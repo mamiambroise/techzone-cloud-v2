@@ -106,70 +106,78 @@ export class CloneService {
 
     const now = new Date();
 
-    // 3. Insert new Application
-    const [newApp] = await db
-      .insert(applications)
-      .values({
-        name: newName,
-        code: newCode,
-        description: params.description ?? sourceApp.description ?? `Clone de ${sourceApp.name}`,
-        category: params.category ?? sourceApp.category ?? "Autre",
-        icon: params.icon ?? sourceApp.icon ?? "Package",
-        status: "DRAFT",
-        environment: sourceApp.environment ?? "DEVELOPMENT",
-        createdBy: actor.id,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-      })
-      .returning();
+    // Spec §48: "Clone Application + Initial Version + Audit" is one atomic unit.
+    const { finalApp, initialVersion } = await db.transaction(async (tx) => {
+      // 3. Insert new Application
+      const [newApp] = await tx
+        .insert(applications)
+        .values({
+          name: newName,
+          code: newCode,
+          description: params.description ?? sourceApp.description ?? `Clone de ${sourceApp.name}`,
+          category: params.category ?? sourceApp.category ?? "Autre",
+          icon: params.icon ?? sourceApp.icon ?? "Package",
+          status: "DRAFT",
+          environment: sourceApp.environment ?? "DEVELOPMENT",
+          createdBy: actor.id,
+          createdAt: now,
+          updatedAt: now,
+          version: 1,
+        })
+        .returning();
 
-    // 4. Insert initial version
-    const [initialVersion] = await db
-      .insert(applicationVersions)
-      .values({
-        applicationId: newApp.id,
-        versionNumber: "1.0.0",
-        status: "DRAFT",
-        snapshot: sourceSnapshot,
-        comment: `Version initiale issue du clonage de ${sourceApp.name} (${sourceApp.code})`,
-        createdBy: actor.id,
-        createdAt: now,
-        version: 1,
-      })
-      .returning();
+      // 4. Insert initial version
+      const [initialVersion] = await tx
+        .insert(applicationVersions)
+        .values({
+          applicationId: newApp.id,
+          versionNumber: "1.0.0",
+          status: "DRAFT",
+          snapshot: sourceSnapshot,
+          comment: `Version initiale issue du clonage de ${sourceApp.name} (${sourceApp.code})`,
+          createdBy: actor.id,
+          createdAt: now,
+          version: 1,
+        })
+        .returning();
 
-    // 5. Update cloned application currentVersionId
-    const [finalApp] = await db
-      .update(applications)
-      .set({
-        currentVersionId: initialVersion.id,
-        updatedAt: now,
-      })
-      .where(eq(applications.id, newApp.id))
-      .returning();
+      // 5. Update cloned application currentVersionId
+      const [finalApp] = await tx
+        .update(applications)
+        .set({
+          currentVersionId: initialVersion.id,
+          updatedAt: now,
+        })
+        .where(eq(applications.id, newApp.id))
+        .returning();
 
-    // 6. Audit event
-    await AuditService.log({
-      applicationId: finalApp.id,
-      actorId: actor.id,
-      eventType: "business.application.cloned",
-      action: "CLONE",
-      targetType: "APPLICATION",
-      targetId: finalApp.id,
-      result: "SUCCESS",
-      after: {
-        id: finalApp.id,
-        code: finalApp.code,
-        name: finalApp.name,
-        initialVersion: initialVersion.versionNumber,
-      },
-      metadata: {
-        sourceApplicationId: sourceApp.id,
-        sourceApplicationCode: sourceApp.code,
-        sourceApplicationName: sourceApp.name,
-      },
-      traceId,
+      // 6. Audit event
+      await AuditService.log(
+        {
+          applicationId: finalApp.id,
+          actorId: actor.id,
+          eventType: "business.application.cloned",
+          action: "CLONE",
+          targetType: "APPLICATION",
+          targetId: finalApp.id,
+          result: "SUCCESS",
+          after: {
+            id: finalApp.id,
+            code: finalApp.code,
+            name: finalApp.name,
+            initialVersion: initialVersion.versionNumber,
+          },
+          metadata: {
+            sourceApplicationId: sourceApp.id,
+            sourceApplicationCode: sourceApp.code,
+            sourceApplicationName: sourceApp.name,
+          },
+          traceId,
+        },
+        tx
+      );
+
+      return { finalApp, initialVersion };
     });
 
     return {

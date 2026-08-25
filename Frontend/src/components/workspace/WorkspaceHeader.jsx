@@ -7,7 +7,7 @@ import { EnvironmentBadge, StatusBadge } from "../ui/StatusBadge";
 import { IconRenderer } from "../ui/IconRenderer";
 import { CloneModal } from "../modals/CloneModal";
 import { TransitionModal } from "../modals/TransitionModal";
-import { getCurrentUserRole } from "@/lib/api-client";
+import { getCurrentUserRole, hasClientPermission, PERMISSIONS } from "@/lib/api-client";
 
 export function WorkspaceHeader({ application, onRefresh, onOpenPublish }) {
   const [showCloneModal, setShowCloneModal] = useState(false);
@@ -92,7 +92,7 @@ export function WorkspaceHeader({ application, onRefresh, onOpenPublish }) {
               <span>Cloner</span>
             </button>
 
-            {onOpenPublish && (
+            {onOpenPublish && hasClientPermission(PERMISSIONS.PUBLISH_VERSION) && (
               <button
                 onClick={onOpenPublish}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition-all active:scale-95"

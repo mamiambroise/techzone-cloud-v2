@@ -12,7 +12,7 @@ import {
   Rocket,
   ShieldCheck,
 } from "lucide-react";
-import { api, getCurrentUserRole } from "@/lib/api-client";
+import { api, getCurrentUserRole, hasClientPermission, PERMISSIONS } from "@/lib/api-client";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { PublishModal } from "@/components/modals/PublishModal";
 
@@ -167,7 +167,7 @@ function ValidationInner() {
                 </p>
               </div>
             </div>
-            {result.canPublish && role !== "VIEWER" && (
+            {result.canPublish && hasClientPermission(PERMISSIONS.PUBLISH_VERSION) && (
               <button
                 onClick={() => setShowPublish(true)}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold"

@@ -31,7 +31,7 @@ import {
   UserCog,
   Boxes,
 } from "lucide-react";
-import { api, getCurrentUserRole } from "@/lib/api-client";
+import { api, getCurrentUserRole, hasClientPermission, PERMISSIONS } from "@/lib/api-client";
 import { StatusBadge, EnvironmentBadge } from "@/components/ui/StatusBadge";
 import { IconRenderer } from "@/components/ui/IconRenderer";
 import { OverviewTab } from "@/components/workspace/OverviewTab";
@@ -454,7 +454,8 @@ function WorkspaceInner() {
 
           <button
             onClick={() => targetVersion && setShowPublish(true)}
-            disabled={!targetVersion || role === "VIEWER"}
+            disabled={!targetVersion || !hasClientPermission(PERMISSIONS.PUBLISH_VERSION)}
+            title={!hasClientPermission(PERMISSIONS.PUBLISH_VERSION) ? "Rôle actuel non autorisé à publier (business.application.publish)" : undefined}
             className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-green-300 bg-green-50 text-xs font-bold text-green-700 hover:bg-green-100 disabled:opacity-40"
           >
             <Rocket className="w-4 h-4" /> Publier (v{targetVersion?.versionNumber || "—"})

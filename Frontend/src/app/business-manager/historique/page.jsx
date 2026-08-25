@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { History, Loader2, RotateCcw } from "lucide-react";
-import { api, getCurrentUserRole } from "@/lib/api-client";
+import { api, getCurrentUserRole, hasClientPermission, PERMISSIONS } from "@/lib/api-client";
 import { ActivityTab } from "@/components/workspace/ActivityTab";
 import { RollbackModal } from "@/components/modals/RollbackModal";
 
@@ -76,7 +76,7 @@ function HistoriqueInner() {
               ))}
             </select>
           </div>
-          {role !== "VIEWER" && (
+          {hasClientPermission(PERMISSIONS.ROLLBACK_VERSION) && (
             <button
               onClick={() => setShowRollback(true)}
               disabled={!app || versions.length < 2}

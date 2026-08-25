@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { db, DbOrTx } from "@/db";
 import { activityEvents, applications } from "@/db/schema";
 import { ActivityEventModel } from "../types/domain";
 import { desc, eq, and, sql } from "drizzle-orm";
@@ -19,24 +19,31 @@ export interface LogActivityParams {
 }
 
 export class AuditService {
-  static async log(params: LogActivityParams): Promise<void> {
-    try {
-      await db.insert(activityEvents).values({
-        applicationId: params.applicationId ?? null,
-        actorId: params.actorId,
-        eventType: params.eventType,
-        action: params.action,
-        targetType: params.targetType,
-        targetId: params.targetId,
-        result: params.result || "SUCCESS",
-        before: params.before ?? null,
-        after: params.after ?? null,
-        metadata: params.metadata ?? {},
-        traceId: params.traceId || generateTraceId(),
-      });
-    } catch (error) {
-      console.error("[AuditService] Failed to record audit log:", error);
-    }
+  // Accepts an optional transaction handle (`tx` from db.transaction(async (tx) => ...))
+  // so the audit row is written atomically with the operation it documents — a failure
+  // later in the transaction rolls the audit entry back too, instead of leaving a
+  // "phantom" audit record for an operation that never actually completed.
+  static async log(params: LogActivityParams, client: DbOrTx = db): Promise<void> {
+    // Spec §48/§17: when called with a transaction handle, audit is part of the atomic
+    // unit (create/clone/publish/rollback + audit) — a failed insert here must propagate
+    // so the whole transaction rolls back instead of committing silently without its
+    // audit trail. When called with the plain `db` client (no active transaction), the
+    // insert still isn't swallowed: a caller that truly wants best-effort logging can
+    // catch it, but silently eating the error previously meant `result: SUCCESS` could be
+    // reported to the API caller for an operation whose audit trail never landed.
+    await client.insert(activityEvents).values({
+      applicationId: params.applicationId ?? null,
+      actorId: params.actorId,
+      eventType: params.eventType,
+      action: params.action,
+      targetType: params.targetType,
+      targetId: params.targetId,
+      result: params.result || "SUCCESS",
+      before: params.before ?? null,
+      after: params.after ?? null,
+      metadata: params.metadata ?? {},
+      traceId: params.traceId || generateTraceId(),
+    });
   }
 
   static async getApplicationActivities(

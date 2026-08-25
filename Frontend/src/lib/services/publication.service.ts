@@ -89,82 +89,92 @@ export class PublicationService {
     const previousPublishedId = app.publishedVersionId;
     const now = new Date();
 
-    // 4. Update previous version if any
-    if (previousPublishedId && previousPublishedId !== versionId) {
-      await db
+    // Spec §17/§48: "Publish Version + Update Application + Audit" must be atomic —
+    // create Publication, supersede the previous version, mark the new one PUBLISHED,
+    // flip the Application to ACTIVE and log the audit event all-or-nothing.
+    const { pub, updatedApp } = await db.transaction(async (tx) => {
+      // 4. Update previous version if any
+      if (previousPublishedId && previousPublishedId !== versionId) {
+        await tx
+          .update(applicationVersions)
+          .set({ status: "SUPERSEDED" })
+          .where(eq(applicationVersions.id, previousPublishedId));
+      }
+
+      // 5. Create Publication record
+      const [pub] = await tx
+        .insert(publications)
+        .values({
+          applicationId: app.id,
+          versionId: ver.id,
+          environment: targetEnv,
+          type: "PUBLISH",
+          status: "SUCCESS",
+          previousVersionId: previousPublishedId ?? null,
+          publishedBy: actorContext.id,
+          publishedAt: now,
+          result: {
+            validationSummary: validationResult.summary,
+            versionNumber: ver.versionNumber,
+            targetEnv,
+          },
+        })
+        .returning();
+
+      // 6. Mark version published
+      await tx
         .update(applicationVersions)
-        .set({ status: "SUPERSEDED" })
-        .where(eq(applicationVersions.id, previousPublishedId));
-    }
+        .set({
+          status: "PUBLISHED",
+          publishedAt: now,
+          version: ver.version + 1,
+        })
+        .where(eq(applicationVersions.id, ver.id));
 
-    // 5. Create Publication record
-    const [pub] = await db
-      .insert(publications)
-      .values({
-        applicationId: app.id,
-        versionId: ver.id,
-        environment: targetEnv,
-        type: "PUBLISH",
-        status: "SUCCESS",
-        previousVersionId: previousPublishedId ?? null,
-        publishedBy: actorContext.id,
-        publishedAt: now,
-        result: {
-          validationSummary: validationResult.summary,
-          versionNumber: ver.versionNumber,
-          targetEnv,
+      // 7. Update Application status -> ACTIVE & publishedVersionId
+      const [updatedApp] = await tx
+        .update(applications)
+        .set({
+          publishedVersionId: ver.id,
+          currentVersionId: ver.id,
+          status: "ACTIVE",
+          environment: targetEnv,
+          updatedAt: now,
+          version: app.version + 1,
+        })
+        .where(eq(applications.id, app.id))
+        .returning();
+
+      // 8. Record audit log
+      await AuditService.log(
+        {
+          applicationId: app.id,
+          actorId: actorContext.id,
+          eventType: "business.application.published",
+          action: "PUBLISH",
+          targetType: "PUBLICATION",
+          targetId: pub.id,
+          result: "SUCCESS",
+          before: {
+            publishedVersionId: previousPublishedId,
+            status: app.status,
+          },
+          after: {
+            publishedVersionId: ver.id,
+            status: updatedApp.status,
+          },
+          metadata: {
+            versionId: ver.id,
+            versionNumber: ver.versionNumber,
+            environment: targetEnv,
+            publicationId: pub.id,
+          },
+          traceId,
         },
-      })
-      .returning();
+        tx
+      );
 
-    // 6. Mark version published
-    await db
-      .update(applicationVersions)
-      .set({
-        status: "PUBLISHED",
-        publishedAt: now,
-        version: ver.version + 1,
-      })
-      .where(eq(applicationVersions.id, ver.id));
-
-    // 7. Update Application status -> ACTIVE & publishedVersionId
-    const [updatedApp] = await db
-      .update(applications)
-      .set({
-        publishedVersionId: ver.id,
-        currentVersionId: ver.id,
-        status: "ACTIVE",
-        environment: targetEnv,
-        updatedAt: now,
-        version: app.version + 1,
-      })
-      .where(eq(applications.id, app.id))
-      .returning();
-
-    // 8. Record audit log
-    await AuditService.log({
-      applicationId: app.id,
-      actorId: actorContext.id,
-      eventType: "business.application.published",
-      action: "PUBLISH",
-      targetType: "PUBLICATION",
-      targetId: pub.id,
-      result: "SUCCESS",
-      before: {
-        publishedVersionId: previousPublishedId,
-        status: app.status,
-      },
-      after: {
-        publishedVersionId: ver.id,
-        status: updatedApp.status,
-      },
-      metadata: {
-        versionId: ver.id,
-        versionNumber: ver.versionNumber,
-        environment: targetEnv,
-        publicationId: pub.id,
-      },
-      traceId,
+      return { pub, updatedApp };
     });
 
     return {
@@ -265,80 +275,90 @@ export class PublicationService {
     const now = new Date();
     const targetEnv: Environment = environment || (app.environment as Environment) || "DEVELOPMENT";
 
-    // Mark current published version as SUPERSEDED
-    if (previousPublishedId) {
-      await db
+    // Spec §18/§48: "Rollback + Publication Record + Audit" must be atomic — no version
+    // or history row may be deleted, and a mid-operation failure must not leave the
+    // Application pointing at a version that was never actually marked PUBLISHED again.
+    const { pub, updatedApp } = await db.transaction(async (tx) => {
+      // Mark current published version as SUPERSEDED
+      if (previousPublishedId) {
+        await tx
+          .update(applicationVersions)
+          .set({ status: "SUPERSEDED" })
+          .where(eq(applicationVersions.id, previousPublishedId));
+      }
+
+      // Set target version as PUBLISHED
+      await tx
         .update(applicationVersions)
-        .set({ status: "SUPERSEDED" })
-        .where(eq(applicationVersions.id, previousPublishedId));
-    }
+        .set({
+          status: "PUBLISHED",
+          publishedAt: now,
+          version: targetVer.version + 1,
+        })
+        .where(eq(applicationVersions.id, targetVer.id));
 
-    // Set target version as PUBLISHED
-    await db
-      .update(applicationVersions)
-      .set({
-        status: "PUBLISHED",
-        publishedAt: now,
-        version: targetVer.version + 1,
-      })
-      .where(eq(applicationVersions.id, targetVer.id));
+      // Create Rollback Publication record
+      const [pub] = await tx
+        .insert(publications)
+        .values({
+          applicationId: app.id,
+          versionId: targetVer.id,
+          environment: targetEnv,
+          type: "ROLLBACK",
+          status: "SUCCESS",
+          previousVersionId: previousPublishedId ?? null,
+          publishedBy: actorContext.id,
+          publishedAt: now,
+          result: {
+            action: "ROLLBACK",
+            targetVersionNumber: targetVer.versionNumber,
+            previousPublishedVersionId: previousPublishedId,
+          },
+        })
+        .returning();
 
-    // Create Rollback Publication record
-    const [pub] = await db
-      .insert(publications)
-      .values({
-        applicationId: app.id,
-        versionId: targetVer.id,
-        environment: targetEnv,
-        type: "ROLLBACK",
-        status: "SUCCESS",
-        previousVersionId: previousPublishedId ?? null,
-        publishedBy: actorContext.id,
-        publishedAt: now,
-        result: {
+      // Update Application
+      const [updatedApp] = await tx
+        .update(applications)
+        .set({
+          publishedVersionId: targetVer.id,
+          status: "ACTIVE",
+          environment: targetEnv,
+          updatedAt: now,
+          version: app.version + 1,
+        })
+        .where(eq(applications.id, app.id))
+        .returning();
+
+      // Record audit event
+      await AuditService.log(
+        {
+          applicationId: app.id,
+          actorId: actorContext.id,
+          eventType: "business.application.rollback",
           action: "ROLLBACK",
-          targetVersionNumber: targetVer.versionNumber,
-          previousPublishedVersionId: previousPublishedId,
+          targetType: "PUBLICATION",
+          targetId: pub.id,
+          result: "SUCCESS",
+          before: {
+            publishedVersionId: previousPublishedId,
+          },
+          after: {
+            publishedVersionId: targetVer.id,
+            status: updatedApp.status,
+          },
+          metadata: {
+            restoredVersionId: targetVer.id,
+            restoredVersionNumber: targetVer.versionNumber,
+            previousVersionId: previousPublishedId,
+            publicationId: pub.id,
+          },
+          traceId,
         },
-      })
-      .returning();
+        tx
+      );
 
-    // Update Application
-    const [updatedApp] = await db
-      .update(applications)
-      .set({
-        publishedVersionId: targetVer.id,
-        status: "ACTIVE",
-        environment: targetEnv,
-        updatedAt: now,
-        version: app.version + 1,
-      })
-      .where(eq(applications.id, app.id))
-      .returning();
-
-    // Record audit event
-    await AuditService.log({
-      applicationId: app.id,
-      actorId: actorContext.id,
-      eventType: "business.application.rollback",
-      action: "ROLLBACK",
-      targetType: "PUBLICATION",
-      targetId: pub.id,
-      result: "SUCCESS",
-      before: {
-        publishedVersionId: previousPublishedId,
-      },
-      after: {
-        publishedVersionId: targetVer.id,
-        status: updatedApp.status,
-      },
-      metadata: {
-        restoredVersionId: targetVer.id,
-        restoredVersionNumber: targetVer.versionNumber,
-        previousVersionId: previousPublishedId,
-        publicationId: pub.id,
-      },
-      traceId,
+      return { pub, updatedApp };
     });
 
     return {

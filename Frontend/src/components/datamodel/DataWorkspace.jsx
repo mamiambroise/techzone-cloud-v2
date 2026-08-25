@@ -3,14 +3,17 @@
 import React, { useState, useEffect } from "react";
 import {
   Database, Boxes, Link2, GitBranch, Network, BadgeCheck, GitCompare, Rocket, Plus, Search,
-  Copy, Archive, Pencil, Download, Loader2, AlertTriangle, CheckCircle2, XCircle, Sparkles,
-  ShieldAlert, Info, ArrowRight, Lock,
+  Copy, Archive, Pencil, Download, Loader2, AlertTriangle, XCircle, Sparkles,
+  Info, ArrowRight, Lock, FlaskConical,
 } from "lucide-react";
 import { dm, api } from "@/lib/api-client";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { IconRenderer } from "@/components/ui/IconRenderer";
 import { SchemaViewer } from "./SchemaViewer";
 import { EntityEditor } from "./EntityEditor";
+import { ImpactAnalysisModal } from "./ImpactAnalysisModal";
+import { SandboxPanel } from "./SandboxPanel";
+import { MigrationMappingPanel } from "./MigrationMappingPanel";
 
 const SUB_TABS = [
   { key: "overview", label: "Overview", icon: Database },
@@ -21,6 +24,7 @@ const SUB_TABS = [
   { key: "validation", label: "Validation", icon: BadgeCheck },
   { key: "changes", label: "Changes", icon: GitCompare },
   { key: "migration", label: "Migration", icon: Rocket },
+  { key: "sandbox", label: "Sandbox", icon: FlaskConical },
 ];
 
 const RISK_STYLE = {
@@ -48,6 +52,7 @@ export function DataWorkspace({ appId, versionId, tab, app, versions, navigate }
   const [migration, setMigration] = useState(null);
   const [depObject, setDepObject] = useState("");
   const [deps, setDeps] = useState(null);
+  const [pendingImpact, setPendingImpact] = useState(null);
 
   const readOnly = app?.status === "PUBLISHED" || app?.status === "SUPERSEDED";
   const publishedVersion = versions.find((v) => v.id === app?.publishedVersionId);
@@ -88,7 +93,21 @@ export function DataWorkspace({ appId, versionId, tab, app, versions, navigate }
   };
 
   const duplicateEntity = async (id) => { await dm.duplicateEntity(appId, versionId, id); await load(); };
-  const archiveEntity = async (id) => { if (!window.confirm("Archiver cette entité ?")) return; await dm.archiveEntity(appId, versionId, id); await load(); };
+
+  // Specs §23/§46 — archiving an Entity is a structural, potentially destructive change
+  // (relations, dependent formulas...): gate it on Impact Analysis instead of a plain confirm().
+  const archiveEntity = (id) => {
+    const entity = entities.find((e) => e.id === id);
+    setPendingImpact({
+      change: { kind: "ENTITY_ARCHIVE", entityId: id },
+      title: `Archiver l'entité "${entity?.code || id}"`,
+      run: async () => {
+        const res = await dm.archiveEntity(appId, versionId, id);
+        if (!res.success) { window.alert(res.error?.message); return; }
+        await load();
+      },
+    });
+  };
 
   const runValidation = async () => {
     setValidating(true);
@@ -392,36 +411,17 @@ export function DataWorkspace({ appId, versionId, tab, app, versions, navigate }
 
           {/* MIGRATION */}
           {tab === "migration" && (
-            <div className="space-y-4">
-              <button onClick={runMigration} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700"><Rocket className="w-4 h-4" /> Générer le plan de migration</button>
-              {migration && (
-                <>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    {[
-                      ["Safe", migration.riskSummary.safe, "bg-green-50 text-green-700 border-green-200"],
-                      ["Warnings", migration.riskSummary.warnings, "bg-amber-50 text-amber-700 border-amber-200"],
-                      ["Breaking", migration.riskSummary.breaking, "bg-red-50 text-red-700 border-red-200"],
-                      ["Data Loss", migration.riskSummary.dataLoss, "bg-rose-100 text-rose-800 border-rose-300"],
-                    ].map(([l, v, s], i) => (
-                      <div key={i} className={`p-4 rounded-xl border text-center ${s}`}><p className="text-2xl font-black">{v}</p><p className="text-[10px] font-bold uppercase">{l}</p></div>
-                    ))}
-                    <div className="p-4 rounded-xl border border-slate-200 bg-white text-center"><p className={`text-lg font-black ${migration.status === "READY" ? "text-green-600" : migration.status === "BLOCKED" ? "text-red-600" : "text-amber-600"}`}>{migration.status}</p><p className="text-[10px] font-bold uppercase text-slate-400">Statut</p></div>
-                  </div>
-                  <div className="rounded-xl bg-white border border-slate-200 divide-y divide-slate-100">
-                    {migration.steps.map((s) => (
-                      <div key={s.id} className="flex items-center gap-3 px-4 py-3 text-xs">
-                        <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 font-black flex items-center justify-center">{s.order}</span>
-                        <span className="font-bold text-slate-800">{s.operation}</span>
-                        <span className="text-slate-400">{s.targetType}</span>
-                        <span className={`ml-auto text-[10px] font-black px-2 py-1 rounded border ${RISK_STYLE[s.riskLevel]}`}>{s.riskLevel}</span>
-                        {s.requiresConfirmation ? <span className="text-[10px] font-bold text-rose-700 flex items-center gap-1"><ShieldAlert className="w-3.5 h-3.5" /> confirmation</span> : <span className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> automatique</span>}
-                      </div>
-                    ))}
-                    {migration.steps.length === 0 && <p className="p-8 text-center text-xs text-slate-400">Aucune étape : schémas identiques.</p>}
-                  </div>
-                </>
-              )}
-            </div>
+            <MigrationMappingPanel
+              migration={migration}
+              onGenerate={runMigration}
+              sourceVersionNumber={publishedVersion?.versionNumber}
+              targetVersionNumber={versions.find((v) => v.id === versionId)?.versionNumber}
+            />
+          )}
+
+          {/* SANDBOX */}
+          {tab === "sandbox" && (
+            <SandboxPanel appId={appId} versionId={versionId} entities={entities} />
           )}
         </>
       )}
@@ -464,6 +464,18 @@ export function DataWorkspace({ appId, versionId, tab, app, versions, navigate }
           onChanged={load}
         />
       )}
+
+      <ImpactAnalysisModal
+        appId={appId}
+        versionId={versionId}
+        change={pendingImpact?.change}
+        title={pendingImpact?.title}
+        onCancel={() => setPendingImpact(null)}
+        onConfirm={async () => {
+          await pendingImpact.run();
+          setPendingImpact(null);
+        }}
+      />
     </div>
   );
 }

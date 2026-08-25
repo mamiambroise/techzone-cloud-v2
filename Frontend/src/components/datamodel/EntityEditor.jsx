@@ -4,8 +4,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   X, Plus, Save, Undo2, Redo2, Trash2, ArrowUp, ArrowDown, Pencil, RefreshCw,
   AlertTriangle, CheckCircle2, CloudUpload, Database, Link2, ShieldCheck, ListOrdered, BadgeCheck, GitBranch,
+  FolderOpen, Layers, LayoutList,
 } from "lucide-react";
 import { dm } from "@/lib/api-client";
+import { ImpactAnalysisModal } from "./ImpactAnalysisModal";
 
 const TABS = [
   { key: "general", label: "General" },
@@ -28,7 +30,52 @@ const TYPE_HINT = {
 const emptyFieldForm = {
   code: "", label: "", dataType: "TEXT", required: false, unique: false, indexed: false, readonly: false,
   defaultValue: "", formula: "", options: [{ value: "", label: "" }], scope: "ORGANIZATION", classification: "INTERNAL",
+  fieldGroup: "",
 };
+
+// Specs P0.2 §17 (Field Groups): "Permettre de regrouper des champs logiquement." No dedicated
+// domain object is introduced — the group name is stored inside the field's existing free-form
+// `configuration` JSON (already persisted as-is by FieldService), so grouping needs no schema
+// change: it's purely an organizational label on top of the existing Field definition.
+const SUGGESTED_FIELD_GROUPS = ["ADDRESS", "CONTACT_INFORMATION", "DIMENSIONS", "PRICING", "IDENTITY_INFORMATION"];
+const NO_GROUP = "__no_group__";
+
+function fieldGroupOf(f) {
+  return (f.fieldGroup ?? f.configuration?.fieldGroup ?? "").trim() || null;
+}
+
+function FieldRow({ f, index, showArrows, readOnly, onMove, onEdit, onArchive }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50">
+      {showArrows && !readOnly && (
+        <div className="flex flex-col">
+          <button onClick={() => onMove(index, -1)} className="text-slate-300 hover:text-slate-600"><ArrowUp className="w-3.5 h-3.5" /></button>
+          <button onClick={() => onMove(index, 1)} className="text-slate-300 hover:text-slate-600"><ArrowDown className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+      <span className="text-slate-300 cursor-grab">≡</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-slate-800 font-mono flex items-center gap-1.5">
+          {f.dataType === "FORMULA" && <span className="text-violet-600">ƒ</span>}{f.code}
+          {(f._isNew || f._dirty) && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+        </p>
+        <p className="text-[11px] text-slate-400 truncate">{f.label}{f.dataType === "FORMULA" ? ` = ${f.formula || f.formulaExpression || ""}` : ""}</p>
+      </div>
+      <span className="text-[10px] font-black px-2 py-0.5 rounded" style={{ color: TYPE_HINT[f.dataType] || "#64748b", background: "#f1f5f9" }}>{f.dataType}</span>
+      <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+        {f.required && <span className="text-red-500">*</span>}
+        {f.unique && <span className="px-1 rounded bg-slate-100">U</span>}
+        {f.indexed && <span className="px-1 rounded bg-slate-100">IX</span>}
+      </div>
+      {!readOnly && (
+        <div className="flex items-center gap-1">
+          <button onClick={() => onEdit(f)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"><Pencil className="w-3.5 h-3.5" /></button>
+          <button onClick={() => onArchive(f)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function EntityEditor({ appId, versionId, entityId, entities, readOnly, onClose, onChanged }) {
   const [tab, setTab] = useState("fields");
@@ -42,6 +89,7 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
   const [fieldForm, setFieldForm] = useState(null); // 'new' | fieldId
   const [form, setForm] = useState(emptyFieldForm);
   const [formError, setFormError] = useState(null);
+  const [groupBy, setGroupBy] = useState("none"); // "none" | "group" — specs §17 Field Groups
 
   const [relations, setRelations] = useState([]);
   const [constraints, setConstraints] = useState([]);
@@ -59,6 +107,10 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
 
   const [depFieldId, setDepFieldId] = useState("");
   const [deps, setDeps] = useState(null);
+
+  // Specs §23/§46 — structural changes (type change, field/relation removal) must go through
+  // an Impact Analysis confirmation gate before being applied. { change, title, run } | null.
+  const [pendingImpact, setPendingImpact] = useState(null);
 
   const load = async () => {
     const [e, f, r, dt] = await Promise.all([
@@ -140,13 +192,21 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
     // eslint-disable-next-line
   }, [autosave, draft]);
 
-  const toPayload = (f) => ({
-    code: f.code, label: f.label, data_type: f.dataType, required: !!f.required, unique: !!f.unique,
-    indexed: !!f.indexed, readonly: !!f.readonly, default_value: f.defaultValue === "" ? null : coerceDefault(f.dataType, f.defaultValue),
-    scope: f.scope, classification: f.classification,
-    configuration: f.dataType === "ENUM" || f.dataType === "MULTI_ENUM" ? { options: (f.options || []).filter((o) => o.value) } : f.configuration || {},
-    formula_expression: f.dataType === "FORMULA" ? f.formula : null,
-  });
+  const toPayload = (f) => {
+    // Field Groups (§17) ride on the existing free-form `configuration` JSON — no schema change.
+    const fieldGroup = (f.fieldGroup ?? "").trim() || null;
+    const baseConfig =
+      f.dataType === "ENUM" || f.dataType === "MULTI_ENUM"
+        ? { options: (f.options || []).filter((o) => o.value) }
+        : f.configuration || {};
+    return {
+      code: f.code, label: f.label, data_type: f.dataType, required: !!f.required, unique: !!f.unique,
+      indexed: !!f.indexed, readonly: !!f.readonly, default_value: f.defaultValue === "" ? null : coerceDefault(f.dataType, f.defaultValue),
+      scope: f.scope, classification: f.classification,
+      configuration: { ...baseConfig, fieldGroup },
+      formula_expression: f.dataType === "FORMULA" ? f.formula : null,
+    };
+  };
 
   const coerceDefault = (type, v) => {
     if (["INTEGER", "BIG_INTEGER", "DECIMAL", "CURRENCY", "PERCENTAGE"].includes(type)) { const n = Number(v); return isNaN(n) ? null : n; }
@@ -165,7 +225,7 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
         code: f.code, label: f.label, dataType: f.dataType, required: f.required, unique: f.unique, indexed: f.indexed,
         readonly: f.readonly, defaultValue: f.defaultValue ?? "", formula: f.formulaExpression || "",
         options: f.configuration?.options?.length ? f.configuration.options : [{ value: "", label: "" }],
-        scope: f.scope, classification: f.classification,
+        scope: f.scope, classification: f.classification, fieldGroup: fieldGroupOf(f) || "",
       });
       setFieldForm(f.id);
     }
@@ -177,16 +237,55 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
     return codes.filter((c) => new RegExp(`\\b${c}\\b`).test(form.formula));
   }, [form.formula, form.dataType, draft, fieldForm]);
 
+  const existingGroups = useMemo(() => {
+    const seen = new Set();
+    draft.forEach((f) => { const g = fieldGroupOf(f); if (g) seen.add(g); });
+    return Array.from(seen);
+  }, [draft]);
+
+  // Groups fields by fieldGroup, preserving each field's relative order (§17 Field Groups).
+  const groupedFields = useMemo(() => {
+    if (groupBy !== "group") return null;
+    const order = [];
+    const buckets = new Map();
+    draft.forEach((f) => {
+      const g = fieldGroupOf(f) || NO_GROUP;
+      if (!buckets.has(g)) { buckets.set(g, []); order.push(g); }
+      buckets.get(g).push(f);
+    });
+    // Ungrouped fields last, regardless of where they first appeared.
+    const ordered = order.includes(NO_GROUP) ? [...order.filter((g) => g !== NO_GROUP), NO_GROUP] : order;
+    return ordered.map((g) => ({ group: g, fields: buckets.get(g) }));
+  }, [draft, groupBy]);
+
   const submitFieldForm = () => {
     setFormError(null);
     if (!form.code.trim() || !form.label.trim()) { setFormError("Code et label sont obligatoires."); return; }
     if (form.dataType === "FORMULA" && !form.formula.trim()) { setFormError("Expression requise pour un champ FORMULA."); return; }
-    if (fieldForm === "new") {
-      mutate((d) => [...d, { ...form, id: `tmp_${Date.now()}`, _isNew: true, _dirty: false, position: d.length, version: 0, status: "ACTIVE" }]);
-    } else {
-      mutate((d) => d.map((f) => (f.id === fieldForm ? { ...f, ...form, _dirty: true } : f)));
+
+    const applyField = () => {
+      if (fieldForm === "new") {
+        mutate((d) => [...d, { ...form, id: `tmp_${Date.now()}`, _isNew: true, _dirty: false, position: d.length, version: 0, status: "ACTIVE" }]);
+      } else {
+        mutate((d) => d.map((f) => (f.id === fieldForm ? { ...f, ...form, _dirty: true } : f)));
+      }
+      setFieldForm(null);
+    };
+
+    // Specs §23 — changing the type of an already-persisted field is a structural change:
+    // gate it on Impact Analysis (formulas/validations/constraints/indexes referencing it may break).
+    if (fieldForm !== "new") {
+      const original = draft.find((f) => f.id === fieldForm);
+      if (original && !original._isNew && original.dataType !== form.dataType) {
+        setPendingImpact({
+          change: { kind: "FIELD_TYPE_CHANGE", fieldId: fieldForm, proposedType: form.dataType },
+          title: `Changer le type de "${original.code}" : ${original.dataType} → ${form.dataType}`,
+          run: applyField,
+        });
+        return;
+      }
     }
-    setFieldForm(null);
+    applyField();
   };
 
   const moveField = (idx, dir) => {
@@ -195,11 +294,21 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
     mutate((d) => { const c = [...d]; [c[idx], c[j]] = [c[j], c[idx]]; return c; });
   };
 
-  const archiveField = async (f) => {
-    if (!window.confirm(`Archiver le champ ${f.code} ?`)) return;
-    const res = await dm.archiveField(appId, versionId, entityId, f.id);
-    if (!res.success) { window.alert(res.error?.message); return; }
-    await load(); onChanged && onChanged();
+  const archiveField = (f) => {
+    // A brand-new, not-yet-saved field has no server-side dependents to analyze — just drop it locally.
+    if (f._isNew) {
+      mutate((d) => d.filter((x) => x.id !== f.id));
+      return;
+    }
+    setPendingImpact({
+      change: { kind: "FIELD_REMOVE", fieldId: f.id },
+      title: `Archiver le champ "${f.code}"`,
+      run: async () => {
+        const res = await dm.archiveField(appId, versionId, entityId, f.id);
+        if (!res.success) { window.alert(res.error?.message); return; }
+        await load(); onChanged && onChanged();
+      },
+    });
   };
 
   // ---------- entity general ----------
@@ -216,10 +325,15 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
     if (!res.success) { window.alert(res.error?.message); return; }
     await load(); onChanged && onChanged();
   };
-  const removeRelation = async (id) => {
-    if (!window.confirm("Supprimer cette relation ?")) return;
-    await dm.removeRelation(appId, versionId, id);
-    await load(); onChanged && onChanged();
+  const removeRelation = (id) => {
+    setPendingImpact({
+      change: { kind: "RELATION_REMOVE", relationId: id },
+      title: "Supprimer cette relation",
+      run: async () => {
+        await dm.removeRelation(appId, versionId, id);
+        await load(); onChanged && onChanged();
+      },
+    });
   };
 
   // ---------- constraints / indexes / validations ----------
@@ -379,6 +493,24 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
                     </div>
                   </div>
 
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1 flex items-center gap-1.5">
+                      <FolderOpen className="w-3.5 h-3.5 text-slate-400" /> Groupe de champs (optionnel)
+                    </label>
+                    <input
+                      value={form.fieldGroup}
+                      onChange={(e) => setForm({ ...form, fieldGroup: e.target.value })}
+                      list="field-group-suggestions"
+                      placeholder="ex: ADDRESS, PRICING…"
+                      className="w-full h-9 px-3 rounded-lg border border-slate-200 text-sm"
+                    />
+                    <datalist id="field-group-suggestions">
+                      {existingGroups.map((g) => <option key={g} value={g} />)}
+                      {SUGGESTED_FIELD_GROUPS.filter((g) => !existingGroups.includes(g)).map((g) => <option key={g} value={g} />)}
+                    </datalist>
+                    <p className="text-[10px] text-slate-400 mt-1">Regroupe visuellement des champs liés (ex: ADDRESS = address_line, city, postal_code, country) — purement organisationnel, specs §17.</p>
+                  </div>
+
                   {(form.dataType === "ENUM" || form.dataType === "MULTI_ENUM") && (
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 mb-1">Options ENUM (value stable / label affichable)</label>
@@ -423,40 +555,56 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
                 </div>
               )}
 
-              {/* Field rows */}
-              <div className="rounded-xl border border-slate-200 divide-y divide-slate-100">
-                {draft.map((f, i) => (
-                  <div key={f.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50">
-                    {!readOnly && (
-                      <div className="flex flex-col">
-                        <button onClick={() => moveField(i, -1)} className="text-slate-300 hover:text-slate-600"><ArrowUp className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => moveField(i, 1)} className="text-slate-300 hover:text-slate-600"><ArrowDown className="w-3.5 h-3.5" /></button>
-                      </div>
-                    )}
-                    <span className="text-slate-300 cursor-grab">≡</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800 font-mono flex items-center gap-1.5">
-                        {f.dataType === "FORMULA" && <span className="text-violet-600">ƒ</span>}{f.code}
-                        {(f._isNew || f._dirty) && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
-                      </p>
-                      <p className="text-[11px] text-slate-400 truncate">{f.label}{f.dataType === "FORMULA" ? ` = ${f.formula || f.formulaExpression || ""}` : ""}</p>
-                    </div>
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded" style={{ color: TYPE_HINT[f.dataType] || "#64748b", background: "#f1f5f9" }}>{f.dataType}</span>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                      {f.required && <span className="text-red-500">*</span>}
-                      {f.unique && <span className="px-1 rounded bg-slate-100">U</span>}
-                      {f.indexed && <span className="px-1 rounded bg-slate-100">IX</span>}
-                    </div>
-                    {!readOnly && (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openFieldForm(f)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => archiveField(f)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /></button>
-                      </div>
-                    )}
+              {/* Group by toggle — specs §17 Field Groups */}
+              {draft.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-slate-500">Affichage :</span>
+                  <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden">
+                    <button
+                      onClick={() => setGroupBy("none")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold ${groupBy === "none" ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                    >
+                      <LayoutList className="w-3.5 h-3.5" /> Liste
+                    </button>
+                    <button
+                      onClick={() => setGroupBy("group")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold border-l border-slate-200 ${groupBy === "group" ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                    >
+                      <Layers className="w-3.5 h-3.5" /> Par groupe
+                    </button>
                   </div>
-                ))}
-                {draft.length === 0 && <p className="p-6 text-center text-xs text-slate-400">Aucun champ. Ajoutez le premier champ de cette entité.</p>}
-              </div>
+                  {groupBy === "group" && <span className="text-[11px] text-slate-400">Réordonnez depuis la vue « Liste ».</span>}
+                </div>
+              )}
+
+              {/* Field rows */}
+              {groupBy === "group" && groupedFields ? (
+                <div className="space-y-4">
+                  {groupedFields.map(({ group, fields: groupFields }) => (
+                    <div key={group} className="rounded-xl border border-slate-200 overflow-hidden">
+                      <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                        <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wide">
+                          {group === NO_GROUP ? "Sans groupe" : group}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400">({groupFields.length})</span>
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {groupFields.map((f) => (
+                          <FieldRow key={f.id} f={f} showArrows={false} readOnly={readOnly} onMove={moveField} onEdit={openFieldForm} onArchive={archiveField} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 divide-y divide-slate-100">
+                  {draft.map((f, i) => (
+                    <FieldRow key={f.id} f={f} index={i} showArrows readOnly={readOnly} onMove={moveField} onEdit={openFieldForm} onArchive={archiveField} />
+                  ))}
+                  {draft.length === 0 && <p className="p-6 text-center text-xs text-slate-400">Aucun champ. Ajoutez le premier champ de cette entité.</p>}
+                </div>
+              )}
             </div>
           )}
 
@@ -663,6 +811,18 @@ export function EntityEditor({ appId, versionId, entityId, entities, readOnly, o
           )}
         </div>
       </div>
+
+      <ImpactAnalysisModal
+        appId={appId}
+        versionId={versionId}
+        change={pendingImpact?.change}
+        title={pendingImpact?.title}
+        onCancel={() => setPendingImpact(null)}
+        onConfirm={async () => {
+          await pendingImpact.run();
+          setPendingImpact(null);
+        }}
+      />
     </div>
   );
 }

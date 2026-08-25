@@ -1,21 +1,67 @@
 "use client";
 
-import React, { useState } from "react";
-import { Send, X, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Send, X, AlertCircle, Loader2, Sparkles, CheckCircle2, XCircle, AlertTriangle, ShieldCheck, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api-client";
 import confetti from "canvas-confetti";
 
 const ENVIRONMENTS = ["DEVELOPMENT", "TEST", "STAGING", "PRODUCTION"];
+
+const CHECK_ICONS = {
+  PASS: <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />,
+  WARNING: <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />,
+  FAIL: <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />,
+};
 
 export function PublishModal({ application, version, isOpen, onClose, onPublished }) {
   const [environment, setEnvironment] = useState("PRODUCTION");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Specs §39 (F13/Publication Dialog): show the validation result and disable the
+  // publish button while validation blocks the operation. Re-run automatically whenever
+  // the modal is opened for a given application/version, mirroring ValidationModal.
+  const [validation, setValidation] = useState(null);
+  const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState(null);
+
+  const runValidation = async () => {
+    if (!application || !version) return;
+    setValidating(true);
+    setValidationError(null);
+    try {
+      const res = await api.validateVersion(application.id, version.id);
+      if (res.success && res.data) {
+        setValidation(res.data);
+      } else {
+        setValidationError(res.error?.message || "Échec de la validation");
+      }
+    } catch (err) {
+      setValidationError(err.message || "Erreur de validation");
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && application && version) {
+      setError(null);
+      runValidation();
+    } else {
+      setValidation(null);
+      setValidationError(null);
+      setError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, application?.id, version?.id]);
+
   if (!isOpen || !application || !version) return null;
+
+  const canPublish = !!validation?.canPublish;
 
   const handlePublish = async (e) => {
     e.preventDefault();
+    if (!canPublish) return;
     setError(null);
     setLoading(true);
 
@@ -63,6 +109,62 @@ export function PublishModal({ application, version, isOpen, onClose, onPublishe
               <span>{error}</span>
             </div>
           )}
+
+          {/* Validation result (Specs §39) — the publish button below is gated on this */}
+          <div>
+            {validating ? (
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-2.5 text-xs text-slate-600">
+                <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                <span>Vérification des contrôles de pré-publication...</span>
+              </div>
+            ) : validationError ? (
+              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+                <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{validationError}</span>
+              </div>
+            ) : validation ? (
+              <div
+                className={`rounded-2xl border overflow-hidden ${
+                  canPublish ? "bg-emerald-50/70 border-emerald-200" : "bg-red-50/70 border-red-200"
+                }`}
+              >
+                <div className="p-3.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    {canPublish ? (
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    )}
+                    <p className={`text-xs font-bold ${canPublish ? "text-emerald-900" : "text-red-900"}`}>
+                      {canPublish ? "Validation OK — prêt pour publication" : "Validation échouée — publication bloquée"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={runValidation}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-white/60"
+                    title="Re-vérifier"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {!canPublish && (
+                  <ul className="px-3.5 pb-3.5 space-y-1.5">
+                    {validation.checks
+                      .filter((c) => c.status !== "PASS")
+                      .map((c) => (
+                        <li key={c.code} className="flex items-start gap-2 text-[11px] text-red-800">
+                          {CHECK_ICONS[c.status]}
+                          <span>
+                            <strong>{c.name}</strong> — {c.message}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            ) : null}
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
@@ -123,7 +225,8 @@ export function PublishModal({ application, version, isOpen, onClose, onPublishe
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || validating || !canPublish}
+              title={!validating && !canPublish ? "La validation bloque la publication — corrigez les erreurs ci-dessus." : undefined}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-md shadow-emerald-200 transition-all active:scale-95"
             >
               {loading ? (

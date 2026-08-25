@@ -95,24 +95,6 @@ export class ApplicationService {
     const category = input.category || "Autre";
     const icon = input.icon || "Package";
 
-    // 1. Create initial application record
-    const [app] = await db
-      .insert(applications)
-      .values({
-        name,
-        code,
-        description: input.description || null,
-        category,
-        icon,
-        status: "DRAFT",
-        environment: env,
-        createdBy: actor.id,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-      })
-      .returning();
-
     // 2. Prepare initial snapshot (customized based on template)
     let initialSnapshot: Record<string, any> = {
       appName: name,
@@ -157,52 +139,79 @@ export class ApplicationService {
       initialSnapshot.features = ["AppointmentBooking", "DiagnosticSheet", "Invoicing"];
     }
 
-    // 3. Create initial 1.0.0 version
-    const [initialVersion] = await db
-      .insert(applicationVersions)
-      .values({
-        applicationId: app.id,
-        versionNumber: "1.0.0",
-        status: "DRAFT",
-        snapshot: initialSnapshot,
-        comment: "Version initiale créée automatiquement",
-        createdBy: actor.id,
-        createdAt: now,
-        version: 1,
-      })
-      .returning();
+    // Spec §48: "Create Application + Initial Version + Audit" is one atomic unit —
+    // if any step fails, none of it should be persisted.
+    const { updatedApp, initialVersion } = await db.transaction(async (tx) => {
+      // 1. Create initial application record
+      const [app] = await tx
+        .insert(applications)
+        .values({
+          name,
+          code,
+          description: input.description || null,
+          category,
+          icon,
+          status: "DRAFT",
+          environment: env,
+          createdBy: actor.id,
+          createdAt: now,
+          updatedAt: now,
+          version: 1,
+        })
+        .returning();
 
-    // 4. Update application with currentVersionId
-    const [updatedApp] = await db
-      .update(applications)
-      .set({
-        currentVersionId: initialVersion.id,
-        updatedAt: now,
-      })
-      .where(eq(applications.id, app.id))
-      .returning();
+      // 3. Create initial 1.0.0 version
+      const [initialVersion] = await tx
+        .insert(applicationVersions)
+        .values({
+          applicationId: app.id,
+          versionNumber: "1.0.0",
+          status: "DRAFT",
+          snapshot: initialSnapshot,
+          comment: "Version initiale créée automatiquement",
+          createdBy: actor.id,
+          createdAt: now,
+          version: 1,
+        })
+        .returning();
 
-    // 5. Log audit event
-    await AuditService.log({
-      applicationId: updatedApp.id,
-      actorId: actor.id,
-      eventType: "business.application.created",
-      action: "CREATE",
-      targetType: "APPLICATION",
-      targetId: updatedApp.id,
-      result: "SUCCESS",
-      after: {
-        id: updatedApp.id,
-        code: updatedApp.code,
-        name: updatedApp.name,
-        status: updatedApp.status,
-        initialVersion: initialVersion.versionNumber,
-      },
-      metadata: {
-        templateKey: input.templateKey || "empty",
-        environment: env,
-      },
-      traceId,
+      // 4. Update application with currentVersionId
+      const [updatedApp] = await tx
+        .update(applications)
+        .set({
+          currentVersionId: initialVersion.id,
+          updatedAt: now,
+        })
+        .where(eq(applications.id, app.id))
+        .returning();
+
+      // 5. Log audit event
+      await AuditService.log(
+        {
+          applicationId: updatedApp.id,
+          actorId: actor.id,
+          eventType: "business.application.created",
+          action: "CREATE",
+          targetType: "APPLICATION",
+          targetId: updatedApp.id,
+          result: "SUCCESS",
+          after: {
+            id: updatedApp.id,
+            code: updatedApp.code,
+            name: updatedApp.name,
+            status: updatedApp.status,
+            initialVersion: initialVersion.versionNumber,
+          },
+          metadata: {
+            templateKey: input.templateKey || "empty",
+            environment: env,
+          },
+          traceId,
+        },
+        tx
+      );
+
+      return { updatedApp, initialVersion };
     });
 
     return {

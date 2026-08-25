@@ -22,3 +22,8 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export const db = drizzle(pool);
+
+// Structural type covering both the top-level `db` and the `tx` handle passed into
+// `db.transaction(async (tx) => ...)`. Services accept this so a caller can run a
+// sequence of operations either standalone or atomically inside one transaction.
+export type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];

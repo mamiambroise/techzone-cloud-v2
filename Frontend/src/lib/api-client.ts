@@ -8,7 +8,12 @@ import {
   ActivityEventModel,
   ValidationResult,
   UserRole,
+  Permission,
+  ROLE_PERMISSIONS,
+  PERMISSIONS,
 } from "./types/domain";
+
+export { PERMISSIONS };
 
 let currentRole: UserRole = "ADMIN";
 let currentActor = {
@@ -42,6 +47,13 @@ export function setCurrentUserRole(role: UserRole) {
 
 export function getCurrentUserRole(): UserRole {
   return currentRole;
+}
+
+// Mirrors the backend's ROLE_PERMISSIONS mapping (auth.service.ts) so the UI can
+// hide/disable a specific action (e.g. Publish, Rollback) instead of only checking
+// role !== "VIEWER". The Backend remains the source of authority — this is display-only.
+export function hasClientPermission(permission: Permission): boolean {
+  return (ROLE_PERMISSIONS[currentRole] || []).includes(permission);
 }
 
 export function getCurrentActor() {

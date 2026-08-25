@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Rocket, Loader2, CheckCircle2, History, ArrowRight, ShieldCheck } from "lucide-react";
-import { api, getCurrentUserRole } from "@/lib/api-client";
+import { api, getCurrentUserRole, hasClientPermission, PERMISSIONS } from "@/lib/api-client";
 import { StatusBadge, EnvironmentBadge } from "@/components/ui/StatusBadge";
 import { PublishModal } from "@/components/modals/PublishModal";
 import { ValidationModal } from "@/components/modals/ValidationModal";
@@ -145,7 +145,9 @@ function PublicationInner() {
                   </button>
                   <button
                     onClick={() => setShowPublish(true)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                    disabled={!hasClientPermission(PERMISSIONS.PUBLISH_VERSION)}
+                    title={!hasClientPermission(PERMISSIONS.PUBLISH_VERSION) ? "Rôle actuel non autorisé à publier (business.application.publish)" : undefined}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-bold"
                   >
                     <Rocket className="w-4 h-4" /> Publier
                   </button>

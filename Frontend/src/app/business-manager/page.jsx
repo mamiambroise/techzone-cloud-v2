@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   RefreshCw,
@@ -283,7 +283,7 @@ export default function OverviewPage() {
           {lifecycle.map((s, i) => {
             const Icon = s.icon;
             return (
-              <React.Fragment key={s.key}>
+              <Fragment key={s.key}>
                 <div className="flex-1 min-w-[150px] border border-slate-200 rounded-xl p-4 flex flex-col items-start gap-3">
                   <div className="flex items-center gap-2 w-full">
                     <Icon className={`w-5 h-5 ${s.color}`} />
@@ -297,7 +297,7 @@ export default function OverviewPage() {
                     <ArrowRight className="w-4 h-4 text-blue-400" />
                   </div>
                 )}
-              </React.Fragment>
+              </Fragment>
             );
           })}
         </div>

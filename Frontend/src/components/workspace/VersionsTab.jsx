@@ -21,7 +21,7 @@ import { PublishModal } from "../modals/PublishModal";
 import { CreateVersionModal } from "../modals/CreateVersionModal";
 import { RollbackModal } from "../modals/RollbackModal";
 import { CompareVersionsModal } from "../modals/CompareVersionsModal";
-import { getCurrentUserRole } from "@/lib/api-client";
+import { getCurrentUserRole, hasClientPermission, PERMISSIONS } from "@/lib/api-client";
 
 export function VersionsTab({ application, versions, onRefresh }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -50,7 +50,7 @@ export function VersionsTab({ application, versions, onRefresh }) {
 
         {role !== "VIEWER" && (
           <div className="flex items-center gap-2">
-            {versions.length > 1 && (
+            {versions.length > 1 && hasClientPermission(PERMISSIONS.ROLLBACK_VERSION) && (
               <button
                 onClick={() => setShowRollbackModal(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-95 shadow-2xs"
@@ -208,23 +208,23 @@ export function VersionsTab({ application, versions, onRefresh }) {
                   )}
 
                   {role !== "VIEWER" && (
-                    <>
-                      <button
-                        onClick={() => setSelectedValidationVer(ver)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 text-xs font-bold text-indigo-700 hover:bg-indigo-50 transition-colors shadow-2xs"
-                      >
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Valider</span>
-                      </button>
+                    <button
+                      onClick={() => setSelectedValidationVer(ver)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 text-xs font-bold text-indigo-700 hover:bg-indigo-50 transition-colors shadow-2xs"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Valider</span>
+                    </button>
+                  )}
 
-                      <button
-                        onClick={() => setSelectedPublishVer(ver)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Publier</span>
-                      </button>
-                    </>
+                  {hasClientPermission(PERMISSIONS.PUBLISH_VERSION) && (
+                    <button
+                      onClick={() => setSelectedPublishVer(ver)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Publier</span>
+                    </button>
                   )}
                 </div>
               </div>
