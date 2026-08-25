@@ -1,0 +1,338 @@
+import { db } from "@/db";
+import { applications, applicationVersions } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { ApplicationVersionModel, ERROR_CODES } from "../types/domain";
+import { ActorContext } from "./auth.service";
+import { AuditService } from "./audit.service";
+import { isValidSemver } from "../utils/slug";
+import { generateTraceId } from "../utils/trace";
+import { SchemaService } from "./datamodel/schema.service";
+
+export interface CreateVersionParams {
+  versionNumber: string;
+  sourceVersionId?: string;
+  comment?: string;
+  snapshot?: Record<string, any>;
+}
+
+export class VersionService {
+  static async listVersions(applicationId: string): Promise<ApplicationVersionModel[]> {
+    const rows = await db
+      .select()
+      .from(applicationVersions)
+      .where(eq(applicationVersions.applicationId, applicationId))
+      .orderBy(desc(applicationVersions.createdAt));
+
+    return rows.map((r) => ({
+      id: r.id,
+      applicationId: r.applicationId,
+      versionNumber: r.versionNumber,
+      status: r.status as any,
+      snapshot: (r.snapshot as Record<string, any>) || {},
+      comment: r.comment,
+      createdBy: r.createdBy,
+      createdAt: r.createdAt.toISOString(),
+      validatedAt: r.validatedAt ? r.validatedAt.toISOString() : null,
+      publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
+      version: r.version,
+    }));
+  }
+
+  static async getVersion(applicationId: string, versionId: string): Promise<ApplicationVersionModel | null> {
+    const [row] = await db
+      .select()
+      .from(applicationVersions)
+      .where(and(eq(applicationVersions.id, versionId), eq(applicationVersions.applicationId, applicationId)));
+
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      applicationId: row.applicationId,
+      versionNumber: row.versionNumber,
+      status: row.status as any,
+      snapshot: (row.snapshot as Record<string, any>) || {},
+      comment: row.comment,
+      createdBy: row.createdBy,
+      createdAt: row.createdAt.toISOString(),
+      validatedAt: row.validatedAt ? row.validatedAt.toISOString() : null,
+      publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      version: row.version,
+    };
+  }
+
+  static async createVersion(
+    applicationId: string,
+    params: CreateVersionParams,
+    actor: ActorContext,
+    traceId = generateTraceId()
+  ): Promise<{ success: boolean; data?: ApplicationVersionModel; error?: { code: string; message: string } }> {
+    const [app] = await db
+      .select()
+      .from(applications)
+      .where(eq(applications.id, applicationId));
+
+    if (!app) {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.APPLICATION_NOT_FOUND,
+          message: `Application avec l'ID "${applicationId}" introuvable.`,
+        },
+      };
+    }
+
+    if (app.status === "ARCHIVED") {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.APPLICATION_ARCHIVED,
+          message: "Impossible de créer une version pour une application archivée.",
+        },
+      };
+    }
+
+    const versionNumber = params.versionNumber.trim();
+    if (!isValidSemver(versionNumber)) {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.VERSION_INVALID_NUMBER,
+          message: `Le numéro de version "${versionNumber}" est invalide. Format attendu: MAJOR.MINOR.PATCH (ex: 1.0.0, 1.1.0).`,
+        },
+      };
+    }
+
+    // Check for duplicate version in this application
+    const [existing] = await db
+      .select()
+      .from(applicationVersions)
+      .where(and(eq(applicationVersions.applicationId, applicationId), eq(applicationVersions.versionNumber, versionNumber)));
+
+    if (existing) {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.VERSION_ALREADY_EXISTS,
+          message: `La version "${versionNumber}" existe déjà pour cette application.`,
+        },
+      };
+    }
+
+    // Build snapshot from source version or default template
+    let baseSnapshot: Record<string, any> = {
+      appName: app.name,
+      appCode: app.code,
+      category: app.category,
+      icon: app.icon,
+      environment: app.environment,
+      dataModels: [],
+      features: [],
+      menus: [
+        { id: "menu_home", label: "Accueil", path: "/" },
+        { id: "menu_main", label: "Gestion Principale", path: "/main" },
+      ],
+      pages: [],
+      forms: [],
+      dashboards: [],
+      rules: [],
+      workflows: [],
+      automations: [],
+    };
+
+    if (params.snapshot) {
+      baseSnapshot = { ...baseSnapshot, ...params.snapshot };
+    } else if (params.sourceVersionId) {
+      const sourceVer = await this.getVersion(applicationId, params.sourceVersionId);
+      if (sourceVer?.snapshot) {
+        baseSnapshot = { ...sourceVer.snapshot, baseSourceVersion: sourceVer.versionNumber };
+      }
+    } else if (app.currentVersionId) {
+      const currentVer = await this.getVersion(applicationId, app.currentVersionId);
+      if (currentVer?.snapshot) {
+        baseSnapshot = { ...currentVer.snapshot, baseSourceVersion: currentVer.versionNumber };
+      }
+    }
+
+    const [created] = await db
+      .insert(applicationVersions)
+      .values({
+        applicationId,
+        versionNumber,
+        status: "DRAFT",
+        snapshot: baseSnapshot,
+        comment: params.comment || `Création de la version ${versionNumber}`,
+        createdBy: actor.id,
+      })
+      .returning();
+
+    // Update application currentVersionId & touch updatedAt
+    await db
+      .update(applications)
+      .set({
+        currentVersionId: created.id,
+        updatedAt: new Date(),
+        version: app.version + 1,
+      })
+      .where(eq(applications.id, applicationId));
+
+    // P0.2 automation (§48): copy Data Model definitions from source version
+    const copyFromId = params.sourceVersionId || app.currentVersionId;
+    if (copyFromId && copyFromId !== created.id) {
+      try {
+        await SchemaService.cloneVersionData(copyFromId, created.id, applicationId);
+      } catch (cloneErr) {
+        console.error("[VersionService] Data model copy failed:", cloneErr);
+      }
+    }
+
+    await AuditService.log({
+      applicationId: app.id,
+      actorId: actor.id,
+      eventType: "business.application.version.created",
+      action: "VERSION_CREATE",
+      targetType: "APPLICATION_VERSION",
+      targetId: created.id,
+      result: "SUCCESS",
+      after: {
+        versionId: created.id,
+        versionNumber: created.versionNumber,
+        status: created.status,
+      },
+      metadata: {
+        versionNumber: created.versionNumber,
+        sourceVersionId: params.sourceVersionId || null,
+        comment: params.comment || null,
+      },
+      traceId,
+    });
+
+    return {
+      success: true,
+      data: {
+        id: created.id,
+        applicationId: created.applicationId,
+        versionNumber: created.versionNumber,
+        status: created.status as any,
+        snapshot: created.snapshot as any,
+        comment: created.comment,
+        createdBy: created.createdBy,
+        createdAt: created.createdAt.toISOString(),
+        validatedAt: null,
+        publishedAt: null,
+        version: created.version,
+      },
+    };
+  }
+
+  static async discardDraftVersion(
+    applicationId: string,
+    versionId: string,
+    actor: ActorContext,
+    traceId = generateTraceId()
+  ): Promise<{ success: boolean; error?: { code: string; message: string } }> {
+    const [app] = await db
+      .select()
+      .from(applications)
+      .where(eq(applications.id, applicationId));
+
+    if (!app) {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.APPLICATION_NOT_FOUND,
+          message: `Application avec l'ID "${applicationId}" introuvable.`,
+        },
+      };
+    }
+
+    const [ver] = await db
+      .select()
+      .from(applicationVersions)
+      .where(and(eq(applicationVersions.id, versionId), eq(applicationVersions.applicationId, applicationId)));
+
+    if (!ver) {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.VERSION_NOT_FOUND,
+          message: `Version avec l'ID "${versionId}" introuvable.`,
+        },
+      };
+    }
+
+    if (ver.status !== "DRAFT") {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.VERSION_NOT_PUBLISHABLE,
+          message: `Seule une version en statut DRAFT peut être supprimée. Statut actuel: ${ver.status}.`,
+        },
+      };
+    }
+
+    if (app.publishedVersionId === ver.id) {
+      return {
+        success: false,
+        error: {
+          code: ERROR_CODES.PUBLICATION_CONFLICT,
+          message: "Impossible de supprimer une version actuellement publiée.",
+        },
+      };
+    }
+
+    await db
+      .update(applicationVersions)
+      .set({ status: "ARCHIVED", version: ver.version + 1 })
+      .where(eq(applicationVersions.id, ver.id));
+
+    if (app.currentVersionId === ver.id) {
+      await db
+        .update(applications)
+        .set({
+          currentVersionId: app.publishedVersionId ?? null,
+          updatedAt: new Date(),
+          version: app.version + 1,
+        })
+        .where(eq(applications.id, app.id));
+    }
+
+    await AuditService.log({
+      applicationId: app.id,
+      actorId: actor.id,
+      eventType: "business.application.version.created",
+      action: "VERSION_DISCARD",
+      targetType: "APPLICATION_VERSION",
+      targetId: ver.id,
+      result: "SUCCESS",
+      before: { status: ver.status, versionNumber: ver.versionNumber },
+      after: { status: "ARCHIVED" },
+      metadata: { discardedVersionNumber: ver.versionNumber },
+      traceId,
+    });
+
+    return { success: true };
+  }
+
+  static async compareVersions(
+    applicationId: string,
+    v1Id: string,
+    v2Id: string
+  ): Promise<{ v1: ApplicationVersionModel | null; v2: ApplicationVersionModel | null; diff: any }> {
+    const v1 = await this.getVersion(applicationId, v1Id);
+    const v2 = await this.getVersion(applicationId, v2Id);
+
+    const diff = {
+      versionNumbers: { v1: v1?.versionNumber, v2: v2?.versionNumber },
+      statuses: { v1: v1?.status, v2: v2?.status },
+      createdAt: { v1: v1?.createdAt, v2: v2?.createdAt },
+      publishedAt: { v1: v1?.publishedAt, v2: v2?.publishedAt },
+      snapshotDiff: {
+        v1Keys: v1?.snapshot ? Object.keys(v1.snapshot) : [],
+        v2Keys: v2?.snapshot ? Object.keys(v2.snapshot) : [],
+      },
+    };
+
+    return { v1, v2, diff };
+  }
+}

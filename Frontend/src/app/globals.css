@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* Goodle Drive design language */
+main h1 {
+  color: #1e4fc2;
+}
+
+main h1,
+main h2,
+main h3 {
+  letter-spacing: -0.01em;
+}
+
+/* Thin, soft scrollbars to match the floating-card aesthetic */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c9d6f2;
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #a8bce8;
+}
+
+::selection {
+  background: #2e6be6;
+  color: #ffffff;
+}
