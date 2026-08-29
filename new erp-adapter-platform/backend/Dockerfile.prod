@@ -1,0 +1,39 @@
+# ========== BUILD STAGE ==========
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copier package.json et lockfile
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Installer les dependances
+RUN npm ci && npm cache clean --force
+
+# Generer Prisma Client
+RUN npx prisma generate
+
+# ========== RUNTIME STAGE ==========
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copier les modules et Prisma
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+
+# Copier le code source
+COPY . .
+
+# Creer l'utilisateur non-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
+
+# Exposer le port
+EXPOSE 3000
+
+# Lancer l'application en production
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]

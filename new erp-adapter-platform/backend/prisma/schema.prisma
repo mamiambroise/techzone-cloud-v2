@@ -1,0 +1,63 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Table principale des ERP enregistrés
+model ERPRegistry {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  nom            String
+  type           String
+  url            String
+  status         String   @default("inactive")
+  capabilities   Json?
+  healthStatus   String   @default("unknown") @map("health_status")
+  lastConnection DateTime? @map("last_connection")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  entityMappings EntityMapping[]
+
+  @@map("erp_registry")
+}
+
+// Table des adaptateurs ERP disponibles
+model AdapterRegistry {
+  id           String @id @default(uuid())
+  adapterId    String @unique @map("adapter_id")
+  nom          String
+  version      String
+  erpFamily    String @map("erp_family")
+  capabilities Json?
+  status       String @default("active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("adapter_registry")
+}
+
+// Table des correspondances d'entités
+model EntityMapping {
+  id           String @id @default(uuid())
+  erpId        String @map("erp_id")
+  entity       String
+  erpEntity    String @map("erp_entity")
+  fieldMappings Json  @map("field_mappings")
+  status       String @default("active")
+  version      String @default("1.0")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  erp ERPRegistry @relation(fields: [erpId], references: [id], onDelete: Cascade)
+
+  @@unique([erpId, entity])
+  @@map("entity_mapping")
+}
