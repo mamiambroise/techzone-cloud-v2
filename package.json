@@ -1,0 +1,13 @@
+{
+    "name": "business-manager",
+    "private": true,
+    "scripts": {
+        "start": "npm --prefix Backend run start",
+        "start:dev": "npm --prefix Backend run start:dev",
+        "start:debug": "npm --prefix Backend run start:debug",
+        "build": "npm --prefix Backend run build",
+        "test": "npm --prefix Backend run test",
+        "test:e2e": "npm --prefix Backend run test:e2e",
+        "seed": "npm --prefix Backend run seed"
+    }
+}

@@ -5,6 +5,15 @@ import { Application } from '../modules/business-manager/entities/application.en
 import { ApplicationVersion } from '../modules/business-manager/entities/application-version.entity';
 import { Publication } from '../modules/business-manager/entities/publication.entity';
 import { ActivityEvent } from '../modules/business-manager/entities/activity-event.entity';
+import { DataModelDefinition } from '../modules/business-manager/entities/data-model.entity';
+import { DataModelSnapshot } from '../modules/business-manager/entities/data-model-snapshot.entity';
+import { Feature } from '../modules/business-manager/entities/feature.entity';
+import { Capability } from '../modules/business-manager/entities/capability.entity';
+import { FeatureCapability } from '../modules/business-manager/entities/feature-capability.entity';
+import { VersionFeature } from '../modules/business-manager/entities/version-feature.entity';
+import { VersionCapability } from '../modules/business-manager/entities/version-capability.entity';
+import { CapabilityDependency } from '../modules/business-manager/entities/capability-dependency.entity';
+import { CapabilityEntityRequirement } from '../modules/business-manager/entities/capability-entity-requirement.entity';
 
 config();
 
@@ -19,7 +28,21 @@ export const dataSourceOptions: DataSourceOptions = {
   database: configService.get('DB_DATABASE', 'business_manager'),
   synchronize: true,
   logging: configService.get('DB_LOGGING', 'false') === 'true',
-  entities: [Application, ApplicationVersion, Publication, ActivityEvent],
+  entities: [
+    Application,
+    ApplicationVersion,
+    Publication,
+    ActivityEvent,
+    DataModelDefinition,
+    DataModelSnapshot,
+    Feature,
+    Capability,
+    FeatureCapability,
+    VersionFeature,
+    VersionCapability,
+    CapabilityDependency,
+    CapabilityEntityRequirement,
+  ],
   migrations: ['dist/migrations/*.js'],
 };
 

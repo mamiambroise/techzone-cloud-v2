@@ -25,6 +25,12 @@ import { CloneService } from './clone/clone.service';
 import { AuditController } from './audit/audit.controller';
 import { AuditService } from './audit/audit.service';
 
+import { DataModelController } from './data-model/data-model.controller';
+import { DataModelService } from './data-model/data-model.service';
+
+import { FeatureCapabilityController } from './feature-capability/feature-capability.controller';
+import { FeatureCapabilityService } from './feature-capability/feature-capability.service';
+
 @Module({
   imports: [
     JwtModule.registerAsync({
@@ -45,6 +51,8 @@ import { AuditService } from './audit/audit.service';
     PublicationController,
     RollbackController,
     AuditController,
+    DataModelController,
+    FeatureCapabilityController,
   ],
   providers: [
     ApplicationService,
@@ -55,12 +63,16 @@ import { AuditService } from './audit/audit.service';
     RollbackService,
     CloneService,
     AuditService,
+    DataModelService,
+    FeatureCapabilityService,
   ],
   exports: [
     ApplicationService,
     VersionService,
     PublicationService,
     AuditService,
+    DataModelService,
+    FeatureCapabilityService,
   ],
 })
 export class BusinessManagerModule { }
