@@ -122,6 +122,16 @@ export enum FeatureSourceType {
   GENERATED = 'GENERATED',
 }
 
+export enum MenuLocation { SIDEBAR = 'SIDEBAR', TOPBAR = 'TOPBAR', BOTTOM_NAV = 'BOTTOM_NAV', USER_MENU = 'USER_MENU', CONTEXT_MENU = 'CONTEXT_MENU', QUICK_ACTIONS = 'QUICK_ACTIONS' }
+export enum MenuStatus { DRAFT = 'DRAFT', ACTIVE = 'ACTIVE', DEPRECATED = 'DEPRECATED', ARCHIVED = 'ARCHIVED' }
+export enum MenuSourceType { SYSTEM = 'SYSTEM', PACK = 'PACK', CUSTOM = 'CUSTOM', GENERATED = 'GENERATED' }
+export enum MenuItemState { ENABLED = 'ENABLED', DISABLED = 'DISABLED', HIDDEN = 'HIDDEN' }
+export enum NavigationTargetType { ROUTE = 'ROUTE', EXTERNAL_URL = 'EXTERNAL_URL', ACTION = 'ACTION', NONE = 'NONE' }
+export enum NavigationOpenMode { SAME_VIEW = 'SAME_VIEW', NEW_TAB = 'NEW_TAB', MODAL = 'MODAL', DRAWER = 'DRAWER' }
+export enum RequirementMode { ALL = 'ALL', ANY = 'ANY' }
+export enum ConfigurationDataType { STRING = 'STRING', TEXT = 'TEXT', INTEGER = 'INTEGER', DECIMAL = 'DECIMAL', BOOLEAN = 'BOOLEAN', DATE = 'DATE', DATETIME = 'DATETIME', TIME = 'TIME', ENUM = 'ENUM', MULTI_ENUM = 'MULTI_ENUM', COLOR = 'COLOR', ICON = 'ICON', URL = 'URL', EMAIL = 'EMAIL', PHONE = 'PHONE', JSON = 'JSON', REFERENCE = 'REFERENCE', LIST = 'LIST', MAP = 'MAP', SECRET = 'SECRET' }
+export enum ConfigurationScope { PLATFORM = 'PLATFORM', TENANT = 'TENANT', APPLICATION = 'APPLICATION', APPLICATION_VERSION = 'APPLICATION_VERSION', ENVIRONMENT = 'ENVIRONMENT', RUNTIME_CONTEXT = 'RUNTIME_CONTEXT' }
+
 export enum Permission {
   APPLICATION_READ = 'business.application.read',
   APPLICATION_CREATE = 'business.application.create',

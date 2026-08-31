@@ -1,14 +1,17 @@
-import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { createHash } from 'crypto';
 import { DataSource, Repository } from 'typeorm';
-import { Feature } from '../entities/feature.entity';
+import { ApplicationVersion } from '../entities/application-version.entity';
 import { Capability } from '../entities/capability.entity';
-import { FeatureCapability } from '../entities/feature-capability.entity';
-import { VersionFeature } from '../entities/version-feature.entity';
-import { VersionCapability } from '../entities/version-capability.entity';
 import { CapabilityDependency } from '../entities/capability-dependency.entity';
 import { CapabilityEntityRequirement } from '../entities/capability-entity-requirement.entity';
-import { CapabilityStatus, FeatureStatus, VersionFeatureState, DependencyType } from '../../../common/enums';
+import { DataModelDefinition } from '../entities/data-model.entity';
+import { Feature } from '../entities/feature.entity';
+import { FeatureCapability } from '../entities/feature-capability.entity';
+import { VersionCapability } from '../entities/version-capability.entity';
+import { VersionFeature } from '../entities/version-feature.entity';
+import { ApplicationVersionStatus, CapabilityStatus, DependencyType, FeatureStatus, VersionFeatureState } from '../../../common/enums';
 
 export interface ValidationIssue {
   severity: 'ERROR' | 'WARNING' | 'INFO';
@@ -18,6 +21,8 @@ export interface ValidationIssue {
   dependency?: string;
 }
 
+type CatalogQuery = { search?: string; status?: string; category?: string; type?: string; riskLevel?: string; sourceType?: string; group?: string; page?: number; limit?: number };
+
 @Injectable()
 export class FeatureCapabilityService {
   private readonly featureRepository: Repository<Feature>;
@@ -25,492 +30,198 @@ export class FeatureCapabilityService {
   private readonly featureCapabilityRepository: Repository<FeatureCapability>;
   private readonly versionFeatureRepository: Repository<VersionFeature>;
   private readonly versionCapabilityRepository: Repository<VersionCapability>;
-  private readonly capabilityDependencyRepository: Repository<CapabilityDependency>;
-  private readonly capabilityRequirementRepository: Repository<CapabilityEntityRequirement>;
+  private readonly dependencyRepository: Repository<CapabilityDependency>;
+  private readonly requirementRepository: Repository<CapabilityEntityRequirement>;
+  private readonly versionRepository: Repository<ApplicationVersion>;
+  private readonly dataModelRepository: Repository<DataModelDefinition>;
 
-  constructor(
-    @InjectDataSource() private readonly dataSource: DataSource,
-  ) {
-    this.featureRepository = this.dataSource?.getRepository(Feature);
-    this.capabilityRepository = this.dataSource?.getRepository(Capability);
-    this.featureCapabilityRepository = this.dataSource?.getRepository(FeatureCapability);
-    this.versionFeatureRepository = this.dataSource?.getRepository(VersionFeature);
-    this.versionCapabilityRepository = this.dataSource?.getRepository(VersionCapability);
-    this.capabilityDependencyRepository = this.dataSource?.getRepository(CapabilityDependency);
-    this.capabilityRequirementRepository = this.dataSource?.getRepository(CapabilityEntityRequirement);
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) {
+    this.featureRepository = dataSource.getRepository(Feature);
+    this.capabilityRepository = dataSource.getRepository(Capability);
+    this.featureCapabilityRepository = dataSource.getRepository(FeatureCapability);
+    this.versionFeatureRepository = dataSource.getRepository(VersionFeature);
+    this.versionCapabilityRepository = dataSource.getRepository(VersionCapability);
+    this.dependencyRepository = dataSource.getRepository(CapabilityDependency);
+    this.requirementRepository = dataSource.getRepository(CapabilityEntityRequirement);
+    this.versionRepository = dataSource.getRepository(ApplicationVersion);
+    this.dataModelRepository = dataSource.getRepository(DataModelDefinition);
   }
 
   async createFeature(data: Partial<Feature>): Promise<Feature> {
-    if (!data.code || !String(data.code).trim()) {
-      throw new BadRequestException('Feature code is required');
-    }
-
-    const existing = await this.featureRepository.findOne({ where: { code: data.code } });
-    if (existing) {
-      throw new ConflictException(`Feature code already exists: ${data.code}`);
-    }
-
-    const feature = this.featureRepository.create({
-      ...data,
-      status: data.status ?? FeatureStatus.DRAFT,
-      version: 1,
-    });
-
-    return this.featureRepository.save(feature);
+    const code = String(data.code ?? '').trim().toUpperCase();
+    if (!code || !String(data.name ?? '').trim()) throw new BadRequestException('FEATURE_CODE_AND_NAME_REQUIRED');
+    if (await this.featureRepository.findOne({ where: { code } })) throw new ConflictException('FEATURE_CODE_EXISTS');
+    return this.featureRepository.save(this.featureRepository.create({ ...data, code, status: data.status ?? FeatureStatus.DRAFT, version: 1 }));
   }
+
+  async listFeatures(query: CatalogQuery = {}) {
+    const qb = this.featureRepository.createQueryBuilder('feature');
+    if (query.search) qb.andWhere('(LOWER(feature.code) LIKE LOWER(:search) OR LOWER(feature.name) LIKE LOWER(:search))', { search: `%${query.search}%` });
+    for (const key of ['status', 'category', 'sourceType'] as const) if (query[key]) qb.andWhere(`feature.${key} = :${key}`, { [key]: query[key] });
+    const limit = Math.min(Number(query.limit) || 25, 100);
+    const [items, total] = await qb.orderBy('feature.sortOrder', 'ASC').addOrderBy('feature.code', 'ASC').skip(((Number(query.page) || 1) - 1) * limit).take(limit).getManyAndCount();
+    return { items, pagination: this.pagination(query, total) };
+  }
+  async getFeature(id: string): Promise<Feature> { return this.requireFeature(id); }
+  async updateFeature(id: string, data: Partial<Feature> & { expectedVersion?: number }): Promise<Feature> {
+    const feature = await this.requireFeature(id); this.assertOptimisticLock(feature.version, data.expectedVersion);
+    const { expectedVersion: _expectedVersion, id: _id, code: _code, createdBy: _createdBy, ...changes } = data;
+    return this.featureRepository.save({ ...feature, ...changes, version: feature.version + 1 });
+  }
+  deprecateFeature(id: string, expectedVersion?: number) { return this.updateFeature(id, { status: FeatureStatus.DEPRECATED, expectedVersion }); }
+  archiveFeature(id: string, expectedVersion?: number) { return this.updateFeature(id, { status: FeatureStatus.ARCHIVED, archivedAt: new Date(), expectedVersion }); }
 
   async createCapability(data: Partial<Capability>): Promise<Capability> {
-    if (!data.code || !String(data.code).trim()) {
-      throw new BadRequestException('Capability code is required');
-    }
-
-    const existing = await this.capabilityRepository.findOne({ where: { code: data.code } });
-    if (existing) {
-      throw new ConflictException(`Capability code already exists: ${data.code}`);
-    }
-
-    const capability = this.capabilityRepository.create({
-      ...data,
-      status: data.status ?? CapabilityStatus.DRAFT,
-      version: 1,
-    });
-
-    return this.capabilityRepository.save(capability);
+    const code = String(data.code ?? '').trim().toLowerCase();
+    if (!/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/.test(code)) throw new BadRequestException('CAPABILITY_CODE_INVALID');
+    if (!String(data.name ?? '').trim()) throw new BadRequestException('CAPABILITY_NAME_REQUIRED');
+    if (await this.capabilityRepository.findOne({ where: { code } })) throw new ConflictException('CAPABILITY_CODE_EXISTS');
+    return this.capabilityRepository.save(this.capabilityRepository.create({ ...data, code, status: data.status ?? CapabilityStatus.DRAFT, version: 1 }));
   }
-
-  async attachCapability(featureId: string, capabilityId: string, required = false): Promise<FeatureCapability> {
-    const feature = await this.featureRepository.findOne({ where: { id: featureId } });
-    const capability = await this.capabilityRepository.findOne({ where: { id: capabilityId } });
-
-    if (!feature) throw new NotFoundException(`Feature not found: ${featureId}`);
-    if (!capability) throw new NotFoundException(`Capability not found: ${capabilityId}`);
-
-    const existing = await this.featureCapabilityRepository.findOne({ where: { featureId, capabilityId } });
-    if (existing) {
-      throw new ConflictException('FEATURE_CAPABILITY_EXISTS');
-    }
-
-    const relation = this.featureCapabilityRepository.create({ featureId, capabilityId, required });
-    return this.featureCapabilityRepository.save(relation);
+  async listCapabilities(query: CatalogQuery = {}) {
+    const qb = this.capabilityRepository.createQueryBuilder('capability');
+    if (query.search) qb.andWhere('(LOWER(capability.code) LIKE LOWER(:search) OR LOWER(capability.name) LIKE LOWER(:search))', { search: `%${query.search}%` });
+    for (const key of ['status', 'category', 'type', 'riskLevel', 'sourceType'] as const) if (query[key]) qb.andWhere(`capability.${key} = :${key}`, { [key]: query[key] });
+    if (query.group) qb.andWhere('capability.groupName = :group', { group: query.group });
+    const limit = Math.min(Number(query.limit) || 25, 100);
+    const [items, total] = await qb.orderBy('capability.code', 'ASC').skip(((Number(query.page) || 1) - 1) * limit).take(limit).getManyAndCount();
+    return { items, pagination: this.pagination(query, total) };
   }
+  async getCapability(id: string): Promise<Capability> { return this.requireCapability(id); }
+  async updateCapability(id: string, data: Partial<Capability> & { expectedVersion?: number }): Promise<Capability> {
+    const capability = await this.requireCapability(id); this.assertOptimisticLock(capability.version, data.expectedVersion);
+    const { expectedVersion: _expectedVersion, id: _id, code: _code, createdBy: _createdBy, ...changes } = data;
+    return this.capabilityRepository.save({ ...capability, ...changes, version: capability.version + 1 });
+  }
+  deprecateCapability(id: string, expectedVersion?: number) { return this.updateCapability(id, { status: CapabilityStatus.DEPRECATED, expectedVersion }); }
+  archiveCapability(id: string, expectedVersion?: number) { return this.updateCapability(id, { status: CapabilityStatus.ARCHIVED, archivedAt: new Date(), expectedVersion }); }
 
+  async attachCapability(featureId: string, capabilityId: string, required = false, sortOrder = 0): Promise<FeatureCapability> {
+    await this.requireFeature(featureId); await this.requireCapability(capabilityId);
+    if (await this.featureCapabilityRepository.findOne({ where: { featureId, capabilityId } })) throw new ConflictException('FEATURE_CAPABILITY_EXISTS');
+    return this.featureCapabilityRepository.save(this.featureCapabilityRepository.create({ featureId, capabilityId, required, sortOrder }));
+  }
   async detachCapability(featureId: string, capabilityId: string): Promise<void> {
-    await this.featureCapabilityRepository.delete({ featureId, capabilityId });
+    const mapping = await this.featureCapabilityRepository.findOne({ where: { featureId, capabilityId } });
+    if (!mapping) throw new NotFoundException('FEATURE_CAPABILITY_NOT_FOUND');
+    await this.featureCapabilityRepository.remove(mapping);
   }
-
-  async enableFeature(applicationVersionId: string, featureId: string, createdBy?: string): Promise<VersionFeature> {
-    const existing = await this.versionFeatureRepository.findOne({ where: { applicationVersionId, featureId } });
-    if (existing) {
-      existing.state = VersionFeatureState.ENABLED;
-      existing.createdBy = createdBy ?? existing.createdBy;
-      return this.versionFeatureRepository.save(existing);
-    }
-
-    const item = this.versionFeatureRepository.create({
-      applicationVersionId,
-      featureId,
-      state: VersionFeatureState.ENABLED,
-      createdBy,
-    });
-
-    return this.versionFeatureRepository.save(item);
-  }
-
-  async enableCapability(applicationVersionId: string, capabilityId: string, createdBy?: string): Promise<VersionCapability> {
-    const existing = await this.versionCapabilityRepository.findOne({ where: { applicationVersionId, capabilityId } });
-    if (existing) {
-      existing.enabled = true;
-      existing.createdBy = createdBy ?? existing.createdBy;
-      return this.versionCapabilityRepository.save(existing);
-    }
-
-    const item = this.versionCapabilityRepository.create({
-      applicationVersionId,
-      capabilityId,
-      enabled: true,
-      createdBy,
-    });
-
-    return this.versionCapabilityRepository.save(item);
-  }
+  async getFeatureCapabilities(featureId: string) { await this.requireFeature(featureId); return this.featureCapabilityRepository.find({ where: { featureId }, relations: ['capability'], order: { sortOrder: 'ASC' } }); }
 
   async addDependency(capabilityId: string, dependencyCapabilityId: string, dependencyType: DependencyType = DependencyType.REQUIRES, createdBy?: string): Promise<CapabilityDependency> {
-    if (capabilityId === dependencyCapabilityId) {
-      throw new BadRequestException('DEPENDENCY_SELF_REFERENCE');
+    if (capabilityId === dependencyCapabilityId) throw new BadRequestException('DEPENDENCY_SELF_REFERENCE');
+    await this.requireCapability(capabilityId); await this.requireCapability(dependencyCapabilityId);
+    if (await this.dependencyRepository.findOne({ where: { capabilityId, dependencyCapabilityId, dependencyType } })) throw new ConflictException('DEPENDENCY_EXISTS');
+    if (dependencyType === DependencyType.REQUIRES) {
+      const edges = await this.dependencyRepository.find({ where: { dependencyType: DependencyType.REQUIRES } });
+      this.assertNoCycle([...edges, { capabilityId, dependencyCapabilityId }]);
     }
-
-    const capability = await this.capabilityRepository.findOne({ where: { id: capabilityId } });
-    const dependency = await this.capabilityRepository.findOne({ where: { id: dependencyCapabilityId } });
-
-    if (!capability) throw new NotFoundException(`Capability not found: ${capabilityId}`);
-    if (!dependency) throw new NotFoundException(`Dependency capability not found: ${dependencyCapabilityId}`);
-
-    const existing = await this.capabilityDependencyRepository.findOne({
-      where: { capabilityId, dependencyCapabilityId, dependencyType },
-    });
-    if (existing) {
-      throw new ConflictException('DEPENDENCY_EXISTS');
-    }
-
-    const record = this.capabilityDependencyRepository.create({
-      capabilityId,
-      dependencyCapabilityId,
-      dependencyType,
-      createdBy,
-    });
-
-    return this.capabilityDependencyRepository.save(record);
+    return this.dependencyRepository.save(this.dependencyRepository.create({ capabilityId, dependencyCapabilityId, dependencyType, createdBy }));
   }
-
-  detectDependencyCycle(edges: Array<{ capabilityId: string; dependencyCapabilityId: string }>): void {
-    const graph = new Map<string, string[]>();
-    for (const edge of edges) {
-      const from = edge.capabilityId;
-      const to = edge.dependencyCapabilityId;
-      graph.set(from, [...(graph.get(from) ?? []), to]);
-    }
-
-    const visited = new Set<string>();
-    const stack = new Set<string>();
-
-    const dfs = (node: string): boolean => {
-      if (stack.has(node)) return true;
-      if (visited.has(node)) return false;
-      visited.add(node);
-      stack.add(node);
-
-      for (const next of graph.get(node) ?? []) {
-        if (dfs(next)) return true;
-      }
-
-      stack.delete(node);
-      return false;
-    };
-
-    if (dfs(edges[0]?.capabilityId ?? '')) {
-      throw new BadRequestException('DEPENDENCY_CYCLE');
-    }
+  async removeDependency(capabilityId: string, dependencyId: string): Promise<void> {
+    const dependency = await this.dependencyRepository.findOne({ where: { id: dependencyId, capabilityId } });
+    if (!dependency) throw new NotFoundException('DEPENDENCY_NOT_FOUND');
+    await this.dependencyRepository.remove(dependency);
   }
-
-  validateRequiredCapabilities(list: Array<{ capabilityId: string; enabled: boolean; required: boolean }>): { valid: boolean; issues: ValidationIssue[] } {
-    const issues: ValidationIssue[] = [];
-
-    for (const item of list) {
-      if (item.required && !item.enabled) {
-        issues.push({
-          severity: 'ERROR',
-          code: 'REQUIRED_CAPABILITY_DISABLED',
-          message: 'Required capability is disabled',
-          target: item.capabilityId,
-        });
-      }
-    }
-
-    return { valid: issues.length === 0, issues };
-  }
-
-  async validateVersion(applicationVersionId: string): Promise<{ valid: boolean; completeness: number; issues: ValidationIssue[] }> {
-    const versionCapabilities = await this.versionCapabilityRepository.find({ where: { applicationVersionId } });
-    const requiredList = versionCapabilities.map((item) => ({
-      capabilityId: item.capabilityId,
-      enabled: item.enabled,
-      required: item.enabled && item.version > 0,
-    }));
-
-    const check = this.validateRequiredCapabilities(requiredList);
-    const issues = check.issues;
-
-    return {
-      valid: issues.length === 0,
-      completeness: issues.length === 0 ? 100 : 90,
-      issues,
-    };
-  }
-
+  async getDependencies(capabilityId: string) { await this.requireCapability(capabilityId); return this.dependencyRepository.find({ where: { capabilityId }, relations: ['dependencyCapability'] }); }
   async addEntityRequirement(capabilityId: string, dataEntityId: string, requirementType?: string): Promise<CapabilityEntityRequirement> {
-    const capability = await this.capabilityRepository.findOne({ where: { id: capabilityId } });
-    if (!capability) {
-      throw new NotFoundException(`Capability not found: ${capabilityId}`);
-    }
+    await this.requireCapability(capabilityId);
+    if (await this.requirementRepository.findOne({ where: { capabilityId, dataEntityId } })) throw new ConflictException('ENTITY_REQUIREMENT_EXISTS');
+    return this.requirementRepository.save(this.requirementRepository.create({ capabilityId, dataEntityId, requirementType }));
+  }
+  async removeEntityRequirement(capabilityId: string, requirementId: string): Promise<void> {
+    const requirement = await this.requirementRepository.findOne({ where: { id: requirementId, capabilityId } });
+    if (!requirement) throw new NotFoundException('ENTITY_REQUIREMENT_NOT_FOUND');
+    await this.requirementRepository.remove(requirement);
+  }
+  async getEntityRequirements(capabilityId: string) { await this.requireCapability(capabilityId); return this.requirementRepository.find({ where: { capabilityId } }); }
 
-    const existing = await this.capabilityRequirementRepository.findOne({ where: { capabilityId, dataEntityId } });
-    if (existing) {
-      throw new ConflictException('REQUIRED_ENTITY_MISSING');
-    }
+  async setFeatureState(versionId: string, featureId: string, state: VersionFeatureState, createdBy?: string, expectedVersion?: number): Promise<VersionFeature> {
+    await this.assertEditableVersion(versionId); await this.requireFeature(featureId);
+    const existing = await this.versionFeatureRepository.findOne({ where: { applicationVersionId: versionId, featureId } });
+    if (existing) { this.assertOptimisticLock(existing.version, expectedVersion); return this.versionFeatureRepository.save({ ...existing, state, createdBy: createdBy ?? existing.createdBy, version: existing.version + 1 }); }
+    return this.versionFeatureRepository.save(this.versionFeatureRepository.create({ applicationVersionId: versionId, featureId, state, createdBy }));
+  }
+  enableFeature(versionId: string, featureId: string, createdBy?: string, expectedVersion?: number) { return this.setFeatureState(versionId, featureId, VersionFeatureState.ENABLED, createdBy, expectedVersion); }
+  disableFeature(versionId: string, featureId: string, createdBy?: string, expectedVersion?: number) { return this.setFeatureState(versionId, featureId, VersionFeatureState.DISABLED, createdBy, expectedVersion); }
+  setFeatureExperimental(versionId: string, featureId: string, createdBy?: string, expectedVersion?: number) { return this.setFeatureState(versionId, featureId, VersionFeatureState.EXPERIMENTAL, createdBy, expectedVersion); }
+  async setCapabilityEnabled(versionId: string, capabilityId: string, enabled: boolean, createdBy?: string, expectedVersion?: number): Promise<VersionCapability> {
+    await this.assertEditableVersion(versionId); await this.requireCapability(capabilityId);
+    const existing = await this.versionCapabilityRepository.findOne({ where: { applicationVersionId: versionId, capabilityId } });
+    if (existing) { this.assertOptimisticLock(existing.version, expectedVersion); return this.versionCapabilityRepository.save({ ...existing, enabled, createdBy: createdBy ?? existing.createdBy, version: existing.version + 1 }); }
+    return this.versionCapabilityRepository.save(this.versionCapabilityRepository.create({ applicationVersionId: versionId, capabilityId, enabled, createdBy }));
+  }
+  enableCapability(versionId: string, capabilityId: string, createdBy?: string, expectedVersion?: number) { return this.setCapabilityEnabled(versionId, capabilityId, true, createdBy, expectedVersion); }
+  disableCapability(versionId: string, capabilityId: string, createdBy?: string, expectedVersion?: number) { return this.setCapabilityEnabled(versionId, capabilityId, false, createdBy, expectedVersion); }
+  async getVersionFeatures(versionId: string) { await this.requireVersion(versionId); return this.versionFeatureRepository.find({ where: { applicationVersionId: versionId }, relations: ['feature'], order: { createdAt: 'ASC' } }); }
+  async getVersionCapabilities(versionId: string) { await this.requireVersion(versionId); return this.versionCapabilityRepository.find({ where: { applicationVersionId: versionId }, relations: ['capability'], order: { createdAt: 'ASC' } }); }
 
-    const record = this.capabilityRequirementRepository.create({ capabilityId, dataEntityId, requirementType });
-    return this.capabilityRequirementRepository.save(record);
+  async cloneConfiguration(sourceVersionId: string, targetVersionId: string, createdBy?: string) {
+    await this.assertEditableVersion(targetVersionId); await this.requireVersion(sourceVersionId);
+    const [features, capabilities] = await Promise.all([this.versionFeatureRepository.find({ where: { applicationVersionId: sourceVersionId } }), this.versionCapabilityRepository.find({ where: { applicationVersionId: sourceVersionId } })]);
+    await this.dataSource.transaction(async manager => {
+      await manager.getRepository(VersionFeature).delete({ applicationVersionId: targetVersionId });
+      await manager.getRepository(VersionCapability).delete({ applicationVersionId: targetVersionId });
+      if (features.length) await manager.getRepository(VersionFeature).save(features.map(({ id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...item }) => ({ ...item, applicationVersionId: targetVersionId, createdBy: createdBy ?? item.createdBy, version: 1 })));
+      if (capabilities.length) await manager.getRepository(VersionCapability).save(capabilities.map(({ id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...item }) => ({ ...item, applicationVersionId: targetVersionId, createdBy: createdBy ?? item.createdBy, version: 1 })));
+    });
+    return { features: features.length, capabilities: capabilities.length };
   }
 
-  /**
-   * Detect conflicting capabilities in the same version
-   * Capabilities with conflicting metadata or breaking change flags conflict
-   */
-  async detectConflicts(applicationVersionId: string): Promise<ValidationIssue[]> {
-    const versionCapabilities = await this.versionCapabilityRepository.find({
-      where: { applicationVersionId },
-      relations: ['capability'],
-    });
-
+  async validateVersion(versionId: string) {
+    const [versionFeatures, versionCapabilities, dependencies] = await Promise.all([this.getVersionFeatures(versionId), this.getVersionCapabilities(versionId), this.dependencyRepository.find({ relations: ['capability', 'dependencyCapability'] })]);
     const issues: ValidationIssue[] = [];
-    const enabledCaps = versionCapabilities.filter(vc => vc.enabled).map(vc => vc.capability);
-
-    for (let i = 0; i < enabledCaps.length; i++) {
-      for (let j = i + 1; j < enabledCaps.length; j++) {
-        const cap1 = enabledCaps[i];
-        const cap2 = enabledCaps[j];
-
-        // Check if capabilities have conflicting metadata
-        const metadata1 = cap1.metadata || {};
-        const metadata2 = cap2.metadata || {};
-
-        if (metadata1.conflictsWith && metadata1.conflictsWith.includes(cap2.code)) {
-          issues.push({
-            severity: 'ERROR',
-            code: 'CAPABILITY_CONFLICT',
-            message: `Capability ${cap1.code} conflicts with ${cap2.code}`,
-            target: cap1.code,
-            dependency: cap2.code,
-          });
-        }
-      }
+    const enabled = new Map(versionCapabilities.filter(item => item.enabled).map(item => [item.capabilityId, item.capability]));
+    for (const feature of versionFeatures.filter(item => item.state !== VersionFeatureState.DISABLED)) {
+      const mappings = await this.featureCapabilityRepository.find({ where: { featureId: feature.featureId }, relations: ['capability'] });
+      for (const mapping of mappings.filter(item => item.required)) if (!enabled.has(mapping.capabilityId)) issues.push({ severity: 'ERROR', code: 'REQUIRED_CAPABILITY_DISABLED', message: `Required capability ${mapping.capability.code} is disabled.`, target: mapping.capability.code });
     }
-
-    return issues;
+    for (const dependency of dependencies) {
+      if (!enabled.has(dependency.capabilityId)) continue;
+      const target = dependency.dependencyCapability?.code ?? dependency.dependencyCapabilityId;
+      if (dependency.dependencyType === DependencyType.REQUIRES && !enabled.has(dependency.dependencyCapabilityId)) issues.push({ severity: 'ERROR', code: 'DEPENDENCY_MISSING', message: `Required dependency ${target} is disabled.`, target: dependency.capability?.code, dependency: target });
+      if (dependency.dependencyType === DependencyType.CONFLICTS_WITH && enabled.has(dependency.dependencyCapabilityId)) issues.push({ severity: 'ERROR', code: 'DEPENDENCY_CONFLICT', message: `Capability conflicts with ${target}.`, target: dependency.capability?.code, dependency: target });
+    }
+    const [requirements, models] = await Promise.all([this.requirementRepository.find(), this.dataModelRepository.find({ where: { versionId } })]);
+    const modelIds = new Set(models.map(model => model.id));
+    for (const requirement of requirements.filter(item => enabled.has(item.capabilityId))) if (!modelIds.has(requirement.dataEntityId)) issues.push({ severity: 'ERROR', code: 'REQUIRED_ENTITY_MISSING', message: `Required data entity ${requirement.dataEntityId} is missing.`, target: enabled.get(requirement.capabilityId)?.code, dependency: requirement.dataEntityId });
+    for (const capability of enabled.values()) if (capability.status === CapabilityStatus.DEPRECATED || capability.status === CapabilityStatus.ARCHIVED) issues.push({ severity: 'WARNING', code: 'CAPABILITY_DEPRECATED', message: `Capability ${capability.code} is ${capability.status}.`, target: capability.code });
+    const completeness = this.calculateCompleteness(issues, versionFeatures.length, enabled.size);
+    return { valid: !issues.some(issue => issue.severity === 'ERROR'), completeness, errors: issues.filter(issue => issue.severity === 'ERROR').length, warnings: issues.filter(issue => issue.severity === 'WARNING').length, issues };
   }
 
-  /**
-   * Validate breaking change compatibility
-   * Check if breaking changes are allowed in this version lifecycle
-   */
-  async validateBreakingChanges(applicationVersionId: string, applicationId: string): Promise<ValidationIssue[]> {
-    const versionCapabilities = await this.versionCapabilityRepository.find({
-      where: { applicationVersionId },
-      relations: ['capability'],
-    });
-
-    const issues: ValidationIssue[] = [];
-
-    // Get previous version to compare
-    const currentVersion = await this.dataSource
-      .createQueryBuilder()
-      .select('av')
-      .from('ApplicationVersion', 'av')
-      .where('av.id = :versionId', { versionId: applicationVersionId })
-      .getOne();
-
-    if (!currentVersion) {
-      return issues;
-    }
-
-    for (const vc of versionCapabilities) {
-      const cap = vc.capability;
-      if (!cap || !vc.enabled) continue;
-
-      // Check if capability has breaking change flag
-      const hasBreakingChange = cap.metadata?.breakingChange === true;
-      if (hasBreakingChange) {
-        // Breaking changes are only allowed in MAJOR version increments
-        const isMinorOrPatch = !currentVersion.versionNumber?.includes('MAJOR');
-        if (isMinorOrPatch) {
-          issues.push({
-            severity: 'ERROR',
-            code: 'BREAKING_CHANGE_DISALLOWED',
-            message: `Capability ${cap.code} has breaking changes not allowed in minor/patch release`,
-            target: cap.code,
-          });
-        }
-      }
-    }
-
-    return issues;
+  async getDisableImpact(versionId: string, capabilityId: string) {
+    const enabled = await this.getVersionCapabilities(versionId);
+    const enabledIds = new Set(enabled.filter(item => item.enabled).map(item => item.capabilityId));
+    const dependencies = await this.dependencyRepository.find({ relations: ['capability'] });
+    const queue = [capabilityId]; const impacted = new Set<string>();
+    while (queue.length) { const current = queue.shift(); for (const dependent of dependencies.filter(item => item.dependencyType === DependencyType.REQUIRES && item.dependencyCapabilityId === current && enabledIds.has(item.capabilityId))) if (!impacted.has(dependent.capabilityId)) { impacted.add(dependent.capabilityId); queue.push(dependent.capabilityId); } }
+    const featureMappings = await this.featureCapabilityRepository.find({ relations: ['feature'] });
+    return { capabilityId, affectedCapabilities: enabled.filter(item => impacted.has(item.capabilityId)).map(item => item.capability.code), affectedFeatures: [...new Set(featureMappings.filter(item => impacted.has(item.capabilityId) || item.capabilityId === capabilityId).map(item => item.feature.code))], blocking: impacted.size > 0 };
   }
 
-  /**
-   * Check if all required data entities are covered by at least one enabled capability
-   */
-  async checkCompleteness(applicationVersionId: string): Promise<{ complete: boolean; coverage: number; uncovered: string[]; issues: ValidationIssue[] }> {
-    // Get all required data entity IDs
-    const allRequirements = await this.capabilityRequirementRepository.find();
-    const requiredEntityIds = new Set(allRequirements.map(r => r.dataEntityId));
-
-    if (requiredEntityIds.size === 0) {
-      return { complete: true, coverage: 100, uncovered: [], issues: [] };
-    }
-
-    // Get entities covered by enabled capabilities
-    const versionCapabilities = await this.versionCapabilityRepository.find({
-      where: { applicationVersionId, enabled: true },
-    });
-
-    const coveredEntityIds = new Set<string>();
-    for (const vc of versionCapabilities) {
-      const requirements = await this.capabilityRequirementRepository.find({
-        where: { capabilityId: vc.capabilityId },
-      });
-      requirements.forEach(r => coveredEntityIds.add(r.dataEntityId));
-    }
-
-    const uncovered = Array.from(requiredEntityIds).filter(id => !coveredEntityIds.has(id));
-    const coverage = Math.round((coveredEntityIds.size / requiredEntityIds.size) * 100);
-    const complete = uncovered.length === 0;
-
-    const issues: ValidationIssue[] = uncovered.map(entityId => ({
-      severity: 'ERROR',
-      code: 'ENTITY_NOT_COVERED',
-      message: `Required data entity not covered by enabled capabilities: ${entityId}`,
-      target: entityId,
-    }));
-
-    return { complete, coverage, uncovered, issues };
+  async createSnapshot(versionId: string) {
+    const version = await this.requireVersion(versionId);
+    const [features, capabilities, dependencies, validation] = await Promise.all([this.getVersionFeatures(versionId), this.getVersionCapabilities(versionId), this.dependencyRepository.find({ relations: ['capability', 'dependencyCapability'] }), this.validateVersion(versionId)]);
+    const payload = { schemaVersion: 1, applicationId: version.applicationId, applicationVersionId: versionId, features: features.map(item => ({ code: item.feature.code, state: item.state })).sort((a, b) => a.code.localeCompare(b.code)), capabilities: capabilities.filter(item => item.enabled).map(item => item.capability.code).sort(), dependencies: dependencies.map(item => ({ capability: item.capability?.code, dependency: item.dependencyCapability?.code, type: item.dependencyType })).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))), validationStatus: validation.valid ? 'VALID' : 'INVALID', completeness: validation.completeness };
+    const snapshotHash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    const snapshot = { ...payload, generatedAt: new Date().toISOString(), snapshotHash };
+    await this.versionRepository.save({ ...version, snapshot });
+    return snapshot;
   }
+  async getSnapshot(versionId: string) { return (await this.requireVersion(versionId)).snapshot; }
 
-  /**
-   * Comprehensive validation: cycle + required + conflicts + breaking changes + completeness
-   */
-  async validateFeatureSet(applicationVersionId: string, applicationId: string): Promise<{
-    valid: boolean;
-    completeness: number;
-    issues: ValidationIssue[];
-  }> {
-    const allIssues: ValidationIssue[] = [];
-
-    // 1. Cycle detection
-    const dependencies = await this.capabilityDependencyRepository.find();
-    try {
-      this.detectDependencyCycle(dependencies.map(d => ({ capabilityId: d.capabilityId, dependencyCapabilityId: d.dependencyCapabilityId })));
-    } catch (e) {
-      allIssues.push({
-        severity: 'ERROR',
-        code: 'DEPENDENCY_CYCLE',
-        message: 'Dependency cycle detected',
-      });
-    }
-
-    // 2. Required capabilities validation
-    const versionCapabilities = await this.versionCapabilityRepository.find({
-      where: { applicationVersionId },
-      relations: ['capability'],
-    });
-
-    const requiredList = versionCapabilities.map(vc => ({
-      capabilityId: vc.capabilityId,
-      enabled: vc.enabled,
-      required: vc.capability?.metadata?.required === true,
-    }));
-
-    const requiredCheck = this.validateRequiredCapabilities(requiredList);
-    allIssues.push(...requiredCheck.issues);
-
-    // 3. Conflict detection
-    const conflictIssues = await this.detectConflicts(applicationVersionId);
-    allIssues.push(...conflictIssues);
-
-    // 4. Breaking change validation
-    const breakingChangeIssues = await this.validateBreakingChanges(applicationVersionId, applicationId);
-    allIssues.push(...breakingChangeIssues);
-
-    // 5. Completeness check
-    const completenessResult = await this.checkCompleteness(applicationVersionId);
-    allIssues.push(...completenessResult.issues);
-
-    return {
-      valid: allIssues.filter(i => i.severity === 'ERROR').length === 0,
-      completeness: completenessResult.coverage,
-      issues: allIssues,
-    };
+  private async requireFeature(id: string) { const item = await this.featureRepository.findOne({ where: { id } }); if (!item) throw new NotFoundException('FEATURE_NOT_FOUND'); return item; }
+  private async requireCapability(id: string) { const item = await this.capabilityRepository.findOne({ where: { id } }); if (!item) throw new NotFoundException('CAPABILITY_NOT_FOUND'); return item; }
+  private async requireVersion(id: string) { const item = await this.versionRepository.findOne({ where: { id } }); if (!item) throw new NotFoundException('VERSION_NOT_FOUND'); return item; }
+  private async assertEditableVersion(id: string) { const version = await this.requireVersion(id); if ([ApplicationVersionStatus.PUBLISHED, ApplicationVersionStatus.SUPERSEDED, ApplicationVersionStatus.ARCHIVED].includes(version.status)) throw new ConflictException('VERSION_NOT_EDITABLE'); return version; }
+  private assertOptimisticLock(stored: number, expected?: number) { if (expected !== undefined && stored !== expected) throw new ConflictException('VERSION_CONFLICT'); }
+  private assertNoCycle(edges: Array<{ capabilityId: string; dependencyCapabilityId: string }>) {
+    const graph = new Map<string, string[]>(); edges.forEach(edge => graph.set(edge.capabilityId, [...(graph.get(edge.capabilityId) ?? []), edge.dependencyCapabilityId]));
+    const visiting = new Set<string>(); const visited = new Set<string>();
+    const visit = (node: string): boolean => { if (visiting.has(node)) return true; if (visited.has(node)) return false; visiting.add(node); const cyclic = (graph.get(node) ?? []).some(visit); visiting.delete(node); visited.add(node); return cyclic; };
+    if ([...graph.keys()].some(visit)) throw new BadRequestException('DEPENDENCY_CYCLE');
   }
-
-  /**
-   * Get impact analysis: affected downstream versions and dependencies
-   */
-  async getImpactAnalysis(featureId: string): Promise<{
-    directDependents: string[];
-    transitiveDependents: string[];
-    affectedVersions: string[];
-    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  }> {
-    // Get capabilities attached to this feature
-    const featureCapabilities = await this.featureCapabilityRepository.find({ where: { featureId } });
-    const capabilityIds = featureCapabilities.map(fc => fc.capabilityId);
-
-    // Find capabilities that depend on these
-    const dependents = await this.capabilityDependencyRepository.find({
-      where: capabilityIds.map(cid => ({ dependencyCapabilityId: cid })),
-    });
-
-    const directDependents = dependents.map(d => d.capabilityId);
-
-    // Transitive closure
-    const transitiveDependents = new Set(directDependents);
-    const queue = [...directDependents];
-
-    while (queue.length > 0) {
-      const current = queue.shift();
-      const nextLevel = await this.capabilityDependencyRepository.find({
-        where: { dependencyCapabilityId: current },
-      });
-
-      for (const dep of nextLevel) {
-        if (!transitiveDependents.has(dep.capabilityId)) {
-          transitiveDependents.add(dep.capabilityId);
-          queue.push(dep.capabilityId);
-        }
-      }
-    }
-
-    // Find affected versions
-    const affectedVersions = await this.versionCapabilityRepository.find({
-      where: capabilityIds.map(cid => ({ capabilityId: cid, enabled: true })),
-    });
-
-    const affectedVersionIds = [...new Set(affectedVersions.map(av => av.applicationVersionId))];
-
-    // Risk level based on transitive impact
-    let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
-    if (transitiveDependents.size > 5) riskLevel = 'HIGH';
-    else if (transitiveDependents.size > 2) riskLevel = 'MEDIUM';
-
-    return {
-      directDependents,
-      transitiveDependents: Array.from(transitiveDependents),
-      affectedVersions: affectedVersionIds,
-      riskLevel,
-    };
-  }
-
-  /**
-   * Create a feature/capability snapshot for a version
-   */
-  async createSnapshot(applicationVersionId: string, createdBy?: string): Promise<{
-    snapshotId: string;
-    timestamp: Date;
-    featureCount: number;
-    capabilityCount: number;
-    validationState: { valid: boolean; completeness: number };
-  }> {
-    const versionFeatures = await this.versionFeatureRepository.find({ where: { applicationVersionId } });
-    const versionCapabilities = await this.versionCapabilityRepository.find({ where: { applicationVersionId } });
-
-    // Store snapshot metadata in version
-    const snapshot = {
-      snapshotId: `SNAPSHOT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date(),
-      featureCount: versionFeatures.length,
-      capabilityCount: versionCapabilities.length,
-      createdBy,
-    };
-
-    // In a full implementation, this would be persisted to a snapshot table
-    // For now, we return the snapshot metadata
-    const validationState = await this.validateFeatureSet(applicationVersionId, '');
-
-    return {
-      ...snapshot,
-      validationState: {
-        valid: validationState.valid,
-        completeness: validationState.completeness,
-      },
-    };
-  }
+  private calculateCompleteness(issues: ValidationIssue[], enabledFeatures: number, enabledCapabilities: number) { if (!enabledFeatures && !enabledCapabilities) return 0; const penalties = issues.filter(i => i.severity === 'ERROR').length * 15 + issues.filter(i => i.severity === 'WARNING').length * 5; return Math.max(0, Math.min(100, 100 - penalties)); }
+  private pagination(query: CatalogQuery, total: number) { const page = Number(query.page) || 1; const limit = Math.min(Number(query.limit) || 25, 100); return { page, limit, total, pages: Math.ceil(total / limit) }; }
 }

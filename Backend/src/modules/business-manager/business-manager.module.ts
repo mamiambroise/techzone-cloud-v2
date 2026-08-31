@@ -30,6 +30,14 @@ import { DataModelService } from './data-model/data-model.service';
 
 import { FeatureCapabilityController } from './feature-capability/feature-capability.controller';
 import { FeatureCapabilityService } from './feature-capability/feature-capability.service';
+import { MenuController } from './menus/menu.controller';
+import { MenuService } from './menus/menu.service';
+import { ConfigurationController } from './configuration/configuration.controller';
+import { ConfigurationService } from './configuration/configuration.service';
+import { RuntimeBridgeController } from './runtime/runtime-bridge.controller';
+import { RuntimeBridgeService } from './runtime/runtime-bridge.service';
+import { QualityController } from './quality/quality.controller';
+import { QualityService } from './quality/quality.service';
 
 @Module({
   imports: [
@@ -53,6 +61,10 @@ import { FeatureCapabilityService } from './feature-capability/feature-capabilit
     AuditController,
     DataModelController,
     FeatureCapabilityController,
+    MenuController,
+    ConfigurationController,
+    RuntimeBridgeController,
+    QualityController,
   ],
   providers: [
     ApplicationService,
@@ -65,6 +77,10 @@ import { FeatureCapabilityService } from './feature-capability/feature-capabilit
     AuditService,
     DataModelService,
     FeatureCapabilityService,
+    MenuService,
+    ConfigurationService,
+    RuntimeBridgeService,
+    QualityService,
   ],
   exports: [
     ApplicationService,
@@ -73,6 +89,10 @@ import { FeatureCapabilityService } from './feature-capability/feature-capabilit
     AuditService,
     DataModelService,
     FeatureCapabilityService,
+    MenuService,
+    ConfigurationService,
+    RuntimeBridgeService,
+    QualityService,
   ],
 })
 export class BusinessManagerModule { }

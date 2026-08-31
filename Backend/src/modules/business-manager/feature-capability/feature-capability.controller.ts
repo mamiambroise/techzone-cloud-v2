@@ -1,9 +1,11 @@
-import { Controller, Post, Get, Param, Body, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Permissions } from '../../../common/decorators/permissions.decorator';
+import { User } from '../../../common/decorators/user.decorator';
+import type { UserContext } from '../../../common/decorators/user.decorator';
+import { Permission } from '../../../common/enums';
 import { AuthGuard } from '../../../common/guards/auth.guard';
 import { PermissionGuard } from '../../../common/guards/permission.guard';
-import { Permissions } from '../../../common/decorators/permissions.decorator';
-import { Permission } from '../../../common/enums';
 import { FeatureCapabilityService } from './feature-capability.service';
 
 @ApiTags('Feature & Capability Manager')
@@ -11,127 +13,75 @@ import { FeatureCapabilityService } from './feature-capability.service';
 @Controller('api/v1/business-manager')
 @UseGuards(AuthGuard, PermissionGuard)
 export class FeatureCapabilityController {
-  constructor(private readonly service: FeatureCapabilityService) { }
+  constructor(private readonly service: FeatureCapabilityService) {}
 
-  @Post('features')
-  @Permissions(Permission.FEATURE_CREATE)
-  @ApiOperation({ summary: 'Create a feature' })
-  async createFeature(@Body() payload: any) {
-    return this.service.createFeature(payload);
-  }
+  @Get('features') @Permissions(Permission.FEATURE_READ)
+  listFeatures(@Query() query: any) { return this.service.listFeatures(query); }
+  @Post('features') @Permissions(Permission.FEATURE_CREATE)
+  createFeature(@Body() body: any, @User() user: UserContext) { return this.service.createFeature({ ...body, createdBy: user.id }); }
+  @Get('features/:featureId') @Permissions(Permission.FEATURE_READ)
+  getFeature(@Param('featureId') id: string) { return this.service.getFeature(id); }
+  @Patch('features/:featureId') @Permissions(Permission.FEATURE_UPDATE)
+  updateFeature(@Param('featureId') id: string, @Body() body: any) { return this.service.updateFeature(id, body); }
+  @Post('features/:featureId/deprecate') @Permissions(Permission.FEATURE_UPDATE)
+  deprecateFeature(@Param('featureId') id: string, @Body() body: any) { return this.service.deprecateFeature(id, body?.expectedVersion); }
+  @Post('features/:featureId/archive') @Permissions(Permission.FEATURE_ARCHIVE)
+  archiveFeature(@Param('featureId') id: string, @Body() body: any) { return this.service.archiveFeature(id, body?.expectedVersion); }
+  @Get('features/:featureId/capabilities') @Permissions(Permission.FEATURE_READ)
+  getFeatureCapabilities(@Param('featureId') id: string) { return this.service.getFeatureCapabilities(id); }
+  @Post('features/:featureId/capabilities') @Permissions(Permission.FEATURE_MAPPING_MANAGE)
+  attachCapability(@Param('featureId') featureId: string, @Body() body: any) { return this.service.attachCapability(featureId, body.capabilityId, body.required === true, body.sortOrder); }
+  @Delete('features/:featureId/capabilities/:capabilityId') @Permissions(Permission.FEATURE_MAPPING_MANAGE)
+  detachCapability(@Param('featureId') featureId: string, @Param('capabilityId') capabilityId: string) { return this.service.detachCapability(featureId, capabilityId); }
 
-  @Post('capabilities')
-  @Permissions(Permission.CAPABILITY_CREATE)
-  @ApiOperation({ summary: 'Create a capability' })
-  async createCapability(@Body() payload: any) {
-    return this.service.createCapability(payload);
-  }
+  @Get('capabilities') @Permissions(Permission.CAPABILITY_READ)
+  listCapabilities(@Query() query: any) { return this.service.listCapabilities(query); }
+  @Post('capabilities') @Permissions(Permission.CAPABILITY_CREATE)
+  createCapability(@Body() body: any, @User() user: UserContext) { return this.service.createCapability({ ...body, createdBy: user.id }); }
+  @Get('capabilities/:capabilityId') @Permissions(Permission.CAPABILITY_READ)
+  getCapability(@Param('capabilityId') id: string) { return this.service.getCapability(id); }
+  @Patch('capabilities/:capabilityId') @Permissions(Permission.CAPABILITY_UPDATE)
+  updateCapability(@Param('capabilityId') id: string, @Body() body: any) { return this.service.updateCapability(id, body); }
+  @Post('capabilities/:capabilityId/deprecate') @Permissions(Permission.CAPABILITY_UPDATE)
+  deprecateCapability(@Param('capabilityId') id: string, @Body() body: any) { return this.service.deprecateCapability(id, body?.expectedVersion); }
+  @Post('capabilities/:capabilityId/archive') @Permissions(Permission.CAPABILITY_ARCHIVE)
+  archiveCapability(@Param('capabilityId') id: string, @Body() body: any) { return this.service.archiveCapability(id, body?.expectedVersion); }
+  @Get('capabilities/:capabilityId/dependencies') @Permissions(Permission.CAPABILITY_READ)
+  getDependencies(@Param('capabilityId') id: string) { return this.service.getDependencies(id); }
+  @Post('capabilities/:capabilityId/dependencies') @Permissions(Permission.CAPABILITY_DEPENDENCY_MANAGE)
+  addDependency(@Param('capabilityId') id: string, @Body() body: any, @User() user: UserContext) { return this.service.addDependency(id, body.dependencyCapabilityId, body.dependencyType, user.id); }
+  @Delete('capabilities/:capabilityId/dependencies/:dependencyId') @Permissions(Permission.CAPABILITY_DEPENDENCY_MANAGE)
+  removeDependency(@Param('capabilityId') capabilityId: string, @Param('dependencyId') dependencyId: string) { return this.service.removeDependency(capabilityId, dependencyId); }
+  @Get('capabilities/:capabilityId/requirements') @Permissions(Permission.CAPABILITY_READ)
+  getRequirements(@Param('capabilityId') id: string) { return this.service.getEntityRequirements(id); }
+  @Post('capabilities/:capabilityId/requirements') @Permissions(Permission.CAPABILITY_REQUIREMENT_MANAGE)
+  addRequirement(@Param('capabilityId') id: string, @Body() body: any) { return this.service.addEntityRequirement(id, body.dataEntityId, body.requirementType); }
+  @Delete('capabilities/:capabilityId/requirements/:requirementId') @Permissions(Permission.CAPABILITY_REQUIREMENT_MANAGE)
+  removeRequirement(@Param('capabilityId') capabilityId: string, @Param('requirementId') requirementId: string) { return this.service.removeEntityRequirement(capabilityId, requirementId); }
 
-  @Post('features/:featureId/capabilities/:capabilityId')
-  @Permissions(Permission.FEATURE_MAPPING_MANAGE)
-  @ApiOperation({ summary: 'Attach capability to feature' })
-  async attach(@Param('featureId') featureId: string, @Param('capabilityId') capabilityId: string, @Query('required') required: string) {
-    return this.service.attachCapability(featureId, capabilityId, required === 'true');
-  }
-
-  @Post('applications/:applicationId/versions/:versionId/features/:featureId/enable')
-  @Permissions(Permission.VERSION_FEATURE_MANAGE)
-  @ApiOperation({ summary: 'Enable a feature in a version' })
-  async enableFeature(@Param('applicationId') applicationId: string, @Param('versionId') versionId: string, @Param('featureId') featureId: string) {
-    return this.service.enableFeature(versionId, featureId, applicationId);
-  }
-
-  @Post('applications/:applicationId/versions/:versionId/capabilities/:capabilityId/enable')
-  @Permissions(Permission.VERSION_CAPABILITY_MANAGE)
-  @ApiOperation({ summary: 'Enable a capability in a version' })
-  async enableCapability(@Param('applicationId') applicationId: string, @Param('versionId') versionId: string, @Param('capabilityId') capabilityId: string) {
-    return this.service.enableCapability(versionId, capabilityId, applicationId);
-  }
-
-  @Get('applications/:applicationId/versions/:versionId/features/validate')
-  @Permissions(Permission.FEATURE_VALIDATION_RUN)
-  @ApiOperation({ summary: 'Validate version feature configuration' })
-  async validate(@Param('versionId') versionId: string) {
-    return this.service.validateVersion(versionId);
-  }
-
-  @Post('capabilities/:capabilityId/dependencies')
-  @Permissions(Permission.CAPABILITY_DEPENDENCY_MANAGE)
-  @ApiOperation({ summary: 'Create dependency between capabilities' })
-  async addDependency(@Param('capabilityId') capabilityId: string, @Body() body: any) {
-    return this.service.addDependency(capabilityId, body.dependencyCapabilityId, body.dependencyType || 'REQUIRES', body.createdBy);
-  }
-
-  @Post('capabilities/:capabilityId/requirements')
-  @Permissions(Permission.CAPABILITY_REQUIREMENT_MANAGE)
-  @ApiOperation({ summary: 'Add entity requirement to a capability' })
-  async addRequirement(@Param('capabilityId') capabilityId: string, @Body() body: any) {
-    return this.service.addEntityRequirement(capabilityId, body.dataEntityId, body.requirementType);
-  }
-
-  @Delete('features/:featureId/capabilities/:capabilityId')
-  @Permissions(Permission.FEATURE_MAPPING_MANAGE)
-  @ApiOperation({ summary: 'Detach capability from feature' })
-  async detach(@Param('featureId') featureId: string, @Param('capabilityId') capabilityId: string) {
-    await this.service.detachCapability(featureId, capabilityId);
-    return { success: true };
-  }
-
-  @Get('applications/:applicationId/versions/:versionId/validate')
-  @Permissions(Permission.FEATURE_VALIDATION_RUN)
-  @ApiOperation({ summary: 'Comprehensive feature/capability validation' })
-  async validateFeatureSet(@Param('applicationId') applicationId: string, @Param('versionId') versionId: string) {
-    return this.service.validateFeatureSet(versionId, applicationId);
-  }
-
-  @Get('applications/:applicationId/versions/:versionId/completeness')
-  @Permissions(Permission.FEATURE_VALIDATION_RUN)
-  @ApiOperation({ summary: 'Check data entity coverage completeness' })
-  async checkCompleteness(@Param('versionId') versionId: string) {
-    return this.service.checkCompleteness(versionId);
-  }
-
-  @Get('features/:featureId/impact')
-  @Permissions(Permission.FEATURE_VALIDATION_RUN)
-  @ApiOperation({ summary: 'Get impact analysis for a feature' })
-  async getImpactAnalysis(@Param('featureId') featureId: string) {
-    return this.service.getImpactAnalysis(featureId);
-  }
-
-  @Post('applications/:applicationId/versions/:versionId/snapshot')
-  @Permissions(Permission.VERSION_FEATURE_MANAGE)
-  @ApiOperation({ summary: 'Create feature/capability snapshot for version' })
-  async createSnapshot(@Param('versionId') versionId: string, @Body() body?: { createdBy?: string }) {
-    return this.service.createSnapshot(versionId, body?.createdBy);
-  }
-
-  @Get('applications/:applicationId/versions/:versionId/features')
-  @Permissions(Permission.FEATURE_READ)
-  @ApiOperation({ summary: 'List features with validation state in version' })
-  async listFeaturesInVersion(@Param('versionId') versionId: string) {
-    const versionFeatures = await this.service['versionFeatureRepository'].find({
-      where: { applicationVersionId: versionId },
-      relations: ['feature'],
-    });
-    return versionFeatures.map(vf => ({
-      ...vf.feature,
-      state: vf.state,
-      applicationVersionId: versionId,
-    }));
-  }
-
-  @Get('applications/:applicationId/versions/:versionId/capabilities')
-  @Permissions(Permission.CAPABILITY_READ)
-  @ApiOperation({ summary: 'List capabilities with validation state in version' })
-  async listCapabilitiesInVersion(@Param('versionId') versionId: string) {
-    const versionCapabilities = await this.service['versionCapabilityRepository'].find({
-      where: { applicationVersionId: versionId },
-      relations: ['capability'],
-    });
-    return versionCapabilities.map(vc => ({
-      ...vc.capability,
-      enabled: vc.enabled,
-      applicationVersionId: versionId,
-    }));
-  }
+  @Get('application-versions/:versionId/features') @Permissions(Permission.FEATURE_READ)
+  getVersionFeatures(@Param('versionId') id: string) { return this.service.getVersionFeatures(id); }
+  @Post('application-versions/:versionId/features/:featureId/enable') @Permissions(Permission.VERSION_FEATURE_MANAGE)
+  enableFeature(@Param('versionId') versionId: string, @Param('featureId') featureId: string, @Body() body: any, @User() user: UserContext) { return this.service.enableFeature(versionId, featureId, user.id, body?.expectedVersion); }
+  @Post('application-versions/:versionId/features/:featureId/disable') @Permissions(Permission.VERSION_FEATURE_MANAGE)
+  disableFeature(@Param('versionId') versionId: string, @Param('featureId') featureId: string, @Body() body: any, @User() user: UserContext) { return this.service.disableFeature(versionId, featureId, user.id, body?.expectedVersion); }
+  @Post('application-versions/:versionId/features/:featureId/experimental') @Permissions(Permission.VERSION_FEATURE_MANAGE)
+  experimentalFeature(@Param('versionId') versionId: string, @Param('featureId') featureId: string, @Body() body: any, @User() user: UserContext) { return this.service.setFeatureExperimental(versionId, featureId, user.id, body?.expectedVersion); }
+  @Get('application-versions/:versionId/capabilities') @Permissions(Permission.CAPABILITY_READ)
+  getVersionCapabilities(@Param('versionId') id: string) { return this.service.getVersionCapabilities(id); }
+  @Post('application-versions/:versionId/capabilities/:capabilityId/enable') @Permissions(Permission.VERSION_CAPABILITY_MANAGE)
+  enableCapability(@Param('versionId') versionId: string, @Param('capabilityId') capabilityId: string, @Body() body: any, @User() user: UserContext) { return this.service.enableCapability(versionId, capabilityId, user.id, body?.expectedVersion); }
+  @Post('application-versions/:versionId/capabilities/:capabilityId/disable') @Permissions(Permission.VERSION_CAPABILITY_MANAGE)
+  disableCapability(@Param('versionId') versionId: string, @Param('capabilityId') capabilityId: string, @Body() body: any, @User() user: UserContext) { return this.service.disableCapability(versionId, capabilityId, user.id, body?.expectedVersion); }
+  @Post('application-versions/:versionId/features/clone') @Permissions(Permission.VERSION_FEATURE_MANAGE)
+  cloneConfiguration(@Param('versionId') targetVersionId: string, @Body() body: any, @User() user: UserContext) { return this.service.cloneConfiguration(body.sourceVersionId, targetVersionId, user.id); }
+  @Post('application-versions/:versionId/features/validate') @Permissions(Permission.FEATURE_VALIDATION_RUN)
+  validate(@Param('versionId') id: string) { return this.service.validateVersion(id); }
+  @Get('application-versions/:versionId/features/snapshot') @Permissions(Permission.FEATURE_SNAPSHOT_READ)
+  getSnapshot(@Param('versionId') id: string) { return this.service.getSnapshot(id); }
+  @Post('application-versions/:versionId/features/snapshot') @Permissions(Permission.VERSION_FEATURE_MANAGE)
+  createSnapshot(@Param('versionId') id: string) { return this.service.createSnapshot(id); }
+  @Get('application-versions/:versionId/capabilities/:capabilityId/disable-impact') @Permissions(Permission.FEATURE_IMPACT_READ)
+  @ApiOperation({ summary: 'Analyse des conséquences avant désactivation' })
+  disableImpact(@Param('versionId') versionId: string, @Param('capabilityId') capabilityId: string) { return this.service.getDisableImpact(versionId, capabilityId); }
 }

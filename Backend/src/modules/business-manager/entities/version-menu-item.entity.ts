@@ -1,0 +1,4 @@
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { MenuItemState } from '../../../common/enums';
+@Entity({ name: 'version_menu_items' }) @Index(['applicationVersionId', 'menuItemId'], { unique: true })
+export class VersionMenuItem { @PrimaryGeneratedColumn('uuid') id: string; @Column() applicationVersionId: string; @Column() menuItemId: string; @Column({ type: 'enum', enum: MenuItemState, nullable: true }) state?: MenuItemState; @Column({ nullable: true }) sortOrder?: number; @Column({ type: 'json', nullable: true }) configuration?: Record<string, unknown>; @Column({ nullable: true }) createdBy?: string; @CreateDateColumn({ type: 'timestamp with time zone' }) createdAt: Date; @UpdateDateColumn({ type: 'timestamp with time zone' }) updatedAt: Date; @Column({ default: 1 }) version: number; }
