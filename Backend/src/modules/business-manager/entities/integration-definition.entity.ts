@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+@Entity({ name: 'bm_integration_definitions' }) @Index(['code'], { unique: true })
+export class IntegrationDefinition { @PrimaryGeneratedColumn('uuid') id: string; @Column({ unique: true }) code: string; @Column() name: string; @Column() type: string; @Column() adapterKey: string; @Column({ type: 'json', nullable: true }) configurationSchema?: unknown; @Column({ default: false }) active: boolean; @Column({ type: 'json', nullable: true }) metadata?: unknown; @CreateDateColumn({ type: 'timestamp with time zone' }) createdAt: Date; @UpdateDateColumn({ type: 'timestamp with time zone' }) updatedAt: Date; @Column({ default: 1 }) version: number; }

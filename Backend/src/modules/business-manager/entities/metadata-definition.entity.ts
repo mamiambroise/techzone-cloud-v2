@@ -1,0 +1,4 @@
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { ConfigurationDataType } from '../../../common/enums';
+@Entity({ name: 'bm_metadata_definitions' }) @Index(['targetType', 'code'], { unique: true })
+export class MetadataDefinition { @PrimaryGeneratedColumn('uuid') id: string; @Column() code: string; @Column() targetType: string; @Column() name: string; @Column({ type: 'enum', enum: ConfigurationDataType }) dataType: ConfigurationDataType; @Column({ default: false }) multiple: boolean; @Column({ default: false }) required: boolean; @Column({ type: 'json', nullable: true }) defaultValue?: unknown; @Column({ type: 'json', nullable: true }) validationRules?: Record<string, unknown>; @Column({ default: false }) searchable: boolean; @Column({ default: false }) filterable: boolean; @Column({ default: false }) runtimeExposed: boolean; }

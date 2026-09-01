@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+@Entity({ name: 'bm_quality_issues' }) @Index(['campaignId', 'severity'])
+export class QualityIssue { @PrimaryGeneratedColumn('uuid') id: string; @Column() campaignId: string; @Column() validator: string; @Column() code: string; @Column() severity: string; @Column({ default: true }) blocking: boolean; @Column({ type: 'text' }) message: string; @Column({ nullable: true }) targetType?: string; @Column({ nullable: true }) targetId?: string; @Column({ type: 'json', nullable: true }) details?: unknown; @CreateDateColumn({ type: 'timestamp with time zone' }) createdAt: Date; }

@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+@Entity({ name: 'bm_runtime_snapshots' }) @Index(['applicationVersionId', 'environment', 'snapshotHash'], { unique: true })
+export class RuntimeSnapshot { @PrimaryGeneratedColumn('uuid') id: string; @Column() applicationId: string; @Column() applicationVersionId: string; @Column({ nullable: true }) environment?: string; @Column({ default: '1.0.0' }) manifestVersion: string; @Column() snapshotHash: string; @Column({ type: 'json' }) manifest: unknown; @Column({ default: 'READY' }) status: string; @CreateDateColumn({ type: 'timestamp with time zone' }) generatedAt: Date; }
