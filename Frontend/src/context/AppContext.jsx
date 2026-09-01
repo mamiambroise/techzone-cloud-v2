@@ -343,15 +343,16 @@ export function AppProvider({ children }) {
     return { success: true, source: 'jwt' };
   }, []);
 
-  // 15-Minute Inactivity Auto-Logout Handler (IAM Zero-Trust Security Standard)
-  const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes (900 seconds)
-  const [sessionRemainingSeconds, setSessionRemainingSeconds] = useState(15 * 60);
+  // Inactivity auto-logout: DESACTIVATE. Conservé comme no-op pour ne pas casser
+  // les consommateurs (Header, IAMDashboardView) qui lisent sessionRemainingSeconds.
+  const SESSION_FALLBACK_SECONDS = 15 * 60;
+  const [sessionRemainingSeconds, setSessionRemainingSeconds] = useState(SESSION_FALLBACK_SECONDS);
   const lastActivityRef = React.useRef(Date.now());
 
-  // Proactive session extension / activity pulse
+  // No-op: la restriction d'inactivité a été retirée.
   const resetInactivityTimer = useCallback(() => {
     lastActivityRef.current = Date.now();
-    setSessionRemainingSeconds(15 * 60);
+    setSessionRemainingSeconds(SESSION_FALLBACK_SECONDS);
   }, []);
 
   // Logout handler
@@ -382,48 +383,10 @@ export function AppProvider({ children }) {
     }
   }, [userEmail]);
 
-  // Activity listeners to detect user interaction and reset timer
+  // Activity listeners — DÉSACTIVÉS (la restriction d'inactivité 15 min est retirée).
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    // Reset timestamp when logging in
-    lastActivityRef.current = Date.now();
-    setSessionRemainingSeconds(15 * 60);
-
-    let lastThrottledTime = Date.now();
-    const handleUserActivity = () => {
-      const now = Date.now();
-      // Throttle event updates to at most once every 3 seconds to preserve performance
-      if (now - lastThrottledTime > 3000) {
-        lastThrottledTime = now;
-        lastActivityRef.current = now;
-      }
-    };
-
-    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'focus', 'click'];
-    activityEvents.forEach((evt) => {
-      window.addEventListener(evt, handleUserActivity, { passive: true });
-    });
-
-    // Inactivity ticker interval (checks every 1 second)
-    const intervalId = setInterval(() => {
-      const elapsed = Date.now() - lastActivityRef.current;
-      const remaining = Math.max(0, Math.floor((INACTIVITY_TIMEOUT_MS - elapsed) / 1000));
-      setSessionRemainingSeconds(remaining);
-
-      if (remaining <= 0) {
-        clearInterval(intervalId);
-        logout('INACTIVITY');
-      }
-    }, 1000);
-
-    return () => {
-      clearInterval(intervalId);
-      activityEvents.forEach((evt) => {
-        window.removeEventListener(evt, handleUserActivity);
-      });
-    };
-  }, [isAuthenticated, logout]);
+    return undefined;
+  }, [isAuthenticated]);
 
   // Sync to LocalStorage
   useEffect(() => {

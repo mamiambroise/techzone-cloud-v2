@@ -672,7 +672,7 @@ export function OverviewView() {
               <div key={item.id} className="py-2.5 space-y-1">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center">
+                    <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center">
                       {item.actorId || 'AD'}
                     </span>
                     <span className="font-bold text-slate-800">{item.actorName}</span>
