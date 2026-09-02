@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 
 import { ApplicationVersionsService } from './application-versions.service';
-import { CreateApplicationVersionDto } from '../application-versions/dto/create-app-version.dto';
-import { UpdateApplicationVersionDto } from '../application-versions/dto/update-app-version.dto';
+import { CreateApplicationVersionDto } from './dto/create-app-version.dto';
+import { UpdateApplicationVersionDto } from './dto/update-app-version.dto';
 
 @Controller()
 export class ApplicationVersionsController {

@@ -3,11 +3,21 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
-import { ApplicationsModule } from './modules/applications/applications..module';
-import { ApplicationVersionsModule } from './modules/application-versions/application-versions.module';
+import { ApplicationsModule } from './modules/platform/applications/applications..module';
+import { ApplicationVersionsModule } from './modules/platform/application-versions/application-versions.module';
+import { EnvironmentsModule } from './modules/platform/environments/environment.module';
+import { ContractsModule } from './modules/platform/contracts/contract.module';
+import { ConfigurationModule } from './modules/platform/configuration/configuration.module';
 
 @Module({
-  imports: [PrismaModule, ApplicationsModule, ApplicationVersionsModule],
+  imports: [
+    PrismaModule,
+    ApplicationsModule,
+    ApplicationVersionsModule,
+    EnvironmentsModule,
+    ContractsModule,
+    ConfigurationModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

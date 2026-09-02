@@ -1,12 +1,12 @@
 import { ConflictException, HttpStatus, Injectable } from '@nestjs/common';
 
-import { PrismaService } from '../../prisma/prisma.service';
-import { PlatformErrorCode } from '../../common/errors/platform-error-code.enum';
-import { PlatformException } from '../../common/errors/platform.exception';
-import { canTransitionVersion } from '../../common/lifecycle/version-lifecycle.util';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';
+import { PlatformException } from '../../../common/errors/platform.exception';
+import { canTransitionVersion } from '../../../common/lifecycle/version-lifecycle.util';
 
-import { CreateApplicationVersionDto } from '../application-versions/dto/create-app-version.dto';
-import { UpdateApplicationVersionDto } from '../application-versions/dto/update-app-version.dto';
+import { CreateApplicationVersionDto } from './dto/create-app-version.dto';
+import { UpdateApplicationVersionDto } from './dto/update-app-version.dto';
 
 @Injectable()
 export class ApplicationVersionsService {

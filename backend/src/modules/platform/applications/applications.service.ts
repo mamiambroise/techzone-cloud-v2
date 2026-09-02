@@ -5,12 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { PrismaService } from '../../prisma/prisma.service';
-import { PlatformErrorCode } from '../../common/errors/platform-error-code.enum';
-import { PlatformException } from '../../common/errors/platform.exception';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';
+import { PlatformException } from '../../../common/errors/platform.exception';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
-import { ApplicationStatus } from '../../generated/prisma/enums';
+import { ApplicationStatus } from '../../../generated/prisma/enums';
 
 @Injectable()
 export class ApplicationsService {

@@ -122,6 +122,7 @@ model Environment {
   deployments            Deployment[]
   environmentDeployments EnvironmentDeployment[]
   deploymentHistory      DeploymentHistory[]
+  history                EnvironmentHistory[]
 
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -130,6 +131,33 @@ model Environment {
   @@index([type])
   @@index([status])
   @@map("environments")
+}
+
+enum EnvironmentHistoryAction {
+  CREATED
+  UPDATED
+  STATUS_CHANGED
+  CONFIGURATION_CHANGED
+  ARCHIVED
+}
+
+model EnvironmentHistory {
+  id            String @id @default(uuid()) @db.Uuid
+  environmentId String @db.Uuid
+
+  action   EnvironmentHistoryAction
+  actor    String?                  @db.VarChar(100)
+  changes  Json?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@index([environmentId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("environment_history")
 }
 
 model Contract {
@@ -150,11 +178,92 @@ model Contract {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  history   ContractHistory[]
+  providers ContractProvider[]
+  consumers ContractConsumer[]
+
   @@unique([contractCode, contractVersion])
   @@index([contractCode])
   @@index([status])
   @@index([ownerTeam])
   @@map("contracts")
+}
+
+enum ContractHistoryAction {
+  CREATED
+  VALIDATED
+  LOCKED
+  ACTIVATED
+  DEPRECATED
+  RETIRED
+  COMPATIBILITY_CHECKED
+}
+
+model ContractHistory {
+  id         String @id @default(uuid()) @db.Uuid
+  contractId String @db.Uuid
+
+  action   ContractHistoryAction
+  actor    String?               @db.VarChar(100)
+  changes  Json?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("contract_history")
+}
+
+enum ContractParticipantType {
+  APPLICATION
+  PACK
+  SERVICE
+  TEAM
+  EXTERNAL
+}
+
+model ContractProvider {
+  id         String @id @default(uuid()) @db.Uuid
+  contractId String @db.Uuid
+
+  providerCode String                  @db.VarChar(100)
+  providerType ContractParticipantType
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, providerCode])
+  @@index([contractId])
+  @@index([providerCode])
+  @@map("contract_providers")
+}
+
+model ContractConsumer {
+  id         String @id @default(uuid()) @db.Uuid
+  contractId String @db.Uuid
+
+  consumerCode String                  @db.VarChar(100)
+  consumerType ContractParticipantType
+
+  supportedVersion String? @db.VarChar(50)
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, consumerCode])
+  @@index([contractId])
+  @@index([consumerCode])
+  @@map("contract_consumers")
 }
 
 enum ConfigurationScope {
@@ -178,6 +287,7 @@ enum ConfigurationType {
 enum ConfigurationStatus {
   DRAFT
   VALIDATING
+  READY
   ACTIVE
   DEPRECATED
   ARCHIVED
@@ -188,7 +298,7 @@ model Configuration {
   key String @db.VarChar(150)
 
   scope   ConfigurationScope
-  scopeId String             @db.VarChar(100)
+  scopeId String?            @db.VarChar(100)
 
   type         ConfigurationType
   value        Json?
@@ -203,11 +313,44 @@ model Configuration {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  history ConfigurationHistory[]
+
   @@unique([key, scope, scopeId, version])
   @@index([key])
   @@index([scope, scopeId])
   @@index([status])
   @@map("configurations")
+}
+
+enum ConfigurationHistoryAction {
+  CREATED
+  UPDATED
+  VALIDATED
+  ACTIVATED
+  DEPRECATED
+  ARCHIVED
+}
+
+model ConfigurationHistory {
+  id String @id @default(uuid()) @db.Uuid
+
+  configurationId String @db.Uuid
+
+  action ConfigurationHistoryAction
+
+  actor String? @db.VarChar(100)
+
+  changes  Json?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  configuration Configuration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+
+  @@index([configurationId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("configuration_history")
 }
 
 enum SnapshotStatus {
@@ -586,10 +729,8 @@ model IntegrationLog {
 
   connector Connector? @relation(fields: [connectorId], references: [id], onDelete: SetNull)
 
-  @@index([traceId])
-  @@index([tenantId])
-  @@index([connectorId])
-  @@index([status])
+  @@index([tenantId, createdAt])
+  @@index([connectorId, status])
   @@index([errorCode])
   @@index([startedAt])
   @@map("integration_logs")
@@ -683,7 +824,7 @@ model Deployment {
   status   DeploymentStatus   @default(PENDING)
   strategy DeploymentStrategy @default(STANDARD)
 
-  idempotencyKey String @unique @db.VarChar(150)
+  idempotencyKey String? @unique @db.VarChar(150)
 
   startedBy  String    @db.VarChar(100)
   startedAt  DateTime  @default(now())
@@ -901,10 +1042,8 @@ model DeploymentHistory {
   @@index([traceId])
   @@index([releaseId])
   @@index([deploymentId])
-  @@index([applicationId])
-  @@index([environmentId])
+  @@index([applicationId, environmentId, createdAt])
   @@index([action])
   @@index([status])
-  @@index([createdAt])
   @@map("deployment_history")
 }
