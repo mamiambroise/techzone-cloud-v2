@@ -8,6 +8,9 @@ import {
     PublicationStatus,
     PublicationType,
     ResultType,
+    FeatureStatus,
+    CapabilityStatus,
+    MenuStatus,
 } from './common/enums';
 import { Application } from './modules/business-manager/entities/application.entity';
 import { ApplicationVersion } from './modules/business-manager/entities/application-version.entity';
