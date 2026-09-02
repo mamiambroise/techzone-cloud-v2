@@ -2,12 +2,26 @@ import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@ne
 import { AuthGuard } from '../../../common/guards/auth.guard';
 import { PermissionGuard } from '../../../common/guards/permission.guard';
 import { RuntimeBridgeService } from './runtime-bridge.service';
-@Controller('api/v1/business-manager') @UseGuards(AuthGuard, PermissionGuard)
+
+@Controller('api/v1/business-manager')
+@UseGuards(AuthGuard, PermissionGuard)
 export class RuntimeBridgeController {
-  constructor(private readonly service: RuntimeBridgeService) {}
-  @Get('application-versions/:versionId/runtime-manifest') manifest(@Param('versionId') id: string, @Query('environment') env?: string, @Query('channel') channel?: string) { return this.service.manifest(id, env, channel); }
-  @Get('application-versions/:versionId/runtime-readiness') readiness(@Param('versionId') id: string, @Query('environment') env?: string) { return this.service.readiness(id, env); }
-  @Post('application-versions/:versionId/runtime-readiness/validate') validateReadiness(@Param('versionId') id: string, @Query('environment') env?: string) { return this.service.readiness(id, env); }
+  constructor(private readonly service: RuntimeBridgeService) { }
+
+  @Get('application-versions/:versionId/runtime-manifest')
+  manifest(@Param('versionId') id: string, @Query('environment') env?: string, @Query('channel') channel?: string) {
+    return this.service.manifest(id, env, channel);
+  }
+
+  @Get('application-versions/:versionId/runtime-readiness')
+  readiness(@Param('versionId') id: string, @Query('environment') env?: string) {
+    return this.service.readiness(id, env);
+  }
+
+  @Post('application-versions/:versionId/runtime-readiness/validate')
+  validateReadiness(@Param('versionId') id: string, @Query('environment') env?: string) {
+    return this.service.readiness(id, env);
+  }
   @Post('application-versions/:versionId/contracts') contracts(@Param('versionId') id: string) { return this.service.generateContracts(id); }
   @Get('application-versions/:versionId/contracts') listContracts(@Param('versionId') id: string) { return this.service.contracts(id); }
   @Get('application-versions/:versionId/contracts/:type') contract(@Param('versionId') id: string, @Param('type') type: string) { return this.service.contracts(id, type); }
