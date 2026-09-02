@@ -1,0 +1,6 @@
+{
+  "name": "Techzone Cloud - Business Manager",
+  "description": "Socle & Architecture Business Manager : Gestionnaire centralisé d'applications, cycle de vie, versioning, validation, publication, audit et gouvernance multi-tenant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
