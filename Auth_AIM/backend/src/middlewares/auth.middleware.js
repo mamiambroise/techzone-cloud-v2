@@ -1,27 +1,39 @@
 const { verifyAccessToken } = require('../utils/jwt');
-const { failure } = require('../utils/response');
-const { prisma } = require('../config/database');
+const { AppError } = require('../utils/response');
+const sessionService = require('../services/session.service');
 
-async function authMiddleware(req, res, next) {
+async function authenticate(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return failure(res, { statusCode: 401, message: 'Token manquant' });
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) {
+      throw new AppError('Token manquant', 401, 'UNAUTHENTICATED');
     }
 
-    const token = authHeader.split(' ')[1];
-    const payload = verifyAccessToken(token);
-
-    const session = await prisma.session.findUnique({ where: { id: payload.sessionId } });
-    if (!session || session.status !== 'ACTIVE') {
-      return failure(res, { statusCode: 401, message: 'Session invalide ou expirée' });
+    const token = header.slice('Bearer '.length);
+    let decoded;
+    try {
+      decoded = verifyAccessToken(token);
+    } catch (err) {
+      throw new AppError('Token invalide ou expiré', 401, 'UNAUTHENTICATED');
     }
 
-    req.user = { id: payload.sub, sessionId: payload.sessionId, tenantId: payload.tenantId };
-    next();
+    const session = await sessionService.getSessionById(decoded.sessionId);
+    await sessionService.assertSessionUsable(session);
+    await sessionService.touchSession(session.id);
+
+    req.auth = {
+      userId: decoded.userId,
+      sessionId: decoded.sessionId,
+      tenantId: decoded.tenantId,
+      organizationId: decoded.organizationId,
+      authenticationLevel: decoded.authenticationLevel,
+    };
+
+    return next();
   } catch (err) {
-    return failure(res, { statusCode: 401, message: 'Token invalide' });
+    if (err instanceof AppError) return next(err);
+    return next(new AppError('Non authentifié', 401, 'UNAUTHENTICATED'));
   }
 }
 
-module.exports = authMiddleware;
+module.exports = { authenticate };

@@ -1,16 +1,15 @@
-const { validationResult } = require('express-validator');
-const { failure } = require('../utils/response');
+const { AppError } = require('../utils/response');
 
-function validationMiddleware(req, res, next) {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return failure(res, {
-      statusCode: 422,
-      message: 'Erreur de validation',
-      errors: errors.array(),
-    });
-  }
-  next();
+function validate(schema, source = 'body') {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req[source], { abortEarly: false, stripUnknown: true });
+    if (error) {
+      const details = error.details.map((d) => ({ field: d.path.join('.'), message: d.message }));
+      return next(new AppError('Validation échouée', 422, 'VALIDATION_ERROR', details));
+    }
+    req[source] = value;
+    return next();
+  };
 }
 
-module.exports = validationMiddleware;
+module.exports = { validate };

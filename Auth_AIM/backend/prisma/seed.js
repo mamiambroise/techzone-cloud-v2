@@ -1,88 +1,91 @@
-import { PrismaClient } from "@prisma/client";
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // 1. Organisation de démo
-  const org = await prisma.organisation.upsert({
-    where: { code: "ORG-DEMO-001" },
-    update: {},
-    create: {
-      code: "ORG-DEMO-001",
-      name: "Techzone Demo SARL",
-      type: "COMPANY",
-      status: "ACTIVE",
-      country: "MG",
-      timezone: "Indian/Antananarivo",
-      locale: "fr-MG",
+  const passwordHash = await bcrypt.hash('TestPassword123!', 12);
+
+  const tenant = await prisma.tenant.create({
+    data: { code: 'techzone-demo', name: 'Techzone Demo Tenant', status: 'ACTIVE' },
+  });
+
+  const organization = await prisma.organization.create({
+    data: { tenantId: tenant.id, code: 'org-demo', name: 'Techzone Demo Org', status: 'ACTIVE' },
+  });
+
+  const identity = await prisma.identity.create({
+    data: { type: 'HUMAN', status: 'ACTIVE', email: 'nassa.test@techzone.dev', confidence: 1.0 },
+  });
+
+  const user = await prisma.user.create({
+    data: {
+      username: 'nassa.test',
+      primaryEmail: 'nassa.test@techzone.dev',
+      firstName: 'Nassa',
+      lastName: 'Test',
+      status: 'ACTIVE',
     },
   });
 
-  // 2. Tenant rattaché à l'organisation
-  const tenant = await prisma.tenant.upsert({
-    where: { code: "TEN-DEMO-001" },
-    update: {},
-    create: {
-      code: "TEN-DEMO-001",
-      name: "Boutique Demo",
-      slug: "boutique-demo",
-      type: "DEMO",
-      status: "ACTIVE",
-      provisioningStatus: "COMPLETED",
-      timezone: "Indian/Antananarivo",
-      locale: "fr-MG",
-      currency: "MGA",
-      organisationId: org.id,
-    },
+  await prisma.userIdentity.create({
+    data: { userId: user.id, identityId: identity.id, isPrimary: true },
   });
 
-  // 3. Utilisateur de démo
-  const user = await prisma.user.upsert({
-    where: { username: "lianah.demo" },
-    update: {},
-    create: {
-      username: "lianah.demo",
-      displayName: "Lianah (Demo)",
-      firstName: "Lianah",
-      lastName: "Demo",
-      primaryEmail: "lianah.demo@techzone.mg",
-      status: "ACTIVE",
-      defaultTenantId: tenant.id,
-    },
+  await prisma.credential.create({
+    data: { userId: user.id, type: 'PASSWORD', status: 'ACTIVE', secretHash: passwordHash },
   });
 
-  // 4. Membership OWNER + TenantOwner
-  await prisma.membership.upsert({
-    where: { tenantId_userId: { tenantId: tenant.id, userId: user.id } },
-    update: {},
-    create: {
-      tenantId: tenant.id,
+  await prisma.passwordHistory.create({
+    data: { userId: user.id, passwordHash },
+  });
+
+  await prisma.membership.create({
+    data: {
       userId: user.id,
-      type: "OWNER",
-      status: "ACTIVE",
-      source: "MANUAL",
+      tenantId: tenant.id,
+      organizationId: organization.id,
+      status: 'ACTIVE',
       joinedAt: new Date(),
     },
   });
 
-  await prisma.tenantOwner.upsert({
-    where: { tenantId_userId: { tenantId: tenant.id, userId: user.id } },
-    update: {},
-    create: {
+  const permission = await prisma.permission.create({
+    data: { code: 'iam.context.test.read', resource: 'context', action: 'read', name: 'Lire le contexte de test' },
+  });
+
+  const role = await prisma.role.create({
+    data: { tenantId: tenant.id, code: 'demo-viewer', name: 'Demo Viewer', status: 'ACTIVE' },
+  });
+
+  await prisma.rolePermission.create({
+    data: { roleId: role.id, permissionId: permission.id },
+  });
+
+  await prisma.roleAssignment.create({
+    data: { roleId: role.id, userId: user.id, tenantId: tenant.id },
+  });
+
+  await prisma.accessPolicy.create({
+    data: {
       tenantId: tenant.id,
-      userId: user.id,
-      status: "ACTIVE",
+      code: 'demo-allow-context-read',
+      name: 'Allow context read (demo)',
+      status: 'ACTIVE',
+      effect: 'ALLOW',
+      priority: 100,
+      resource: 'context',
+      action: 'read',
     },
   });
 
-  console.log("Seed terminé :", { org: org.code, tenant: tenant.code, user: user.username });
+  console.log('✅ Seed terminé');
+  console.log({ tenantId: tenant.id, organizationId: organization.id, userId: user.id });
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((err) => {
+    console.error('❌ Erreur seed:', err);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .finally(() => prisma.$disconnect());
