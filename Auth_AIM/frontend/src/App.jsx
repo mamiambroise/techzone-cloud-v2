@@ -5,10 +5,12 @@ import AdminLayout from './layouts/AdminLayout';
 import MainLayout from './layouts/MainLayout';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
-import UsersListPage from './pages/UsersListPage';
 import Placeholder from './pages/Placeholder';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import UsersPage from './pages/Users/UsersPage';
+import IdentitiesPage from './pages/Identities/IdentitiesPage';
+import IdentityLinksPage from './pages/IdentityLinks/IdentityLinksPage';
+import IdentityGroupsPage from './pages/IdentityGroups/IdentityGroupsPage';
 import OrganisationsPage from './pages/Organisations/OrganisationsPage';
 import RolesPage from './pages/Roles/RolesPage';
 import PoliciesPage from './pages/Policies/PoliciesPage';
@@ -28,8 +30,11 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/users" element={<UsersListPage />} />
+        <Route path="/users" element={<UsersPage />} />
         <Route path="/users/:userId" element={<Placeholder title="Détail utilisateur" />} />
+        <Route path="/identities" element={<IdentitiesPage />} />
+        <Route path="/identity-links" element={<IdentityLinksPage />} />
+        <Route path="/identity-groups" element={<IdentityGroupsPage />} />
         <Route path="/organisations" element={<Placeholder title="Organisations" />} />
         <Route path="/organisations/:orgId" element={<Placeholder title="Détail organisation" />} />
         <Route path="/tenants" element={<Placeholder title="Tenants" />} />
