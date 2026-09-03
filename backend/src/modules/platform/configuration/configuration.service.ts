@@ -44,6 +44,8 @@ export class ConfigurationService {
       );
     }
 
+    await this.validateScopeTarget(dto.scope, dto.scopeId);
+
     // Vérifier qu'une configuration identique n'existe pas déjà
     const existing = dto.scopeId
       ? await this.prisma.configuration.findFirst({
@@ -71,8 +73,10 @@ export class ConfigurationService {
       );
     }
 
+    this.validateSecretConfiguration(dto.value, dto.schema);
+
     // Vérification de base de la valeur selon son type
-    this.validateValueType(dto.type, dto.value);
+    this.validateValueType(dto.type, dto.value, dto.schema);
 
     return this.prisma.$transaction(async (tx) => {
       const configuration = await tx.configuration.create({
@@ -194,7 +198,11 @@ export class ConfigurationService {
     return Array.from(effective.values());
   }
 
-  private validateValueType(type: ConfigurationType, value: unknown) {
+  private validateValueType(
+    type: ConfigurationType,
+    value: unknown,
+    schema?: unknown,
+  ) {
     if (value === undefined || value === null) {
       return;
     }
@@ -274,6 +282,345 @@ export class ConfigurationService {
         // La vraie validation de l'enum sera faite avec `schema`
         break;
     }
+
+    this.validateSchemaConstraints(type, value, schema);
+  }
+
+  private validateSchemaConstraints(
+    type: ConfigurationType,
+    value: unknown,
+    schema?: unknown,
+  ) {
+    if (
+      value === undefined ||
+      value === null ||
+      schema === undefined ||
+      schema === null
+    ) {
+      return;
+    }
+
+    if (typeof schema !== 'object' || Array.isArray(schema)) {
+      throw new PlatformException(
+        PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+        'Configuration schema must be a JSON object',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const constraints = schema as Record<string, unknown>;
+
+    // NUMBER
+    if (type === ConfigurationType.NUMBER) {
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return;
+      }
+
+      if (
+        constraints.min !== undefined &&
+        (typeof constraints.min !== 'number' ||
+          !Number.isFinite(constraints.min))
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          'Configuration schema "min" must be a finite number',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (
+        constraints.max !== undefined &&
+        (typeof constraints.max !== 'number' ||
+          !Number.isFinite(constraints.max))
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          'Configuration schema "max" must be a finite number',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (
+        constraints.min !== undefined &&
+        value < (constraints.min as number)
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          `Configuration value must be greater than or equal to ${constraints.min}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (
+        constraints.max !== undefined &&
+        value > (constraints.max as number)
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          `Configuration value must be less than or equal to ${constraints.max}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    // STRING / URL
+    if (type === ConfigurationType.STRING || type === ConfigurationType.URL) {
+      if (typeof value !== 'string') {
+        return;
+      }
+
+      if (
+        constraints.minLength !== undefined &&
+        (!Number.isInteger(constraints.minLength) ||
+          (constraints.minLength as number) < 0)
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          'Configuration schema "minLength" must be a non-negative integer',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (
+        constraints.maxLength !== undefined &&
+        (!Number.isInteger(constraints.maxLength) ||
+          (constraints.maxLength as number) < 0)
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          'Configuration schema "maxLength" must be a non-negative integer',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (
+        constraints.minLength !== undefined &&
+        value.length < (constraints.minLength as number)
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          `Configuration value must contain at least ${constraints.minLength} characters`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (
+        constraints.maxLength !== undefined &&
+        value.length > (constraints.maxLength as number)
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          `Configuration value must contain at most ${constraints.maxLength} characters`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (constraints.pattern !== undefined) {
+        if (typeof constraints.pattern !== 'string') {
+          throw new PlatformException(
+            PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+            'Configuration schema "pattern" must be a string',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        let regex: RegExp;
+
+        try {
+          regex = new RegExp(constraints.pattern);
+        } catch {
+          throw new PlatformException(
+            PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+            'Configuration schema "pattern" must be a valid regular expression',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        if (!regex.test(value)) {
+          throw new PlatformException(
+            PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+            'Configuration value does not match the required pattern',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+    }
+
+    // DURATION
+    if (type === ConfigurationType.DURATION) {
+      if (typeof value !== 'string') {
+        return;
+      }
+
+      const valueMs = this.durationToMilliseconds(value);
+
+      if (
+        constraints.min !== undefined &&
+        typeof constraints.min !== 'string'
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          'Configuration schema "min" must be a duration string',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (
+        constraints.max !== undefined &&
+        typeof constraints.max !== 'string'
+      ) {
+        throw new PlatformException(
+          PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+          'Configuration schema "max" must be a duration string',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (constraints.min !== undefined) {
+        const minMs = this.durationToMilliseconds(constraints.min as string);
+
+        if (valueMs < minMs) {
+          throw new PlatformException(
+            PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+            `Configuration duration must be greater than or equal to ${constraints.min}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      if (constraints.max !== undefined) {
+        const maxMs = this.durationToMilliseconds(constraints.max as string);
+
+        if (valueMs > maxMs) {
+          throw new PlatformException(
+            PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+            `Configuration duration must be less than or equal to ${constraints.max}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+    }
+  }
+
+  private durationToMilliseconds(value: string): number {
+    const match = value.match(/^(\d+)(ms|s|m|h|d)$/);
+
+    if (!match) {
+      throw new PlatformException(
+        PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+        `Invalid duration "${value}"`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const amount = Number(match[1]);
+    const unit = match[2];
+
+    const multipliers: Record<string, number> = {
+      ms: 1,
+      s: 1000,
+      m: 60 * 1000,
+      h: 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000,
+    };
+
+    return amount * multipliers[unit];
+  }
+
+  private validateSecretConfiguration(value: unknown, schema?: unknown) {
+    if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
+      return;
+    }
+
+    const configSchema = schema as Record<string, unknown>;
+
+    if (configSchema.secret !== true) {
+      return;
+    }
+
+    if (value !== undefined && value !== null) {
+      throw new PlatformException(
+        PlatformErrorCode.CONFIGURATION_INVALID_VALUE,
+        'Secret configuration values must not be stored in clear text',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async validateScopeTarget(
+    scope: ConfigurationScope,
+    scopeId?: string,
+  ) {
+    if (scope === ConfigurationScope.PLATFORM) {
+      return;
+    }
+
+    if (!scopeId) {
+      throw new PlatformException(
+        PlatformErrorCode.CONFIGURATION_INVALID_SCOPE,
+        `Scope "${scope}" requires a scopeId`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    switch (scope) {
+      case ConfigurationScope.APPLICATION: {
+        const application = await this.prisma.application.findUnique({
+          where: { id: scopeId },
+          select: { id: true },
+        });
+
+        if (!application) {
+          throw new PlatformException(
+            PlatformErrorCode.APPLICATION_NOT_FOUND,
+            `Application "${scopeId}" not found`,
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        break;
+      }
+
+      case ConfigurationScope.APPLICATION_VERSION: {
+        const version = await this.prisma.applicationVersion.findUnique({
+          where: { id: scopeId },
+          select: { id: true },
+        });
+
+        if (!version) {
+          throw new PlatformException(
+            PlatformErrorCode.VERSION_NOT_FOUND,
+            `Application version "${scopeId}" not found`,
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        break;
+      }
+
+      case ConfigurationScope.ENVIRONMENT: {
+        const environment = await this.prisma.environment.findUnique({
+          where: { id: scopeId },
+          select: { id: true },
+        });
+
+        if (!environment) {
+          throw new PlatformException(
+            PlatformErrorCode.ENVIRONMENT_NOT_FOUND,
+            `Environment "${scopeId}" not found`,
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        break;
+      }
+
+      case ConfigurationScope.TENANT:
+        // Le modèle Tenant n'existe pas encore dans ton schéma.
+        // Ce scope sera traité lorsque la gestion TENANT
+        // sera implémentée.
+        break;
+    }
   }
 
   async findByScope(scope: string, scopeId: string) {
@@ -313,7 +660,13 @@ export class ConfigurationService {
 
     // Vérifier le nouveau type de valeur
     if (dto.value !== undefined) {
-      this.validateValueType(configuration.type, dto.value);
+      const newValue =
+        dto.value !== undefined ? dto.value : configuration.value;
+
+      const newSchema =
+        dto.schema !== undefined ? dto.schema : configuration.schema;
+
+      this.validateValueType(configuration.type, newValue, newSchema);
     }
 
     // Construire l'historique des changements
@@ -560,7 +913,11 @@ export class ConfigurationService {
 
     // Vérification du type
     if (configuration.value !== null && configuration.value !== undefined) {
-      this.validateValueType(configuration.type, configuration.value);
+      this.validateValueType(
+        configuration.type,
+        configuration.value,
+        configuration.schema,
+      );
     }
 
     // Validation spécifique ENUM

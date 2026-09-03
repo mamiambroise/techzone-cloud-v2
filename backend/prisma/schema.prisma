@@ -75,8 +75,9 @@ model Application {
   environmentDeployments EnvironmentDeployment[]
   deploymentHistory      DeploymentHistory[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  snapshots Snapshot[]
 
   @@index([tenantScope])
   @@index([status])
@@ -358,11 +359,13 @@ enum SnapshotStatus {
   VALIDATING
   VALID
   INVALID
+  ACTIVE
   ARCHIVED
 }
 
 enum SnapshotHistoryAction {
   CREATED
+  CHANGED
   VALIDATED
   ACTIVATED
   ARCHIVED
@@ -382,6 +385,7 @@ model Snapshot {
   hash                 String             @db.VarChar(128)
   status               SnapshotStatus     @default(DRAFT)
   releases             Release[]
+  application          Application        @relation(fields: [applicationId], references: [id])
   applicationVersion   ApplicationVersion @relation(fields: [applicationVersionId], references: [id])
   environment          Environment        @relation(fields: [environmentId], references: [id])
   history              SnapshotHistory[]

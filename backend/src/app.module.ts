@@ -8,6 +8,7 @@ import { ApplicationVersionsModule } from './modules/platform/application-versio
 import { EnvironmentsModule } from './modules/platform/environments/environment.module';
 import { ContractsModule } from './modules/platform/contracts/contract.module';
 import { ConfigurationModule } from './modules/platform/configuration/configuration.module';
+import { SnapshotsModule } from './modules/platform/snapshots/snapshot.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ConfigurationModule } from './modules/platform/configuration/configurat
     EnvironmentsModule,
     ContractsModule,
     ConfigurationModule,
+    SnapshotsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
