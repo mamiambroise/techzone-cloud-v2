@@ -1,23 +1,22 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const cookieParser = require('cookie-parser');
-
-const env = require('./config/env');
-// const routes = require('./routes');
-// const errorMiddleware = require('./middlewares/error.middleware');
+const config = require('./config/env');
+const routes = require('./routes');
+const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({ credentials: true, origin: env.corsOrigin }));
+app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json());
-app.use(cookieParser());
-app.use(morgan('dev'));
 
-// app.use('/api', routes);
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
-// app.use(errorMiddleware);
+app.use('/api/iam', routes);
+
+app.use((req, res, next) => {
+  res.status(404).json({ success: false, message: 'Route introuvable', code: 'NOT_FOUND' });
+});
+
+app.use(errorMiddleware);
 
 module.exports = app;
