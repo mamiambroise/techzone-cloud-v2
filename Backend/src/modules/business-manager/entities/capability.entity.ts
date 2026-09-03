@@ -7,6 +7,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { CapabilityStatus, CapabilitySourceType, CapabilityType, RiskLevel } from '../../../common/enums';
 import { FeatureCapability } from './feature-capability.entity';
 import { VersionCapability } from './version-capability.entity';
@@ -71,14 +72,14 @@ export class Capability {
   version: number;
 
   @OneToMany(() => FeatureCapability, (featureCapability) => featureCapability.capability)
-  featureCapabilities: FeatureCapability[];
+  featureCapabilities: Relation<FeatureCapability[]>;
 
   @OneToMany(() => VersionCapability, (versionCapability) => versionCapability.capability)
-  versionCapabilities: VersionCapability[];
+  versionCapabilities: Relation<VersionCapability[]>;
 
   @OneToMany(() => CapabilityDependency, (dependency) => dependency.capability)
-  dependencies: CapabilityDependency[];
+  dependencies: Relation<CapabilityDependency[]>;
 
   @OneToMany(() => CapabilityEntityRequirement, (requirement) => requirement.capability)
-  entityRequirements: CapabilityEntityRequirement[];
+  entityRequirements: Relation<CapabilityEntityRequirement[]>;
 }

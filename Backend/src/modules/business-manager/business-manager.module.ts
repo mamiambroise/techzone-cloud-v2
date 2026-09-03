@@ -38,20 +38,23 @@ import { RuntimeBridgeController } from './runtime/runtime-bridge.controller';
 import { RuntimeBridgeService } from './runtime/runtime-bridge.service';
 import { QualityController } from './quality/quality.controller';
 import { QualityService } from './quality/quality.service';
+import { AuthController } from './auth/auth.controller';
 
 @Module({
   imports: [
     JwtModule.registerAsync({
+      global: true,
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
+        secret: configService.get('app.jwtSecret', 'super-secret-key-change-me'),
         signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN', '7d'),
+          expiresIn: configService.get('app.jwtExpiresIn', '7d'),
         },
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [
+    AuthController,
     ApplicationController,
     LifecycleController,
     VersionController,

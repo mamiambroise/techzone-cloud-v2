@@ -1,6 +1,7 @@
 // PacksView.jsx — PM-CDC-02 Pack Definition Manager & Registry
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../../context/AppContext';
+import { EmptyState } from '../../common/EmptyState';
 import {
   Boxes,
   Layers,
@@ -92,7 +93,7 @@ export default function PacksView() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
-              PM-CDC-02 • Pack Definition Manager
+              Pack Manager
             </span>
             <span className="text-xs text-slate-500">
               {filteredPacks.length} / {packs.length} packs affichés
@@ -102,10 +103,10 @@ export default function PacksView() {
             <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
               <Boxes className="w-5 h-5" />
             </div>
-            Registre & Définition des Packs
+            Packs
           </h1>
           <p className="text-xs text-slate-600 max-w-3xl">
-            Gestion du cycle de vie des briques logicielles modulaires. Déclaration des identifiants uniques, métadonnées, catégorisations et accès direct aux versions.
+            Gérez les packs disponibles et ouvrez leurs versions.
           </p>
         </div>
 
@@ -115,7 +116,7 @@ export default function PacksView() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-xs flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>Nouveau Pack</span>
+            <span>Nouveau pack</span>
           </button>
         </div>
       </div>
@@ -200,13 +201,7 @@ export default function PacksView() {
 
       {/* 3. Packs Grid / Table View */}
       {filteredPacks.length === 0 ? (
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-500 space-y-3 shadow-xs">
-          <Boxes className="w-12 h-12 text-slate-400 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900">Aucun pack correspondant aux filtres</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Ajustez votre recherche ou réinitialisez les critères de filtrage pour afficher les packs disponibles.
-          </p>
-          <button
+        <EmptyState title={packs.length === 0 ? 'Aucun pack' : 'Aucun résultat'} description={packs.length === 0 ? 'Créez un pack pour commencer.' : 'Ajustez votre recherche ou réinitialisez les filtres.'} action={packs.length === 0 ? <button type="button" onClick={() => setIsNewModalOpen(true)} className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700">Nouveau pack</button> : <button
             onClick={() => {
               setSearchTerm('');
               setSelectedCategory('ALL');
@@ -216,8 +211,7 @@ export default function PacksView() {
             className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
           >
             Réinitialiser les filtres
-          </button>
-        </div>
+          </button>} />
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredPacks.map((pack) => (

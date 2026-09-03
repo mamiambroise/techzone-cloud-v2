@@ -187,7 +187,9 @@ export class DataModelService {
             }
         });
 
-        const primaryKeys = fields.filter((field) => field.primaryKey || field.name?.toLowerCase() === 'id');
+        // BM-CDC-03: a conventional field name is not enough to establish a
+        // database constraint. Primary-key intent must be explicit.
+        const primaryKeys = fields.filter((field) => field.primaryKey === true);
         if (primaryKeys.length === 0) {
             issues.push({
                 code: 'MISSING_PRIMARY_KEY',

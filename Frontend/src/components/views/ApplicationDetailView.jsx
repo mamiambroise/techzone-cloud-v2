@@ -28,8 +28,8 @@ import { useApp } from '../../context/AppContext';
 import { StatusBadge } from '../common/StatusBadge';
 import { EnvironmentBadge } from '../common/EnvironmentBadge';
 import { IconRenderer } from '../common/IconRenderer';
-import { ValidationEngine } from '../../lib/validationEngine';
 import { AuditTrail } from '../common/AuditTrail';
+import { formatDateTime } from '../../lib/formatDateTime';
 
 export function ApplicationDetailView({
   onOpenNewVersionModal,
@@ -103,13 +103,13 @@ export function ApplicationDetailView({
     });
   };
 
-  const handleRunValidation = () => {
+  const handleRunValidation = async () => {
     if (selectedVersion) {
-      const result = validateCurrentVersion(selectedVersion.id);
+      const result = await validateCurrentVersion(selectedVersion.id);
       showToast(
         result.valid
           ? 'Validation réussie (Score: 100%)'
-          : `Validation terminée : ${result.errors.length} erreurs bloquantes trouvées`,
+          : `Validation terminée : ${result.errors?.length || 0} erreurs bloquantes trouvées`,
         result.valid ? 'success' : 'warning'
       );
     }
@@ -412,7 +412,7 @@ export function ApplicationDetailView({
                     Créé par / Date
                   </span>
                   <span className="text-slate-700">
-                    {selectedApp.createdBy} • {new Date(selectedApp.createdAt).toLocaleDateString('fr-FR')}
+                    {selectedApp.createdBy} • {formatDateTime(selectedApp.createdAt)}
                   </span>
                 </div>
               </div>
@@ -502,10 +502,10 @@ export function ApplicationDetailView({
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-500">
-                      {new Date(ver.createdAt).toLocaleDateString('fr-FR')}
+                      {formatDateTime(ver.createdAt)}
                     </td>
                     <td className="py-3 px-4 text-slate-500">
-                      {ver.publishedAt ? new Date(ver.publishedAt).toLocaleDateString('fr-FR') : '—'}
+                      {formatDateTime(ver.publishedAt)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <button
@@ -532,7 +532,7 @@ export function ApplicationDetailView({
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="text-sm font-black text-slate-900">
-                Schéma de données (BM-P0.2 Data Model Manager)
+                Data Model
               </h3>
               <p className="text-xs text-slate-500">
                 Entités métier, relations, contraintes et index pour v{selectedVersion?.versionNumber}.

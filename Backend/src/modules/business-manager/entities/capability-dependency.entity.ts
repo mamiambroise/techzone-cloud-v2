@@ -7,6 +7,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { DependencyType } from '../../../common/enums';
 import { Capability } from './capability.entity';
 
@@ -33,9 +34,9 @@ export class CapabilityDependency {
 
   @ManyToOne(() => Capability, (capability) => capability.dependencies, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'capabilityId' })
-  capability: Capability;
+  capability: Relation<Capability>;
 
   @ManyToOne(() => Capability, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'dependencyCapabilityId' })
-  dependencyCapability: Capability;
+  dependencyCapability: Relation<Capability>;
 }

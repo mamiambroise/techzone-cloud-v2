@@ -17,7 +17,7 @@ export default function NewPackModuleModal({ isOpen, onClose, packVersionId }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
       showToast('Le nom du module est obligatoire.', 'error');
@@ -26,7 +26,7 @@ export default function NewPackModuleModal({ isOpen, onClose, packVersionId }) {
 
     setIsSubmitting(true);
     try {
-      const res = createPackModule({
+      const res = await createPackModule({
         packVersionId,
         name: name.trim(),
         shortName: shortName.trim() || name.trim(),

@@ -9,6 +9,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { DataModelStatus } from '../../../common/enums';
 import { ApplicationVersion } from './application-version.entity';
 import { DataModelSnapshot } from './data-model-snapshot.entity';
@@ -140,8 +141,8 @@ export class DataModelDefinition {
 
     @ManyToOne(() => ApplicationVersion, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'versionId' })
-    version: ApplicationVersion;
+    version: Relation<ApplicationVersion>;
 
     @OneToMany(() => DataModelSnapshot, (snapshot) => snapshot.model)
-    snapshots: DataModelSnapshot[];
+    snapshots: Relation<DataModelSnapshot[]>;
 }

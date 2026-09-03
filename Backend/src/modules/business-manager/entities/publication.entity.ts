@@ -7,6 +7,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { Environment, PublicationStatus, PublicationType } from '../../../common/enums';
 import { Application } from './application.entity';
 import { ApplicationVersion } from './application-version.entity';
@@ -48,9 +49,9 @@ export class Publication {
 
     @ManyToOne(() => Application, (application) => application.publications, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'applicationId' })
-    application: Application;
+    application: Relation<Application>;
 
     @ManyToOne(() => ApplicationVersion, (version) => version.publications, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'versionId' })
-    version: ApplicationVersion;
+    version: Relation<ApplicationVersion>;
 }

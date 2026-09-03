@@ -1,5 +1,5 @@
 // PackVersionsView.jsx — PM-CDC-03: Pack Versions, Validation Matrix & Sealed Manifests v1
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../../context/AppContext';
 import {
   Layers,
@@ -26,8 +26,9 @@ import {
 } from 'lucide-react';
 import StatusBadge from '../../StatusBadge';
 import NewPackVersionModal from './NewPackVersionModal';
+import { ConfirmDialog } from '../../common/ConfirmDialog';
 
-export default function PackVersionsView() {
+export default function PackVersionsView({ mode = 'versions' }) {
   const {
     packs,
     packVersions,
@@ -48,9 +49,16 @@ export default function PackVersionsView() {
   const [isValidating, setIsValidating] = useState(false);
   const [isGeneratingManifest, setIsGeneratingManifest] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishConfirmationOpen, setPublishConfirmationOpen] = useState(false);
   const [lastValidationReport, setLastValidationReport] = useState(null);
   const [manifestData, setManifestData] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
+
+  useEffect(() => {
+    if (mode === 'manifest') setActiveTab('manifest');
+    else if (mode === 'publication') setActiveTab('pipeline');
+    else if (mode === 'validation') setActiveTab('validation');
+  }, [mode]);
 
   // Selected pack & version
   const activePack = packs.find((p) => p.id === selectedPackId) || packs[0];
@@ -97,6 +105,7 @@ export default function PackVersionsView() {
     setIsPublishing(true);
     try {
       await publishPackVersion(activeVersion.id);
+      setPublishConfirmationOpen(false);
     } finally {
       setIsPublishing(false);
     }
@@ -146,14 +155,14 @@ export default function PackVersionsView() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-black text-slate-900">
-                  Versions & Pipeline de Release (PM-CDC-03)
+                  Versions
                 </h1>
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-cyan-100 text-cyan-800 border border-cyan-300">
                   SemVer 2.0.0
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Cycle de vie, matrice de validation, scellement cryptographique SHA-256 et publication des manifests.
+                Construisez, validez et publiez les versions du pack sélectionné.
               </p>
             </div>
           </div>
@@ -180,7 +189,7 @@ export default function PackVersionsView() {
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition-all shadow-md shadow-cyan-600/20"
             >
               <Plus className="w-4 h-4" />
-              <span>Nouvelle Version</span>
+              <span>Nouvelle version</span>
             </button>
           </div>
         </div>
@@ -481,7 +490,7 @@ export default function PackVersionsView() {
                     <div className="flex flex-wrap gap-2 pt-2">
                       {activeVersion.status !== 'PUBLISHED' && (
                         <button
-                          onClick={handlePublish}
+                          onClick={() => setPublishConfirmationOpen(true)}
                           disabled={isPublishing || activeVersion.validationStatus !== 'VALID'}
                           className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50 flex items-center gap-2"
                         >
@@ -527,6 +536,15 @@ export default function PackVersionsView() {
         isOpen={isNewVersionModalOpen}
         onClose={() => setIsNewVersionModalOpen(false)}
         targetPackId={activePack.id}
+      />
+      <ConfirmDialog
+        open={publishConfirmationOpen}
+        title="Publier cette version ?"
+        description={`La version ${activeVersion?.versionNumber || ''} sera scellée et exposée au Pack Runtime. Cette action modifie le cycle de vie persistant.`}
+        confirmLabel="Publier en production"
+        busy={isPublishing}
+        onConfirm={handlePublish}
+        onCancel={() => setPublishConfirmationOpen(false)}
       />
     </div>
   );

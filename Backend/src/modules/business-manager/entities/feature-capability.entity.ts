@@ -7,6 +7,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { Feature } from './feature.entity';
 import { Capability } from './capability.entity';
 
@@ -33,9 +34,9 @@ export class FeatureCapability {
 
   @ManyToOne(() => Feature, (feature) => feature.featureCapabilities, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'featureId' })
-  feature: Feature;
+  feature: Relation<Feature>;
 
   @ManyToOne(() => Capability, (capability) => capability.featureCapabilities, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'capabilityId' })
-  capability: Capability;
+  capability: Relation<Capability>;
 }

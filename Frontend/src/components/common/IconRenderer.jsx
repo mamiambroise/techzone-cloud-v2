@@ -1,5 +1,5 @@
 // IconRenderer.jsx — Safe Lucide icon registry resolver
-import React from 'react';
+import React from "react";
 import {
   ShoppingBag,
   Store,
@@ -41,7 +41,7 @@ import {
   GitBranch,
   History,
   Lock,
-} from 'lucide-react';
+} from "lucide-react";
 
 export const ICON_MAP = {
   ShoppingBag,
@@ -86,7 +86,7 @@ export const ICON_MAP = {
   Lock,
 };
 
-export function IconRenderer({ name, className = 'w-5 h-5' }) {
+export function IconRenderer({ name, className = "w-5 h-5" }) {
   const IconComponent = name && ICON_MAP[name] ? ICON_MAP[name] : Package;
   return <IconComponent className={className} />;
 }

@@ -7,6 +7,7 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { ApplicationStatus, Environment } from '../../../common/enums';
 import { ApplicationVersion } from './application-version.entity';
 import { Publication } from './publication.entity';
@@ -64,11 +65,11 @@ export class Application {
     version: number;
 
     @OneToMany(() => ApplicationVersion, (version) => version.application)
-    versions: ApplicationVersion[];
+    versions: Relation<ApplicationVersion[]>;
 
     @OneToMany(() => Publication, (publication) => publication.application)
-    publications: Publication[];
+    publications: Relation<Publication[]>;
 
     @OneToMany(() => ActivityEvent, (activity) => activity.application)
-    activities: ActivityEvent[];
+    activities: Relation<ActivityEvent[]>;
 }

@@ -1,5 +1,5 @@
 // ConfigurationView.jsx — Configuration & Metadata Manager (BM-CDC-06)
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   Sliders,
   Settings,
@@ -21,8 +21,8 @@ import {
   Trash2,
   HelpCircle,
   X,
-} from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+} from "lucide-react";
+import { useApp } from "../../context/AppContext";
 
 export function ConfigurationView() {
   const {
@@ -39,22 +39,22 @@ export function ConfigurationView() {
     isVersionReadOnly,
   } = useApp();
 
-  const [selectedScope, setSelectedScope] = useState('ALL'); // 'ALL' | 'APPLICATION' | 'APPLICATION_VERSION' | 'ENVIRONMENT'
+  const [selectedScope, setSelectedScope] = useState("ALL"); // 'ALL' | 'APPLICATION' | 'APPLICATION_VERSION' | 'ENVIRONMENT'
   const [revealedSecrets, setRevealedSecrets] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSection, setSelectedSection] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSection, setSelectedSection] = useState("ALL");
   const [isNewConfigModalOpen, setIsNewConfigModalOpen] = useState(false);
 
   const [configForm, setConfigForm] = useState({
-    code: '',
-    label: '',
-    section: 'Général',
-    dataType: 'STRING',
-    defaultValue: '',
-    scope: 'APPLICATION',
+    code: "",
+    label: "",
+    section: "Général",
+    dataType: "STRING",
+    defaultValue: "",
+    scope: "APPLICATION",
     isSecret: false,
     runtimeExposed: false,
-    description: '',
+    description: "",
   });
 
   const filteredConfigs = useMemo(() => {
@@ -63,54 +63,58 @@ export function ConfigurationView() {
         c.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.section.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchScope = selectedScope === 'ALL' || c.scope === selectedScope;
-      const matchSection = selectedSection === 'ALL' || c.section === selectedSection;
+      const matchScope = selectedScope === "ALL" || c.scope === selectedScope;
+      const matchSection =
+        selectedSection === "ALL" || c.section === selectedSection;
       return matchSearch && matchScope && matchSection;
     });
   }, [appConfigs, searchTerm, selectedScope, selectedSection]);
 
   const sections = useMemo(() => {
     const set = new Set(appConfigs.map((c) => c.section));
-    return ['ALL', ...Array.from(set)];
+    return ["ALL", ...Array.from(set)];
   }, [appConfigs]);
 
   const toggleSecretReveal = (code) => {
     setRevealedSecrets((prev) => ({ ...prev, [code]: !prev[code] }));
   };
 
-  const handleCreateConfigSubmit = (e) => {
+  const handleCreateConfigSubmit = async (e) => {
     e.preventDefault();
     if (!configForm.code) return;
-    const res = createConfig(configForm);
+    const res = await createConfig(configForm);
     if (res.success) {
       setIsNewConfigModalOpen(false);
       setConfigForm({
-        code: '',
-        label: '',
-        section: 'Général',
-        dataType: 'STRING',
-        defaultValue: '',
-        scope: 'APPLICATION',
+        code: "",
+        label: "",
+        section: "Général",
+        dataType: "STRING",
+        defaultValue: "",
+        scope: "APPLICATION",
         isSecret: false,
         runtimeExposed: false,
-        description: '',
+        description: "",
       });
     }
   };
 
   const handleExportEnvFile = () => {
     const envContent = filteredConfigs
-      .map((c) => `# ${c.label} (${c.scope})\n${c.code}=${c.isSecret ? '********' : c.storedValue || c.defaultValue}`)
-      .join('\n\n');
+      .map(
+        (c) =>
+          `# ${c.label} (${c.scope})\n${c.code}=${c.isSecret ? "********" : c.storedValue || c.defaultValue}`,
+      )
+      .join("\n\n");
 
-    const blob = new Blob([envContent], { type: 'text/plain' });
+    const blob = new Blob([envContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `.env.${selectedApp?.code || 'app'}.${selectedApp?.environment?.toLowerCase() || 'dev'}`;
+    a.download = `.env.${selectedApp?.code || "app"}.${selectedApp?.environment?.toLowerCase() || "dev"}`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Fichier d environnement exporté en toute sécurité.');
+    showToast("Fichier d environnement exporté en toute sécurité.");
   };
 
   return (
@@ -120,27 +124,28 @@ export function ConfigurationView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Configuration & Variables d'Environnement
+              Configuration
             </h1>
             <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-black uppercase">
               BM-CDC-06
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Paramétrage hiérarchique, typage strict, chiffrement des secrets et masquage au runtime.
+            Gérez les paramètres et variables d’environnement.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Target App Switcher */}
           <select
-            value={selectedApp?.id || ''}
+            value={selectedApp?.id || ""}
             onChange={(e) => setSelectedAppId(e.target.value)}
             className="h-10 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs cursor-pointer"
           >
             {applications.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} (v{a.publishedVersionNumber || a.currentVersionNumber || '1.0.0'})
+                {a.name} (v
+                {a.publishedVersionNumber || a.currentVersionNumber || "1.0.0"})
               </option>
             ))}
           </select>
@@ -171,7 +176,9 @@ export function ConfigurationView() {
             Variables Définies
           </span>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{appConfigs.length}</span>
+            <span className="text-3xl font-black text-slate-900">
+              {appConfigs.length}
+            </span>
             <span className="text-xs text-slate-400 font-semibold">clés</span>
           </div>
         </div>
@@ -196,7 +203,9 @@ export function ConfigurationView() {
             <span className="text-3xl font-black text-blue-600">
               {appConfigs.filter((c) => c.runtimeExposed).length}
             </span>
-            <span className="text-xs text-slate-400 font-semibold">publiques</span>
+            <span className="text-xs text-slate-400 font-semibold">
+              publiques
+            </span>
           </div>
         </div>
 
@@ -206,7 +215,9 @@ export function ConfigurationView() {
           </span>
           <div className="mt-2 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span className="text-sm font-black text-slate-900">100% Conforme</span>
+            <span className="text-sm font-black text-slate-900">
+              100% Conforme
+            </span>
           </div>
         </div>
       </div>
@@ -261,18 +272,29 @@ export function ConfigurationView() {
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 border-b border-slate-200/70">
             <tr>
-              <th className="px-4 py-3.5 font-bold text-slate-700">Paramètre / Clé</th>
-              <th className="px-4 py-3.5 font-bold text-slate-700">Scope & Type</th>
-              <th className="px-4 py-3.5 font-bold text-slate-700">Valeur Active</th>
+              <th className="px-4 py-3.5 font-bold text-slate-700">
+                Paramètre / Clé
+              </th>
+              <th className="px-4 py-3.5 font-bold text-slate-700">
+                Scope & Type
+              </th>
+              <th className="px-4 py-3.5 font-bold text-slate-700">
+                Valeur Active
+              </th>
               <th className="px-4 py-3.5 font-bold text-slate-700">Sécurité</th>
-              <th className="px-4 py-3.5 font-bold text-slate-700 text-right">Actions</th>
+              <th className="px-4 py-3.5 font-bold text-slate-700 text-right">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredConfigs.map((config) => {
               const isRevealed = revealedSecrets[config.code];
               return (
-                <tr key={config.code} className="hover:bg-slate-50/60 transition-colors">
+                <tr
+                  key={config.code}
+                  className="hover:bg-slate-50/60 transition-colors"
+                >
                   <td className="px-4 py-3.5">
                     <div className="font-extrabold text-slate-900 flex items-center gap-2">
                       <span>{config.label}</span>
@@ -280,7 +302,9 @@ export function ConfigurationView() {
                         {config.code}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">{config.description}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      {config.description}
+                    </div>
                   </td>
 
                   <td className="px-4 py-3.5">
@@ -298,20 +322,28 @@ export function ConfigurationView() {
                     {config.isSecret ? (
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-slate-700">
-                          {isRevealed ? config.storedValue || config.defaultValue : '••••••••••••••••'}
+                          {isRevealed
+                            ? config.storedValue || config.defaultValue
+                            : "••••••••••••••••"}
                         </span>
                         <button
                           onClick={() => toggleSecretReveal(config.code)}
                           className="text-slate-400 hover:text-slate-700"
                         >
-                          {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-amber-600" />}
+                          {isRevealed ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5 text-amber-600" />
+                          )}
                         </button>
                       </div>
                     ) : (
                       <input
-                        type={config.dataType === 'NUMBER' ? 'number' : 'text'}
+                        type={config.dataType === "NUMBER" ? "number" : "text"}
                         defaultValue={config.storedValue ?? config.defaultValue}
-                        onBlur={(e) => updateConfigValue(config.code, e.target.value)}
+                        onBlur={(e) =>
+                          updateConfigValue(config.code, e.target.value)
+                        }
                         disabled={isVersionReadOnly}
                         className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono w-48 disabled:opacity-50"
                       />
@@ -324,7 +356,9 @@ export function ConfigurationView() {
                         <Lock className="w-2.5 h-2.5" /> SECRET
                       </span>
                     ) : (
-                      <span className="text-slate-400 text-[11px]">Standard</span>
+                      <span className="text-slate-400 text-[11px]">
+                        Standard
+                      </span>
                     )}
                   </td>
 
@@ -358,42 +392,62 @@ export function ConfigurationView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-sm font-black text-slate-900">Déclarer un nouveau paramètre de configuration</h3>
-              <button onClick={() => setIsNewConfigModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 className="text-sm font-black text-slate-900">
+                Déclarer un nouveau paramètre de configuration
+              </h3>
+              <button
+                onClick={() => setIsNewConfigModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateConfigSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Clé technique (UPPERCASE_SNAKE) *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Clé technique (UPPERCASE_SNAKE) *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: STRIPE_PUBLIC_KEY, MAX_RETRIES"
                   value={configForm.code}
-                  onChange={(e) => setConfigForm({ ...configForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
+                  onChange={(e) =>
+                    setConfigForm({
+                      ...configForm,
+                      code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                    })
+                  }
                   className="w-full px-3 py-2 border rounded-xl text-xs font-mono font-bold text-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Libellé compréhensible</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Libellé compréhensible
+                </label>
                 <input
                   type="text"
                   placeholder="Ex: Clé publique Stripe"
                   value={configForm.label}
-                  onChange={(e) => setConfigForm({ ...configForm, label: e.target.value })}
+                  onChange={(e) =>
+                    setConfigForm({ ...configForm, label: e.target.value })
+                  }
                   className="w-full px-3 py-2 border rounded-xl text-xs font-bold text-slate-800"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Type de donnée</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Type de donnée
+                  </label>
                   <select
                     value={configForm.dataType}
-                    onChange={(e) => setConfigForm({ ...configForm, dataType: e.target.value })}
+                    onChange={(e) =>
+                      setConfigForm({ ...configForm, dataType: e.target.value })
+                    }
                     className="w-full px-3 py-2 border rounded-xl text-xs font-bold text-slate-800"
                   >
                     <option value="STRING">STRING</option>
@@ -405,10 +459,14 @@ export function ConfigurationView() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Scope</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Scope
+                  </label>
                   <select
                     value={configForm.scope}
-                    onChange={(e) => setConfigForm({ ...configForm, scope: e.target.value })}
+                    onChange={(e) =>
+                      setConfigForm({ ...configForm, scope: e.target.value })
+                    }
                     className="w-full px-3 py-2 border rounded-xl text-xs font-bold text-slate-800"
                   >
                     <option value="APPLICATION">APPLICATION</option>
@@ -419,12 +477,19 @@ export function ConfigurationView() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Valeur par défaut</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Valeur par défaut
+                </label>
                 <input
                   type="text"
                   placeholder="Valeur par défaut..."
                   value={configForm.defaultValue}
-                  onChange={(e) => setConfigForm({ ...configForm, defaultValue: e.target.value })}
+                  onChange={(e) =>
+                    setConfigForm({
+                      ...configForm,
+                      defaultValue: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border rounded-xl text-xs font-mono text-slate-800"
                 />
               </div>
@@ -434,7 +499,12 @@ export function ConfigurationView() {
                   <input
                     type="checkbox"
                     checked={configForm.isSecret}
-                    onChange={(e) => setConfigForm({ ...configForm, isSecret: e.target.checked })}
+                    onChange={(e) =>
+                      setConfigForm({
+                        ...configForm,
+                        isSecret: e.target.checked,
+                      })
+                    }
                     className="rounded text-amber-600"
                   />
                   <span>Variable Secrète (Chiffrement AES)</span>

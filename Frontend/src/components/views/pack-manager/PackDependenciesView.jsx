@@ -85,14 +85,14 @@ export default function PackDependenciesView() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-black text-slate-900">
-                  Graphe & Résolution des Dépendances (PM-CDC-06)
+                  Dependencies
                 </h1>
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-300">
-                  SAT Resolver & Cycle Detection
+                  Vérification
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Vérification des plages SemVer, détection des cycles et résolution multi-packs déterministe.
+                Vérifiez les dépendances et les conflits.
               </p>
             </div>
           </div>
@@ -241,18 +241,16 @@ export default function PackDependenciesView() {
               <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="px-4 py-3">Pack Cible</th>
-                  <th className="px-4 py-3">Plage SemVer</th>
+                  <th className="px-4 py-3">Version</th>
                   <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Statut Résolution</th>
-                  <th className="px-4 py-3">Version Résolue</th>
-                  <th className="px-4 py-3">Description</th>
+                  <th className="px-4 py-3">Statut</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {scopedPackDependencies.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400 italic">
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">
                       Aucune dépendance déclarée pour ce pack. Ce pack est totalement autonome.
                     </td>
                   </tr>
@@ -305,15 +303,9 @@ export default function PackDependenciesView() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 font-mono text-[11px] text-cyan-700 font-bold">
-                          {dep.resolvedVersion ? `v${dep.resolvedVersion}` : '—'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 max-w-xs truncate">
-                          {dep.description || '—'}
-                        </td>
                         <td className="px-4 py-3 text-right">
                           <button
-                            onClick={() => deletePackDependency(dep.id)}
+                            onClick={() => window.confirm('Supprimer cette dépendance ?') && deletePackDependency(dep.id)}
                             className="p-1 rounded text-slate-400 hover:text-rose-600 transition-colors"
                             title="Supprimer la dépendance"
                           >

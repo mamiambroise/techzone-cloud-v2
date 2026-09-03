@@ -1,23 +1,25 @@
 // Toast.jsx — Animated floating notification
-import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
+import React from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { CheckCircle2, AlertTriangle, XCircle, Info, X } from "lucide-react";
 
 export function Toast({ toast, onClose }) {
   if (!toast) return null;
 
   const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />,
+    success: (
+      <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+    ),
     warning: <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />,
     error: <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />,
     info: <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />,
   };
 
   const bgColors = {
-    success: 'bg-slate-900 border-emerald-500/30 text-white',
-    warning: 'bg-slate-900 border-amber-500/30 text-white',
-    error: 'bg-slate-900 border-red-500/30 text-white',
-    info: 'bg-slate-900 border-blue-500/30 text-white',
+    success: "bg-slate-900 border-emerald-500/30 text-white",
+    warning: "bg-slate-900 border-amber-500/30 text-white",
+    error: "bg-slate-900 border-red-500/30 text-white",
+    info: "bg-slate-900 border-blue-500/30 text-white",
   };
 
   return (
@@ -35,7 +37,9 @@ export function Toast({ toast, onClose }) {
           }`}
         >
           {icons[toast.type] || icons.info}
-          <div className="flex-1 text-xs font-semibold pr-2">{toast.message}</div>
+          <div className="flex-1 text-xs font-semibold pr-2">
+            {toast.message}
+          </div>
           {onClose && (
             <button
               onClick={onClose}

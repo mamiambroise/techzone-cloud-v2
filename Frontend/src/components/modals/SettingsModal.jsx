@@ -36,11 +36,11 @@ export function SettingsModal({ isOpen, onClose }) {
             </span>
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-700">Nom du Tenant :</span>
-              <span className="font-bold text-slate-900">{currentTenant.name}</span>
+              <span className="font-bold text-slate-900">{currentTenant?.name || 'Tenant non chargé'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-700">Tenant ID :</span>
-              <span className="font-mono text-slate-500">{currentTenant.id}</span>
+              <span className="font-mono text-slate-500">{currentTenant?.id || 'Contexte indisponible'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-700">Utilisateur actif :</span>

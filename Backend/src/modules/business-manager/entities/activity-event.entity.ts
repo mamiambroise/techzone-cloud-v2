@@ -7,6 +7,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { ResultType } from '../../../common/enums';
 import { Application } from './application.entity';
 
@@ -57,5 +58,5 @@ export class ActivityEvent {
 
     @ManyToOne(() => Application, (application) => application.activities, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'applicationId' })
-    application?: Application;
+    application?: Relation<Application>;
 }

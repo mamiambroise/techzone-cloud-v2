@@ -1,29 +1,36 @@
 // NewPackRuleModal.jsx — PM-CDC-07: Modal to build composition & integrity rules
-import React, { useState } from 'react';
-import { useApp } from '../../../context/AppContext';
-import { Sliders, X, Plus, Trash2, CheckCircle2, Sparkles } from 'lucide-react';
+import React, { useState } from "react";
+import { useApp } from "../../../context/AppContext";
+import { Sliders, X, Plus, Trash2, CheckCircle2, Sparkles } from "lucide-react";
 
-export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packCode }) {
+export default function NewPackRuleModal({
+  isOpen,
+  onClose,
+  packVersionId,
+  packCode,
+}) {
   const { createPackRule, showToast } = useApp();
 
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [description, setDescription] = useState('');
-  const [ruleType, setRuleType] = useState('COMPOSITION'); // 'COMPOSITION' | 'VALIDATION' | 'INTEGRITY' | 'DYNAMIC_CONFIG'
-  const [trigger, setTrigger] = useState('ON_FEATURE_CHANGE'); // 'ON_FEATURE_CHANGE' | 'ON_MODULE_ENABLE' | 'GLOBAL_EVAL'
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [description, setDescription] = useState("");
+  const [ruleType, setRuleType] = useState("COMPOSITION"); // 'COMPOSITION' | 'VALIDATION' | 'INTEGRITY' | 'DYNAMIC_CONFIG'
+  const [trigger, setTrigger] = useState("ON_FEATURE_CHANGE"); // 'ON_FEATURE_CHANGE' | 'ON_MODULE_ENABLE' | 'GLOBAL_EVAL'
   const [priority, setPriority] = useState(10);
   const [isActive, setIsActive] = useState(true);
 
   // Condition
-  const [combinator, setCombinator] = useState('AND');
+  const [combinator, setCombinator] = useState("AND");
   const [predicates, setPredicates] = useState([
-    { field: `features.stock.serial`, operator: 'EQUALS', value: 'true' },
+    { field: `features.stock.serial`, operator: "EQUALS", value: "true" },
   ]);
 
   // Effect
-  const [effectType, setEffectType] = useState('REQUIRE_MODULE'); // 'REQUIRE_MODULE' | 'ENABLE_FEATURE' | 'DISABLE_FEATURE' | 'INCOMPATIBLE_CONFLICT'
-  const [effectTarget, setEffectTarget] = useState('stock_movements');
-  const [effectMessage, setEffectMessage] = useState('Nécessite le module de mouvements.');
+  const [effectType, setEffectType] = useState("REQUIRE_MODULE"); // 'REQUIRE_MODULE' | 'ENABLE_FEATURE' | 'DISABLE_FEATURE' | 'INCOMPATIBLE_CONFLICT'
+  const [effectTarget, setEffectTarget] = useState("stock_movements");
+  const [effectMessage, setEffectMessage] = useState(
+    "Nécessite le module de mouvements.",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -31,7 +38,7 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
   const handleAddPredicate = () => {
     setPredicates((prev) => [
       ...prev,
-      { field: 'features.', operator: 'EQUALS', value: 'true' },
+      { field: "features.", operator: "EQUALS", value: "true" },
     ]);
   };
 
@@ -41,20 +48,20 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
 
   const handleUpdatePredicate = (idx, field, val) => {
     setPredicates((prev) =>
-      prev.map((p, i) => (i === idx ? { ...p, [field]: val } : p))
+      prev.map((p, i) => (i === idx ? { ...p, [field]: val } : p)),
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
-      showToast('Le nom de la règle est requis.', 'error');
+      showToast("Le nom de la règle est requis.", "error");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = createPackRule({
+      const res = await createPackRule({
         packVersionId,
         packCode,
         name: name.trim(),
@@ -93,8 +100,12 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold">Nouvelle Règle de Composition</h3>
-              <p className="text-xs text-slate-300">PM-CDC-07 Moteur Déterministe</p>
+              <h3 className="text-base font-bold">
+                Nouvelle Règle de Composition
+              </h3>
+              <p className="text-xs text-slate-300">
+                PM-CDC-07 Moteur Déterministe
+              </p>
             </div>
           </div>
           <button
@@ -106,7 +117,10 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700"
+        >
           <div>
             <label className="block text-xs font-bold text-slate-800 mb-1">
               Nom de la Règle <span className="text-rose-500">*</span>
@@ -116,7 +130,10 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                if (!code) setCode(`rule_${e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '_')}`);
+                if (!code)
+                  setCode(
+                    `rule_${e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "_")}`,
+                  );
               }}
               placeholder="ex: Sérialisation requiert module Mouvements"
               required
@@ -126,7 +143,9 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">Type</label>
+              <label className="block text-xs font-bold text-slate-800 mb-1">
+                Type
+              </label>
               <select
                 value={ruleType}
                 onChange={(e) => setRuleType(e.target.value)}
@@ -140,7 +159,9 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">Déclencheur</label>
+              <label className="block text-xs font-bold text-slate-800 mb-1">
+                Déclencheur
+              </label>
               <select
                 value={trigger}
                 onChange={(e) => setTrigger(e.target.value)}
@@ -153,7 +174,9 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">Priorité</label>
+              <label className="block text-xs font-bold text-slate-800 mb-1">
+                Priorité
+              </label>
               <input
                 type="number"
                 value={priority}
@@ -167,7 +190,9 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
           <div className="p-3.5 bg-purple-50/50 border border-purple-200 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xs text-purple-900 uppercase">SI (Condition)</span>
+                <span className="font-extrabold text-xs text-purple-900 uppercase">
+                  SI (Condition)
+                </span>
                 <select
                   value={combinator}
                   onChange={(e) => setCombinator(e.target.value)}
@@ -193,13 +218,17 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
                   <input
                     type="text"
                     value={pred.field}
-                    onChange={(e) => handleUpdatePredicate(idx, 'field', e.target.value)}
+                    onChange={(e) =>
+                      handleUpdatePredicate(idx, "field", e.target.value)
+                    }
                     placeholder="Champ (ex: features.stock.serial)"
                     className="flex-1 px-2.5 py-1.5 rounded-lg border border-purple-200 text-xs font-mono bg-white"
                   />
                   <select
                     value={pred.operator}
-                    onChange={(e) => handleUpdatePredicate(idx, 'operator', e.target.value)}
+                    onChange={(e) =>
+                      handleUpdatePredicate(idx, "operator", e.target.value)
+                    }
                     className="px-2 py-1.5 rounded-lg border border-purple-200 text-xs bg-white font-bold"
                   >
                     <option value="EQUALS">==</option>
@@ -211,7 +240,9 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
                   <input
                     type="text"
                     value={pred.value}
-                    onChange={(e) => handleUpdatePredicate(idx, 'value', e.target.value)}
+                    onChange={(e) =>
+                      handleUpdatePredicate(idx, "value", e.target.value)
+                    }
                     placeholder="Valeur (ex: true)"
                     className="w-24 px-2.5 py-1.5 rounded-lg border border-purple-200 text-xs font-mono bg-white"
                   />
@@ -231,24 +262,38 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
 
           {/* Effect Builder (THEN) */}
           <div className="p-3.5 bg-cyan-50/50 border border-cyan-200 rounded-xl space-y-3">
-            <span className="font-extrabold text-xs text-cyan-900 uppercase">ALORS (Effet / Mutation)</span>
+            <span className="font-extrabold text-xs text-cyan-900 uppercase">
+              ALORS (Effet / Mutation)
+            </span>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Type d'effet</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Type d'effet
+                </label>
                 <select
                   value={effectType}
                   onChange={(e) => setEffectType(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-cyan-300 text-xs bg-white font-bold text-cyan-900"
                 >
-                  <option value="REQUIRE_MODULE">REQUIRE_MODULE (Module Obligatoire)</option>
-                  <option value="ENABLE_FEATURE">ENABLE_FEATURE (Activer Feature)</option>
-                  <option value="DISABLE_FEATURE">DISABLE_FEATURE (Désactiver Feature)</option>
-                  <option value="INCOMPATIBLE_CONFLICT">INCOMPATIBLE_CONFLICT (Conflit Bloquant)</option>
+                  <option value="REQUIRE_MODULE">
+                    REQUIRE_MODULE (Module Obligatoire)
+                  </option>
+                  <option value="ENABLE_FEATURE">
+                    ENABLE_FEATURE (Activer Feature)
+                  </option>
+                  <option value="DISABLE_FEATURE">
+                    DISABLE_FEATURE (Désactiver Feature)
+                  </option>
+                  <option value="INCOMPATIBLE_CONFLICT">
+                    INCOMPATIBLE_CONFLICT (Conflit Bloquant)
+                  </option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Cible de l'effet</label>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Cible de l'effet
+                </label>
                 <input
                   type="text"
                   value={effectTarget}
@@ -260,7 +305,9 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">Message d'explication</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                Message d'explication
+              </label>
               <input
                 type="text"
                 value={effectMessage}
@@ -285,7 +332,7 @@ export default function NewPackRuleModal({ isOpen, onClose, packVersionId, packC
               disabled={isSubmitting}
               className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold transition-all shadow-md shadow-purple-600/20 disabled:opacity-50"
             >
-              {isSubmitting ? 'Création...' : 'Créer la Règle'}
+              {isSubmitting ? "Création..." : "Créer la Règle"}
             </button>
           </div>
         </form>

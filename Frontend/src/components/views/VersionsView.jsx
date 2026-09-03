@@ -20,6 +20,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { EnvironmentBadge } from '../common/EnvironmentBadge';
 import { IconRenderer } from '../common/IconRenderer';
 import { AuditTrail } from '../common/AuditTrail';
+import { formatDateTime } from '../../lib/formatDateTime';
 
 export function VersionsView({ onOpenNewVersionModal, onOpenPublishModal, onOpenRollbackModal }) {
   const {
@@ -59,10 +60,10 @@ export function VersionsView({ onOpenNewVersionModal, onOpenPublishModal, onOpen
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Matrice des Versions (BM-CDC-00 / P0.1)
+            Versions & Lifecycle
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Suivi des versions SemVer, snapshots déterministes, statut d homologation, publications et audit.
+            Suivez les versions, validations et publications.
           </p>
         </div>
 
@@ -206,7 +207,7 @@ export function VersionsView({ onOpenNewVersionModal, onOpenPublishModal, onOpen
                         </td>
 
                         <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
-                          {new Date(ver.createdAt).toLocaleDateString('fr-FR')}
+                          {formatDateTime(ver.createdAt)}
                         </td>
 
                         <td className="py-3.5 px-4 text-right">

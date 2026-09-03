@@ -3,7 +3,6 @@ export {
   StatusBadge,
   STATUS_CONFIG,
   getStatusBadgeConfig,
-} from '../StatusBadge';
+} from "../StatusBadge";
 
-export { StatusBadge as default } from '../StatusBadge';
-
+export { StatusBadge as default } from "../StatusBadge";

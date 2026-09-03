@@ -7,6 +7,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { DataModelDefinition } from './data-model.entity';
 
 @Entity({ name: 'data_model_snapshots' })
@@ -39,5 +40,5 @@ export class DataModelSnapshot {
 
     @ManyToOne(() => DataModelDefinition, (model) => model.snapshots, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'modelId' })
-    model: DataModelDefinition;
+    model: Relation<DataModelDefinition>;
 }

@@ -8,6 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { Capability } from './capability.entity';
 import { ApplicationVersion } from './application-version.entity';
 
@@ -43,9 +44,9 @@ export class VersionCapability {
 
   @ManyToOne(() => ApplicationVersion, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'applicationVersionId' })
-  applicationVersion: ApplicationVersion;
+  applicationVersion: Relation<ApplicationVersion>;
 
   @ManyToOne(() => Capability, (capability) => capability.versionCapabilities, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'capabilityId' })
-  capability: Capability;
+  capability: Relation<Capability>;
 }

@@ -143,7 +143,10 @@ export class RuntimeBridgeService {
       blockingIssues,
       warnings,
       issues: [...issues, ...warnings],
-      contractStatus: ready ? 'VALID' : 'INVALID',
+      // BM-CDC-07: contract validity and runtime readiness are independent.
+      // A valid contract can still be unready because a required binding is
+      // disabled; callers inspect `ready` and `blockingIssues` for that state.
+      contractStatus: 'VALID',
       snapshotStatus: 'READY',
       compatibilityStatus: 'COMPATIBLE',
       manifestHash: manifest.manifestHash,

@@ -1,183 +1,57 @@
-// Breadcrumb.jsx — Dynamic navigational breadcrumbs
-import React from 'react';
-import { Home, ChevronRight, Boxes, GitBranch } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ChevronRight, Home } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { findNavigationItem } from '../../lib/navigationConfig';
+
+const legacyLabels = {
+  overview: 'Dashboard',
+  applications: 'Applications',
+  'new-application': 'Nouvelle application',
+  'application-detail': 'Détails de l’application',
+  versions: 'Versions & Lifecycle',
+  'data-model': 'Data Model Manager',
+  features: 'Feature & Capability Manager',
+  menus: 'Menu Engine',
+  configuration: 'Configuration & Metadata',
+  integrations: 'Integrations',
+  validation: 'Validation & Quality',
+  audit: 'Audit',
+  'e2e-bench': 'Diagnostics',
+  'iam-overview': 'Auth + IAM + Context',
+  'iam-users': 'Utilisateurs & Identités',
+  'iam-roles': 'Rôles & Permissions',
+  'iam-tenants': 'Organisations & Tenants',
+  'pack-overview': 'Pack Manager',
+  packs: 'Packs',
+  'pack-versions': 'Versions de packs',
+  'pack-modules': 'Modules',
+  'pack-dependencies': 'Dépendances',
+  'pack-rules': 'Règles & Conditions',
+  'pack-runtime': 'Pack Runtime',
+};
 
 export function Breadcrumb() {
   const { currentView, setCurrentView, selectedApp } = useApp();
+  const [pathname, setPathname] = useState(() => window.location.pathname || '/dashboard');
+
+  useEffect(() => {
+    const handlePopState = () => setPathname(window.location.pathname || '/dashboard');
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const route = findNavigationItem(pathname);
+  const label = route?.label || legacyLabels[currentView] || 'Dashboard';
+  const isDashboard = route?.path === '/dashboard' || currentView === 'overview';
+  const isApplicationDetail = currentView === 'application-detail';
 
   return (
-    <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-3 select-none flex-wrap">
-      <button
-        onClick={() => setCurrentView('overview')}
-        className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
-      >
-        <Home className="w-3.5 h-3.5" />
-        <span>Business Manager</span>
+    <nav aria-label="Fil d’Ariane" className="mb-5 flex min-h-5 items-center gap-1.5 text-[11px] font-medium text-slate-400">
+      <button type="button" onClick={() => setCurrentView('overview')} className="inline-flex items-center gap-1.5 rounded-md px-1 py-1 transition-colors hover:bg-white hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Retour au dashboard">
+        <Home className="h-3.5 w-3.5" aria-hidden="true" />
+        <span className="hidden sm:inline">Dashboard</span>
       </button>
-
-      {currentView === 'overview' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Vue d ensemble</span>
-        </>
-      )}
-
-      {currentView === 'applications' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Applications</span>
-        </>
-      )}
-
-      {currentView === 'new-application' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <button
-            onClick={() => setCurrentView('applications')}
-            className="hover:text-blue-600 transition-colors"
-          >
-            Applications
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Nouvelle application</span>
-        </>
-      )}
-
-      {currentView === 'application-detail' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <button
-            onClick={() => setCurrentView('applications')}
-            className="hover:text-blue-600 transition-colors"
-          >
-            Applications
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold truncate max-w-xs">
-            {selectedApp?.name || 'Détails de l application'}
-          </span>
-        </>
-      )}
-
-      {currentView === 'versions' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Versions</span>
-        </>
-      )}
-
-      {currentView === 'data-model' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Data Model Manager (P0.2)</span>
-        </>
-      )}
-
-      {currentView === 'features' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Feature & Capability Manager (P0.3)</span>
-        </>
-      )}
-
-      {currentView === 'menus' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Menu Engine & Navigation (P0.4)</span>
-        </>
-      )}
-
-      {currentView === 'configuration' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Configuration & Metadata (P0.5)</span>
-        </>
-      )}
-
-      {currentView === 'integrations' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Integration & Runtime Bridge (P0.6)</span>
-        </>
-      )}
-
-      {currentView === 'validation' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Validation & Qualité</span>
-        </>
-      )}
-
-      {currentView === 'audit' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Journal d Audit & Traçabilité</span>
-        </>
-      )}
-
-      {currentView === 'e2e-bench' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Banc de Test & Homologation E2E</span>
-        </>
-      )}
-
-      {/* Pack Manager Breadcrumbs */}
-      {currentView === 'pack-overview' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-cyan-600 font-bold">Pack Manager</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Cockpit & Supervision (PM-CDC-01)</span>
-        </>
-      )}
-
-      {currentView === 'packs' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-cyan-600 font-bold">Pack Manager</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Registre & Définition des Packs (PM-CDC-02)</span>
-        </>
-      )}
-
-      {currentView === 'pack-versions' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-cyan-600 font-bold">Pack Manager</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Versions & Manifests Scellés (PM-CDC-03)</span>
-        </>
-      )}
-
-      {currentView === 'pack-dependencies' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-cyan-600 font-bold">Pack Manager</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Graphe & Matrice de Dépendances (PM-CDC-06)</span>
-        </>
-      )}
-
-      {currentView === 'pack-rules' && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-cyan-600 font-bold">Pack Manager</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Moteur de Règles & Conditions (PM-CDC-07)</span>
-        </>
-      )}
-
-      {/* Auth & IAM Breadcrumbs (IAM-CDC-01) */}
-      {(currentView === 'iam-overview' || currentView === 'iam-users' || currentView === 'iam-roles' || currentView === 'iam-tenants') && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-purple-600 font-bold">Auth • IAM + Context</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-extrabold">Global Status & Gouvernance IAM (IAM-CDC-01)</span>
-        </>
-      )}
+      {!isDashboard && <><ChevronRight className="h-3.5 w-3.5 text-slate-300" aria-hidden="true" /><span className="truncate font-semibold text-slate-700">{isApplicationDetail ? selectedApp?.name || label : label}</span></>}
     </nav>
   );
 }

@@ -51,6 +51,7 @@ export function DataModelView() {
   const [isNewEntityModalOpen, setIsNewEntityModalOpen] = useState(false);
   const [isNewFieldModalOpen, setIsNewFieldModalOpen] = useState(false);
   const [isNewRelationModalOpen, setIsNewRelationModalOpen] = useState(false);
+  const [isSavingEntity, setIsSavingEntity] = useState(false);
 
   // Form states
   const [entityForm, setEntityForm] = useState({
@@ -109,13 +110,15 @@ export function DataModelView() {
     showToast('Schéma de données (BM-CDC-03) exporté au format JSON.');
   };
 
-  const handleCreateEntitySubmit = (e) => {
+  const handleCreateEntitySubmit = async (e) => {
     e.preventDefault();
     if (!entityForm.name) {
       showToast('Le nom de l entité est requis', 'error');
       return;
     }
-    const res = createEntity(entityForm);
+    setIsSavingEntity(true);
+    const res = await createEntity(entityForm);
+    setIsSavingEntity(false);
     if (res.success) {
       setSelectedEntityId(res.data.id);
       setIsNewEntityModalOpen(false);
@@ -166,14 +169,14 @@ export function DataModelView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Data Model Manager
+              Data Model
             </h1>
             <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
               BM-CDC-03
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Moteur de modélisation entités-relations, champs typés, contraintes et planificateur de migrations DDL.
+            Définissez les entités, champs et relations de l’application.
           </p>
         </div>
 
@@ -201,11 +204,11 @@ export function DataModelView() {
 
           <button
             onClick={() => setIsNewEntityModalOpen(true)}
-            disabled={isVersionReadOnly}
+            disabled={isVersionReadOnly || isSavingEntity}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs disabled:opacity-50 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Nouvelle Entité</span>
+            <span>{isSavingEntity ? 'Enregistrement…' : 'Nouvelle Entité'}</span>
           </button>
         </div>
       </div>

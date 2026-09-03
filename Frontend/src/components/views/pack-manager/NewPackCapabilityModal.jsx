@@ -16,7 +16,7 @@ export default function NewPackCapabilityModal({ isOpen, onClose, packVersionId,
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!capabilityCode.trim() || !name.trim()) {
       showToast('Le code et le nom de la capability sont obligatoires.', 'error');
@@ -25,7 +25,7 @@ export default function NewPackCapabilityModal({ isOpen, onClose, packVersionId,
 
     setIsSubmitting(true);
     try {
-      const res = createPackCapability({
+      const res = await createPackCapability({
         packVersionId,
         packCode,
         capabilityCode: capabilityCode.trim(),

@@ -16,7 +16,7 @@ export default function NewPackFeatureModal({ isOpen, onClose, moduleId, packVer
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
       showToast('Le nom de la fonctionnalité est requis.', 'error');
@@ -25,7 +25,7 @@ export default function NewPackFeatureModal({ isOpen, onClose, moduleId, packVer
 
     setIsSubmitting(true);
     try {
-      const res = createPackFeature({
+      const res = await createPackFeature({
         moduleId,
         packVersionId,
         name: name.trim(),

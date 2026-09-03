@@ -15,16 +15,16 @@ export function NewVersionModal({ isOpen, onClose }) {
   const currentVer = selectedApp.publishedVersionNumber || selectedApp.currentVersionNumber || '1.0.0';
   const calculatedNextVer = bumpSemVer(currentVer, bumpType);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newVer = createNewVersion(selectedApp.id, {
+    const result = await createNewVersion(selectedApp.id, {
       versionNumber: calculatedNextVer,
       changelog: changelog.trim() || `Création de la version v${calculatedNextVer} (${bumpType})`,
       environment: 'DEVELOPMENT',
     });
 
-    if (newVer) {
-      showToast(`Nouvelle version v${newVer.versionNumber} créée avec succès`);
+    if (result?.success) {
+      showToast(`Nouvelle version v${result.data.versionNumber} créée avec succès`);
       onClose();
     }
   };

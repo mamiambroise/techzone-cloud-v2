@@ -64,6 +64,7 @@ export class CreateApplicationDto {
     example: 'user-uuid',
     description: 'ID de l\'utilisateur créateur',
   })
+  @IsOptional()
   @IsUUID()
   createdBy: string;
 }

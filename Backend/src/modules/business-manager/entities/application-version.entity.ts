@@ -8,6 +8,7 @@ import {
     Index,
     JoinColumn,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { ApplicationVersionStatus } from '../../../common/enums';
 import { Application } from './application.entity';
 import { Publication } from './publication.entity';
@@ -52,8 +53,8 @@ export class ApplicationVersion {
 
     @ManyToOne(() => Application, (application) => application.versions, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'applicationId' })
-    application: Application;
+    application: Relation<Application>;
 
     @OneToMany(() => Publication, (publication) => publication.version)
-    publications: Publication[];
+    publications: Relation<Publication[]>;
 }

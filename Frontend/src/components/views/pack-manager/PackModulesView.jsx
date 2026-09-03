@@ -101,7 +101,7 @@ export default function PackModulesView() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Arborescence modulaire, feature flags et registre des interfaces techniques pour le pack.
+                Organisez les modules et les features du pack.
               </p>
             </div>
           </div>

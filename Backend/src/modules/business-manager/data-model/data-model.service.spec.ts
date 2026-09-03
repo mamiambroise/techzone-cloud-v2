@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { DataModelService } from './data-model.service';
 
 describe('DataModelService', () => {

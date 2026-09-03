@@ -69,7 +69,7 @@ export function NewApplicationView() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
@@ -90,7 +90,7 @@ export function NewApplicationView() {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const newApp = createApplication({
+    const result = await createApplication({
       name: formData.name.trim(),
       shortName: formData.shortName.trim() || formData.name.trim(),
       code: formData.code.toUpperCase().trim(),
@@ -103,8 +103,8 @@ export function NewApplicationView() {
       initialVersionNumber: formData.initialVersionNumber || '0.1.0',
     });
 
-    if (newApp) {
-      showToast(`Application ${newApp.name} créée avec succès`);
+    if (result?.success) {
+      showToast(`Application ${result.data.name} créée avec succès`);
       setCurrentView('applications');
     }
   };

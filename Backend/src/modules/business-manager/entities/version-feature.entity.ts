@@ -8,6 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { VersionFeatureState } from '../../../common/enums';
 import { ApplicationVersion } from './application-version.entity';
 import { Feature } from './feature.entity';
@@ -44,9 +45,9 @@ export class VersionFeature {
 
   @ManyToOne(() => ApplicationVersion, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'applicationVersionId' })
-  applicationVersion: ApplicationVersion;
+  applicationVersion: Relation<ApplicationVersion>;
 
   @ManyToOne(() => Feature, (feature) => feature.versionFeatures, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'featureId' })
-  feature: Feature;
+  feature: Relation<Feature>;
 }

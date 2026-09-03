@@ -27,6 +27,8 @@ import { useApp } from '../../context/AppContext';
 import { StatusBadge } from '../common/StatusBadge';
 import { EnvironmentBadge } from '../common/EnvironmentBadge';
 import { IconRenderer } from '../common/IconRenderer';
+import { EmptyState } from '../common/EmptyState';
+import { formatDateTime } from '../../lib/formatDateTime';
 
 export function ApplicationsView({ onOpenCloneModal, onOpenTransitionModal }) {
   const {
@@ -329,15 +331,11 @@ export function ApplicationsView({ onOpenCloneModal, onOpenTransitionModal }) {
 
       {/* 4. Main Data Table or Grid */}
       {paginatedApps.length === 0 ? (
-        <div className="p-12 rounded-2xl bg-white border border-slate-200/80 shadow-xs text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-            <Boxes className="w-6 h-6" />
-          </div>
-          <h3 className="text-sm font-extrabold text-slate-900">Aucune application trouvée</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Aucun résultat ne correspond à vos filtres actuels. Modifiez vos critères de recherche.
-          </p>
-        </div>
+        <EmptyState
+          title={applications.length === 0 ? 'Aucune application' : 'Aucun résultat'}
+          description={applications.length === 0 ? 'Créez une application pour commencer.' : 'Modifiez vos critères de recherche.'}
+          action={applications.length === 0 && currentRole !== 'VIEWER' ? <button type="button" onClick={() => setCurrentView('new-application')} className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700">Nouvelle application</button> : undefined}
+        />
       ) : viewMode === 'table' ? (
         <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
@@ -431,7 +429,7 @@ export function ApplicationsView({ onOpenCloneModal, onOpenTransitionModal }) {
 
                     {/* Dernière mise à jour */}
                     <td className="py-3.5 px-4 text-slate-500 text-[11px] whitespace-nowrap">
-                      {new Date(app.updatedAt).toLocaleDateString('fr-FR')} {new Date(app.updatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      {formatDateTime(app.updatedAt)}
                     </td>
 
                     {/* Actions Menu */}
@@ -551,7 +549,7 @@ export function ApplicationsView({ onOpenCloneModal, onOpenTransitionModal }) {
 
               <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-[11px] text-slate-400 font-medium">
-                  {new Date(app.updatedAt).toLocaleDateString('fr-FR')}
+                  {formatDateTime(app.updatedAt)}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
                   <span>Ouvrir</span>

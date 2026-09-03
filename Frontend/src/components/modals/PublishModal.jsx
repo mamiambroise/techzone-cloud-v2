@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Sparkles, ShieldCheck, CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { SnapshotService } from '../../lib/snapshotService';
 
 export function PublishModal({ isOpen, onClose }) {
   const { selectedApp, selectedVersion, publishVersion, showToast } = useApp();
@@ -11,13 +10,14 @@ export function PublishModal({ isOpen, onClose }) {
 
   if (!isOpen || !selectedApp || !selectedVersion) return null;
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     setIsPublishing(true);
-    setTimeout(() => {
-      publishVersion(selectedVersion.id, targetEnv);
+    try {
+      const result = await publishVersion(selectedVersion.id, targetEnv);
+      if (result?.success) onClose();
+    } finally {
       setIsPublishing(false);
-      onClose();
-    }, 600);
+    }
   };
 
   return (

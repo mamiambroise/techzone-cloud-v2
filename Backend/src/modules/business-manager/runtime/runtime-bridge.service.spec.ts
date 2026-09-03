@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { RuntimeBridgeService } from './runtime-bridge.service';
 
 describe('RuntimeBridgeService', () => {

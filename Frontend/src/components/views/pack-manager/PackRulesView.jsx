@@ -91,14 +91,14 @@ export default function PackRulesView() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-black text-slate-900">
-                  Moteur de Règles & Conditions (PM-CDC-07)
+                  Rules & Conditions
                 </h1>
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-300">
-                  Moteur Déterministe
+                  Composition
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Règles de composition conditionnelle, contraintes d'intégrité et simulateur dry-run.
+                Définissez les conditions de composition du pack.
               </p>
             </div>
           </div>

@@ -96,7 +96,7 @@ export default function NewPackModal({ isOpen, onClose }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -106,7 +106,7 @@ export default function NewPackModal({ isOpen, onClose }) {
       .map((t) => t.trim().toLowerCase())
       .filter(Boolean);
 
-    const result = createPack({
+    const result = await createPack({
       name,
       code,
       shortName,

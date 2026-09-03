@@ -7,6 +7,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { FeatureStatus, FeatureSourceType } from '../../../common/enums';
 import { FeatureCapability } from './feature-capability.entity';
 import { VersionFeature } from './version-feature.entity';
@@ -62,8 +63,8 @@ export class Feature {
   version: number;
 
   @OneToMany(() => FeatureCapability, (featureCapability) => featureCapability.feature)
-  featureCapabilities: FeatureCapability[];
+  featureCapabilities: Relation<FeatureCapability[]>;
 
   @OneToMany(() => VersionFeature, (versionFeature) => versionFeature.feature)
-  versionFeatures: VersionFeature[];
+  versionFeatures: Relation<VersionFeature[]>;
 }

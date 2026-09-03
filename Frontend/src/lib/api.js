@@ -1,110 +1,33 @@
 // Techzone Cloud — REST API client (Backend NestJS).
 // Base URL is proxied by Vite at "/api" → backend in dev.
-// Auth: signed JWT (HS256) generated client-side; the backend's AuthGuard
-// verifies it with the shared JWT_SECRET. No backend /auth endpoint is used.
+// Auth: the NestJS backend is the sole JWT issuer. The browser never receives
+// or embeds the signing secret.
 
-import { signJwt, getSharedSecret, isJwtExpired } from './jwt';
+import { isJwtExpired } from "./jwt";
 
-const ACCESS_TOKEN_KEY = 'bm_api_access_token';
-const TOKEN_PAYLOAD_KEY = 'bm_api_token_payload';
-
-const ROLE_PERMISSIONS = {
-  ADMIN: [
-    'business.application.read', 'business.application.create', 'business.application.update',
-    'business.application.clone', 'business.application.archive',
-    'business.application.version.read', 'business.application.version.create',
-    'business.application.validate', 'business.application.publish', 'business.application.rollback',
-    'business.application.audit.read',
-    'business.application.data-model.read', 'business.application.data-model.write',
-    'business.application.data-model.validate',
-    'business.feature.read', 'business.feature.create', 'business.feature.update', 'business.feature.archive',
-    'business.capability.read', 'business.capability.create', 'business.capability.update', 'business.capability.archive',
-    'business.feature.mapping.manage', 'business.capability.dependency.manage', 'business.capability.requirement.manage',
-    'business.version.feature.manage', 'business.version.capability.manage',
-    'business.feature.impact.read', 'business.feature.validation.run', 'business.feature.snapshot.read',
-  ],
-  BUILDER: [
-    'business.application.read', 'business.application.create', 'business.application.update',
-    'business.application.version.read', 'business.application.version.create',
-    'business.application.data-model.read', 'business.application.data-model.write',
-    'business.feature.read', 'business.feature.create', 'business.feature.update',
-    'business.capability.read',
-    'business.version.feature.manage', 'business.version.capability.manage',
-  ],
-  VIEWER: [
-    'business.application.read',
-    'business.application.version.read',
-    'business.application.audit.read',
-    'business.application.data-model.read',
-    'business.feature.read',
-    'business.capability.read',
-    'business.feature.snapshot.read',
-  ],
-};
-
-const DEMO_USERS = {
-  'admin@techzone.io': { id: 'usr_admin_01', name: 'Super Administrateur', role: 'ADMIN' },
-  'builder@techzone.io': { id: 'usr_builder_02', name: 'Studio Builder Techzone', role: 'BUILDER' },
-  'guest@techzone.io': { id: 'usr_viewer_03', name: 'Lecteur Invité Entreprise', role: 'VIEWER' },
-};
-
-export function resolveRoleFromEmail(email) {
-  const norm = (email || '').toLowerCase().trim();
-  if (DEMO_USERS[norm]) return DEMO_USERS[norm].role;
-  if (norm.includes('builder')) return 'BUILDER';
-  if (norm.includes('viewer') || norm.includes('guest')) return 'VIEWER';
-  return 'ADMIN';
-}
-
-export function resolveUserFromEmail(email, name) {
-  const norm = (email || '').toLowerCase().trim();
-  const known = DEMO_USERS[norm];
-  if (known) return { id: known.id, email: norm, name: name || known.name, role: known.role };
-  return {
-    id: `usr_${norm.replace(/[^a-z0-9]/g, '').slice(0, 12) || 'local'}`,
-    email: norm,
-    name: name || norm.split('@')[0],
-    role: resolveRoleFromEmail(norm),
-  };
-}
-
-function safeRead(key) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeWrite(key, value) {
-  try {
-    if (value === null || value === undefined) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
-  } catch {
-    /* ignore */
-  }
-}
+let accessTokenInMemory = null;
+let tokenPayloadInMemory = null;
 
 export function setSession({ email, name, role }) {
-  const user = resolveUserFromEmail(email, name);
-  const finalRole = role || user.role;
-  const payload = {
-    sub: user.id,
-    email: user.email,
-    name: user.name,
-    role: finalRole,
-    permissions: ROLE_PERMISSIONS[finalRole] || [],
-    tenantId: 'tenant-techzone-01',
-  };
-  return signJwt(payload, { secret: getSharedSecret() }).then((accessToken) => {
-    safeWrite(ACCESS_TOKEN_KEY, accessToken);
-    safeWrite(TOKEN_PAYLOAD_KEY, JSON.stringify(payload));
-    return { accessToken, user: { ...user, role: finalRole, permissions: payload.permissions, tenantId: payload.tenantId } };
+  return request("/v1/auth/session", {
+    method: "POST",
+    body: { email, name },
+  }).then(({ accessToken, user }) => {
+    accessTokenInMemory = accessToken;
+    tokenPayloadInMemory = {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      permissions: user.permissions,
+      tenantId: user.tenantId,
+    };
+    return { accessToken, user };
   });
 }
 
 export function getAccessToken() {
-  const token = safeRead(ACCESS_TOKEN_KEY);
+  const token = accessTokenInMemory;
   if (!token) return null;
   if (isJwtExpired(token)) {
     clearAccessToken();
@@ -114,41 +37,38 @@ export function getAccessToken() {
 }
 
 export function getTokenPayload() {
-  const raw = safeRead(TOKEN_PAYLOAD_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  return tokenPayloadInMemory;
 }
 
 export function clearAccessToken() {
-  safeWrite(ACCESS_TOKEN_KEY, null);
-  safeWrite(TOKEN_PAYLOAD_KEY, null);
+  accessTokenInMemory = null;
+  tokenPayloadInMemory = null;
 }
 
 export function getApiBaseUrl() {
-  return import.meta.env.VITE_API_URL || '/api';
+  return import.meta.env.VITE_API_URL || "/api";
 }
 
 export class ApiError extends Error {
   constructor(message, status, payload) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.payload = payload;
   }
 }
 
-async function request(path, { method = 'GET', body, headers = {}, query, signal } = {}) {
+async function request(
+  path,
+  { method = "GET", body, headers = {}, query, signal } = {},
+) {
   const base = getApiBaseUrl();
-  let url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  let url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
 
   if (query) {
     const qs = new URLSearchParams();
     Object.entries(query).forEach(([k, v]) => {
-      if (v === undefined || v === null || v === '') return;
+      if (v === undefined || v === null || v === "") return;
       qs.append(k, String(v));
     });
     const search = qs.toString();
@@ -156,7 +76,7 @@ async function request(path, { method = 'GET', body, headers = {}, query, signal
   }
 
   const finalHeaders = {
-    Accept: 'application/json',
+    Accept: "application/json",
     ...headers,
   };
 
@@ -167,8 +87,9 @@ async function request(path, { method = 'GET', body, headers = {}, query, signal
 
   let payload;
   if (body !== undefined && body !== null) {
-    finalHeaders['Content-Type'] = finalHeaders['Content-Type'] || 'application/json';
-    payload = typeof body === 'string' ? body : JSON.stringify(body);
+    finalHeaders["Content-Type"] =
+      finalHeaders["Content-Type"] || "application/json";
+    payload = typeof body === "string" ? body : JSON.stringify(body);
   }
 
   const res = await fetch(url, {
@@ -176,7 +97,7 @@ async function request(path, { method = 'GET', body, headers = {}, query, signal
     headers: finalHeaders,
     body: payload,
     signal,
-    credentials: 'include',
+    credentials: "include",
   });
 
   const text = await res.text();
@@ -191,7 +112,9 @@ async function request(path, { method = 'GET', body, headers = {}, query, signal
 
   if (!res.ok) {
     const message =
-      (data && (data.message || (Array.isArray(data.message) ? data.message.join(', ') : null))) ||
+      (data &&
+        (data.message ||
+          (Array.isArray(data.message) ? data.message.join(", ") : null))) ||
       res.statusText ||
       `HTTP ${res.status}`;
     throw new ApiError(message, res.status, data);
@@ -200,48 +123,242 @@ async function request(path, { method = 'GET', body, headers = {}, query, signal
   return data;
 }
 
+const unwrap = (response) => response?.data ?? response;
+
 export const api = {
-  get: (path, options) => request(path, { ...options, method: 'GET' }),
-  post: (path, body, options) => request(path, { ...options, method: 'POST', body }),
-  patch: (path, body, options) => request(path, { ...options, method: 'PATCH', body }),
-  put: (path, body, options) => request(path, { ...options, method: 'PUT', body }),
-  del: (path, options) => request(path, { ...options, method: 'DELETE' }),
+  get: (path, options) => request(path, { ...options, method: "GET" }),
+  post: (path, body, options) =>
+    request(path, { ...options, method: "POST", body }),
+  patch: (path, body, options) =>
+    request(path, { ...options, method: "PATCH", body }),
+  put: (path, body, options) =>
+    request(path, { ...options, method: "PUT", body }),
+  del: (path, options) => request(path, { ...options, method: "DELETE" }),
 
   // Applications
-  listApplications: (query = {}) => request('/v1/business-manager/applications', { query }),
+  listApplications: (query = {}) =>
+    request("/v1/business-manager/applications", { query }),
   getApplication: (id) => request(`/v1/business-manager/applications/${id}`),
-  createApplication: (payload) => request('/v1/business-manager/applications', { method: 'POST', body: payload }),
-  updateApplication: (id, payload) => request(`/v1/business-manager/applications/${id}`, { method: 'PATCH', body: payload }),
-  archiveApplication: (id) => request(`/v1/business-manager/applications/${id}/archive`, { method: 'POST' }),
-  dashboardStats: () => request('/v1/business-manager/applications/stats'),
-  recentApplications: () => request('/v1/business-manager/applications/recent'),
+  createApplication: (payload) =>
+    request("/v1/business-manager/applications", {
+      method: "POST",
+      body: payload,
+    }),
+  updateApplication: (id, payload) =>
+    request(`/v1/business-manager/applications/${id}`, {
+      method: "PATCH",
+      body: payload,
+    }),
+  archiveApplication: (id) =>
+    request(`/v1/business-manager/applications/${id}/archive`, {
+      method: "POST",
+    }),
+  transitionApplication: (id, targetStatus) =>
+    request(`/v1/business-manager/applications/${id}/transition`, {
+      method: "POST",
+      body: { targetStatus },
+    }).then(unwrap),
+  dashboardStats: () => request("/v1/business-manager/applications/stats"),
+  recentApplications: () => request("/v1/business-manager/applications/recent"),
 
   // Versions
   listVersions: (applicationId) =>
     request(`/v1/business-manager/applications/${applicationId}/versions`),
   getVersion: (applicationId, versionId) =>
-    request(`/v1/business-manager/applications/${applicationId}/versions/${versionId}`),
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}`,
+    ),
   getVersionSnapshot: (applicationId, versionId) =>
-    request(`/v1/business-manager/applications/${applicationId}/versions/${versionId}/snapshot`),
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}/snapshot`,
+    ),
+  createBusinessVersion: (applicationId, payload) =>
+    request(`/v1/business-manager/applications/${applicationId}/versions`, {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  validateBusinessVersion: (applicationId, versionId) =>
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}/validate`,
+      { method: "POST" },
+    ).then(unwrap),
+  publishBusinessVersion: (applicationId, versionId, environment) =>
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}/publish`,
+      { method: "POST", body: { environment } },
+    ).then(unwrap),
+  rollbackBusinessVersion: (applicationId, versionId, environment) =>
+    request(`/v1/business-manager/applications/${applicationId}/rollback`, {
+      method: "POST",
+      body: { versionId, environment },
+    }).then(unwrap),
 
   // Activity / Audit
   listActivity: (applicationId, query = {}) =>
-    request(`/v1/business-manager/applications/${applicationId}/activity`, { query }),
+    request(`/v1/business-manager/applications/${applicationId}/activity`, {
+      query,
+    }),
   recentActivity: (applicationId) =>
-    request(`/v1/business-manager/applications/${applicationId}/activity/recent`),
+    request(
+      `/v1/business-manager/applications/${applicationId}/activity/recent`,
+    ),
 
   // Features & Capabilities
-  listFeatures: (query = {}) => request('/v1/business-manager/features', { query }),
-  listCapabilities: (query = {}) => request('/v1/business-manager/capabilities', { query }),
+  listFeatures: (query = {}) =>
+    request("/v1/business-manager/features", { query }),
+  listCapabilities: (query = {}) =>
+    request("/v1/business-manager/capabilities", { query }),
 
   // Menus
-  listMenus: (query = {}) => request('/v1/business-manager/menus', { query }),
+  listMenus: (query = {}) => request("/v1/business-manager/menus", { query }),
 
   // Configuration
   listConfigDefinitions: (query = {}) =>
-    request('/v1/business-manager/configuration/definitions', { query }),
+    request("/v1/business-manager/configuration/definitions", { query }),
+  listRuntimeIntegrations: () => request("/v1/business-manager/integrations"),
+
+  // Data Model Manager
+  listDataModels: (applicationId, versionId) =>
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}/models`,
+    ),
+  getDataModel: (applicationId, versionId, modelId) =>
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}/models/${modelId}`,
+    ),
+  createDataModel: (applicationId, versionId, payload) =>
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}/models`,
+      { method: "POST", body: payload },
+    ).then(unwrap),
+  validateDataModel: (applicationId, versionId, modelId) =>
+    request(
+      `/v1/business-manager/applications/${applicationId}/versions/${versionId}/models/${modelId}/validate`,
+      { method: "POST" },
+    ).then(unwrap),
+  runQualityCampaign: (versionId, mode) =>
+    request(
+      `/v1/business-manager/application-versions/${versionId}/quality/campaigns`,
+      { method: "POST", body: { mode } },
+    ).then(unwrap),
+  listQualityCampaigns: (versionId) =>
+    request(`/v1/business-manager/application-versions/${versionId}/quality/campaigns`).then(unwrap),
+  getQualityGate: (versionId) =>
+    request(`/v1/business-manager/application-versions/${versionId}/quality/gate`).then(unwrap),
+  getQualityReport: (campaignId) =>
+    request(`/v1/business-manager/quality/campaigns/${campaignId}/report`).then(unwrap),
+
+  // Pack Manager (PM-CDC-01..07)
+  packDashboard: () => request("/pack-manager/dashboard").then(unwrap),
+  listPacks: (query = {}) =>
+    request("/pack-manager/packs", { query }).then(unwrap),
+  getPack: (id) => request(`/pack-manager/packs/${id}`).then(unwrap),
+  createPack: (payload) =>
+    request("/pack-manager/packs", { method: "POST", body: payload }).then(
+      unwrap,
+    ),
+  updatePack: (id, payload) =>
+    request(`/pack-manager/packs/${id}`, {
+      method: "PATCH",
+      body: payload,
+    }).then(unwrap),
+  archivePack: (id, reason) =>
+    request(`/pack-manager/packs/${id}/archive`, {
+      method: "POST",
+      body: { reason },
+    }).then(unwrap),
+  restorePack: (id) =>
+    request(`/pack-manager/packs/${id}/restore`, { method: "POST" }).then(
+      unwrap,
+    ),
+  listPackVersions: (packId) =>
+    request(`/pack-manager/packs/${packId}/versions`).then(unwrap),
+  createPackVersion: (packId, payload) =>
+    request(`/pack-manager/packs/${packId}/versions`, {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  updatePackVersion: (id, payload) =>
+    request(`/pack-manager/versions/${id}`, {
+      method: "PATCH",
+      body: payload,
+    }).then(unwrap),
+  addPackModule: (versionId, payload) =>
+    request(`/pack-manager/versions/${versionId}/modules`, {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  listPackModules: (versionId) =>
+    request(`/pack-manager/versions/${versionId}/modules`).then(unwrap),
+  addPackFeature: (versionId, payload) =>
+    request(`/pack-manager/versions/${versionId}/features`, {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  listPackFeatures: (versionId) =>
+    request(`/pack-manager/versions/${versionId}/features`).then(unwrap),
+  createPackCapability: (payload) =>
+    request("/pack-manager/capabilities", {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  listPackCapabilities: () =>
+    request("/pack-manager/capabilities").then(unwrap),
+  addPackDependency: (versionId, payload) =>
+    request(`/pack-manager/versions/${versionId}/dependencies`, {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  listPackDependencies: (versionId) =>
+    request(`/pack-manager/versions/${versionId}/dependencies`).then(unwrap),
+  addPackRule: (versionId, payload) =>
+    request(`/pack-manager/versions/${versionId}/rules`, {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  listPackRules: (versionId) =>
+    request(`/pack-manager/versions/${versionId}/rules`).then(unwrap),
+  validatePackVersion: (versionId) =>
+    request(`/pack-manager/versions/${versionId}/validate`, {
+      method: "POST",
+    }).then(unwrap),
+  generatePackManifest: (versionId) =>
+    request(`/pack-manager/versions/${versionId}/manifest`, {
+      method: "POST",
+    }).then(unwrap),
+  publishPackVersion: (versionId) =>
+    request(`/pack-manager/versions/${versionId}/publish`, {
+      method: "POST",
+    }).then(unwrap),
+
+  // Pack Runtime (PR-CDC-00..07)
+  resolveRuntime: (payload) =>
+    request("/runtime/resolve", { method: "POST", body: payload }).then(unwrap),
+  runtimeDashboard: () => request("/runtime/dashboard").then(unwrap),
+  listRuntimeResolutions: () => request("/runtime/resolutions").then(unwrap),
+  getRuntimeResolution: (id) =>
+    request(`/runtime/resolutions/${id}`).then(unwrap),
+  getEffectiveManifest: (resolutionId) =>
+    request(`/runtime/resolutions/${resolutionId}/effective-manifest`).then(
+      unwrap,
+    ),
+  getRuntimeDiagnostics: (resolutionId) =>
+    request(`/runtime/resolutions/${resolutionId}/diagnostics`).then(unwrap),
+  getRuntimeCacheStatus: () => request("/runtime/cache/status").then(unwrap),
+  listRuntimeCacheEntries: () => request("/runtime/cache/entries").then(unwrap),
+  invalidateRuntimeCache: (payload) =>
+    request("/runtime/cache/invalidate", {
+      method: "POST",
+      body: payload,
+    }).then(unwrap),
+  getRuntimeProvidersHealth: () =>
+    request("/runtime/providers/health").then(unwrap),
+  getRuntimeResilienceStatus: () =>
+    request("/runtime/resilience/status").then(unwrap),
+  reresolveRuntime: (id) =>
+    request(`/runtime/resolutions/${id}/reresolve`, { method: "POST" }).then(
+      unwrap,
+    ),
 };
 
 export default api;
-
-export { ACCESS_TOKEN_KEY, TOKEN_PAYLOAD_KEY };
