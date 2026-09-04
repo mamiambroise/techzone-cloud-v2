@@ -60,11 +60,11 @@ describe('RuntimeBridgeService', () => {
         };
 
         const db: any = {
-            getRepository: jest.fn((entity) => repositories[entity.name] ?? {
+            getRepository: jest.fn((entity: any) => repositories[entity.name as keyof typeof repositories] ?? {
                 find: jest.fn(async () => []),
                 findOne: jest.fn(async () => null),
-                create: jest.fn((value) => value),
-                save: jest.fn(async (value) => value),
+                create: jest.fn((value: any) => value),
+                save: jest.fn(async (value: any) => value),
             }),
         };
 
@@ -73,7 +73,7 @@ describe('RuntimeBridgeService', () => {
 
     it('builds a manifest without exposing secrets and keeps a deterministic hash', async () => {
         const service = buildService();
-        const manifest = await service.manifest('version-1', 'DEV', 'WEB');
+        const manifest = await service.manifest('version-1', 'DEV', 'WEB') as any;
 
         expect(manifest.applicationVersion.id).toBe('version-1');
         expect(manifest.applicationId).toBe('app-1');
