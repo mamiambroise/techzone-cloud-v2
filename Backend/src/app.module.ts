@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { dataSourceOptions } from './config/data-source';
 import { BusinessManagerModule } from './modules/business-manager/business-manager.module';
+import { PackManagerModule } from './modules/business-manager/pack-manager/pack-manager.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { BusinessManagerModule } from './modules/business-manager/business-manag
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     BusinessManagerModule,
+    PackManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
