@@ -9,6 +9,8 @@ import { EnvironmentsModule } from './modules/platform/environments/environment.
 import { ContractsModule } from './modules/platform/contracts/contract.module';
 import { ConfigurationModule } from './modules/platform/configuration/configuration.module';
 import { SnapshotsModule } from './modules/platform/snapshots/snapshot.module';
+import { PlatformModule } from './modules/platform/platform.module';
+import { platform } from 'os';
 
 @Module({
   imports: [
@@ -19,6 +21,7 @@ import { SnapshotsModule } from './modules/platform/snapshots/snapshot.module';
     ContractsModule,
     ConfigurationModule,
     SnapshotsModule,
+    PlatformModule,
   ],
   controllers: [AppController],
   providers: [AppService],

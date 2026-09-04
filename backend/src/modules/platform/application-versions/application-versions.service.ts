@@ -25,6 +25,14 @@ export class ApplicationVersionsService {
     });
   }
 
+  async findAll() {
+    return this.prisma.applicationVersion.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
   async create(applicationId: string, dto: CreateApplicationVersionDto) {
     await this.ensureApplicationExists(applicationId);
 

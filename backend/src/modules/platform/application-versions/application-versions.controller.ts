@@ -13,6 +13,11 @@ export class ApplicationVersionsController {
     return this.versionsService.findByApplication(applicationId);
   }
 
+  @Get('api/platform/versions')
+  findAll() {
+    return this.versionsService.findAll();
+  }
+
   @Post('api/platform/applications/:id/versions')
   create(
     @Param('id') applicationId: string,

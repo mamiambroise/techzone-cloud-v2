@@ -32,6 +32,11 @@ export class ContractsController {
     return this.contractsService.lock(id);
   }
 
+  @Get(':id/history')
+  history(@Param('id') id: string) {
+    return this.contractsService.getHistory(id);
+  }
+
   @Get(':id/compatibility')
   compatibility(@Param('id') id: string) {
     return this.contractsService.getCompatibility(id);

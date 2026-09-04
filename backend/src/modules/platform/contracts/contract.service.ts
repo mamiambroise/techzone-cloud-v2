@@ -369,6 +369,19 @@ export class ContractsService {
     };
   }
 
+  async getHistory(id: string) {
+    await this.findOne(id);
+
+    return this.prisma.contractHistory.findMany({
+      where: {
+        contractId: id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
   private detectBreakingChange(
     previousSchema: Prisma.JsonValue,
     currentSchema: Prisma.JsonValue,
