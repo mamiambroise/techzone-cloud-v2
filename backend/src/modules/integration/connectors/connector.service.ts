@@ -37,7 +37,11 @@ export class ConnectorService {
     });
 
     if (existing) {
-      throw new Error(`Connector with code "${data.code}" already exists`);
+      throw new IntegrationException(
+        IntegrationErrorCode.INTEGRATION_CONTRACT_UNSUPPORTED,
+        `Connector with code "${data.code}" already exists`,
+        HttpStatus.CONFLICT,
+      );
     }
 
     return this.prisma.connector.create({
@@ -82,7 +86,11 @@ export class ConnectorService {
     });
 
     if (!connector) {
-      throw new Error(`Connector "${id}" not found`);
+      throw new IntegrationException(
+        IntegrationErrorCode.INTEGRATION_PROVIDER_UNAVAILABLE,
+        `Connector "${id}" not found`,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return this.prisma.connector.update({
@@ -103,7 +111,11 @@ export class ConnectorService {
     });
 
     if (!connector) {
-      throw new Error(`Connector "${id}" not found`);
+      throw new IntegrationException(
+        IntegrationErrorCode.INTEGRATION_PROVIDER_UNAVAILABLE,
+        `Connector "${id}" not found`,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     // Passage en validation
@@ -128,13 +140,16 @@ export class ConnectorService {
         },
       });
 
-      throw new Error(`Connector "${connector.code}" has no configuration`);
+      throw new IntegrationException(
+        IntegrationErrorCode.INTEGRATION_PAYLOAD_INVALID,
+        `Connector "${connector.code}" has no configuration`,
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    // Validation minimale de la configuration
     if (
       connector.providerType === 'REST' &&
-      typeof config.baseUrl !== 'string'
+      typeof (config.endpoint ?? config.baseUrl) !== 'string'
     ) {
       await this.prisma.connector.update({
         where: { id },
@@ -144,7 +159,11 @@ export class ConnectorService {
         },
       });
 
-      throw new Error(`Connector "${connector.code}" requires a valid baseUrl`);
+      throw new IntegrationException(
+        IntegrationErrorCode.INTEGRATION_PAYLOAD_INVALID,
+        `Connector "${connector.code}" requires a valid endpoint`,
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     // Configuration valide
@@ -163,7 +182,11 @@ export class ConnectorService {
     });
 
     if (!connector) {
-      throw new Error(`Connector "${id}" not found`);
+      throw new IntegrationException(
+        IntegrationErrorCode.INTEGRATION_PROVIDER_UNAVAILABLE,
+        `Connector "${id}" not found`,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     const configuration =
