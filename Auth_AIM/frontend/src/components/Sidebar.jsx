@@ -41,9 +41,9 @@ const menuSections = [
           },
           { path: '/organisations', label: 'Organisations & Tenants', disabled: true },
           { path: '/roles', label: 'Rôles & Permissions', disabled: true },
-          { path: '/policies', label: 'Accès & Policies', disabled: true },
-          { path: '/sessions', label: 'Sessions & Sécurité', disabled: true },
-          { path: '/contexts', label: 'Contextes', disabled: true },
+          { path: '/policies', label: 'Accès & Policies' },
+          { path: '/sessions', label: 'Sessions & Sécurité' },
+          { path: '/contexts', label: 'Contextes' },
         ],
       },
       {

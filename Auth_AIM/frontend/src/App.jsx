@@ -14,11 +14,13 @@ import RolesPage from './pages/Roles/RolesPage';
 import PoliciesPage from './pages/Policies/PoliciesPage';
 import SessionsPage from './pages/Sessions/SessionsPage';
 import ContextsPage from './pages/Contexts/ContextsPage';
+import InvitationPage from './pages/Invitation/InvitationPage';
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/invitation/:token" element={<InvitationPage />} />
 
       <Route
         element={

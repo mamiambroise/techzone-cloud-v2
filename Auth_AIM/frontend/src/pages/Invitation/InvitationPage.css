@@ -1,0 +1,187 @@
+.invitation-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: var(--color-bg);
+  transition: background-color 0.3s ease;
+}
+
+.invitation-card {
+  width: 100%;
+  max-width: 28rem;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-table-border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.invitation-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  transition: color 0.3s ease;
+}
+
+.invitation-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-top: -0.75rem;
+  transition: color 0.3s ease;
+}
+
+.invitation-context {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.invitation-context-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background-color: var(--color-table-header);
+  border: 1px solid var(--color-table-border);
+  border-radius: var(--radius-md);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.invitation-context-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  transition: color 0.3s ease;
+}
+
+.invitation-context-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  transition: color 0.3s ease;
+}
+
+.invitation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.invitation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.invitation-field-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  transition: color 0.3s ease;
+}
+
+.invitation-field-input {
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+}
+
+.invitation-field-input:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.invitation-field-input::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.invitation-error {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-error);
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  text-align: center;
+  animation: invitationErrorIn 0.35s ease-out both;
+}
+
+[data-theme="dark"] .invitation-error {
+  background-color: #7f1d1d;
+  border-color: #991b1b;
+}
+
+.invitation-submit {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.invitation-submit:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+.invitation-submit:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+.invitation-submit:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.invitation-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.invitation-loading {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+@keyframes invitationErrorIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  40% {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+  70% {
+    transform: translateX(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invitation-error,
+  .invitation-submit {
+    animation: none !important;
+    transition: none !important;
+  }
+}

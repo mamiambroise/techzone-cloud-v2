@@ -1,52 +1,144 @@
-const MOCK_USERS = [
-  { id: 1, username: 'admin@gmail.com', password: 'admin123', displayName: 'Administrateur' },
-  { id: 2, username: 'user', password: 'user123', displayName: 'Utilisateur' },
-];
-
+const API_BASE = '/api/iam/auth';
 const SESSION_KEY = 'iam_auth_session';
 
-function delay(ms = 500) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function generateDeviceFingerprint() {
+  const stored = localStorage.getItem('iam_device_fingerprint');
+  if (stored) return stored;
+  const raw = `${navigator.userAgent}-${screen.width}x${screen.height}-${new Date().getTime()}`;
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const chr = raw.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash = hash & hash;
+  }
+  const fingerprint = `web-${Math.abs(hash).toString(16)}-${Math.random().toString(36).slice(2, 8)}`;
+  try {
+    localStorage.setItem('iam_device_fingerprint', fingerprint);
+  } catch {
+    // ignore storage errors
+  }
+  return fingerprint;
 }
 
-export async function login(username, password) {
-  await delay(500);
+export function getDeviceFingerprint() {
+  return generateDeviceFingerprint();
+}
 
-  if (!username || !password) {
-    const error = new Error('Identifiants requis');
-    error.status = 400;
+async function request(path, options = {}) {
+  const url = `${API_BASE}${path}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'omit',
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const message = data?.message || 'Requête impossible';
+    const error = new Error(message);
+    error.status = response.status;
+    error.code = data?.code;
+    error.details = data?.details;
     throw error;
   }
 
-  const user = MOCK_USERS.find(
-    (u) => u.username === username && u.password === password
-  );
+  return data;
+}
 
-  if (!user) {
-    const error = new Error('Identifiants invalides');
-    error.status = 401;
-    throw error;
-  }
+export async function login(identifier, password) {
+  const payload = {
+    identifier,
+    password,
+    deviceFingerprint: getDeviceFingerprint(),
+  };
 
-  const token = `mock-token-${user.id}-${Date.now()}`;
+  const result = await request('/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
-  const session = {
-    user: { id: user.id, username: user.username, displayName: user.displayName },
-    token,
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+  const sessionData = {
+    user: result.data.user,
+    accessToken: result.data.accessToken,
+    refreshToken: result.data.refreshToken,
+    session: result.data.session,
+    expiresAt: Date.now() + (result.data.expiresIn || 900) * 1000,
+    mfaRequired: result.data.mfaRequired || false,
+    challengeToken: result.data.challengeToken || null,
   };
 
   try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
   } catch {
     // ignore storage errors
   }
 
-  return { user: session.user, token: session.token };
+  return sessionData;
+}
+
+export async function refreshToken() {
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (!raw) {
+    throw new Error('Session expirée');
+  }
+
+  let sessionData;
+  try {
+    sessionData = JSON.parse(raw);
+  } catch {
+    throw new Error('Session invalide');
+  }
+
+  if (!sessionData.refreshToken) {
+    throw new Error('Refresh token manquant');
+  }
+
+  const result = await request('/refresh', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken: sessionData.refreshToken }),
+  });
+
+  const updated = {
+    ...sessionData,
+    accessToken: result.data.accessToken,
+    refreshToken: result.data.refreshToken,
+    expiresAt: Date.now() + (result.data.expiresIn || 900) * 1000,
+  };
+
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore storage errors
+  }
+
+  return updated;
 }
 
 export async function logout() {
-  await delay(200);
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (raw) {
+    try {
+      const sessionData = JSON.parse(raw);
+      if (sessionData.session?.id) {
+        await request('/logout', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sessionData.accessToken}`,
+          },
+          body: JSON.stringify({ sessionId: sessionData.session.id }),
+        });
+      }
+    } catch {
+      // ignore logout errors
+    }
+  }
+
   try {
     localStorage.removeItem(SESSION_KEY);
   } catch {
@@ -58,15 +150,22 @@ export async function getSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    const session = JSON.parse(raw);
-    if (session.expiresAt && Date.now() > session.expiresAt) {
+    const sessionData = JSON.parse(raw);
+    if (sessionData.expiresAt && Date.now() > sessionData.expiresAt) {
       localStorage.removeItem(SESSION_KEY);
       return null;
     }
-    return session;
+    return sessionData;
   } catch {
     return null;
   }
 }
 
-export default { login, logout, getSession };
+export async function verifyMfaChallenge(challengeToken, mfaMethodId, code) {
+  return request('/login/mfa', {
+    method: 'POST',
+    body: JSON.stringify({ challengeToken, mfaMethodId, code }),
+  });
+}
+
+export default { login, logout, getSession, refreshToken, verifyMfaChallenge };

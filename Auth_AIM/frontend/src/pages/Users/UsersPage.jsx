@@ -1,49 +1,443 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { users as mockUsers, roleColors, statusConfig, identityTypeLabels, topUsers, connections24h, roleStats } from '../../data/mock';
+import { roleColors, statusConfig, identityTypeLabels, roleStats, connections24h, topUsers } from '../../data/mock';
+import * as usersService from '../../services/usersMockService';
 import UserDetailPanel from '../../components/UserDetailPanel';
 import DonutChart from '../../components/DonutChart';
 import LineChart from '../../components/LineChart';
 import './UsersPage.css';
 
-const ITEMS_PER_PAGE = 7;
+const ROLE_OPTIONS = ['Super Admin', 'Admin', 'Manager', 'Éditeur', 'Viewer'];
+const STATUS_OPTIONS = ['Actif', 'Suspendu'];
+const TENANT_OPTIONS = ['Boutique A', 'Boutique B', 'Boutique C'];
+const IDENTITY_TYPES = ['EMAIL', 'GOOGLE', 'SYSTEM'];
+
+function emptyForm() {
+  return {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    tenant: 'Boutique A',
+    roles: ['Viewer'],
+    status: 'active',
+    identityType: 'EMAIL',
+  };
+}
+
+function NewUserModal({ open, onClose, onCreate }) {
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState('');
+  const firstFieldRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setForm(emptyForm());
+      setError('');
+      setTimeout(() => firstFieldRef.current?.focus(), 0);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+
+  const toggleRole = (role) => {
+    setForm((f) => {
+      const has = f.roles.includes(role);
+      return { ...f, roles: has ? f.roles.filter((r) => r !== role) : [...f.roles, role] };
+    });
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setError('Le prénom et le nom sont obligatoires.');
+      return;
+    }
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('Veuillez saisir un email valide.');
+      return;
+    }
+    if (form.roles.length === 0) {
+      setError('Sélectionnez au moins un rôle.');
+      return;
+    }
+    onCreate({
+      ...form,
+      status: form.status === 'suspended' ? 'suspended' : 'active',
+    });
+  };
+
+  return (
+    <div className="users-modal-backdrop" onClick={onClose}>
+      <div className="users-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="users-modal-header">
+          <h2 className="users-modal-title">Nouvel utilisateur</h2>
+          <button type="button" className="users-modal-close" onClick={onClose} aria-label="Fermer">×</button>
+        </div>
+        <form className="users-modal-form" onSubmit={submit}>
+          <div className="users-modal-row">
+            <label className="users-modal-field">
+              <span>Prénom *</span>
+              <input ref={firstFieldRef} type="text" value={form.firstName} onChange={(e) => update('firstName', e.target.value)} />
+            </label>
+            <label className="users-modal-field">
+              <span>Nom *</span>
+              <input type="text" value={form.lastName} onChange={(e) => update('lastName', e.target.value)} />
+            </label>
+          </div>
+          <label className="users-modal-field">
+            <span>Email *</span>
+            <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} />
+          </label>
+          <div className="users-modal-row">
+            <label className="users-modal-field">
+              <span>Téléphone</span>
+              <input type="text" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
+            </label>
+            <label className="users-modal-field">
+              <span>Type d'identité</span>
+              <select value={form.identityType} onChange={(e) => update('identityType', e.target.value)}>
+                {IDENTITY_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="users-modal-row">
+            <label className="users-modal-field">
+              <span>Tenant</span>
+              <select value={form.tenant} onChange={(e) => update('tenant', e.target.value)}>
+                {TENANT_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+            <label className="users-modal-field">
+              <span>Statut</span>
+              <select value={form.status} onChange={(e) => update('status', e.target.value)}>
+                <option value="active">Actif</option>
+                <option value="suspended">Suspendu</option>
+              </select>
+            </label>
+          </div>
+          <div className="users-modal-field">
+            <span>Rôles *</span>
+            <div className="users-modal-roles">
+              {ROLE_OPTIONS.map((r) => (
+                <label key={r} className={`users-modal-role-chip ${form.roles.includes(r) ? 'is-selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={form.roles.includes(r)}
+                    onChange={() => toggleRole(r)}
+                  />
+                  {r}
+                </label>
+              ))}
+            </div>
+          </div>
+          {error && <div className="users-modal-error">{error}</div>}
+          <div className="users-modal-actions">
+            <button type="button" className="users-modal-btn-secondary" onClick={onClose}>Annuler</button>
+            <button type="submit" className="users-primary-btn">Créer l'utilisateur</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditUserModal({ open, user, onClose, onSave }) {
+  const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    if (open && user) {
+      setForm({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        tenant: user.tenant || TENANT_OPTIONS[0],
+        roles: Array.isArray(user.roles) ? [...user.roles] : ['Viewer'],
+        status: user.status || 'active',
+        identityType: user.identityType || 'EMAIL',
+      });
+    }
+  }, [open, user]);
+
+  if (!open || !user) return null;
+
+  const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+  const toggleRole = (role) => {
+    setForm((f) => {
+      const has = f.roles.includes(role);
+      return { ...f, roles: has ? f.roles.filter((r) => r !== role) : [...f.roles, role] };
+    });
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) return;
+    if (form.roles.length === 0) return;
+    onSave({
+      ...form,
+      status: form.status === 'suspended' ? 'suspended' : 'active',
+    });
+  };
+
+  return (
+    <div className="users-modal-backdrop" onClick={onClose}>
+      <div className="users-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="users-modal-header">
+          <h2 className="users-modal-title">Modifier l'utilisateur</h2>
+          <button type="button" className="users-modal-close" onClick={onClose} aria-label="Fermer">×</button>
+        </div>
+        <form className="users-modal-form" onSubmit={submit}>
+          <div className="users-modal-row">
+            <label className="users-modal-field">
+              <span>Prénom *</span>
+              <input type="text" value={form.firstName} onChange={(e) => update('firstName', e.target.value)} />
+            </label>
+            <label className="users-modal-field">
+              <span>Nom *</span>
+              <input type="text" value={form.lastName} onChange={(e) => update('lastName', e.target.value)} />
+            </label>
+          </div>
+          <label className="users-modal-field">
+            <span>Email *</span>
+            <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} />
+          </label>
+          <div className="users-modal-row">
+            <label className="users-modal-field">
+              <span>Téléphone</span>
+              <input type="text" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
+            </label>
+            <label className="users-modal-field">
+              <span>Type d'identité</span>
+              <select value={form.identityType} onChange={(e) => update('identityType', e.target.value)}>
+                {IDENTITY_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="users-modal-row">
+            <label className="users-modal-field">
+              <span>Tenant</span>
+              <select value={form.tenant} onChange={(e) => update('tenant', e.target.value)}>
+                {TENANT_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+            <label className="users-modal-field">
+              <span>Statut</span>
+              <select value={form.status} onChange={(e) => update('status', e.target.value)}>
+                <option value="active">Actif</option>
+                <option value="suspended">Suspendu</option>
+              </select>
+            </label>
+          </div>
+          <div className="users-modal-field">
+            <span>Rôles *</span>
+            <div className="users-modal-roles">
+              {ROLE_OPTIONS.map((r) => (
+                <label key={r} className={`users-modal-role-chip ${form.roles.includes(r) ? 'is-selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={form.roles.includes(r)}
+                    onChange={() => toggleRole(r)}
+                  />
+                  {r}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="users-modal-actions">
+            <button type="button" className="users-modal-btn-secondary" onClick={onClose}>Annuler</button>
+            <button type="submit" className="users-primary-btn">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ActionMenu({ user, onView, onEdit, onToggleStatus, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const nextStatusLabel = user.status === 'active' ? 'Suspendre' : 'Réactiver';
+
+  return (
+    <div className="users-action-menu" ref={ref}>
+      <button
+        type="button"
+        className="users-action-btn"
+        title="Plus d'actions"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="19" cy="12" r="1" />
+          <circle cx="5" cy="12" r="1" />
+        </svg>
+      </button>
+      {open && (
+        <div className="users-action-dropdown" role="menu">
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); onView(user); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Voir
+          </button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); onEdit(user); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z" />
+            </svg>
+            Modifier
+          </button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); onToggleStatus(user); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {user.status === 'active' ? (
+                <>
+                  <rect x="6" y="4" width="4" height="16" />
+                  <line x1="4" y1="12" x2="12" y2="12" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="8" y1="18" x2="8" y2="22" />
+                </>
+              ) : (
+                <>
+                  <polyline points="20 6 9 17 4 12" />
+                </>
+              )}
+            </svg>
+            {nextStatusLabel}
+          </button>
+          <button type="button" role="menuitem" className="users-action-danger" onClick={() => { setOpen(false); onDelete(user); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M9 6V4a2 2 0 012-2h2a2 2 0 012 2v2" />
+            </svg>
+            Supprimer
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function UsersPage() {
+  const [users, setUsers] = useState(() => usersService.listUsers());
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('Tous');
   const [statusFilter, setStatusFilter] = useState('Tous');
   const [tenantFilter, setTenantFilter] = useState('Tous');
+  const [pageSize, setPageSize] = useState(7);
   const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
   const navigate = useNavigate();
 
+  const syncSelection = (list) => {
+    if (!selectedUser) return;
+    const refreshed = list.find((u) => u.id === selectedUser.id) || null;
+    setSelectedUser(refreshed);
+  };
+
   const filtered = useMemo(() => {
-    return mockUsers.filter((u) => {
-      const q = search.toLowerCase();
-      const matchSearch = !q || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q);
-      const matchRole = roleFilter === 'Tous' || u.roles.includes(roleFilter);
+    const q = search.toLowerCase().trim();
+    return users.filter((u) => {
+      const matchSearch = !q
+        || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q);
+      const matchRole = roleFilter === 'Tous' || (u.roles || []).includes(roleFilter);
       const matchStatus = statusFilter === 'Tous' || u.status === statusFilter.toLowerCase();
       const matchTenant = tenantFilter === 'Tous' || u.tenant === tenantFilter;
       return matchSearch && matchRole && matchStatus && matchTenant;
     });
-  }, [search, roleFilter, statusFilter, tenantFilter]);
+  }, [users, search, roleFilter, statusFilter, tenantFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pageUsers = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+  const pageUsers = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const showingTo = Math.min(safePage * pageSize, filtered.length);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
 
   const handleRowClick = (user) => {
     setSelectedUser(user);
     navigate(`/users/${user.id}`);
   };
 
-  const stats = [
-    { label: 'Utilisateurs', value: '168', context: '+12 ce mois-ci', icon: 'users', color: '#2563eb' },
-    { label: 'Identités', value: '142', context: '85% liées', icon: 'id', color: '#10b981' },
-    { label: 'Sessions actives', value: '37', context: 'Voir en temps réel', icon: 'session', color: '#7c3aed' },
-    { label: 'Rôles attribués', value: '24', context: '+2 ce mois-ci', icon: 'role', color: '#f59e0b' },
-    { label: 'Tenants', value: '5', context: 'Actifs', icon: 'tenant', color: '#14b8a6' },
-  ];
+  const handleCreate = (payload) => {
+    const created = usersService.createUser(payload);
+    setUsers(usersService.listUsers());
+    setCreateOpen(false);
+    setSelectedUser(created);
+    setPage(1);
+  };
+
+  const handleSave = (payload) => {
+    usersService.updateUser(editTarget.id, payload);
+    const next = usersService.listUsers();
+    setUsers(next);
+    syncSelection(next);
+    setEditTarget(null);
+  };
+
+  const handleToggleStatus = (user) => {
+    const nextStatus = user.status === 'active' ? 'suspended' : 'active';
+    usersService.setUserStatus(user.id, nextStatus);
+    const next = usersService.listUsers();
+    setUsers(next);
+    syncSelection(next);
+  };
+
+  const handleDelete = (user) => {
+    const ok = window.confirm(`Supprimer définitivement ${user.firstName} ${user.lastName} ?`);
+    if (!ok) return;
+    usersService.deleteUser(user.id);
+    const next = usersService.listUsers();
+    setUsers(next);
+    if (selectedUser?.id === user.id) {
+      setSelectedUser(null);
+      navigate('/users');
+    }
+  };
+
+  const stats = useMemo(() => {
+    const total = users.length;
+    const identities = new Set(users.map((u) => u.identityType).filter(Boolean)).size;
+    const activeSessions = users.filter((u) => u.isOnline).length;
+    const roles = new Set(users.flatMap((u) => u.roles || [])).size;
+    const tenants = new Set(users.map((u) => u.tenant).filter(Boolean)).size;
+    return [
+      { label: 'Utilisateurs', value: String(total), context: 'Comptes enregistrés', icon: 'users', color: '#2563eb' },
+      { label: 'Identités', value: String(identities), context: 'Types liés', icon: 'id', color: '#10b981' },
+      { label: 'Sessions actives', value: String(activeSessions), context: 'Connectés maintenant', icon: 'session', color: '#7c3aed' },
+      { label: 'Rôles attribués', value: String(roles), context: 'Rôles distincts', icon: 'role', color: '#f59e0b' },
+      { label: 'Tenants', value: String(tenants), context: 'Actifs', icon: 'tenant', color: '#14b8a6' },
+    ];
+  }, [users]);
 
   return (
     <div className="users-page">
@@ -99,24 +493,35 @@ function UsersPage() {
               className="users-search-input"
             />
           </div>
-          <select className="users-filter-select" value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}>
-            <option>Tous</option>
-            <option>Super Admin</option>
-            <option>Admin</option>
-            <option>Manager</option>
-            <option>Éditeur</option>
-            <option>Viewer</option>
+          <select
+            className="users-filter-select"
+            value={roleFilter}
+            onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+          >
+            <option value="Tous">Tous (rôles)</option>
+            {ROLE_OPTIONS.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
           </select>
-          <select className="users-filter-select" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
-            <option>Tous</option>
-            <option>Actif</option>
-            <option>Suspendu</option>
+          <select
+            className="users-filter-select"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          >
+            <option value="Tous">Tous (statut)</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
           </select>
-          <select className="users-filter-select" value={tenantFilter} onChange={(e) => { setTenantFilter(e.target.value); setPage(1); }}>
-            <option>Tous</option>
-            <option>Boutique A</option>
-            <option>Boutique B</option>
-            <option>Boutique C</option>
+          <select
+            className="users-filter-select"
+            value={tenantFilter}
+            onChange={(e) => { setTenantFilter(e.target.value); setPage(1); }}
+          >
+            <option value="Tous">Tous (tenants)</option>
+            {TENANT_OPTIONS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
           </select>
           <button className="users-filter-btn" title="Filtres avancés">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -138,7 +543,7 @@ function UsersPage() {
             </svg>
           </button>
         </div>
-        <button className="users-primary-btn">+ Nouvel utilisateur</button>
+        <button type="button" className="users-primary-btn" onClick={() => setCreateOpen(true)}>+ Nouvel utilisateur</button>
       </div>
 
       <div className="users-main">
@@ -156,6 +561,11 @@ function UsersPage() {
               </tr>
             </thead>
             <tbody>
+              {pageUsers.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="users-empty">Aucun utilisateur ne correspond aux filtres.</td>
+                </tr>
+              )}
               {pageUsers.map((u) => (
                 <tr key={u.id} className={`users-table-row ${selectedUser?.id === u.id ? 'users-table-row-selected' : ''}`} onClick={() => handleRowClick(u)}>
                   <td>
@@ -170,12 +580,12 @@ function UsersPage() {
                   <td>
                     <div className="users-identity-cell">
                       {u.email}
-                      <span className="users-identity-badge">{identityTypeLabels[u.identityType]}</span>
+                      <span className="users-identity-badge">{identityTypeLabels[u.identityType] || u.identityType}</span>
                     </div>
                   </td>
                   <td>
                     <div className="users-roles-cell">
-                      {u.roles.map((r) => {
+                      {(u.roles || []).map((r) => {
                         const colors = roleColors[r] || roleColors['Viewer'];
                         return (
                           <span key={r} className="users-role-pill" style={{ backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }}>
@@ -188,8 +598,8 @@ function UsersPage() {
                   <td>{u.tenant}</td>
                   <td>
                     <div className="users-status-cell">
-                      <span className="users-status-dot" style={{ backgroundColor: statusConfig[u.status].color }} />
-                      <span>{statusConfig[u.status].label}</span>
+                      <span className="users-status-dot" style={{ backgroundColor: statusConfig[u.status]?.color || '#6b7280' }} />
+                      <span>{statusConfig[u.status]?.label || u.status}</span>
                     </div>
                   </td>
                   <td>
@@ -199,20 +609,20 @@ function UsersPage() {
                     </div>
                   </td>
                   <td>
-                    <div className="users-actions-cell" onClick={(_e) => _e.stopPropagation()}>
-                      <button className="users-action-btn" title="Voir" onClick={() => handleRowClick(u)}>
+                    <div className="users-actions-cell" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className="users-action-btn" title="Voir" onClick={() => handleRowClick(u)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                           <circle cx="12" cy="12" r="3" />
                         </svg>
                       </button>
-                      <button className="users-action-btn" title="Plus">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="1" />
-                          <circle cx="19" cy="12" r="1" />
-                          <circle cx="5" cy="12" r="1" />
-                        </svg>
-                      </button>
+                      <ActionMenu
+                        user={u}
+                        onView={handleRowClick}
+                        onEdit={(user) => setEditTarget(user)}
+                        onToggleStatus={handleToggleStatus}
+                        onDelete={handleDelete}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -228,23 +638,37 @@ function UsersPage() {
 
       <div className="users-pagination">
         <span className="users-pagination-info">
-          Affichage {(safePage - 1) * ITEMS_PER_PAGE + 1} à {Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length} utilisateurs
+          {filtered.length === 0
+            ? 'Aucun utilisateur'
+            : `Affichage ${showingFrom} à ${showingTo} sur ${filtered.length} utilisateur${filtered.length > 1 ? 's' : ''}`}
         </span>
         <div className="users-pagination-controls">
-          <button className="users-page-btn" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>‹</button>
+          <button type="button" className="users-page-btn" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>‹</button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button key={p} className={`users-page-btn ${p === safePage ? 'users-page-btn-active' : ''}`} onClick={() => setPage(p)}>
+            <button
+              key={p}
+              type="button"
+              className={`users-page-btn ${p === safePage ? 'users-page-btn-active' : ''}`}
+              onClick={() => setPage(p)}
+            >
               {p}
             </button>
           ))}
-          <button className="users-page-btn" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)}>›</button>
+          <button type="button" className="users-page-btn" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)}>›</button>
         </div>
-        <select className="users-page-size" value={ITEMS_PER_PAGE} onChange={() => { setPage(1); }}>
+        <select
+          className="users-page-size"
+          value={pageSize}
+          onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+        >
           <option value="7">7 / page</option>
           <option value="10">10 / page</option>
           <option value="25">25 / page</option>
         </select>
       </div>
+
+      <NewUserModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={handleCreate} />
+      <EditUserModal open={Boolean(editTarget)} user={editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} />
 
       <div className="users-bottom-cards">
         <div className="users-bottom-card">

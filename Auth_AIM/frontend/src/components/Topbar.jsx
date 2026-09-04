@@ -1,6 +1,75 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import './Topbar.css';
 
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getDisplayName(user) {
+  if (!user) return 'Invité';
+  if (user.displayName) return user.displayName;
+  const first = user.firstName || '';
+  const last = user.lastName || '';
+  const full = `${first} ${last}`.trim();
+  if (full) return full;
+  if (user.username) return user.username;
+  if (user.primaryEmail) return user.primaryEmail;
+  return 'Utilisateur';
+}
+
+function getRoleLabel(user) {
+  if (!user) return '—';
+  if (Array.isArray(user.roles) && user.roles.length > 0) return user.roles[0];
+  if (user.role) return user.role;
+  return '—';
+}
+
 function Topbar() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    const confirmed = window.confirm('Voulez-vous vraiment vous déconnecter ?');
+    if (!confirmed) return;
+    try {
+      await logout();
+    } catch {
+      /* ignore: on redirige dans tous les cas */
+    }
+    navigate('/login', { replace: true });
+  };
+
+  const displayName = getDisplayName(user);
+  const roleLabel = getRoleLabel(user);
+  const initials = getInitials(displayName);
+
   return (
     <header className="topbar">
       <div className="topbar-context">
@@ -99,15 +168,47 @@ function Topbar() {
           </svg>
         </button>
 
-        <div className="topbar-user">
-          <div className="topbar-avatar">MA</div>
-          <div className="topbar-user-info">
-            <span className="topbar-user-name">Mami</span>
-            <span className="topbar-user-role">Super Admin</span>
-          </div>
-          <svg className="topbar-user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+        <div className="topbar-user-wrapper" ref={menuRef}>
+          <button
+            type="button"
+            className="topbar-user"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <div className="topbar-avatar">{initials}</div>
+            <div className="topbar-user-info">
+              <span className="topbar-user-name">{displayName}</span>
+              <span className="topbar-user-role">{roleLabel}</span>
+            </div>
+            <svg className="topbar-user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {menuOpen ? (
+            <div className="topbar-user-menu" role="menu">
+              <div className="topbar-user-menu-header">
+                <div className="topbar-avatar topbar-avatar-sm">{initials}</div>
+                <div className="topbar-user-menu-meta">
+                  <span className="topbar-user-menu-name">{displayName}</span>
+                  <span className="topbar-user-menu-role">{roleLabel}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="topbar-user-menu-item topbar-user-menu-item-danger"
+                role="menuitem"
+                onClick={handleLogout}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Déconnexion</span>
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </header>

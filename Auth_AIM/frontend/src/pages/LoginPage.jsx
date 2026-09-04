@@ -22,7 +22,9 @@ function LoginPage() {
   const messages = [
     'Bonjour ! 😊',
     'Bienvenue sur votre espace de travail',
-    'Votre espace vous attend.'
+    'Votre espace vous attend',
+    'Gérer votre environnement en toute sécurité'
+    
   ];
 
   useEffect(() => {
@@ -165,6 +167,12 @@ function LoginPage() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div className="login-decor-icon login-decor-icon--security-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="M9 12l2 2 4-4" />
             </svg>
           </div>
 

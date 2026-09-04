@@ -267,10 +267,10 @@ export const identityTypeLabels = {
 };
 
 export const activityTypeConfig = {
-  success: { color: '#10b981' },
-  warning: { color: '#f59e0b' },
-  error: { color: '#ef4444' },
-  info: { color: '#6b7280' },
+  success: { color: '#10b981', label: 'Succès' },
+  warning: { color: '#f59e0b', label: 'Attention' },
+  error: { color: '#ef4444', label: 'Erreur' },
+  info: { color: '#6b7280', label: 'Info' },
 };
 
 export const topUsers = [
@@ -349,4 +349,38 @@ export const topUnlinkedIdentities = [
   { name: 'Hugo Mercier', email: 'hugo.mercier@boutique.com', avatarInitials: 'HM', status: 'ACTIVE' },
   { name: 'Marc Leroy', email: 'marc.leroy@boutique.com', avatarInitials: 'ML', status: 'ACTIVE' },
   { name: 'Paul Durand', email: 'paul.durand@boutique.com', avatarInitials: 'PD', status: 'PENDING' },
+];
+
+export const dashboardMetrics = {
+  activeUsers: { value: '142', context: '+8 ce mois-ci', trend: [60, 64, 70, 72, 78, 82, 88, 95, 102, 110, 118, 142], color: '#2563eb' },
+  activeSessions: { value: '37', context: '4 tenants actifs', trend: [12, 15, 18, 22, 20, 24, 26, 30, 28, 32, 35, 37], color: '#7c3aed' },
+  securityAlerts: { value: '3', context: '1 critique · 2 moyennes', color: '#ef4444' },
+  systemHealth: { value: '98%', context: 'Tous services opérationnels', color: '#10b981' },
+};
+
+export const dashboardActions = [
+  { id: 'a1', title: 'Valider 3 invitations en attente', context: 'Boutique A · expire dans 48h', priority: 'high' },
+  { id: 'a2', title: 'Approuver la nouvelle politique MFA', context: 'Brouillon · en attente Super Admin', priority: 'medium' },
+  { id: 'a3', title: 'Réviser 5 comptes suspendus', context: 'Inactivité > 90 jours', priority: 'low' },
+];
+
+export const dashboardActivity = [
+  { id: 'e1', time: "À l'instant", type: 'success', title: 'Connexion réussie', actor: 'Mami Admin', detail: 'Paris, France · Chrome' },
+  { id: 'e2', time: 'Il y a 5 min', type: 'warning', title: 'Mot de passe modifié', actor: 'Sophie Martin', detail: 'Action utilisateur' },
+  { id: 'e3', time: 'Il y a 12 min', type: 'error', title: 'Tentative refusée', actor: 'IP 92.184.*.*', detail: 'Ressource protégée · Boutique C' },
+  { id: 'e4', time: 'Il y a 24 min', type: 'info', title: 'Rôle attribué', actor: 'Hugo Mercier → Manager', detail: 'Boutique A' },
+  { id: 'e5', time: 'Il y a 1 h', type: 'success', title: 'Identité liée à ERP', actor: 'Dolibarr PROD', detail: 'Claire Moreau' },
+  { id: 'e6', time: 'Hier', type: 'info', title: 'Connexion API', actor: 'Service Bot', detail: 'Token utilisé' },
+];
+
+export const invitations = [
+  {
+    token: 'inv-demo-001',
+    email: 'nouveau@boutique.com',
+    organizationName: 'Boutique A',
+    tenantName: 'Boutique A - Paris',
+    role: 'Viewer',
+    invitedBy: 'Mami Admin',
+    expiresAt: '2026-09-10 23:59',
+  },
 ];
