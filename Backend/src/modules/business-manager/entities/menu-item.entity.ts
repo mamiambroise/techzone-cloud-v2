@@ -2,7 +2,7 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Update
 import { MenuItemState, NavigationOpenMode, NavigationTargetType, RequirementMode } from '../../../common/enums';
 @Entity({ name: 'menu_items' }) @Index(['menuId', 'code'], { unique: true }) @Index(['menuId', 'parentId'])
 export class MenuItem {
-  @PrimaryGeneratedColumn('uuid') id: string; @Column() menuId: string; @Column({ nullable: true }) parentId?: string | null;
+  @PrimaryGeneratedColumn('uuid') id: string; @Column() menuId: string; @Column({ type: 'uuid', nullable: true }) parentId?: string | null;
   @Column({ length: 120 }) code: string; @Column({ length: 180 }) label: string; @Column({ nullable: true }) labelKey?: string;
   @Column({ type: 'text', nullable: true }) description?: string; @Column({ nullable: true }) iconKey?: string;
   @Column({ type: 'enum', enum: NavigationTargetType, default: NavigationTargetType.NONE }) targetType: NavigationTargetType;
