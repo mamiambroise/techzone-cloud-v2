@@ -16,6 +16,8 @@ const config: Config = {
 
   extensionsToTreatAsEsm: ['.ts'],
 
+  setupFiles: ['<rootDir>/test/jest.setup.ts'],
+
   testRegex: '.*\\.spec\\.ts$',
 
   transform: {

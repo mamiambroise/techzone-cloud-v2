@@ -1,0 +1,6 @@
+{
+  "name": "Platform Foundation Backend",
+  "description": "NestJS backend API for Platform Foundation, application versioning, configurations, environments, contracts, snapshots, and integration connectors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
