@@ -32,18 +32,21 @@ export function OverviewView() {
     setSelectedAppId,
     selectedEnvironment,
     setSelectedEnvironment,
+    syncFromBackend,
   } = useApp();
 
   const [period, setPeriod] = useState('30 derniers jours');
   const [selectedVerFilter, setSelectedVerFilter] = useState('ALL');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
+    try {
+      await syncFromBackend();
       showToast('Données et statistiques actualisées');
-    }, 400);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (

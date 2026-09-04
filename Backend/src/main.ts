@@ -9,8 +9,9 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // CORS
+  const corsOrigin = configService.get<string>('app.corsOrigin', 'http://localhost:5173');
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN', '*'),
+    origin: corsOrigin.split(',').map((origin) => origin.trim()),
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
@@ -37,7 +38,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = configService.get('PORT', 3000);
+  const port = configService.get('PORT', 3001);
   await app.listen(port);
 
   console.log(`🚀 Techzone Cloud running on: http://localhost:${port}`);

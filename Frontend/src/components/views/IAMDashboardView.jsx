@@ -27,6 +27,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { GlobalStatusGrid } from '../iam/global-status/GlobalStatusGrid';
 import { getSecurityAuditLogs } from '../../lib/authService';
+import { api } from '../../lib/api';
 
 export function IAMDashboardView() {
   const {
@@ -35,49 +36,27 @@ export function IAMDashboardView() {
     currentTenant,
     showToast,
     sessionRemainingSeconds = 900,
-    resetInactivityTimer,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [searchUser, setSearchUser] = useState('');
   const [securityLogs, setSecurityLogs] = useState(() => getSecurityAuditLogs());
+  const [showIdentityForm, setShowIdentityForm] = useState(false);
+  const [newIdentity, setNewIdentity] = useState({ name: '', email: '', role: 'VIEWER', password: '' });
 
-  // Default vault users list
-  const usersList = [
-    {
-      id: 'usr_admin_01',
-      name: 'Super Administrateur',
-      email: 'admin@techzone.io',
-      role: 'ADMIN',
-      department: 'Direction Informatique & Cybersécurité',
-      tenantId: 'tenant-techzone-01',
-      is2FAEnabled: true,
-      status: 'ACTIVE',
-      lastLogin: 'Il y a 5 min',
-    },
-    {
-      id: 'usr_builder_02',
-      name: 'Studio Builder Techzone',
-      email: 'builder@techzone.io',
-      role: 'BUILDER',
-      department: 'Développement Applicatif & Cloud',
-      tenantId: 'tenant-techzone-01',
-      is2FAEnabled: false,
-      status: 'ACTIVE',
-      lastLogin: 'Hier à 16:40',
-    },
-    {
-      id: 'usr_viewer_03',
-      name: 'Lecteur Invité Entreprise',
-      email: 'guest@techzone.io',
-      role: 'VIEWER',
-      department: 'Consultation & Audit',
-      tenantId: 'tenant-techzone-01',
-      is2FAEnabled: false,
-      status: 'ACTIVE',
-      lastLogin: '25/05/2026',
-    },
-  ];
+  const [usersList, setUsersList] = useState([]);
+
+  React.useEffect(() => {
+    api.listUsers()
+      .then((response) => {
+        const users = response?.data ?? response;
+        setUsersList(Array.isArray(users) ? users : []);
+      })
+      .catch((error) => {
+        setUsersList([]);
+        showToast(`Impossible de charger les utilisateurs IAM : ${error.message}`, 'error');
+      });
+  }, []);
 
   const filteredUsers = usersList.filter(
     (u) =>
@@ -85,6 +64,33 @@ export function IAMDashboardView() {
       u.email.toLowerCase().includes(searchUser.toLowerCase()) ||
       u.role.toLowerCase().includes(searchUser.toLowerCase())
   );
+
+  const handleCreateIdentity = (event) => {
+    event.preventDefault();
+    if (currentRole !== 'ADMIN') {
+      showToast('Seul un administrateur peut créer une identité IAM.', 'error');
+      return;
+    }
+    const name = newIdentity.name.trim();
+    const email = newIdentity.email.trim().toLowerCase();
+    if (!name || !email || !newIdentity.password) {
+      showToast('Le nom, l email et le mot de passe sont obligatoires.', 'error');
+      return;
+    }
+    if (usersList.some((user) => user.email === email)) {
+      showToast('Cette adresse email existe déjà.', 'error');
+      return;
+    }
+    api.createUser({ name, email, role: newIdentity.role, password: newIdentity.password })
+      .then((response) => {
+        const createdUser = response?.data ?? response;
+        setUsersList((current) => [...current, createdUser]);
+        setNewIdentity({ name: '', email: '', role: 'VIEWER', password: '' });
+        setShowIdentityForm(false);
+        showToast('Identité IAM ajoutée avec succès.');
+      })
+      .catch((error) => showToast(`Création IAM refusée : ${error.message}`, 'error'));
+  };
 
   return (
     <div className="space-y-4 pb-6 animate-in fade-in duration-300">
@@ -256,8 +262,8 @@ export function IAMDashboardView() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs font-black text-slate-900 block">{currentUser}</span>
-                  <span className="text-[11px] text-slate-500">Tenant: {currentTenant || 'tenant-techzone-01'}</span>
+                  <span className="text-xs font-black text-slate-900 block">{currentUser?.name || currentUser?.email || 'Utilisateur actif'}</span>
+                  <span className="text-[11px] text-slate-500">Tenant: {currentTenant?.name || currentTenant?.id || 'tenant-techzone-01'}</span>
                 </div>
               </div>
 
@@ -298,13 +304,50 @@ export function IAMDashboardView() {
             </div>
 
             <button
-              onClick={() => showToast('Formulaire de création d utilisateur IAM ouvert')}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition-colors shadow-xs self-start sm:self-auto"
+              onClick={() => setShowIdentityForm((visible) => !visible)}
+              disabled={currentRole !== 'ADMIN'}
+              title={currentRole !== 'ADMIN' ? 'Réservé aux administrateurs' : 'Ajouter une identité IAM'}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition-colors shadow-xs self-start sm:self-auto disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nouvelle Identité</span>
             </button>
           </div>
+
+          {showIdentityForm && currentRole === 'ADMIN' && (
+            <form onSubmit={handleCreateIdentity} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-2 p-3 rounded-xl bg-purple-50 border border-purple-100">
+              <input
+                value={newIdentity.name}
+                onChange={(event) => setNewIdentity((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Nom complet"
+                className="px-3 py-2 rounded-lg border border-slate-200 text-xs"
+              />
+              <input
+                type="email"
+                value={newIdentity.email}
+                onChange={(event) => setNewIdentity((current) => ({ ...current, email: event.target.value }))}
+                placeholder="Email professionnel"
+                className="px-3 py-2 rounded-lg border border-slate-200 text-xs"
+              />
+              <input
+                type="password"
+                value={newIdentity.password}
+                onChange={(event) => setNewIdentity((current) => ({ ...current, password: event.target.value }))}
+                placeholder="Mot de passe"
+                className="px-3 py-2 rounded-lg border border-slate-200 text-xs"
+              />
+              <select
+                value={newIdentity.role}
+                onChange={(event) => setNewIdentity((current) => ({ ...current, role: event.target.value }))}
+                className="px-3 py-2 rounded-lg border border-slate-200 text-xs"
+              >
+                <option value="VIEWER">Viewer</option>
+                <option value="BUILDER">Builder</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+              <button type="submit" className="px-3 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold hover:bg-purple-700">Ajouter</button>
+            </form>
+          )}
 
           <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="w-full text-left text-xs">

@@ -31,6 +31,9 @@ import { IntegrationBinding } from '../modules/business-manager/entities/integra
 import { ValidationCampaign } from '../modules/business-manager/entities/validation-campaign.entity';
 import { QualityIssue } from '../modules/business-manager/entities/quality-issue.entity';
 import { QualityWaiver } from '../modules/business-manager/entities/quality-waiver.entity';
+import { Pack } from '../modules/business-manager/entities/pack.entity';
+import { PackVersion } from '../modules/business-manager/entities/pack-version.entity';
+import { User } from '../auth/user.entity';
 
 config();
 
@@ -64,6 +67,7 @@ export const dataSourceOptions: DataSourceOptions = {
     ConfigurationDefinition, ConfigurationValue, MetadataDefinition, MetadataValue,
     ContractArtifact, RuntimeSnapshot, IntegrationDefinition, IntegrationBinding,
     ValidationCampaign, QualityIssue, QualityWaiver,
+    Pack, PackVersion, User,
   ],
   migrations: ['dist/migrations/*.js'],
 };

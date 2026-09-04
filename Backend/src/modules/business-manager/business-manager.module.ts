@@ -38,9 +38,11 @@ import { RuntimeBridgeController } from './runtime/runtime-bridge.controller';
 import { RuntimeBridgeService } from './runtime/runtime-bridge.service';
 import { QualityController } from './quality/quality.controller';
 import { QualityService } from './quality/quality.service';
+import { PackModule } from './pack/pack.module';
 
 @Module({
   imports: [
+    PackModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
