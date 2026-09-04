@@ -31,6 +31,17 @@ import { IntegrationBinding } from '../modules/business-manager/entities/integra
 import { ValidationCampaign } from '../modules/business-manager/entities/validation-campaign.entity';
 import { QualityIssue } from '../modules/business-manager/entities/quality-issue.entity';
 import { QualityWaiver } from '../modules/business-manager/entities/quality-waiver.entity';
+import { Pack } from '../modules/business-manager/entities/pack.entity';
+import { PackVersion } from '../modules/business-manager/entities/pack-version.entity';
+import { PackOutboxEvent } from '../modules/business-manager/entities/pack-outbox-event.entity';
+import { PackModule } from '../modules/business-manager/entities/pack-module.entity';
+import { PackFeature } from '../modules/business-manager/entities/pack-feature.entity';
+import { PackCapability } from '../modules/business-manager/entities/pack-capability.entity';
+import { PackFeatureCapability } from '../modules/business-manager/entities/pack-feature-capability.entity';
+import { PackDependency } from '../modules/business-manager/entities/pack-dependency.entity';
+import { PackRule } from '../modules/business-manager/entities/pack-rule.entity';
+import { RuleCondition } from '../modules/business-manager/entities/rule-condition.entity';
+import { RuleTestCase } from '../modules/business-manager/entities/rule-test-case.entity';
 
 config();
 
@@ -63,7 +74,7 @@ export const dataSourceOptions: DataSourceOptions = {
     MenuItemFeatureRequirement, MenuItemCapabilityRequirement,
     ConfigurationDefinition, ConfigurationValue, MetadataDefinition, MetadataValue,
     ContractArtifact, RuntimeSnapshot, IntegrationDefinition, IntegrationBinding,
-    ValidationCampaign, QualityIssue, QualityWaiver,
+    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability, PackDependency, PackRule, RuleCondition, RuleTestCase,
   ],
   migrations: ['dist/migrations/*.js'],
 };
