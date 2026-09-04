@@ -1,18 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { getDeviceFingerprint } from '../api/auth';
 import './LoginPage.css';
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deviceFingerprint, setDeviceFingerprint] = useState('');
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [fade, setFade] = useState(false);
+  const timeoutRef = useRef(null);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, setMfaRequired: _setMfaRequired, setChallengeToken: _setChallengeToken } = useAuth();
+
+  const messages = [
+    'Bonjour ! 😊',
+    'Bienvenue sur votre espace de travail',
+    'Votre espace vous attend.'
+  ];
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
+    const interval = setInterval(() => {
+      setFade(true);
+      timeoutRef.current = setTimeout(() => {
+        setMessageIndex(prev => (prev + 1) % messages.length);
+        setFade(false);
+      }, 400);
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    setDeviceFingerprint(getDeviceFingerprint());
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = !isDark;
@@ -29,7 +62,13 @@ function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      const result = await login(identifier, password, deviceFingerprint);
+      if (result.mfaRequired) {
+        setMfaRequired(true);
+        setChallengeToken(result.challengeToken);
+        setError('MFA requis : veuillez utiliser le flux de vérification MFA.');
+        return;
+      }
       navigate('/users');
     } catch (err) {
       setError(err.message || 'Connexion impossible');
@@ -96,27 +135,71 @@ function LoginPage() {
         <div className="login-left-footer">
           © 2026 Techzone Cloud. Tous droits réservés.
         </div>
+
+        <div className="login-decorations" aria-hidden="true">
+          <div className="login-decor-icon login-decor-icon--shield">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <div className="login-decor-icon login-decor-icon--lock">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <div className="login-decor-icon login-decor-icon--key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+            </svg>
+          </div>
+          <div className="login-decor-icon login-decor-icon--fingerprint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12z" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+              <path d="M12 6a6 6 0 0 1 6 6" />
+              <path d="M12 10a2 2 0 0 1 2 2" />
+            </svg>
+          </div>
+          <div className="login-decor-icon login-decor-icon--identity">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+
+          <div className="login-decor-particle" />
+          <div className="login-decor-particle login-decor-particle--d2" />
+          <div className="login-decor-particle login-decor-particle--d3" />
+          <div className="login-decor-particle login-decor-particle--d4" />
+          <div className="login-decor-particle login-decor-particle--d5" />
+
+          <div className="login-decor-ring login-decor-ring--1" />
+          <div className="login-decor-ring login-decor-ring--2" />
+        </div>
       </div>
 
       <div className="login-right">
         <div className="login-form-wrapper">
-          <h2 className="login-right-title">Bon retour</h2>
+          <h2 className="login-right-title" style={{ opacity: fade ? 0 : 1 }}>
+            {messages[messageIndex]}
+          </h2>
           <p className="login-right-subtitle">Connectez-vous à votre espace</p>
 
           <form onSubmit={handleSubmit}>
             <div className="login-field">
-              <label htmlFor="login-email" className="login-field-label">
-                Adresse email
+              <label htmlFor="login-identifier" className="login-field-label">
+                Adresse email ou identifiant
               </label>
               <input
-                id="login-email"
-                type="email"
+                id="login-identifier"
+                type="text"
                 className="login-field-input"
-                placeholder="vous@entreprise.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="vous@entreprise.com ou username"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="username"
               />
             </div>
 
