@@ -38,6 +38,10 @@ import { PackModule } from '../modules/business-manager/entities/pack-module.ent
 import { PackFeature } from '../modules/business-manager/entities/pack-feature.entity';
 import { PackCapability } from '../modules/business-manager/entities/pack-capability.entity';
 import { PackFeatureCapability } from '../modules/business-manager/entities/pack-feature-capability.entity';
+import { PackDependency } from '../modules/business-manager/entities/pack-dependency.entity';
+import { PackRule } from '../modules/business-manager/entities/pack-rule.entity';
+import { RuleCondition } from '../modules/business-manager/entities/rule-condition.entity';
+import { RuleTestCase } from '../modules/business-manager/entities/rule-test-case.entity';
 
 config();
 
@@ -70,7 +74,7 @@ export const dataSourceOptions: DataSourceOptions = {
     MenuItemFeatureRequirement, MenuItemCapabilityRequirement,
     ConfigurationDefinition, ConfigurationValue, MetadataDefinition, MetadataValue,
     ContractArtifact, RuntimeSnapshot, IntegrationDefinition, IntegrationBinding,
-    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability,
+    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability, PackDependency, PackRule, RuleCondition, RuleTestCase,
   ],
   migrations: ['dist/migrations/*.js'],
 };
