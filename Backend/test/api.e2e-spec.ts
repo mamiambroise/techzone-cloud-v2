@@ -56,7 +56,7 @@ describe('BM + PM + PR API (JWT)', () => {
         tenantId: 'tenant-other',
         permissions: Object.values(Permission),
       },
-      { secret: config.get('app.jwtSecret', 'super-secret-key-change-me') },
+      { secret: config.getOrThrow('app.jwtSecret') },
     );
   });
 

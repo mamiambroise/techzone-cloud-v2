@@ -36,14 +36,20 @@ config();
 
 const configService = new ConfigService();
 
+function required(name: string): string {
+  const value = configService.get<string>(name);
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+}
+
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
-  host: configService.get('DB_HOST', 'localhost'),
-  port: Number.parseInt(configService.get('DB_PORT', '5432'), 10),
-  username: configService.get('DB_USERNAME', 'postgres'),
-  password: configService.get('DB_PASSWORD', 'postgres'),
-  database: configService.get('DB_DATABASE', 'business_manager'),
-  synchronize: true,
+  host: required('DB_HOST'),
+  port: Number.parseInt(required('DB_PORT'), 10),
+  username: required('DB_USER'),
+  password: configService.get('DB_PASSWORD', ''),
+  database: required('DB_NAME'),
+  synchronize: configService.get('DB_SYNCHRONIZE', 'false') === 'true',
   logging: configService.get('DB_LOGGING', 'false') === 'true',
   entities: [
     Application,

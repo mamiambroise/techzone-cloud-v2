@@ -45,7 +45,7 @@ import { AuthController } from './auth/auth.controller';
     JwtModule.registerAsync({
       global: true,
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get('app.jwtSecret', 'super-secret-key-change-me'),
+        secret: configService.getOrThrow('app.jwtSecret'),
         signOptions: {
           expiresIn: configService.get('app.jwtExpiresIn', '7d'),
         },
