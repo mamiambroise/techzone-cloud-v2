@@ -1,14 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolvePackageJsonExports": true,
     "rootDir": "./"
   },
-  "include": [
-    "src/**/*.ts",
-    "libs/**/*.ts",
-    "apps/**/*.ts",
-    "jest.config.ts"
-  ]
+  "include": ["src/**/*.ts", "libs/**/*.ts", "apps/**/*.ts", "jest.config.ts"]
 }
