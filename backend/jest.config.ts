@@ -19,7 +19,7 @@ const config: Config = {
   testRegex: '.*\\.spec\\.ts$',
 
   transform: {
-    '^.+\\.ts$': [
+    '^.+\\.(ts|js)$': [
       'ts-jest',
       {
         useESM: true,
