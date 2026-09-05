@@ -4,6 +4,7 @@ import DonutChart from '../../components/DonutChart';
 import { identityStats } from '../../data/mock';
 import { identityTypeStats } from '../../data/mock';
 import { identitySourceStats, identities, identityErpLinkStats, topUnlinkedIdentities, topUsers } from '../../data/mock';
+import SectionIcon from '../../components/SectionIcon';
 import './IdentitiesPage.css';
 
 const TYPE_OPTIONS = ['EMAIL', 'GOOGLE', 'SYSTEM', 'EXTERNAL'];
@@ -727,7 +728,10 @@ function IdentitiesPage() {
       <div className="identities-bottom-cards">
         <div className="identities-bottom-card">
           <div className="identities-bottom-card-header">
-            <h3 className="identities-bottom-card-title">Identités par type</h3>
+            <h3 className="identities-bottom-card-title">
+              <span className="identities-bottom-card-title-icon"><SectionIcon name="pie" /></span>
+              Identités par type
+            </h3>
             <a href="#type" className="identities-bottom-card-link">Voir le rapport complet →</a>
           </div>
           <DonutChart data={identityTypeStats} size={170} />
@@ -735,7 +739,10 @@ function IdentitiesPage() {
 
         <div className="identities-bottom-card">
           <div className="identities-bottom-card-header">
-            <h3 className="identities-bottom-card-title">Identités par source</h3>
+            <h3 className="identities-bottom-card-title">
+              <span className="identities-bottom-card-title-icon"><SectionIcon name="source" /></span>
+              Identités par source
+            </h3>
             <a href="#source" className="identities-bottom-card-link">Voir le rapport complet →</a>
           </div>
           <DonutChart data={identitySourceStats} size={170} />
@@ -743,7 +750,10 @@ function IdentitiesPage() {
 
         <div className="identities-bottom-card">
           <div className="identities-bottom-card-header">
-            <h3 className="identities-bottom-card-title">Identités liées à ERP</h3>
+            <h3 className="identities-bottom-card-title">
+              <span className="identities-bottom-card-title-icon"><SectionIcon name="link" /></span>
+              Identités liées à ERP
+            </h3>
             <a href="#erp" className="identities-bottom-card-link">Voir le rapport complet →</a>
           </div>
           <DonutChart data={identityErpLinkStats} size={170} />
@@ -752,7 +762,10 @@ function IdentitiesPage() {
 
       <div className="identities-top-card">
         <div className="identities-top-card-header">
-          <h3 className="identities-top-card-title">Top identités non liées à ERP</h3>
+          <h3 className="identities-top-card-title">
+            <span className="identities-top-card-title-icon"><SectionIcon name="alert" /></span>
+            Top identités non liées à ERP
+          </h3>
           <a href="#top-unlinked" className="identities-top-card-link">Voir toutes les identités →</a>
         </div>
         <div className="identities-top-list">

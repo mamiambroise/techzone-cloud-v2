@@ -1,4 +1,7 @@
-import { dashboardMetrics, dashboardActions, dashboardActivity, activityTypeConfig } from '../data/mock';
+import { dashboardMetrics, dashboardActions, dashboardActivity, activityTypeConfig, userStatusStats, tenantStatusStats, orgTypeStats, connections24h, recentUsers } from '../data/mock';
+import SectionIcon from '../components/SectionIcon';
+import DonutChart from '../components/DonutChart';
+import LineChart from '../components/LineChart';
 import './Dashboard.css';
 
 function MetricSparkline({ data, color }) {
@@ -154,7 +157,10 @@ function Dashboard() {
       <div className="dashboard-grid">
         <section className="dashboard-card">
           <div className="dashboard-card-header">
-            <h3 className="dashboard-card-title">À traiter maintenant</h3>
+            <h3 className="dashboard-card-title">
+              <span className="dashboard-card-title-icon"><SectionIcon name="alert" /></span>
+              À traiter maintenant
+            </h3>
             <span className="dashboard-card-badge">{dashboardActions.length}</span>
           </div>
           <ul className="dashboard-action-list">
@@ -172,7 +178,10 @@ function Dashboard() {
 
         <section className="dashboard-card dashboard-card-activity">
           <div className="dashboard-card-header">
-            <h3 className="dashboard-card-title">Activité récente</h3>
+            <h3 className="dashboard-card-title">
+              <span className="dashboard-card-title-icon"><SectionIcon name="clock" /></span>
+              Activité récente
+            </h3>
             <a href="#activity" className="dashboard-card-link">Voir le journal complet →</a>
           </div>
           <ul className="dashboard-activity-list">
@@ -197,6 +206,76 @@ function Dashboard() {
               );
             })}
           </ul>
+        </section>
+      </div>
+
+      <div className="dashboard-charts-grid">
+        <section className="dashboard-card">
+          <div className="dashboard-card-header">
+            <h3 className="dashboard-card-title">
+              <span className="dashboard-card-title-icon"><SectionIcon name="users" /></span>
+              Répartition des utilisateurs par statut
+            </h3>
+          </div>
+          <DonutChart data={userStatusStats} size={170} />
+        </section>
+
+        <section className="dashboard-card">
+          <div className="dashboard-card-header">
+            <h3 className="dashboard-card-title">
+              <span className="dashboard-card-title-icon"><SectionIcon name="grid" /></span>
+              Répartition des tenants par statut
+            </h3>
+          </div>
+          <DonutChart data={tenantStatusStats} size={170} />
+        </section>
+
+        <section className="dashboard-card">
+          <div className="dashboard-card-header">
+            <h3 className="dashboard-card-title">
+              <span className="dashboard-card-title-icon"><SectionIcon name="pie" /></span>
+              Répartition des organisations par type
+            </h3>
+          </div>
+          <DonutChart data={orgTypeStats} size={170} />
+        </section>
+      </div>
+
+      <div className="dashboard-grid">
+        <section className="dashboard-card">
+          <div className="dashboard-card-header">
+            <h3 className="dashboard-card-title">
+              <span className="dashboard-card-title-icon"><SectionIcon name="trend" /></span>
+              Connexions (24h)
+            </h3>
+          </div>
+          <LineChart data={connections24h} stats={[
+            { value: '37', label: 'Sessions actives' },
+            { value: '156', label: 'Connexions' },
+            { value: '3', label: 'Échecs' },
+            { value: '1', label: 'Suspectes' },
+          ]} />
+        </section>
+
+        <section className="dashboard-card">
+          <div className="dashboard-card-header">
+            <h3 className="dashboard-card-title">
+              <span className="dashboard-card-title-icon"><SectionIcon name="clock" /></span>
+              Derniers utilisateurs créés
+            </h3>
+            <a href="/users" className="dashboard-card-link">Voir tout →</a>
+          </div>
+          <div className="dashboard-recent-list">
+            {recentUsers.map((u) => (
+              <div key={u.id} className="dashboard-recent-item">
+                <div className="dashboard-recent-info">
+                  <span className="dashboard-recent-name">{u.firstName} {u.lastName}</span>
+                  <span className="dashboard-recent-email">{u.email}</span>
+                </div>
+                <span className={`dashboard-recent-status dashboard-recent-status-${u.status}`}>{u.status}</span>
+              </div>
+            ))}
+          </div>
         </section>
       </div>
     </div>

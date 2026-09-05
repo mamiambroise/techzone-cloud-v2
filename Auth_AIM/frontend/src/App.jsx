@@ -10,11 +10,13 @@ import IdentitiesPage from './pages/Identities/IdentitiesPage';
 import IdentityLinksPage from './pages/IdentityLinks/IdentityLinksPage';
 import IdentityGroupsPage from './pages/IdentityGroups/IdentityGroupsPage';
 import OrganisationsPage from './pages/Organisations/OrganisationsPage';
+import TenantsPage from './pages/Tenants/TenantsPage';
 import RolesPage from './pages/Roles/RolesPage';
 import PoliciesPage from './pages/Policies/PoliciesPage';
 import SessionsPage from './pages/Sessions/SessionsPage';
 import ContextsPage from './pages/Contexts/ContextsPage';
 import InvitationPage from './pages/Invitation/InvitationPage';
+import IamOverviewPage from './pages/IamOverview/IamOverviewPage';
 
 function AppRoutes() {
   return (
@@ -30,6 +32,7 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/iam/overview" element={<IamOverviewPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/users/:userId" element={<Placeholder title="Détail utilisateur" />} />
         <Route path="/identities" element={<IdentitiesPage />} />
@@ -37,7 +40,7 @@ function AppRoutes() {
         <Route path="/identity-groups" element={<IdentityGroupsPage />} />
         <Route path="/organisations" element={<OrganisationsPage />} />
         <Route path="/organisations/:orgId" element={<Placeholder title="Détail organisation" />} />
-        <Route path="/tenants" element={<Placeholder title="Tenants" />} />
+        <Route path="/tenants" element={<TenantsPage />} />
         <Route path="/roles" element={<RolesPage />} />
         <Route path="/policies" element={<PoliciesPage />} />
         <Route path="/sessions" element={<SessionsPage />} />

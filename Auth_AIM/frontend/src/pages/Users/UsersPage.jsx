@@ -5,6 +5,7 @@ import * as usersService from '../../services/usersMockService';
 import UserDetailPanel from '../../components/UserDetailPanel';
 import DonutChart from '../../components/DonutChart';
 import LineChart from '../../components/LineChart';
+import SectionIcon from '../../components/SectionIcon';
 import './UsersPage.css';
 
 const ROLE_OPTIONS = ['Super Admin', 'Admin', 'Manager', 'Éditeur', 'Viewer'];
@@ -672,7 +673,10 @@ function UsersPage() {
       <div className="users-bottom-cards">
         <div className="users-bottom-card">
           <div className="users-bottom-card-header">
-            <h3 className="users-bottom-card-title">Répartition par rôle</h3>
+            <h3 className="users-bottom-card-title">
+              <span className="users-bottom-card-title-icon"><SectionIcon name="pie" /></span>
+              Répartition par rôle
+            </h3>
             <a href="#roles" className="users-bottom-card-link">Voir le rapport complet →</a>
           </div>
           <DonutChart data={roleStats} size={170} />
@@ -680,7 +684,10 @@ function UsersPage() {
 
         <div className="users-bottom-card">
           <div className="users-bottom-card-header">
-            <h3 className="users-bottom-card-title">Connexions (24h)</h3>
+            <h3 className="users-bottom-card-title">
+              <span className="users-bottom-card-title-icon"><SectionIcon name="trend" /></span>
+              Connexions (24h)
+            </h3>
             <a href="#connections" className="users-bottom-card-link">Voir le rapport complet →</a>
           </div>
           <LineChart data={connections24h} stats={[
@@ -693,7 +700,10 @@ function UsersPage() {
 
         <div className="users-bottom-card">
           <div className="users-bottom-card-header">
-            <h3 className="users-bottom-card-title">Top utilisateurs par activité</h3>
+            <h3 className="users-bottom-card-title">
+              <span className="users-bottom-card-title-icon"><SectionIcon name="trophy" /></span>
+              Top utilisateurs par activité
+            </h3>
             <a href="#topusers" className="users-bottom-card-link">Voir tous les utilisateurs →</a>
           </div>
           <div className="users-top-list">

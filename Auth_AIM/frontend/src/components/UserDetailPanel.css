@@ -68,23 +68,23 @@
 }
 
 .status-active {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-badge-success-bg);
+  color: var(--color-badge-success-text);
 }
 
 .status-suspended {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-badge-warning-bg);
+  color: var(--color-badge-warning-text);
 }
 
 [data-theme="dark"] .status-active {
-  background-color: #064e3b;
-  color: #a7f3d0;
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
 }
 
 [data-theme="dark"] .status-suspended {
-  background-color: #78350f;
-  color: #fde68a;
+  background-color: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
 }
 
 .user-detail-pills {
@@ -102,27 +102,27 @@
 }
 
 .user-detail-pill-role {
-  background-color: #f5f3ff;
-  color: #7c3aed;
-  border-color: #ddd6fe;
+  background-color: var(--color-stat-icon-bg-purple);
+  color: var(--color-stat-icon-text-purple);
+  border-color: transparent;
 }
 
 .user-detail-pill-tenant {
-  background-color: #eff6ff;
-  color: #2563eb;
-  border-color: #bfdbfe;
+  background-color: var(--color-stat-icon-bg-blue);
+  color: var(--color-stat-icon-text-blue);
+  border-color: transparent;
 }
 
 [data-theme="dark"] .user-detail-pill-role {
-  background-color: #2e1065;
+  background-color: rgba(124, 58, 237, 0.18);
   color: #c4b5fd;
-  border-color: #4c1d95;
+  border-color: transparent;
 }
 
 [data-theme="dark"] .user-detail-pill-tenant {
-  background-color: #172554;
+  background-color: rgba(37, 99, 235, 0.18);
   color: #93c5fd;
-  border-color: #1e3a8a;
+  border-color: transparent;
 }
 
 .user-detail-tabs {

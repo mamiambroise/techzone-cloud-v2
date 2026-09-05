@@ -384,3 +384,328 @@ export const invitations = [
     expiresAt: '2026-09-10 23:59',
   },
 ];
+
+export const organisations = [
+  { id: 1, name: 'Boutique A', legalName: 'Boutique A SARL', code: 'ORG-001', type: 'SARL', country: 'France', timezone: 'Europe/Paris', status: 'active', createdAt: '2024-01-10', tenantCount: 3 },
+  { id: 2, name: 'Boutique B', legalName: 'Boutique B SAS', code: 'ORG-002', type: 'SAS', country: 'France', timezone: 'Europe/Berlin', status: 'active', createdAt: '2024-02-14', tenantCount: 2 },
+  { id: 3, name: 'Boutique C', legalName: 'Boutique C EURL', code: 'ORG-003', type: 'EURL', country: 'Canada', timezone: 'America/Montreal', status: 'active', createdAt: '2024-03-05', tenantCount: 2 },
+  { id: 4, name: 'Boutique D', legalName: 'Boutique D SA', code: 'ORG-004', type: 'SA', country: 'France', timezone: 'Europe/Paris', status: 'suspended', createdAt: '2024-04-18', tenantCount: 1 },
+  { id: 5, name: 'Boutique E', legalName: 'Boutique E EI', code: 'ORG-005', type: 'EI', country: 'Belgique', timezone: 'Europe/Brussels', status: 'archived', createdAt: '2024-05-22', tenantCount: 0 },
+];
+
+export const tenants = [
+  { id: 1, name: 'Boutique A - Paris', organisationId: 1, ownerId: 1, ownerName: 'Mami Admin', status: 'ACTIVE', plan: 'Premium', region: 'EU-West', createdAt: '2024-01-12' },
+  { id: 2, name: 'Boutique A - Lyon', organisationId: 1, ownerId: 2, ownerName: 'Sophie Martin', status: 'ACTIVE', plan: 'Standard', region: 'EU-West', createdAt: '2024-02-01' },
+  { id: 3, name: 'Boutique A - Bordeaux', organisationId: 1, ownerId: 3, ownerName: 'Thomas Bernard', status: 'ACTIVE', plan: 'Standard', region: 'EU-West', createdAt: '2024-02-15' },
+  { id: 4, name: 'Boutique B - Berlin', organisationId: 2, ownerId: 4, ownerName: 'Emma Dubois', status: 'ACTIVE', plan: 'Premium', region: 'EU-Central', createdAt: '2024-02-20' },
+  { id: 5, name: 'Boutique B - Munich', organisationId: 2, ownerId: 5, ownerName: 'Lucas Moreau', status: 'SUSPENDED', plan: 'Standard', region: 'EU-Central', createdAt: '2024-03-10' },
+  { id: 6, name: 'Boutique C - Montreal', organisationId: 3, ownerId: 6, ownerName: 'Chloé Roux', status: 'ACTIVE', plan: 'Premium', region: 'NA-East', createdAt: '2024-03-12' },
+  { id: 7, name: 'Boutique C - Toronto', organisationId: 3, ownerId: 7, ownerName: 'Nathan Girard', status: 'ACTIVE', plan: 'Standard', region: 'NA-East', createdAt: '2024-04-01' },
+  { id: 8, name: 'Boutique D - Paris', organisationId: 4, ownerId: 8, ownerName: 'Léa Fontaine', status: 'ACTIVE', plan: 'Standard', region: 'EU-West', createdAt: '2024-04-20' },
+];
+
+export const organisationStats = [
+  { label: 'Organisations', value: String(organisations.length), context: 'Comptes enregistrés', icon: 'org', color: '#2563eb' },
+  { label: 'Tenants', value: String(tenants.length), context: 'Environnements déployés', icon: 'tenant', color: '#7c3aed' },
+  { label: 'Tenants actifs', value: String(tenants.filter((t) => t.status === 'ACTIVE').length), context: 'Opérationnels', icon: 'active', color: '#10b981' },
+  { label: 'Org. actives', value: String(organisations.filter((o) => o.status === 'active').length), context: `${organisations.filter((o) => o.status === 'suspended').length} suspendues · ${organisations.filter((o) => o.status === 'archived').length} archivées`, icon: 'status', color: '#f59e0b' },
+];
+
+export const userStatusStats = [
+  { name: 'Actif', value: users.filter((u) => u.status === 'active').length, color: '#10b981' },
+  { name: 'Suspendu', value: users.filter((u) => u.status === 'suspended').length, color: '#f59e0b' },
+  { name: 'En attente', value: users.filter((u) => u.status === 'pending').length, color: '#3b82f6' },
+  { name: 'Archivé', value: users.filter((u) => u.status === 'archived').length, color: '#6b7280' },
+];
+
+export const tenantStatusStats = [
+  { name: 'Actif', value: tenants.filter((t) => t.status === 'ACTIVE').length, color: '#10b981' },
+  { name: 'Provisionnement', value: tenants.filter((t) => t.status === 'PENDING').length, color: '#3b82f6' },
+  { name: 'Suspendu', value: tenants.filter((t) => t.status === 'SUSPENDED').length, color: '#f59e0b' },
+  { name: 'Archivé', value: tenants.filter((t) => t.status === 'ARCHIVED').length, color: '#6b7280' },
+];
+
+export const orgTypeStats = [
+  { name: 'SARL', value: organisations.filter((o) => o.type === 'SARL').length, color: '#2563eb' },
+  { name: 'SAS', value: organisations.filter((o) => o.type === 'SAS').length, color: '#7c3aed' },
+  { name: 'EURL', value: organisations.filter((o) => o.type === 'EURL').length, color: '#10b981' },
+  { name: 'SA', value: organisations.filter((o) => o.type === 'SA').length, color: '#f59e0b' },
+  { name: 'EI', value: organisations.filter((o) => o.type === 'EI').length, color: '#6b7280' },
+];
+
+export const recentUsers = users.slice(0, 5);
+
+export const roles = [
+  { id: 1, name: 'Super Admin', type: 'system', scope: 'global', description: 'Accès complet à toutes les fonctionnalités.', status: 'active', createdAt: '2024-01-01', isSystem: true },
+  { id: 2, name: 'Admin', type: 'system', scope: 'global', description: 'Gestion des utilisateurs et des configurations.', status: 'active', createdAt: '2024-01-01', isSystem: true },
+  { id: 3, name: 'Manager', type: 'system', scope: 'tenant', description: 'Gestion des équipes et des opérations par tenant.', status: 'active', createdAt: '2024-01-01', isSystem: true },
+  { id: 4, name: 'Éditeur', type: 'system', scope: 'tenant', description: 'Création et modification de contenu.', status: 'active', createdAt: '2024-01-01', isSystem: true },
+  { id: 5, name: 'Viewer', type: 'system', scope: 'global', description: 'Lecture seule sur les ressources autorisées.', status: 'active', createdAt: '2024-01-01', isSystem: true },
+  { id: 6, name: 'Auditeur', type: 'custom', scope: 'tenant', description: 'Accès en lecture aux logs et rapports.', status: 'active', createdAt: '2024-06-15', isSystem: false },
+  { id: 7, name: 'Support Client', type: 'custom', scope: 'tenant', description: 'Gestion des tickets et du support utilisateur.', status: 'active', createdAt: '2024-08-20', isSystem: false },
+  { id: 8, name: 'Intégrateur', type: 'custom', scope: 'global', description: 'Accès aux APIs et aux connecteurs.', status: 'archived', createdAt: '2025-01-10', isSystem: false },
+];
+
+export const permissions = [
+  { id: 1, name: 'users.read', description: 'Lister et consulter les utilisateurs.', effect: 'ALLOW', resource: 'users', action: 'read' },
+  { id: 2, name: 'users.write', description: 'Créer et modifier des utilisateurs.', effect: 'ALLOW', resource: 'users', action: 'write' },
+  { id: 3, name: 'users.delete', description: 'Supprimer des utilisateurs.', effect: 'ALLOW', resource: 'users', action: 'delete' },
+  { id: 4, name: 'roles.read', description: 'Consulter les rôles et permissions.', effect: 'ALLOW', resource: 'roles', action: 'read' },
+  { id: 5, name: 'roles.write', description: 'Créer et modifier des rôles.', effect: 'ALLOW', resource: 'roles', action: 'write' },
+  { id: 6, name: 'policies.read', description: 'Consulter les policies d\'accès.', effect: 'ALLOW', resource: 'policies', action: 'read' },
+  { id: 7, name: 'policies.write', description: 'Créer et modifier des policies.', effect: 'ALLOW', resource: 'policies', action: 'write' },
+  { id: 8, name: 'policies.delete', description: 'Supprimer des policies.', effect: 'DENY', resource: 'policies', action: 'delete' },
+  { id: 9, name: 'tenants.read', description: 'Consulter les tenants.', effect: 'ALLOW', resource: 'tenants', action: 'read' },
+  { id: 10, name: 'tenants.write', description: 'Modifier les configurations de tenants.', effect: 'ALLOW', resource: 'tenants', action: 'write' },
+  { id: 11, name: 'audit.read', description: 'Accéder aux logs d\'audit.', effect: 'ALLOW', resource: 'audit', action: 'read' },
+  { id: 12, name: 'settings.write', description: 'Modifier les paramètres globaux.', effect: 'DENY', resource: 'settings', action: 'write' },
+];
+
+export const rolePermissions = [
+  { roleId: 1, permissionId: 1 },
+  { roleId: 1, permissionId: 2 },
+  { roleId: 1, permissionId: 3 },
+  { roleId: 1, permissionId: 4 },
+  { roleId: 1, permissionId: 5 },
+  { roleId: 1, permissionId: 6 },
+  { roleId: 1, permissionId: 7 },
+  { roleId: 1, permissionId: 8 },
+  { roleId: 1, permissionId: 9 },
+  { roleId: 1, permissionId: 10 },
+  { roleId: 1, permissionId: 11 },
+  { roleId: 1, permissionId: 12 },
+  { roleId: 2, permissionId: 1 },
+  { roleId: 2, permissionId: 2 },
+  { roleId: 2, permissionId: 4 },
+  { roleId: 2, permissionId: 6 },
+  { roleId: 2, permissionId: 9 },
+  { roleId: 2, permissionId: 11 },
+  { roleId: 3, permissionId: 1 },
+  { roleId: 3, permissionId: 4 },
+  { roleId: 3, permissionId: 9 },
+  { roleId: 3, permissionId: 11 },
+  { roleId: 4, permissionId: 1 },
+  { roleId: 4, permissionId: 4 },
+  { roleId: 5, permissionId: 1 },
+  { roleId: 5, permissionId: 4 },
+  { roleId: 6, permissionId: 1 },
+  { roleId: 6, permissionId: 11 },
+  { roleId: 7, permissionId: 1 },
+  { roleId: 7, permissionId: 4 },
+  { roleId: 7, permissionId: 9 },
+];
+
+export const userRoles = [
+  { userId: 1, roleId: 1 },
+  { userId: 2, roleId: 2 },
+  { userId: 3, roleId: 3 },
+  { userId: 4, roleId: 4 },
+  { userId: 5, roleId: 5 },
+  { userId: 6, roleId: 2 },
+  { userId: 6, roleId: 3 },
+  { userId: 7, roleId: 4 },
+  { userId: 8, roleId: 5 },
+  { userId: 9, roleId: 3 },
+  { userId: 10, roleId: 5 },
+  { userId: 11, roleId: 5 },
+  { userId: 12, roleId: 4 },
+  { userId: 13, roleId: 5 },
+  { userId: 14, roleId: 5 },
+  { userId: 15, roleId: 3 },
+];
+
+export const policies = [
+  { id: 1, name: 'Accès Admin Global', type: 'system', effect: 'ALLOW', priority: 10, status: 'active', description: 'Accès complet pour les administrateurs globaux.', subject: 'role:Super Admin', resource: '*', action: '*', conditions: '', createdAt: '2024-01-01' },
+  { id: 2, name: 'Lecture Utilisateurs', type: 'system', effect: 'ALLOW', priority: 20, status: 'active', description: 'Permet la lecture des utilisateurs pour tous les rôles connectés.', subject: 'role:*', resource: 'users', action: 'read', conditions: 'mfa.enabled == true', createdAt: '2024-01-01' },
+  { id: 3, name: 'Blocage Suppression Policies', type: 'system', effect: 'DENY', priority: 30, status: 'active', description: 'Interdit la suppression de policies par les non-administrateurs.', subject: 'role:Viewer', resource: 'policies', action: 'delete', conditions: '', createdAt: '2024-01-01' },
+  { id: 4, name: 'Accès Support Restreint', type: 'custom', effect: 'ALLOW', priority: 40, status: 'active', description: 'Accès restreint aux tickets et données de support.', subject: 'role:Support Client', resource: 'support:*', action: 'read', conditions: 'tenant.id == request.tenantId', createdAt: '2024-08-20' },
+  { id: 5, name: 'Intégration API', type: 'custom', effect: 'ALLOW', priority: 50, status: 'inactive', description: 'Accès API pour les intégrateurs externes.', subject: 'role:Intégrateur', resource: 'api/*', action: 'invoke', conditions: 'ip.whitelist == true', createdAt: '2025-01-10' },
+  { id: 6, name: 'Audit Logs', type: 'custom', effect: 'ALLOW', priority: 60, status: 'active', description: 'Lecture des logs d\'audit pour les auditeurs.', subject: 'role:Auditeur', resource: 'audit', action: 'read', conditions: 'time.window == business_hours', createdAt: '2024-06-15' },
+];
+
+export const memberships = [
+  { id: 1, userId: 1, tenantId: 1, role: 'Super Admin', joinedAt: '2024-01-15' },
+  { id: 2, userId: 1, tenantId: 2, role: 'Admin', joinedAt: '2024-01-16' },
+  { id: 3, userId: 1, tenantId: 3, role: 'Manager', joinedAt: '2024-01-17' },
+  { id: 4, userId: 2, tenantId: 2, role: 'Admin', joinedAt: '2024-03-10' },
+  { id: 5, userId: 3, tenantId: 3, role: 'Manager', joinedAt: '2024-05-22' },
+  { id: 6, userId: 4, tenantId: 4, role: 'Éditeur', joinedAt: '2024-06-01' },
+  { id: 7, userId: 5, tenantId: 5, role: 'Viewer', joinedAt: '2024-07-14' },
+  { id: 8, userId: 6, tenantId: 6, role: 'Admin', joinedAt: '2024-02-20' },
+  { id: 9, userId: 6, tenantId: 7, role: 'Manager', joinedAt: '2024-02-21' },
+  { id: 10, userId: 7, tenantId: 7, role: 'Éditeur', joinedAt: '2024-08-05' },
+  { id: 11, userId: 8, tenantId: 8, role: 'Viewer', joinedAt: '2024-09-12' },
+  { id: 12, userId: 9, tenantId: 1, role: 'Manager', joinedAt: '2024-04-30' },
+  { id: 13, userId: 10, tenantId: 5, role: 'Viewer', joinedAt: '2024-10-01' },
+  { id: 14, userId: 11, tenantId: 6, role: 'Viewer', joinedAt: '2024-11-05' },
+  { id: 15, userId: 12, tenantId: 4, role: 'Éditeur', joinedAt: '2024-12-01' },
+];
+
+export const sessions = [
+  { id: 1, userId: 1, device: 'Chrome sur Windows', ip: '192.168.1.42', location: 'Antananarivo, MG', createdAt: '2026-09-01 08:00', lastActiveAt: '2026-09-05 16:25', isCurrent: true, status: 'ACTIVE' },
+  { id: 2, userId: 1, device: 'Safari sur iPhone', ip: '192.168.1.43', location: 'Antananarivo, MG', createdAt: '2026-09-02 09:00', lastActiveAt: '2026-09-05 14:10', isCurrent: false, status: 'ACTIVE' },
+  { id: 3, userId: 2, device: 'Chrome sur macOS', ip: '10.0.0.15', location: 'Paris, France', createdAt: '2026-09-02 12:00', lastActiveAt: '2026-09-02 12:20', isCurrent: false, status: 'ACTIVE' },
+  { id: 4, userId: 6, device: 'Firefox sur Windows', ip: '10.0.0.22', location: 'Lyon, France', createdAt: '2026-09-01 18:00', lastActiveAt: '2026-09-02 09:30', isCurrent: false, status: 'ACTIVE' },
+  { id: 5, userId: 3, device: 'Chrome sur Windows', ip: '10.0.0.31', location: 'Berlin, Allemagne', createdAt: '2026-08-30 07:00', lastActiveAt: '2026-09-02 11:05', isCurrent: false, status: 'EXPIRED' },
+  { id: 6, userId: 9, device: 'Edge sur Windows', ip: '10.0.0.45', location: 'Paris, France', createdAt: '2026-09-02 13:00', lastActiveAt: '2026-09-02 14:00', isCurrent: false, status: 'ACTIVE' },
+  { id: 7, userId: 4, device: 'Safari sur iPad', ip: '10.0.0.18', location: 'Montreal, Canada', createdAt: '2026-09-01 10:00', lastActiveAt: '2026-09-01 10:50', isCurrent: false, status: 'REVOKED' },
+  { id: 8, userId: 7, device: 'Chrome sur Android', ip: '10.0.0.72', location: 'Toronto, Canada', createdAt: '2026-08-28 16:00', lastActiveAt: '2026-09-01 18:45', isCurrent: false, status: 'EXPIRED' },
+];
+
+export const sessionStatusConfig = {
+  ACTIVE: { color: '#10b981', label: 'Actif', bg: '#dcfce7', text: '#166534' },
+  EXPIRED: { color: '#f59e0b', label: 'Expire', bg: '#fef3c7', text: '#92400e' },
+  REVOKED: { color: '#ef4444', label: 'Revoque', bg: '#fef2f2', text: '#991b1b' },
+};
+
+export const sessionsStats = [
+  { label: 'Sessions actives', value: String(sessions.filter((s) => s.status === 'ACTIVE').length), context: 'En cours', icon: 'session', color: '#10b981' },
+  { label: 'Appareils uniques', value: String(new Set(sessions.map((s) => s.device)).size), context: 'Tous utilisateurs', icon: 'device', color: '#7c3aed' },
+  { label: 'Derniere activite suspecte', value: 'Hier', context: 'IP 10.0.0.72 · Toronto', icon: 'alert', color: '#f59e0b' },
+  { label: 'Sessions expirees', value: String(sessions.filter((s) => s.status === 'EXPIRED').length), context: 'A nettoyer', icon: 'expired', color: '#ef4444' },
+];
+
+export const iamOverview = {
+  status: 'WARNING',
+  lastRefresh: '2026-09-05T20:32:00Z',
+  mode: 'STANDARD',
+  globalStatus: {
+    health: { score: 92, label: 'Excellent', trend: 'up' },
+    security: { score: 74, label: 'À surveiller', trend: 'down' },
+    readiness: { score: 88, label: 'Bon', trend: 'up' },
+    contextIntegrity: { score: 65, label: 'Fragile', trend: 'down' },
+  },
+  coreMetrics: {
+    users: users.length,
+    identities: 142,
+    tenants: tenants.length,
+    roles: 8,
+    permissions: permissions.length,
+    activeSessions: sessions.filter((s) => s.status === 'ACTIVE').length,
+    activeContexts: 4,
+  },
+  alerts: [
+    {
+      id: 'al-001',
+      severity: 'CRITICAL',
+      title: 'Connexion depuis un pays inhabituel',
+      description: 'IP 92.184.102.55 (Moscou, RU) — utilisateur Mami Admin',
+      module: 'Sessions',
+      createdAt: '2026-09-05 19:48',
+      link: '/sessions',
+    },
+    {
+      id: 'al-002',
+      severity: 'HIGH',
+      title: '5 comptes sans MFA activée',
+      description: 'Comptes privilégiés sans second facteur — Boutique B, Boutique C',
+      module: 'Identités',
+      createdAt: '2026-09-05 18:12',
+      link: '/identities',
+    },
+    {
+      id: 'al-003',
+      severity: 'HIGH',
+      title: 'Conflit de contexte détecté',
+      description: 'Léa Fontana active simultanément sur Boutique D - Paris et Boutique C - Montreal',
+      module: 'Contextes',
+      createdAt: '2026-09-05 16:05',
+      link: '/contexts',
+    },
+    {
+      id: 'al-004',
+      severity: 'WARNING',
+      title: 'Identités non liées à ERP',
+      description: '35 identités sans correspondance ERP — risque de rupture de traçabilité',
+      module: 'Identités',
+      createdAt: '2026-09-05 14:30',
+      link: '/identities',
+    },
+    {
+      id: 'al-005',
+      severity: 'WARNING',
+      title: 'Politique MFA non appliquée',
+      description: 'Brouillon « MFA obligatoire - Super Admin » en attente depuis 3 jours',
+      module: 'Accès & Policies',
+      createdAt: '2026-09-04 11:20',
+      link: '/policies',
+    },
+    {
+      id: 'al-006',
+      severity: 'INFO',
+      title: 'Mise à jour de rôle effectuée',
+      description: 'Hugo Mercier promu Manager sur Boutique A - Paris',
+      module: 'Rôles & Permissions',
+      createdAt: '2026-09-05 09:15',
+      link: '/roles',
+    },
+    {
+      id: 'al-007',
+      severity: 'INFO',
+      title: 'Nouveau tenant provisionné',
+      description: 'Boutique D - Paris a été créé par Mami Admin',
+      module: 'Organisations & Tenants',
+      createdAt: '2026-09-04 17:45',
+      link: '/tenants',
+    },
+  ],
+  contextExplorer: {
+    activeContexts: 4,
+    conflicts: 1,
+    lastCheck: '2026-09-05 20:30:00Z',
+  },
+  accessDecisions: {
+    allow: 1284,
+    deny: 73,
+    last24h: [
+      { hour: '00h', allow: 22, deny: 1 },
+      { hour: '02h', allow: 18, deny: 2 },
+      { hour: '04h', allow: 12, deny: 0 },
+      { hour: '06h', allow: 35, deny: 3 },
+      { hour: '08h', allow: 124, deny: 6 },
+      { hour: '10h', allow: 198, deny: 9 },
+      { hour: '12h', allow: 156, deny: 7 },
+      { hour: '14h', allow: 187, deny: 11 },
+      { hour: '16h', allow: 165, deny: 8 },
+      { hour: '18h', allow: 142, deny: 9 },
+      { hour: '20h', allow: 121, deny: 7 },
+      { hour: '22h', allow: 104, deny: 10 },
+    ],
+  },
+  iamCoverage: {
+    percent: 86,
+    coveredModules: ['Utilisateurs', 'Identités', 'Organisations', 'Tenants', 'Sessions', 'Rôles'],
+    uncoveredModules: ['Policies', 'Audit'],
+  },
+  privilegedAccounts: [
+    { userId: 1, name: 'Mami Admin', role: 'Super Admin', lastActivity: '2026-09-05 20:25' },
+    { userId: 2, name: 'Sophie Martin', role: 'Admin', lastActivity: '2026-09-05 18:42' },
+    { userId: 3, name: 'Thomas Bernard', role: 'Manager', lastActivity: '2026-09-05 16:10' },
+    { userId: 9, name: 'Hugo Mercier', role: 'Manager', lastActivity: '2026-09-05 14:00' },
+  ],
+  sensitiveChanges: [
+    { id: 'sc-01', actor: 'Mami Admin', action: 'a modifié le rôle de', target: 'Hugo Mercier → Manager', timestamp: '2026-09-05 09:15' },
+    { id: 'sc-02', actor: 'Sophie Martin', action: 'a révoqué la session de', target: 'Lucas Moreau (iPad)', timestamp: '2026-09-05 08:50' },
+    { id: 'sc-03', actor: 'Mami Admin', action: 'a suspendu le compte de', target: 'Inès Blanc', timestamp: '2026-09-04 17:22' },
+    { id: 'sc-04', actor: 'Mami Admin', action: 'a archivé l\'organisation', target: 'Boutique E (EI)', timestamp: '2026-09-04 11:05' },
+    { id: 'sc-05', actor: 'Sophie Martin', action: 'a créé la politique', target: 'Accès Support Restreint', timestamp: '2026-09-03 14:40' },
+  ],
+  riskySessions: [
+    { sessionId: 5, userId: 3, reason: 'IP inhabituelle', ip: '10.0.0.31', location: 'Berlin, Allemagne', detectedAt: '2026-09-05 20:15' },
+    { sessionId: 8, userId: 7, reason: 'Localisation inhabituelle', ip: '10.0.0.72', location: 'Toronto, Canada', detectedAt: '2026-09-05 18:48' },
+    { sessionId: 3, userId: 2, reason: 'Plusieurs échecs MFA', ip: '10.0.0.15', location: 'Paris, France', detectedAt: '2026-09-05 12:20' },
+  ],
+  connectionsTrend: connections24h,
+  roleDistribution: roleStats,
+  tenantActivity: tenants.map((t) => {
+    const score = t.status === 'ACTIVE' ? 60 + (t.id * 7) % 35 : 15;
+    const trend = t.status === 'ACTIVE' ? 'up' : 'down';
+    return {
+      tenantId: t.id,
+      tenantName: t.name,
+      activityScore: score,
+      trend,
+    };
+  }),
+  recentActivity: dashboardActivity,
+};
