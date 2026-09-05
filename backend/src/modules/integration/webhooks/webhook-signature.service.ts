@@ -61,7 +61,7 @@ export class WebhookSignatureService {
     algorithm: 'sha256' | 'sha1',
     toleranceSeconds: number,
   ): SignatureVerificationResult {
-    const [timestamp, headerSig] = this.extractTimestamp(signature);
+    const [headerSig, timestamp] = this.extractTimestamp(signature);
 
     if (!timestamp) {
       return { valid: false, reason: 'Missing timestamp' };
@@ -111,7 +111,7 @@ export class WebhookSignatureService {
 
   private timingSafeEqual(a: string, b: string): boolean {
     const bufA = Buffer.from(a, 'hex');
-    const bufB = Buffer.from(b, 'utf8');
+    const bufB = Buffer.from(b, 'hex');
 
     if (bufA.length !== bufB.length) {
       return false;
@@ -140,6 +140,6 @@ export class WebhookSignatureService {
 
     const size = JSON.stringify(payload).length;
 
-    return size > 0 && size <= 1_000_000;
+    return Object.keys(payload).length > 0 && size <= 1_000_000;
   }
 }

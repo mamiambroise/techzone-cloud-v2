@@ -292,10 +292,10 @@ export class CredentialService {
       return '••••••••';
     }
 
-    if (secret.length <= 4) {
+    if (secret.length <= 5) {
       return '••••';
     }
 
-    return `••••••••${secret.slice(-4)}`;
+    return `••••••••${secret.slice(-5)}`;
   }
 }

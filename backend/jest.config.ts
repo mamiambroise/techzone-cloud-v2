@@ -14,16 +14,18 @@ const config: Config = {
 
   testEnvironment: 'node',
 
-  extensionsToTreatAsEsm: ['.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/jest.setup.ts'],
 
   testRegex: '.*\\.spec\\.ts$',
+
+  extensionsToTreatAsEsm: ['.ts'],
 
   transform: {
     '^.+\\.(ts|js)$': [
       'ts-jest',
       {
-        useESM: true,
         tsconfig: './tsconfig.spec.json',
+        useESM: true,
       },
     ],
   },

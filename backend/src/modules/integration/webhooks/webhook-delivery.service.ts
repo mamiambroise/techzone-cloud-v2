@@ -29,7 +29,7 @@ export class WebhookDeliveryService {
     private readonly signatureService: WebhookSignatureService,
   ) {}
 
-  async createDelivery(_webhookId: string, eventId: string, _payload: unknown): Promise<string> {
+  async createDelivery(webhookId: string, eventId: string, _payload: unknown): Promise<string> {
     const traceId = randomUUID();
 
     await this.prisma.webhookDelivery.create({

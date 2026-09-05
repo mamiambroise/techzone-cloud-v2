@@ -13,7 +13,7 @@ export class IntegrationException extends HttpException {
     super(
       {
         code,
-        message,
+        message: `${code}: ${message}`,
         traceId,
         statusCode: status,
         ...(details !== undefined ? { details } : {}),
