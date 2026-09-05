@@ -385,7 +385,6 @@ function UsersPage() {
 
   const handleRowClick = (user) => {
     setSelectedUser(user);
-    navigate(`/users/${user.id}`);
   };
 
   const handleCreate = (payload) => {
