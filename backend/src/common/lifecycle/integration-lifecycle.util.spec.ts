@@ -1,7 +1,7 @@
 import {
   canTransitionIntegrationEntity,
   IntegrationEntityLifecycleStatus,
-} from '../lifecycle.util';
+} from './integration-lifecycle.util';
 
 describe('IntegrationLifecycleUtil', () => {
   describe('canTransitionIntegrationEntity', () => {
