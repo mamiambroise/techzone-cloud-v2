@@ -14,18 +14,18 @@ const config: Config = {
 
   testEnvironment: 'node',
 
-  extensionsToTreatAsEsm: ['.ts'],
-
-  setupFiles: ['<rootDir>/test/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/jest.setup.ts'],
 
   testRegex: '.*\\.spec\\.ts$',
 
+  extensionsToTreatAsEsm: ['.ts'],
+
   transform: {
-    '^.+\\.ts$': [
+    '^.+\\.(ts|js)$': [
       'ts-jest',
       {
-        useESM: true,
         tsconfig: './tsconfig.spec.json',
+        useESM: true,
       },
     ],
   },
@@ -37,6 +37,10 @@ const config: Config = {
     }),
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+
+  transformIgnorePatterns: [
+    'node_modules/(?!(.*?/node_modules/@nestjs/.*)|(.*?/node_modules/@prisma/.*))',
+  ],
 
   moduleFileExtensions: ['js', 'json', 'ts'],
 

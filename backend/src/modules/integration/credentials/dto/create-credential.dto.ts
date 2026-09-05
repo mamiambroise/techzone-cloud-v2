@@ -1,45 +1,77 @@
 import {
-  IsDateString,
   IsEnum,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
-  Matches,
+  MaxLength,
 } from 'class-validator';
-
-export enum CredentialTypeEnum {
-  API_KEY = 'API_KEY',
-  BASIC_AUTH = 'BASIC_AUTH',
-  BEARER_TOKEN = 'BEARER_TOKEN',
-  OAUTH_CLIENT = 'OAUTH_CLIENT',
-  CERTIFICATE_REFERENCE = 'CERTIFICATE_REFERENCE',
-  CUSTOM_SECRET_REFERENCE = 'CUSTOM_SECRET_REFERENCE',
-}
+import {
+  CredentialStatus,
+  CredentialType,
+} from '../../../../generated/prisma/enums';
 
 export class CreateCredentialDto {
-  @IsNotEmpty()
   @IsString()
-  @Matches(/^[a-z0-9-]+$/, {
-    message: 'code must be lowercase alphanumeric with hyphens',
-  })
-  code!: string;
-
+  @MaxLength(100)
   @IsNotEmpty()
-  @IsEnum(CredentialTypeEnum)
-  type!: CredentialTypeEnum;
+  code: string;
 
-  @IsNotEmpty()
+  @IsEnum(CredentialType)
+  type: CredentialType;
+
   @IsString()
-  provider!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  secretValue!: string;
+  @MaxLength(100)
+  provider: string;
 
   @IsOptional()
-  @IsDateString()
-  expiresAt?: string;
-
-  @IsOptional()
+  @IsObject()
   metadataSafe?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  secretValue?: string;
+}
+
+export class UpdateCredentialDto {
+  @IsOptional()
+  @IsEnum(CredentialStatus)
+  status?: CredentialStatus;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  secretValue?: string;
+
+  @IsOptional()
+  @IsObject()
+  metadataSafe?: Record<string, unknown>;
+
+  @IsOptional()
+  expiresAt?: Date;
+}
+
+export class RotateCredentialDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  secretValue?: string;
+
+  @IsOptional()
+  expiresAt?: Date;
+}
+
+export interface CredentialSafeView {
+  id: string;
+  code: string;
+  type: CredentialType;
+  provider: string;
+  status: CredentialStatus;
+  lastRotatedAt: Date | null;
+  expiresAt: Date | null;
+  metadataSafe: Record<string, unknown> | null;
+  maskedSecret: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

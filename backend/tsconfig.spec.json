@@ -2,8 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "resolvePackageJsonExports": true,
+    "ignoreDeprecations": "6.0",
     "rootDir": "./"
   },
   "include": ["src/**/*.ts", "libs/**/*.ts", "apps/**/*.ts", "jest.config.ts"]

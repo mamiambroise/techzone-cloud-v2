@@ -2,61 +2,93 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
-  Matches,
+  MaxLength,
   Min,
 } from 'class-validator';
-
-export enum WebhookDirectionEnum {
-  INBOUND = 'INBOUND',
-  OUTBOUND = 'OUTBOUND',
-}
+import { WebhookDirection } from '../../../../generated/prisma/enums';
 
 export class CreateWebhookDto {
-  @IsNotEmpty()
   @IsString()
-  @Matches(/^[a-z0-9-]+$/, {
-    message: 'code must be lowercase alphanumeric with hyphens',
-  })
-  code!: string;
-
+  @MaxLength(100)
   @IsNotEmpty()
-  @IsEnum(WebhookDirectionEnum)
-  direction!: WebhookDirectionEnum;
+  code: string;
 
-  @IsNotEmpty()
+  @IsEnum(WebhookDirection)
+  direction: WebhookDirection;
+
   @IsString()
-  event!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  endpoint!: string;
+  @MaxLength(150)
+  event: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
+  endpoint?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   secretRef?: string;
 
   @IsOptional()
-  signaturePolicy?: {
-    algorithm?: 'sha256' | 'sha1';
-    headerName?: string;
-    toleranceSeconds?: number;
-  };
+  @IsObject()
+  signaturePolicy?: Record<string, unknown>;
 
   @IsOptional()
-  retryPolicy?: {
-    maxAttempts?: number;
-    initialDelayMs?: number;
-    backoffMultiplier?: number;
-    maxDelayMs?: number;
-  };
+  @IsObject()
+  retryPolicy?: Record<string, unknown>;
 
   @IsOptional()
   @IsInt()
-  @Min(100)
+  @Min(1)
   timeout?: number;
 
   @IsOptional()
+  @IsObject()
   filters?: Record<string, unknown>;
+}
+
+export class UpdateWebhookDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  event?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  endpoint?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  secretRef?: string;
+
+  @IsOptional()
+  @IsObject()
+  signaturePolicy?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsObject()
+  retryPolicy?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  timeout?: number;
+
+  @IsOptional()
+  @IsObject()
+  filters?: Record<string, unknown>;
+}
+
+export class SendWebhookDto {
+  @IsString()
+  eventId: string;
+
+  @IsObject()
+  payload: Record<string, unknown>;
 }

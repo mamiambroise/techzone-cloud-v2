@@ -1,283 +1,288 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '../../../generated/prisma/client';
-import { CreateIntegrationLogDto } from './dto/create-log.dto';
-import { QueryIntegrationLogsDto } from './dto/query-log.dto';
+import { SearchLogsDto, DiagnosisCategory, TimelineResult, IntegrationMetrics, TimelineEntry } from './dto/search-logs.dto';
+import { getDiagnosisCategories } from './dto/search-logs.dto';
+import { IntegrationLog } from '../../../generated/prisma/client';
+
+const SECRET_PATTERNS: RegExp[] = [
+  /"password"\s*:\s*"[^"]*"/gi,
+  /"token"\s*:\s*"[^"]*"/gi,
+  /"secret"\s*:\s*"[^"]*"/gi,
+  /"apiKey"\s*:\s*"[^"]*"/gi,
+  /"authorization"\s*:\s*"[^"]*"/gi,
+  /"refreshToken"\s*:\s*"[^"]*"/gi,
+  /Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi,
+  /[A-Za-z0-9]{32,}/g,
+];
+
+const SECRET_KEYS = new Set([
+  'password',
+  'token',
+  'secret',
+  'apikey',
+  'api_key',
+  'authorization',
+  'refreshtoken',
+  'refresh_token',
+  'accesstoken',
+  'access_token',
+  'clientid',
+  'client_id',
+  'clientsecret',
+  'client_secret',
+]);
 
 @Injectable()
 export class DiagnosticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Systematically redacts secrets, tokens, and credentials from string or object structures.
-   */
-  redactSensitiveData<T>(input: T): T {
-    if (typeof input === 'string') {
-      return input
-        .replace(/(bearer\s+)[a-zA-Z0-9_.-]+/gi, '$1[REDACTED]')
-        .replace(/(api[_-]?key["':\s=]+)[a-zA-Z0-9_-]+/gi, '$1[REDACTED]')
-        .replace(/(secret["':\s=]+)[a-zA-Z0-9_-]+/gi, '$1[REDACTED]')
-        .replace(/(password["':\s=]+)[^"'\s,}]+/gi, '$1[REDACTED]') as unknown as T;
-    }
-
-    if (input && typeof input === 'object' && !Array.isArray(input)) {
-      const redacted: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(input)) {
-        const lowerKey = key.toLowerCase();
-        if (
-          lowerKey.includes('secret') ||
-          lowerKey.includes('password') ||
-          lowerKey.includes('token') ||
-          lowerKey.includes('authorization') ||
-          lowerKey.includes('apikey')
-        ) {
-          redacted[key] = '[REDACTED]';
-        } else {
-          redacted[key] = this.redactSensitiveData(value);
-        }
-      }
-      return redacted as T;
-    }
-
-    if (Array.isArray(input)) {
-      return input.map((item) => this.redactSensitiveData(item)) as unknown as T;
-    }
-
-    return input;
-  }
-
-  async createLog(dto: CreateIntegrationLogDto) {
-    const sanitizedOperation = this.redactSensitiveData(dto.operation);
-    const now = new Date();
-
-    return this.prisma.integrationLog.create({
-      data: {
-        traceId: dto.traceId,
-        tenantId: dto.tenantId ?? 'default',
-        connectorId: dto.connectorId,
-        operation: sanitizedOperation,
-        direction: dto.direction,
-        status: dto.status,
-        errorCode: dto.errorCode,
-        duration: dto.duration ?? 0,
-        attempt: dto.attempt ?? 1,
-        startedAt: new Date(now.getTime() - (dto.duration ?? 0)),
-        finishedAt: now,
-      },
-    });
-  }
-
-  async findLogs(query?: QueryIntegrationLogsDto) {
-    const page = Math.max(Number(query?.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(query?.limit) || 20, 1), 100);
+  async searchLogs(dto: SearchLogsDto) {
+    const page = Math.max(1, dto.page ?? 1);
+    const limit = Math.max(1, Math.min(dto.limit ?? 50, 200));
     const skip = (page - 1) * limit;
 
     const where: Prisma.IntegrationLogWhereInput = {};
-    if (query?.traceId) where.traceId = query.traceId;
-    if (query?.tenantId) where.tenantId = query.tenantId;
-    if (query?.connectorId) where.connectorId = query.connectorId;
-    if (query?.direction) where.direction = query.direction as any;
-    if (query?.status) where.status = query.status as any;
-    if (query?.errorCode) where.errorCode = query.errorCode;
 
-    if (query?.from || query?.to) {
-      where.startedAt = {
-        ...(query?.from ? { gte: new Date(query.from) } : {}),
-        ...(query?.to ? { lte: new Date(query.to) } : {}),
-      };
+    if (dto.traceId) {
+      where.traceId = { contains: dto.traceId };
+    }
+
+    if (dto.connectorId) {
+      where.connectorId = dto.connectorId;
+    }
+
+    if (dto.direction) {
+      where.direction = dto.direction;
+    }
+
+    if (dto.status) {
+      where.status = dto.status;
+    }
+
+    if (dto.errorCode) {
+      where.errorCode = { contains: dto.errorCode };
+    }
+
+    if (dto.operation) {
+      where.operation = { contains: dto.operation };
+    }
+
+    if (dto.tenantId) {
+      where.tenantId = dto.tenantId;
+    }
+
+    if (dto.startDate || dto.endDate) {
+      where.startedAt = {};
+      if (dto.startDate) {
+        where.startedAt.gte = new Date(dto.startDate);
+      }
+      if (dto.endDate) {
+        where.startedAt.lte = new Date(dto.endDate);
+      }
     }
 
     const [items, total] = await Promise.all([
       this.prisma.integrationLog.findMany({
         where,
-        include: { connector: true },
-        orderBy: { startedAt: 'desc' },
         skip,
         take: limit,
+        orderBy: { startedAt: 'desc' },
       }),
       this.prisma.integrationLog.count({ where }),
     ]);
 
+    const redactedItems = items.map((log) => this.redactLog(log));
+
     return {
-      items: items.map((log) => ({
-        ...log,
-        operation: this.redactSensitiveData(log.operation),
-      })),
+      data: redactedItems,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit) || 1,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
-  /**
-   * API-CDC-07 Timeline:
-   * Returns all log events associated with a specific traceId in chronological sequence.
-   */
-  async getTimeline(traceId: string) {
+  async getMetrics(): Promise<IntegrationMetrics> {
+    const [total, succeeded, failed, timeoutLogs, retryingLogs, rateLimitedLogs, webhookFailures, syncFailures] = await Promise.all([
+      this.prisma.integrationLog.count(),
+      this.prisma.integrationLog.count({ where: { status: 'SUCCEEDED' } }),
+      this.prisma.integrationLog.count({ where: { status: 'FAILED' } }),
+      this.prisma.integrationLog.count({ where: { errorCode: 'INTEGRATION_TIMEOUT' } }),
+      this.prisma.integrationLog.count({ where: { status: 'RETRYING' } }),
+      this.prisma.integrationLog.count({ where: { errorCode: 'INTEGRATION_RATE_LIMITED' } }),
+      this.prisma.webhookDelivery.count({
+        where: { status: { in: ['FAILED', 'CANCELLED'] } },
+      }),
+      this.prisma.synchronization.count({
+        where: { status: { in: ['FAILED', 'CANCELLED'] } },
+      }),
+    ]);
+
+    const successRate = total > 0 ? (succeeded / total) * 100 : 100;
+    const failureRate = total > 0 ? (failed / total) * 100 : 0;
+
+    const avgLatencyResult = await this.prisma.integrationLog.aggregate({
+      _avg: { duration: true },
+      where: { duration: { not: null } },
+    });
+
+    const diagnosisBreakdown = await this.buildDiagnosisBreakdown();
+
+    return {
+      requestCount: total,
+      successRate: Number(successRate.toFixed(2)),
+      failureRate: Number(failureRate.toFixed(2)),
+      averageLatency: avgLatencyResult._avg.duration ?? 0,
+      timeoutCount: timeoutLogs,
+      retryCount: retryingLogs,
+      rateLimitEvents: rateLimitedLogs,
+      webhookDeliveryFailures: webhookFailures,
+      syncFailures,
+      diagnosisBreakdown,
+    };
+  }
+
+  async getTimeline(traceId: string): Promise<TimelineResult> {
     const logs = await this.prisma.integrationLog.findMany({
-      where: { traceId },
-      include: { connector: true },
+      where: { traceId: { contains: traceId } },
       orderBy: { startedAt: 'asc' },
     });
 
-    const timeline = logs.map((log, index) => ({
-      stepIndex: index + 1,
-      id: log.id,
-      operation: this.redactSensitiveData(log.operation),
+    if (logs.length === 0) {
+      return {
+        traceId,
+        entries: [],
+        summary: {
+          totalSteps: 0,
+          duration: null,
+          status: 'UNKNOWN',
+          errorCodes: [],
+        },
+      };
+    }
+
+    const redactedEntries: TimelineEntry[] = logs.map((log) => ({
+      traceId: log.traceId,
+      tenantId: log.tenantId,
+      connectorId: log.connectorId,
+      operation: log.operation,
       direction: log.direction,
+      startedAt: log.startedAt,
+      finishedAt: log.finishedAt,
+      duration: log.duration,
       status: log.status,
       errorCode: log.errorCode,
-      durationMs: log.duration,
       attempt: log.attempt,
-      timestamp: log.startedAt,
-      connectorCode: log.connector?.code ?? null,
     }));
 
-    const hasFailure = logs.some(
-      (l) => l.status === 'FAILED' || l.status === 'TIMEOUT',
+    const first = logs[0]!;
+    const last = logs[logs.length - 1]!;
+    const totalDuration = last.finishedAt
+      ? new Date(last.finishedAt).getTime() - new Date(first.startedAt).getTime()
+      : null;
+
+    const errorCodes = Array.from(
+      new Set(logs.filter((l) => l.errorCode).map((l) => l.errorCode!)),
     );
 
     return {
       traceId,
-      totalSteps: logs.length,
-      overallStatus: hasFailure ? 'FAILED' : 'SUCCEEDED',
-      startedAt: logs[0]?.startedAt ?? null,
-      finishedAt: logs[logs.length - 1]?.finishedAt ?? null,
-      totalDurationMs: logs.reduce((acc, curr) => acc + (curr.duration ?? 0), 0),
-      timeline,
+      entries: redactedEntries,
+      summary: {
+        totalSteps: logs.length,
+        duration: totalDuration,
+        status: last.status as 'SUCCEEDED' | 'FAILED' | 'PARTIAL' | 'UNKNOWN',
+        errorCodes,
+      },
     };
   }
 
-  /**
-   * API-CDC-07 Root Cause & Error Categorization breakdown
-   */
-  async getDiagnostics() {
-    const logs = await this.prisma.integrationLog.findMany({
-      take: 200,
-      orderBy: { startedAt: 'desc' },
-      include: { connector: true },
+  private async buildDiagnosisBreakdown(): Promise<DiagnosisCategory[]> {
+    const categories = getDiagnosisCategories();
+
+    const errorCodeCounts = await this.prisma.integrationLog.groupBy({
+      by: ['errorCode'],
+      where: { errorCode: { not: null } },
+      _count: { _all: true },
     });
 
-    const categoryBreakdown = {
-      authenticationFailure: 0,
-      providerUnavailable: 0,
-      timeout: 0,
-      rateLimit: 0,
-      contractMismatch: 0,
-      invalidPayload: 0,
-      webhookSignatureFailure: 0,
-      syncConflict: 0,
-      internalError: 0,
-      other: 0,
-    };
+    return Object.entries(categories).map(([code, info]) => {
+      const match = errorCodeCounts.find((e) => e.errorCode === code);
+      return {
+        code,
+        label: info.label,
+        count: match?._count._all ?? 0,
+        description: info.description,
+      };
+    });
+  }
 
-    const recentErrors: Array<{
-      id: string;
-      traceId: string;
-      connector: string | null;
-      operation: string;
-      errorCode: string | null;
-      startedAt: Date;
-    }> = [];
+  private redactLog(log: IntegrationLog): IntegrationLog {
+    const clone = { ...log } as IntegrationLog;
 
-    for (const log of logs) {
-      if (log.status === 'FAILED' || log.status === 'TIMEOUT') {
-        const code = log.errorCode ?? '';
-        if (code.includes('AUTH')) categoryBreakdown.authenticationFailure++;
-        else if (code.includes('UNAVAILABLE')) categoryBreakdown.providerUnavailable++;
-        else if (code.includes('TIMEOUT') || log.status === 'TIMEOUT') categoryBreakdown.timeout++;
-        else if (code.includes('RATE_LIMIT')) categoryBreakdown.rateLimit++;
-        else if (code.includes('CONTRACT')) categoryBreakdown.contractMismatch++;
-        else if (code.includes('PAYLOAD')) categoryBreakdown.invalidPayload++;
-        else if (code.includes('SIGNATURE')) categoryBreakdown.webhookSignatureFailure++;
-        else if (code.includes('CONFLICT')) categoryBreakdown.syncConflict++;
-        else if (code.includes('INTERNAL')) categoryBreakdown.internalError++;
-        else categoryBreakdown.other++;
+    if (clone.operation) {
+      clone.operation = this.redactString(clone.operation);
+    }
 
-        if (recentErrors.length < 10) {
-          recentErrors.push({
-            id: log.id,
-            traceId: log.traceId,
-            connector: log.connector?.code ?? null,
-            operation: this.redactSensitiveData(log.operation),
-            errorCode: log.errorCode,
-            startedAt: log.startedAt,
-          });
+    return clone;
+  }
+
+  private redactString(value: string): string {
+    let result = value;
+
+    for (const pattern of SECRET_PATTERNS) {
+      result = result.replace(pattern, '[REDACTED]');
+    }
+
+    return result;
+  }
+
+  static redactDeep<T>(obj: T): T {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (typeof obj === 'string') {
+      let result: string = obj;
+
+      for (const pattern of SECRET_PATTERNS) {
+        result = result.replace(pattern, '[REDACTED]');
+      }
+
+      return result as T;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => DiagnosticsService.redactDeep(item)) as T;
+    }
+
+    if (typeof obj === 'object') {
+      const result: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(obj)) {
+        if (SECRET_KEYS.has(key.toLowerCase())) {
+          result[key] = '[REDACTED]';
+        } else {
+          result[key] = DiagnosticsService.redactDeep(value);
         }
       }
+
+      return result as T;
     }
 
-    const totalErrors = Object.values(categoryBreakdown).reduce((a, b) => a + b, 0);
-
-    return {
-      status: totalErrors === 0 ? 'HEALTHY' : totalErrors > 10 ? 'DEGRADED' : 'WARNING',
-      totalErrorsRecorded: totalErrors,
-      categoryBreakdown,
-      recentErrors,
-      recommendedActions: this.deriveRecommendations(categoryBreakdown),
-    };
+    return obj;
   }
 
-  async getMetrics() {
-    const logs = await this.prisma.integrationLog.findMany({
-      take: 500,
-      orderBy: { startedAt: 'desc' },
-    });
+  static redactText(value: string): string {
+    if (!value) return value;
 
-    const total = logs.length;
-    const succeeded = logs.filter((l) => l.status === 'SUCCEEDED').length;
-    const failed = logs.filter((l) => l.status === 'FAILED').length;
-    const timeouts = logs.filter((l) => l.status === 'TIMEOUT').length;
-    const retried = logs.filter((l) => l.attempt > 1).length;
-    const rateLimited = logs.filter((l) => l.errorCode?.includes('RATE_LIMITED')).length;
+    let result = value;
 
-    const totalDuration = logs.reduce((acc, l) => acc + (l.duration ?? 0), 0);
-    const avgLatency = total > 0 ? Math.round(totalDuration / total) : 0;
-    const successRate = total > 0 ? Number(((succeeded / total) * 100).toFixed(2)) : 100;
+    for (const pattern of SECRET_PATTERNS) {
+      result = result.replace(pattern, '[REDACTED]');
+    }
 
-    return {
-      requestCount: total,
-      successCount: succeeded,
-      failureCount: failed,
-      timeoutCount: timeouts,
-      retryCount: retried,
-      rateLimitCount: rateLimited,
-      successRate,
-      averageLatencyMs: avgLatency,
-    };
-  }
-
-  private deriveRecommendations(breakdown: Record<string, number>): string[] {
-    const recommendations: string[] = [];
-    if (breakdown.authenticationFailure > 0) {
-      recommendations.push(
-        'Verify credential validity or initiate credential rotation for failing connectors.',
-      );
-    }
-    if (breakdown.timeout > 0) {
-      recommendations.push(
-        'Check network latency or adjust timeout thresholds in connector resilience policy.',
-      );
-    }
-    if (breakdown.rateLimit > 0) {
-      recommendations.push(
-        'Enable backoff multiplier or request rate limit quota elevation from external providers.',
-      );
-    }
-    if (breakdown.webhookSignatureFailure > 0) {
-      recommendations.push(
-        'Review webhook secret reference configuration and signature verification policies.',
-      );
-    }
-    if (breakdown.syncConflict > 0) {
-      recommendations.push(
-        'Review synchronization conflict policies (e.g. switch to SOURCE_WINS or NEWEST_WINS).',
-      );
-    }
-    if (recommendations.length === 0) {
-      recommendations.push('All integration diagnostic metrics are operating within normal parameters.');
-    }
-    return recommendations;
+    return result;
   }
 }

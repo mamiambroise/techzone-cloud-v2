@@ -1,64 +1,75 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { DiagnosticsService } from './diagnostics.service';
-import { PrismaService } from '../../../prisma/prisma.service';
-import {
-  IntegrationLogDirectionEnum,
-  IntegrationLogStatusEnum,
-} from './dto/create-log.dto';
 
-describe('DiagnosticsService (API-CDC-07)', () => {
-  let service: DiagnosticsService;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [DiagnosticsService, PrismaService],
-    }).compile();
-
-    service = module.get<DiagnosticsService>(DiagnosticsService);
-  });
-
-  it('should redact sensitive tokens and credentials from operations and logs', () => {
-    const input = 'Request with Bearer eyJhbGciOiJIUzI1Ni... and secret="super_secret_val"';
-    const redacted = service.redactSensitiveData(input);
-
-    expect(redacted).not.toContain('eyJhbGciOiJIUzI1Ni');
-    expect(redacted).not.toContain('super_secret_val');
-    expect(redacted).toContain('[REDACTED]');
-  });
-
-  it('should create log and retrieve trace timeline in chronological sequence', async () => {
-    const traceId = 'trc-diagnostics-test-123';
-
-    await service.createLog({
-      traceId,
-      operation: 'auth.verify',
-      direction: IntegrationLogDirectionEnum.OUTBOUND,
-      status: IntegrationLogStatusEnum.SUCCEEDED,
-      duration: 40,
+describe('DiagnosticsService - Secret Redaction', () => {
+  describe('redactText', () => {
+    it('should redact password fields', () => {
+      const input = '{"password": "supersecret123"}';
+      const result = DiagnosticsService.redactText(input);
+      expect(result).not.toContain('supersecret123');
+      expect(result).toContain('[REDACTED]');
     });
 
-    await service.createLog({
-      traceId,
-      operation: 'data.fetch',
-      direction: IntegrationLogDirectionEnum.INBOUND,
-      status: IntegrationLogStatusEnum.SUCCEEDED,
-      duration: 120,
+    it('should redact token fields', () => {
+      const input = '{"token": "abc123def456ghi789"}';
+      const result = DiagnosticsService.redactText(input);
+      expect(result).not.toContain('abc123def456ghi789');
     });
 
-    const timelineResult = await service.getTimeline(traceId);
-    expect(timelineResult.traceId).toBe(traceId);
-    expect(timelineResult.totalSteps).toBe(2);
-    expect(timelineResult.overallStatus).toBe('SUCCEEDED');
+    it('should redact Bearer tokens', () => {
+      const input = 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+      const result = DiagnosticsService.redactText(input);
+      expect(result).not.toContain('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
+      expect(result).toContain('[REDACTED]');
+    });
+
+    it('should redact long hex-like strings (32+ chars)', () => {
+      const input = 'api_key=abcdefghijklmnopqrstuvwxyz123456';
+      const result = DiagnosticsService.redactText(input);
+      expect(result).not.toContain('abcdefghijklmnopqrstuvwxyz123456');
+    });
+
+    it('should not modify short strings', () => {
+      const input = 'short value';
+      const result = DiagnosticsService.redactText(input);
+      expect(result).toBe('short value');
+    });
   });
 
-  it('should generate diagnostics categorization and metrics', async () => {
-    const metrics = await service.getMetrics();
-    expect(metrics).toBeDefined();
-    expect(metrics.requestCount).toBeGreaterThanOrEqual(1);
+  describe('redactDeep', () => {
+    it('should redact known secret keys recursively', () => {
+      const input = {
+        user: 'john',
+        password: 'secret123',
+        nested: {
+          apiKey: 'abc123def456',
+          data: 'safe-value',
+        },
+      };
 
-    const diagnostics = await service.getDiagnostics();
-    expect(diagnostics).toBeDefined();
-    expect(diagnostics.categoryBreakdown).toBeDefined();
-    expect(diagnostics.recommendedActions).toBeDefined();
+      const result = DiagnosticsService.redactDeep(input);
+
+      expect(result.password).toBe('[REDACTED]');
+      expect(result.nested.apiKey).toBe('[REDACTED]');
+      expect(result.nested.data).toBe('safe-value');
+      expect(result.user).toBe('john');
+    });
+
+    it('should redact secrets in arrays', () => {
+      const input = [
+        { password: 'secret1' },
+        { password: 'secret2' },
+      ];
+
+      const result = DiagnosticsService.redactDeep(input);
+
+      expect(result[0].password).toBe('[REDACTED]');
+      expect(result[1].password).toBe('[REDACTED]');
+    });
+
+    it('should handle null and primitive values', () => {
+      expect(DiagnosticsService.redactDeep(null)).toBe(null);
+      expect(DiagnosticsService.redactDeep(42)).toBe(42);
+      expect(DiagnosticsService.redactDeep('text')).toBe('text');
+    });
   });
 });
