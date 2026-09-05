@@ -5,7 +5,3 @@ export * from './pack-module.entity';
 export * from './pack-feature.entity';
 export * from './pack-capability.entity';
 export * from './pack-feature-capability.entity';
-export * from './pack-dependency.entity';
-export * from './pack-rule.entity';
-export * from './rule-condition.entity';
-export * from './rule-test-case.entity';

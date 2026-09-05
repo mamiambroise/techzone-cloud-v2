@@ -38,6 +38,16 @@ import { RuntimeBridgeController } from './runtime/runtime-bridge.controller';
 import { RuntimeBridgeService } from './runtime/runtime-bridge.service';
 import { QualityController } from './quality/quality.controller';
 import { QualityService } from './quality/quality.service';
+import { RuntimeController } from './runtime/runtime.controller';
+import { RuntimeResolverService, RUNTIME_PROVIDERS } from './runtime/runtime-resolver.service';
+import {
+  MockApplicationContextProvider,
+  MockCapabilityProvider,
+  MockEntitlementProvider,
+  MockIamContextProvider,
+} from './runtime/providers/mock-runtime.providers';
+import { RuntimeCockpitController } from './runtime/cockpit/cockpit.controller';
+import { RuntimeCockpitService } from './runtime/cockpit/cockpit.service';
 
 @Module({
   imports: [
@@ -64,7 +74,9 @@ import { QualityService } from './quality/quality.service';
     MenuController,
     ConfigurationController,
     RuntimeBridgeController,
+    RuntimeController,
     QualityController,
+    RuntimeCockpitController,
   ],
   providers: [
     ApplicationService,
@@ -80,7 +92,29 @@ import { QualityService } from './quality/quality.service';
     MenuService,
     ConfigurationService,
     RuntimeBridgeService,
+    RuntimeResolverService,
+    MockApplicationContextProvider,
+    MockIamContextProvider,
+    MockEntitlementProvider,
+    MockCapabilityProvider,
     QualityService,
+    RuntimeCockpitService,
+    {
+      provide: RUNTIME_PROVIDERS.application,
+      useExisting: MockApplicationContextProvider,
+    },
+    {
+      provide: RUNTIME_PROVIDERS.iam,
+      useExisting: MockIamContextProvider,
+    },
+    {
+      provide: RUNTIME_PROVIDERS.entitlement,
+      useExisting: MockEntitlementProvider,
+    },
+    {
+      provide: RUNTIME_PROVIDERS.capability,
+      useExisting: MockCapabilityProvider,
+    },
   ],
   exports: [
     ApplicationService,
@@ -92,6 +126,7 @@ import { QualityService } from './quality/quality.service';
     MenuService,
     ConfigurationService,
     RuntimeBridgeService,
+    RuntimeResolverService,
     QualityService,
   ],
 })

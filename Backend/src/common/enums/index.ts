@@ -99,8 +99,8 @@ export enum RiskLevel {
 export enum DependencyType {
   REQUIRED = 'REQUIRED',
   OPTIONAL = 'OPTIONAL',
-  RECOMMENDS = 'RECOMMENDS',
   REQUIRES = 'REQUIRES',
+  RECOMMENDS = 'RECOMMENDS',
   CONFLICTS_WITH = 'CONFLICTS_WITH',
   IMPLIES = 'IMPLIES',
 }
@@ -108,7 +108,17 @@ export enum DependencyType {
 export enum DependencySourceType { PACK = 'PACK', MODULE = 'MODULE', FEATURE = 'FEATURE', CAPABILITY = 'CAPABILITY' }
 export enum DependencyTargetType { PACK = 'PACK', MODULE = 'MODULE', FEATURE = 'FEATURE', CAPABILITY = 'CAPABILITY', CONTRACT = 'CONTRACT' }
 export enum DependencyStatus { ACTIVE = 'ACTIVE', ARCHIVED = 'ARCHIVED' }
-export enum DependencyResolutionStatus { NOT_RESOLVED = 'NOT_RESOLVED', RESOLVING = 'RESOLVING', RESOLVED = 'RESOLVED', MISSING = 'MISSING', INCOMPATIBLE = 'INCOMPATIBLE', CONFLICT = 'CONFLICT', CYCLE = 'CYCLE', ERROR = 'ERROR', OUTDATED = 'OUTDATED' }
+export enum DependencyResolutionStatus { NOT_RESOLVED = 'NOT_RESOLVED', RESOLVED = 'RESOLVED', MISSING = 'MISSING', INCOMPATIBLE = 'INCOMPATIBLE', CONFLICT = 'CONFLICT', CYCLE = 'CYCLE', OUTDATED = 'OUTDATED' }
+
+export enum RuleType { ACTIVATION = 'ACTIVATION', AVAILABILITY = 'AVAILABILITY', ENTITLEMENT = 'ENTITLEMENT', VISIBILITY = 'VISIBILITY', CONFIGURATION = 'CONFIGURATION', COMPATIBILITY = 'COMPATIBILITY' }
+export enum RuleTargetType { PACK = 'PACK', MODULE = 'MODULE', FEATURE = 'FEATURE', CAPABILITY = 'CAPABILITY' }
+export enum RuleEffect { ENABLE = 'ENABLE', DISABLE = 'DISABLE', ALLOW = 'ALLOW', DENY = 'DENY', SHOW = 'SHOW', HIDE = 'HIDE' }
+export enum RuleStatus { DRAFT = 'DRAFT', ACTIVE = 'ACTIVE', DISABLED = 'DISABLED', DEPRECATED = 'DEPRECATED', ARCHIVED = 'ARCHIVED' }
+export enum RuleValidationStatus { NOT_VALIDATED = 'NOT_VALIDATED', VALID = 'VALID', INVALID = 'INVALID', OUTDATED = 'OUTDATED' }
+export enum ConditionNodeType { GROUP = 'GROUP', NOT = 'NOT', PREDICATE = 'PREDICATE' }
+export enum LogicalOperator { AND = 'AND', OR = 'OR' }
+export enum RuleOperator { EQ = 'EQ', NEQ = 'NEQ', IN = 'IN', NOT_IN = 'NOT_IN', EXISTS = 'EXISTS', NOT_EXISTS = 'NOT_EXISTS', CONTAINS = 'CONTAINS', NOT_CONTAINS = 'NOT_CONTAINS', STARTS_WITH = 'STARTS_WITH', ENDS_WITH = 'ENDS_WITH', MATCHES = 'MATCHES', BETWEEN = 'BETWEEN', GT = 'GT', GTE = 'GTE', LT = 'LT', LTE = 'LTE', VERSION_EQ = 'VERSION_EQ', VERSION_GT = 'VERSION_GT', VERSION_GTE = 'VERSION_GTE', VERSION_LT = 'VERSION_LT', VERSION_LTE = 'VERSION_LTE', VERSION_SATISFIES = 'VERSION_SATISFIES' }
+export enum RuleValueType { STRING = 'STRING', NUMBER = 'NUMBER', BOOLEAN = 'BOOLEAN', ARRAY = 'ARRAY', DATE = 'DATE', OBJECT = 'OBJECT' }
 
 export enum VersionFeatureState {
   ENABLED = 'ENABLED',
@@ -208,8 +218,8 @@ export enum Permission {
   PACK_DEPENDENCY_CREATE = 'pack.dependency.create',
   PACK_DEPENDENCY_UPDATE = 'pack.dependency.update',
   PACK_DEPENDENCY_RESOLVE = 'pack.dependency.resolve',
+  PACK_DEPENDENCY_VIEW_GRAPH = 'pack.dependency.view-graph',
   PACK_DEPENDENCY_ARCHIVE = 'pack.dependency.archive',
-  PACK_DEPENDENCY_VIEW_GRAPH = 'pack.dependency.view_graph',
   PACK_RULE_READ = 'pack.rule.read',
   PACK_RULE_CREATE = 'pack.rule.create',
   PACK_RULE_UPDATE = 'pack.rule.update',
@@ -217,8 +227,21 @@ export enum Permission {
   PACK_RULE_DISABLE = 'pack.rule.disable',
   PACK_RULE_VALIDATE = 'pack.rule.validate',
   PACK_RULE_SIMULATE = 'pack.rule.simulate',
-  PACK_RULE_MANAGE_TESTS = 'pack.rule.manage_tests',
+  PACK_RULE_MANAGE_TESTS = 'pack.rule.manage-tests',
   PACK_RULE_ARCHIVE = 'pack.rule.archive',
+  RUNTIME_DASHBOARD_READ = 'runtime.dashboard.read',
+  RUNTIME_RESOLUTION_READ = 'runtime.resolution.read',
+  RUNTIME_RESOLUTION_RETRY = 'runtime.resolution.retry',
+  RUNTIME_DIAGNOSTIC_READ = 'runtime.diagnostic.read',
+  RUNTIME_PROVIDER_READ = 'runtime.provider.read',
+  RUNTIME_PERFORMANCE_READ = 'runtime.performance.read',
+  RUNTIME_CACHE_READ = 'runtime.cache.read',
+  RUNTIME_CACHE_INVALIDATE = 'runtime.cache.invalidate',
+  RUNTIME_MANIFEST_COMPARE = 'runtime.manifest.compare',
+  RUNTIME_RESOLVE = 'runtime.resolve',
+  RUNTIME_READ = 'runtime.read',
+  RUNTIME_DIAGNOSE = 'runtime.diagnose',
+  RUNTIME_INVALIDATE_CACHE = 'runtime.invalidate-cache',
 }
 
 export enum PackStatus {
@@ -298,13 +321,3 @@ export enum PackDependencyType {
   RECOMMENDS = 'RECOMMENDS',
   IMPLIES = 'IMPLIES',
 }
-
-export enum RuleType { ACTIVATION = 'ACTIVATION', ELIGIBILITY = 'ELIGIBILITY', VISIBILITY = 'VISIBILITY', AVAILABILITY = 'AVAILABILITY', CONFIGURATION = 'CONFIGURATION', COMPATIBILITY = 'COMPATIBILITY' }
-export enum RuleTargetType { PACK = 'PACK', MODULE = 'MODULE', FEATURE = 'FEATURE', CAPABILITY = 'CAPABILITY', CONFIGURATION = 'CONFIGURATION' }
-export enum RuleEffect { ALLOW = 'ALLOW', DENY = 'DENY', ENABLE = 'ENABLE', DISABLE = 'DISABLE', SHOW = 'SHOW', HIDE = 'HIDE', REQUIRE = 'REQUIRE', SET_VALUE = 'SET_VALUE' }
-export enum RuleStatus { DRAFT = 'DRAFT', ACTIVE = 'ACTIVE', DISABLED = 'DISABLED', DEPRECATED = 'DEPRECATED', ARCHIVED = 'ARCHIVED' }
-export enum RuleValidationStatus { NOT_VALIDATED = 'NOT_VALIDATED', VALID = 'VALID', INVALID = 'INVALID', OUTDATED = 'OUTDATED' }
-export enum ConditionNodeType { GROUP = 'GROUP', PREDICATE = 'PREDICATE', NOT = 'NOT' }
-export enum LogicalOperator { AND = 'AND', OR = 'OR' }
-export enum RuleOperator { EQ = 'EQ', NEQ = 'NEQ', GT = 'GT', GTE = 'GTE', LT = 'LT', LTE = 'LTE', IN = 'IN', NOT_IN = 'NOT_IN', CONTAINS = 'CONTAINS', NOT_CONTAINS = 'NOT_CONTAINS', STARTS_WITH = 'STARTS_WITH', ENDS_WITH = 'ENDS_WITH', EXISTS = 'EXISTS', NOT_EXISTS = 'NOT_EXISTS', MATCHES = 'MATCHES', BEFORE = 'BEFORE', AFTER = 'AFTER', BETWEEN = 'BETWEEN', VERSION_EQ = 'VERSION_EQ', VERSION_GT = 'VERSION_GT', VERSION_GTE = 'VERSION_GTE', VERSION_LT = 'VERSION_LT', VERSION_LTE = 'VERSION_LTE', VERSION_SATISFIES = 'VERSION_SATISFIES' }
-export enum RuleValueType { STRING = 'STRING', NUMBER = 'NUMBER', BOOLEAN = 'BOOLEAN', DATE = 'DATE', DATETIME = 'DATETIME', ENUM = 'ENUM', ARRAY = 'ARRAY', VERSION = 'VERSION', REFERENCE = 'REFERENCE', NULL = 'NULL' }
