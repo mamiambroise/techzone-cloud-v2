@@ -58,6 +58,11 @@ npm install
 npx prisma generate
 ```
 
+### Seeder
+``` bash
+npx prisma db seed
+```
+
 ### Lancer le serveur de développement
 ```bash
 npm run start:dev
