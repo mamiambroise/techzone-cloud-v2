@@ -36,6 +36,10 @@ const config: Config = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 
+  transformIgnorePatterns: [
+    'node_modules/(?!(.*?/node_modules/@nestjs/.*)|(.*?/node_modules/@prisma/.*))',
+  ],
+
   moduleFileExtensions: ['js', 'json', 'ts'],
 
   collectCoverageFrom: [
