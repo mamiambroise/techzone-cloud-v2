@@ -148,7 +148,7 @@ export default function App() {
         </main>
 
         {/* Responsive Footer */}
-        <footer className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pb-6">
+        {/*<footer className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pb-6">
           <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2.5 font-mono">
             <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
@@ -174,7 +174,7 @@ export default function App() {
               <span className="text-slate-800 font-semibold">{activeUser?.name}</span>
             </div>
           </div>
-        </footer>
+        </footer>*/}
       </div>
 
       {/* Modals */}

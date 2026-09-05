@@ -48,6 +48,12 @@ export default function WebhookManagerView() {
   const [newEvent, setNewEvent] = useState('');
   const [newEndpoint, setNewEndpoint] = useState('https://webhook.site/example');
   const [newSecretRef, setNewSecretRef] = useState(credentials[0]?.id || '');
+  const [newSignaturePolicy, setNewSignaturePolicy] = useState('HMAC-SHA256');
+  const [newRetryMaxAttempts, setNewRetryMaxAttempts] = useState(5);
+  const [newRetryBackoff, setNewRetryBackoff] = useState('EXPONENTIAL');
+  const [newRetryInitialDelayMs, setNewRetryInitialDelayMs] = useState(1000);
+  const [newTimeout, setNewTimeout] = useState(5000);
+  const [newFilters, setNewFilters] = useState('');
 
   // Filter webhooks
   const filteredWebhooks = webhooks.filter((w) => {
@@ -109,15 +115,24 @@ export default function WebhookManagerView() {
       endpoint: newEndpoint.trim(),
       status: 'ACTIVE',
       secretRef: newSecretRef,
-      signaturePolicy: 'HMAC-SHA256',
-      retryPolicy: { maxAttempts: 5, backoff: 'EXPONENTIAL', initialDelayMs: 1000 },
-      timeout: 5000,
-      filters: {},
+      signaturePolicy: newSignaturePolicy,
+      retryPolicy: { maxAttempts: newRetryMaxAttempts, backoff: newRetryBackoff, initialDelayMs: newRetryInitialDelayMs },
+      timeout: newTimeout,
+      filters: newFilters ? JSON.parse(newFilters) : {},
       deliveriesCount24h: 1,
       successRatePct: 100.0,
     };
 
     dispatch(addWebhook(newWh));
+    dispatch(
+      logAuditAction({
+        action: 'CREATE_WEBHOOK_SUBSCRIPTION',
+        resourceType: 'WEBHOOK',
+        resourceId: newId,
+        user: activeUser,
+        details: { code: newWh.code, direction: newWh.direction, event: newWh.event, endpoint: newWh.endpoint },
+      })
+    );
     setShowCreateModal(false);
     setNewCode('');
     setNewEvent('');
@@ -536,20 +551,89 @@ export default function WebhookManagerView() {
                 />
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Référence Secrète Liée (KMS/Vault)</label>
-                <select
-                  value={newSecretRef}
-                  onChange={(e) => setNewSecretRef(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
-                >
-                  {credentials.map((cred) => (
-                    <option key={cred.id} value={cred.id}>
-                      {cred.code} ({cred.type})
-                    </option>
-                  ))}
-                </select>
-              </div>
+               <div>
+                 <label className="font-semibold text-slate-700 block mb-1">Référence Secrète Liée (KMS/Vault)</label>
+                 <select
+                   value={newSecretRef}
+                   onChange={(e) => setNewSecretRef(e.target.value)}
+                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                 >
+                   {credentials.map((cred) => (
+                     <option key={cred.id} value={cred.id}>
+                       {cred.code} ({cred.type})
+                     </option>
+                   ))}
+                 </select>
+               </div>
+
+               <div className="grid grid-cols-2 gap-3">
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Politique de Signature</label>
+                   <select
+                     value={newSignaturePolicy}
+                     onChange={(e) => setNewSignaturePolicy(e.target.value)}
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   >
+                     <option value="HMAC-SHA256">HMAC-SHA256</option>
+                     <option value="STRIPE-SIGNATURE-V1">STRIPE-SIGNATURE-V1</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Timeout (ms)</label>
+                   <input
+                     type="number"
+                     value={newTimeout}
+                     onChange={(e) => setNewTimeout(Number(e.target.value))}
+                     placeholder="5000"
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   />
+                 </div>
+               </div>
+
+               <div className="grid grid-cols-3 gap-3">
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Max Attempts</label>
+                   <input
+                     type="number"
+                     value={newRetryMaxAttempts}
+                     onChange={(e) => setNewRetryMaxAttempts(Number(e.target.value))}
+                     placeholder="5"
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   />
+                 </div>
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Backoff</label>
+                   <select
+                     value={newRetryBackoff}
+                     onChange={(e) => setNewRetryBackoff(e.target.value)}
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   >
+                     <option value="EXPONENTIAL">EXPONENTIAL</option>
+                     <option value="LINEAR">LINEAR</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Initial Delay (ms)</label>
+                   <input
+                     type="number"
+                     value={newRetryInitialDelayMs}
+                     onChange={(e) => setNewRetryInitialDelayMs(Number(e.target.value))}
+                     placeholder="1000"
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   />
+                 </div>
+               </div>
+
+               <div>
+                 <label className="font-semibold text-slate-700 block mb-1">Filtres (JSON optionnel)</label>
+                 <input
+                   type="text"
+                   value={newFilters}
+                   onChange={(e) => setNewFilters(e.target.value)}
+                   placeholder='ex: {"tenant":"tenant-retail-fr","priority":"HIGH"}'
+                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                 />
+               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button

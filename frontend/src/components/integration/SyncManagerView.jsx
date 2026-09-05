@@ -6,6 +6,9 @@ import {
   updatePipelineProgress,
   finishSyncPipeline,
   addSyncJob,
+  pauseSyncJob,
+  resumeSyncJob,
+  cancelSyncJob,
 } from '../../store/integrationSlice.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
@@ -26,6 +29,7 @@ import {
   FileCode2,
   FastForward,
   Check,
+  Pause,
 } from 'lucide-react';
 
 const PIPELINE_STEPS = [
@@ -42,7 +46,7 @@ export default function SyncManagerView() {
   const dispatch = useDispatch();
 
   const syncJobs = useSelector((state) => state.integration.syncJobs);
-  const selectedSyncJobId = useSelector((state) => state.integration.selectedSyncJobId);
+  const selectedSyncJobId = useSelector((state) => state.integration.selectedSyncId);
   const activePipelineRun = useSelector((state) => state.integration.activePipelineRun);
   const connectors = useSelector((state) => state.integration.connectors);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
@@ -169,6 +173,15 @@ export default function SyncManagerView() {
     };
 
     dispatch(addSyncJob(newJob));
+    dispatch(
+      logAuditAction({
+        action: 'CREATE_SYNC_PIPELINE',
+        resourceType: 'SYNC_JOB',
+        resourceId: newId,
+        user: activeUser,
+        details: { code: newJob.code, mode: newJob.mode, conflictPolicy: newJob.conflictPolicy, schedule: newJob.schedule },
+      })
+    );
     setShowCreateModal(false);
     setNewCode('');
     setNewName('');
@@ -178,6 +191,66 @@ export default function SyncManagerView() {
         type: 'success',
         title: 'Pipeline Enregistré (API-CDC-06)',
         message: `Pipeline ${newJob.code} configuré avec politique ${newJob.conflictPolicy}.`,
+      })
+    );
+  };
+
+  const handlePauseSync = (job) => {
+    dispatch(pauseSyncJob(job.id));
+    dispatch(
+      logAuditAction({
+        action: 'PAUSE_SYNC_PIPELINE',
+        resourceType: 'SYNC_JOB',
+        resourceId: job.id,
+        user: activeUser,
+        details: { code: job.code, previousStatus: 'RUNNING', newStatus: 'PAUSED' },
+      })
+    );
+    dispatch(
+      addToast({
+        type: 'warning',
+        title: 'Pipeline Suspendu (API-CDC-06)',
+        message: `Pipeline ${job.code} mis en pause.`,
+      })
+    );
+  };
+
+  const handleResumeSync = (job) => {
+    dispatch(resumeSyncJob(job.id));
+    dispatch(
+      logAuditAction({
+        action: 'RESUME_SYNC_PIPELINE',
+        resourceType: 'SYNC_JOB',
+        resourceId: job.id,
+        user: activeUser,
+        details: { code: job.code, previousStatus: 'PAUSED', newStatus: 'RUNNING' },
+      })
+    );
+    dispatch(
+      addToast({
+        type: 'success',
+        title: 'Pipeline Repris (API-CDC-06)',
+        message: `Pipeline ${job.code} a repris son exécution.`,
+      })
+    );
+  };
+
+  const handleCancelSync = (job) => {
+    dispatch(cancelSyncJob(job.id));
+    dispatch(
+      logAuditAction({
+        action: 'CANCEL_SYNC_PIPELINE',
+        resourceType: 'SYNC_JOB',
+        resourceId: job.id,
+        user: activeUser,
+        details: { code: job.code, previousStatus: job.status, newStatus: 'CANCELLED' },
+      })
+    );
+    dispatch(
+      addToast({
+        type: 'info',
+        title: 'Pipeline Annulé (API-CDC-06)',
+        message: `Pipeline ${job.code} a été annulé.`,
       })
     );
   };
@@ -333,14 +406,43 @@ export default function SyncManagerView() {
                   <h3 className="text-lg font-bold text-slate-900 mt-1">{selectedSyncJob.name}</h3>
                 </div>
 
-                <button
-                  onClick={() => handleRunPipeline(selectedSyncJob)}
-                  disabled={activePipelineRun !== null}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Exécuter Pipeline</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedSyncJob.status === 'RUNNING' && (
+                    <button
+                      onClick={() => handlePauseSync(selectedSyncJob)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Pause className="w-3.5 h-3.5" />
+                      <span>Pause</span>
+                    </button>
+                  )}
+                  {selectedSyncJob.status === 'PAUSED' && (
+                    <button
+                      onClick={() => handleResumeSync(selectedSyncJob)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Reprendre</span>
+                    </button>
+                  )}
+                  {(selectedSyncJob.status === 'RUNNING' || selectedSyncJob.status === 'PENDING') && (
+                    <button
+                      onClick={() => handleCancelSync(selectedSyncJob)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Annuler</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleRunPipeline(selectedSyncJob)}
+                    disabled={activePipelineRun !== null}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Exécuter Pipeline</span>
+                  </button>
+                </div>
               </div>
 
               {/* Topology / Connectors Source -> Target */}
@@ -352,6 +454,10 @@ export default function SyncManagerView() {
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase font-semibold">Target (Destination)</span>
                   <span className="font-bold text-emerald-700 mt-0.5 block">{selectedSyncJob.targetConnector}</span>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Mapping Référence</span>
+                  <span className="font-bold text-slate-800 mt-0.5 block">{selectedSyncJob.mappingRef}</span>
                 </div>
               </div>
 

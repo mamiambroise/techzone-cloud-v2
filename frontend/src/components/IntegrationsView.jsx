@@ -37,7 +37,7 @@ export const INTEGRATION_NAV_TABS = [
 
 export default function IntegrationsView() {
   const dispatch = useDispatch();
-  const activeTab = useSelector((state) => state.integration.activeTab || 'cockpit');
+  const activeTab = useSelector((state) => state.integration.activeIntegrationTab || 'cockpit');
   const contractV1Locked = useSelector((state) => state.integration.contractV1Locked);
 
   return (

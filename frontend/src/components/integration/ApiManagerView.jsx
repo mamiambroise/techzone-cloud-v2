@@ -138,45 +138,117 @@ export default function ApiManagerView() {
     }, 500);
   };
 
-  const handleCreateApi = (e) => {
-    e.preventDefault();
-    if (!newCode.trim() || !newName.trim()) return;
+   const handleCreateApi = (e) => {
+     e.preventDefault();
+     if (!newCode.trim() || !newName.trim()) return;
 
-    const newId = 'api-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newApiObj = {
-      id: newId,
-      apiCode: newCode.toUpperCase().trim(),
-      name: newName.trim(),
-      version: newVersion.trim(),
-      basePath: newBasePath.trim(),
-      operations: [
-        { method: 'GET', path: '/', summary: 'Lister et paginer', rateLimit: newRateLimit },
-        { method: 'POST', path: '/', summary: 'Créer ressource', idempotencyRequired: true, rateLimit: newRateLimit },
-      ],
-      authentication: 'BEARER_JWT',
-      authorization: ['tenant.scope', 'read', 'write'],
-      rateLimit: newRateLimit,
-      status: 'PUBLISHED',
-      requestSchema: `${newCode}_RequestSchema`,
-      responseSchema: `${newCode}_ResponseSchema`,
-      totalRequests24h: 0,
-      errorRatePct: 0.0,
-      p95LatencyMs: 85,
-    };
+     const newId = 'api-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+     const newApiObj = {
+       id: newId,
+       apiCode: newCode.toUpperCase().trim(),
+       name: newName.trim(),
+       version: newVersion.trim(),
+       basePath: newBasePath.trim(),
+       operations: [
+         { method: 'GET', path: '/', summary: 'Lister et paginer', rateLimit: newRateLimit },
+         { method: 'POST', path: '/', summary: 'Créer ressource', idempotencyRequired: true, rateLimit: newRateLimit },
+       ],
+       authentication: 'BEARER_JWT',
+       authorization: ['tenant.scope', 'read', 'write'],
+       rateLimit: newRateLimit,
+       status: 'PUBLISHED',
+       requestSchema: `${newCode}_RequestSchema`,
+       responseSchema: `${newCode}_ResponseSchema`,
+       totalRequests24h: 0,
+       errorRatePct: 0.0,
+       p95LatencyMs: 85,
+     };
 
-    dispatch(addApi(newApiObj));
-    setShowCreateModal(false);
-    setNewCode('');
-    setNewName('');
+     dispatch(addApi(newApiObj));
+     dispatch(
+       logAuditAction({
+         action: 'CREATE_API_DEFINITION',
+         resourceType: 'API_DEFINITION',
+         resourceId: newId,
+         user: activeUser,
+         details: { apiCode: newApiObj.apiCode, version: newApiObj.version, basePath: newApiObj.basePath },
+       })
+     );
+     setShowCreateModal(false);
+     setNewCode('');
+     setNewName('');
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'API Exposée Enregistrée (API-CDC-03)',
-        message: `L'API ${newApiObj.apiCode} (${newApiObj.version}) a été créée avec son contrat.`,
-      })
-    );
-  };
+     dispatch(
+       addToast({
+         type: 'success',
+         title: 'API Exposée Enregistrée (API-CDC-03)',
+         message: `L'API ${newApiObj.apiCode} (${newApiObj.version}) a été créée avec son contrat.`,
+       })
+     );
+   };
+
+   const handlePublishApi = (api) => {
+     if (api.status !== 'DRAFT') return;
+     dispatch(updateApiStatus({ id: api.id, status: 'PUBLISHED' }));
+     dispatch(
+       logAuditAction({
+         action: 'PUBLISH_API_DEFINITION',
+         resourceType: 'API_DEFINITION',
+         resourceId: api.id,
+         user: activeUser,
+         details: { apiCode: api.apiCode, previousStatus: 'DRAFT', newStatus: 'PUBLISHED' },
+       })
+     );
+     dispatch(
+       addToast({
+         type: 'success',
+         title: 'API Publiée (API-CDC-03)',
+         message: `L'API ${api.apiCode} est maintenant PUBLISHED.`,
+       })
+     );
+   };
+
+   const handleDeprecateApi = (api) => {
+     if (api.status !== 'PUBLISHED') return;
+     dispatch(updateApiStatus({ id: api.id, status: 'DEPRECATED' }));
+     dispatch(
+       logAuditAction({
+         action: 'DEPRECATE_API_DEFINITION',
+         resourceType: 'API_DEFINITION',
+         resourceId: api.id,
+         user: activeUser,
+         details: { apiCode: api.apiCode, previousStatus: 'PUBLISHED', newStatus: 'DEPRECATED' },
+       })
+     );
+     dispatch(
+       addToast({
+         type: 'warning',
+         title: 'API Dépréciée (API-CDC-03)',
+         message: `L'API ${api.apiCode} est marquée DEPRECATED.`,
+       })
+     );
+   };
+
+   const handleRetireApi = (api) => {
+     if (api.status !== 'DEPRECATED') return;
+     dispatch(updateApiStatus({ id: api.id, status: 'RETIRED' }));
+     dispatch(
+       logAuditAction({
+         action: 'RETIRE_API_DEFINITION',
+         resourceType: 'API_DEFINITION',
+         resourceId: api.id,
+         user: activeUser,
+         details: { apiCode: api.apiCode, previousStatus: 'DEPRECATED', newStatus: 'RETIRED' },
+       })
+     );
+     dispatch(
+       addToast({
+         type: 'info',
+         title: 'API Retirée (API-CDC-03)',
+         message: `L'API ${api.apiCode} est maintenant RETIRED.`,
+       })
+     );
+   };
 
   return (
     <div className="space-y-6">
@@ -391,6 +463,36 @@ export default function ApiManagerView() {
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mt-1">{selectedApi.name}</h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {selectedApi.status === 'DRAFT' && (
+                    <button
+                      onClick={() => handlePublishApi(selectedApi)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      <span>Publier</span>
+                    </button>
+                  )}
+                  {selectedApi.status === 'PUBLISHED' && (
+                    <button
+                      onClick={() => handleDeprecateApi(selectedApi)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Déprécier</span>
+                    </button>
+                  )}
+                  {selectedApi.status === 'DEPRECATED' && (
+                    <button
+                      onClick={() => handleRetireApi(selectedApi)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Retirer</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Tab Switcher: Spec vs Playground */}

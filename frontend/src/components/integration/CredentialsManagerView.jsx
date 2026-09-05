@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   rotateCredential,
   addCredentialReference,
+  disableCredential,
 } from '../../store/integrationSlice.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
@@ -34,8 +35,8 @@ export default function CredentialsManagerView() {
 
   const [selectedCred, setSelectedCred] = useState(credentials[0] || null);
   const [showRotateModal, setShowRotateModal] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEndpointsModal, setShowEndpointsModal] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
 
   // New credential reference state
@@ -74,7 +75,7 @@ export default function CredentialsManagerView() {
 
       dispatch(
         logAuditAction({
-          action: 'ROTATE_INTEGRATION_CREDENTIAL',
+          action: 'ROTATE_INTEGRATION_REDENTIAL',
           resourceType: 'CREDENTIAL_REFERENCE',
           resourceId: selectedCred.id,
           user: activeUser,
@@ -86,6 +87,30 @@ export default function CredentialsManagerView() {
         })
       );
     }, 700);
+  };
+
+  const handleDisableCredential = () => {
+    if (!selectedCred) return;
+    dispatch(disableCredential({ id: selectedCred.id }));
+    setShowDisableModal(false);
+
+    dispatch(
+      addToast({
+        type: 'warning',
+        title: 'Référence Révoquée (API-CDC-05)',
+        message: `La référence ${selectedCred.code} a été révoquée et n'est plus utilisable.`,
+      })
+    );
+
+    dispatch(
+      logAuditAction({
+        action: 'DISABLE_CREDENTIAL_REFERENCE',
+        resourceType: 'CREDENTIAL_REFERENCE',
+        resourceId: selectedCred.id,
+        user: activeUser,
+        details: { code: selectedCred.code, type: selectedCred.type, provider: selectedCred.provider },
+      })
+    );
   };
 
   const handleCreateCredential = (e) => {
@@ -110,6 +135,15 @@ export default function CredentialsManagerView() {
     };
 
     dispatch(addCredentialReference(newCred));
+    dispatch(
+      logAuditAction({
+        action: 'CREATE_CREDENTIAL_REFERENCE',
+        resourceType: 'CREDENTIAL_REFERENCE',
+        resourceId: newId,
+        user: activeUser,
+        details: { code: newCred.code, type: newCred.type, provider: newCred.provider },
+      })
+    );
     setShowCreateModal(false);
     setNewCode('');
     setSelectedCred(newCred);
@@ -148,8 +182,13 @@ export default function CredentialsManagerView() {
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+            onClick={() => activeUser.canWriteProd && setShowCreateModal(true)}
+            disabled={!activeUser.canWriteProd}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all ${
+              activeUser.canWriteProd
+                ? 'bg-amber-800 hover:bg-amber-900 text-white'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
           >
             <Plus className="w-4 h-4" />
             <span>Nouvelle Référence</span>
@@ -271,13 +310,32 @@ export default function CredentialsManagerView() {
                   <h3 className="text-lg font-bold text-slate-900 mt-1 font-mono">{selectedCred.type}</h3>
                 </div>
 
-                <button
-                  onClick={() => setShowRotateModal(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Rotation du Secret</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => activeUser.canWriteProd && setShowDisableModal(true)}
+                    disabled={!activeUser.canWriteProd}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                      activeUser.canWriteProd
+                        ? 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+                        : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    }`}
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Révoquer</span>
+                  </button>
+                  <button
+                    onClick={() => activeUser.canWriteProd && setShowRotateModal(true)}
+                    disabled={!activeUser.canWriteProd}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all ${
+                      activeUser.canWriteProd
+                        ? 'bg-amber-800 hover:bg-amber-900 text-white'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Rotation du Secret</span>
+                  </button>
+                </div>
               </div>
 
               {/* Lifecycle & Dates */}
@@ -368,6 +426,50 @@ export default function CredentialsManagerView() {
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin' : ''}`} />
                 <span>{isRotating ? 'Rotation en cours...' : 'Confirmer la rotation'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disable Credential Modal */}
+      {showDisableModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-3xl border border-slate-200 p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-800">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Révoquer la Référence</h3>
+                <p className="text-[11px] text-slate-500 font-mono">{selectedCred?.code}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Cette action révoquera définitivement la référence{' '}
+              <strong>{selectedCred?.code}</strong>. Toute utilisation ultérieure sera rejetée par le backend.
+            </p>
+
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 font-mono">
+              Action auditée sous l'identité : <strong>{activeUser.name} ({activeUser.role})</strong>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDisableModal(false)}
+                className="px-4 py-2 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-xs"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleDisableCredential}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs shadow-sm flex items-center gap-1.5"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Confirmer la révocation</span>
               </button>
             </div>
           </div>

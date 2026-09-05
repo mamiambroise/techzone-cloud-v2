@@ -126,6 +126,53 @@ const initialConnectors = [
     },
     mode: 'MOCK',
   },
+  {
+    id: 'conn-internal-db-06',
+    code: 'INTERNAL-WAREHOUSE-DB',
+    name: 'Entrepôt de Données Interne (Read/Write Adapter)',
+    providerType: 'DATABASE_ADAPTER',
+    contractVersion: 'v1.0.0',
+    status: 'CONFIGURING',
+    configurationSchema: {
+      endpoint: 'jdbc:postgresql://db.internal:5432/warehouse',
+      timeoutMs: 10000,
+      retryCount: 2,
+      circuitBreaker: { failureThreshold: 3, resetTimeoutMs: 45000 },
+    },
+    credentialRef: 'cred-ref-warehouse-db-06',
+    capabilities: ['read', 'write', 'batch'],
+    health: {
+      status: 'WARNING',
+      lastChecked: 'Il y a 8 min',
+      latencyMs: 340,
+      availabilityPct: 97.5,
+    },
+    mode: 'REAL',
+  },
+  {
+    id: 'conn-reports-export-07',
+    code: 'REPORTS-EXPORT-SFTP',
+    name: 'Export Rapports SFTP (Batch)',
+    providerType: 'FILE',
+    contractVersion: 'v1.0.0',
+    status: 'DRAFT',
+    configurationSchema: {
+      protocol: 'SFTP',
+      host: 'sftp.internal.techzone.io',
+      path: '/exports/reports',
+      timeoutMs: 30000,
+      retryCount: 1,
+    },
+    credentialRef: 'cred-ref-reports-sftp-07',
+    capabilities: ['read', 'batch'],
+    health: {
+      status: 'UNKNOWN',
+      lastChecked: 'Jamais',
+      latencyMs: 0,
+      availabilityPct: 0,
+    },
+    mode: 'REAL',
+  },
 ];
 
 // Initial Exposed APIs (API-CDC-03)
@@ -189,6 +236,65 @@ const initialApis = [
     totalRequests24h: 8940,
     errorRatePct: 1.4,
     p95LatencyMs: 380,
+  },
+  {
+    id: 'api-reporting-v2',
+    apiCode: 'INTERNAL-REPORTING-API',
+    name: 'Reporting Analytique Interne',
+    version: 'v2.0.0',
+    basePath: '/api/v2/reporting',
+    operations: [
+      { method: 'GET', path: '/dashboard', summary: 'Métriques consolidées', rateLimit: '120 req/min' },
+      { method: 'POST', path: '/exports', summary: 'Générer export PDF/CSV', idempotencyRequired: true, rateLimit: '30 req/min' },
+    ],
+    authentication: 'BEARER_JWT',
+    authorization: ['reporting.read', 'tenant.scope'],
+    rateLimit: '120 req/min',
+    status: 'DRAFT',
+    requestSchema: 'ReportingPayloadSchema_v2',
+    responseSchema: 'ReportingResponseSchema_v2',
+    totalRequests24h: 0,
+    errorRatePct: 0.0,
+    p95LatencyMs: 0,
+  },
+  {
+    id: 'api-legacy-billing-v1',
+    apiCode: 'LEGACY-BILLING-API',
+    name: 'Facturation Legacy (Legacy)',
+    version: 'v1.0.0',
+    basePath: '/api/v1/billing',
+    operations: [
+      { method: 'GET', path: '/invoices', summary: 'Lister les factures', rateLimit: '200 req/min' },
+      { method: 'POST', path: '/invoices', summary: 'Créer une facture', idempotencyRequired: true, rateLimit: '100 req/min' },
+    ],
+    authentication: 'API_KEY_SCOPED',
+    authorization: ['billing.read', 'billing.write'],
+    rateLimit: '200 req/min',
+    status: 'DEPRECATED',
+    requestSchema: 'LegacyBillingPayloadSchema_v1',
+    responseSchema: 'LegacyBillingResponseSchema_v1',
+    totalRequests24h: 1240,
+    errorRatePct: 0.8,
+    p95LatencyMs: 210,
+  },
+  {
+    id: 'api-inventory-v1',
+    apiCode: 'INVENTORY-LEGACY-API',
+    name: 'Inventaire Local (Retiré)',
+    version: 'v1.0.0',
+    basePath: '/api/v1/inventory',
+    operations: [
+      { method: 'GET', path: '/items', summary: 'Lister le stock local', rateLimit: '300 req/min' },
+    ],
+    authentication: 'BASIC_AUTH',
+    authorization: ['inventory.read'],
+    rateLimit: '300 req/min',
+    status: 'RETIRED',
+    requestSchema: 'InventoryPayloadSchema_v1',
+    responseSchema: 'InventoryResponseSchema_v1',
+    totalRequests24h: 0,
+    errorRatePct: 0.0,
+    p95LatencyMs: 0,
   },
 ];
 
@@ -297,7 +403,7 @@ const initialCredentials = [
     lastRotatedAt: '2026-08-15',
     expiresAt: '2027-08-15',
     metadataSafe: {
-      username: 'techzone_integration_svc',
+      username: 'mock-integration-user',
       maskedSecret: '•••••••••••• (32 octets)',
       vaultKeyId: 'vault/kv/integrations/sap-prod/key-01',
     },
@@ -312,8 +418,8 @@ const initialCredentials = [
     lastRotatedAt: '2026-07-01',
     expiresAt: '2027-01-01',
     metadataSafe: {
-      keyPrefix: 'rk_live_',
-      maskedSecret: 'rk_live_••••••••••••9F3c',
+      keyPrefix: 'sk_mock_****',
+      maskedSecret: 'sk_mock_****••••••••••••',
       vaultKeyId: 'asm:secret:stripe-restricted-prod',
     },
   },
@@ -327,7 +433,7 @@ const initialCredentials = [
     lastRotatedAt: '2026-08-20',
     expiresAt: '2026-11-20',
     metadataSafe: {
-      clientId: '3MVG9lKcPeChReE5.techzone.oauth',
+      clientId: 'mock-client-id-****',
       maskedSecret: '•••••••••••• (Client Secret masqué)',
       tokenEndpoint: 'https://login.salesforce.com/services/oauth2/token',
     },
@@ -429,6 +535,156 @@ const initialSyncJobs = [
       recordsWritten: 12400,
       conflicts: 0,
       checkpoint: 'OFFSET_KAFKA_889021',
+    },
+  },
+  {
+    id: 'sync-warehouse-catalog-pull',
+    code: 'SYNC-WAREHOUSE-CATALOG-PULL',
+    name: 'Catalogue Articles Entrepôt -> Techzone Hub',
+    connectorId: 'conn-sap-erp',
+    source: 'Internal Warehouse DB / ProductCatalog',
+    target: 'Techzone Catalog DB / CatalogStock',
+    mode: 'PULL',
+    schedule: 'Quotidien à 04:00 UTC',
+    mappingRef: 'map-warehouse-tz-catalog-v1',
+    conflictPolicy: 'SOURCE_WINS',
+    batchSize: 1000,
+    status: 'SUCCEEDED',
+    lastExecution: {
+      startedAt: 'Il y a 2h',
+      duration: '1m 12s',
+      recordsRead: 3420,
+      recordsWritten: 3420,
+      conflicts: 0,
+      checkpoint: '2026-09-02T04:00:00Z_REC_3420',
+    },
+  },
+  {
+    id: 'sync-reports-export-full',
+    code: 'SYNC-REPORTS-EXPORT-FULL',
+    name: 'Export Complet Rapports -> SFTP Interne',
+    connectorId: 'conn-kafka-events',
+    source: 'Techzone Reporting Store / MonthlyAggregates',
+    target: 'SFTP Interne / exports/reports/full',
+    mode: 'FULL',
+    schedule: 'Hebdomadaire (dimanche 01:00 UTC)',
+    mappingRef: 'map-reports-sftp-full-v1',
+    conflictPolicy: 'MANUAL_REVIEW',
+    batchSize: 5000,
+    status: 'PARTIAL',
+    lastExecution: {
+      startedAt: 'Il y a 3 jours',
+      duration: '8m 45s',
+      recordsRead: 12400,
+      recordsWritten: 11890,
+      conflicts: 12,
+      checkpoint: 'FULL_REFRESH_20260830T010000Z',
+      issue: '12 conflits réservés pour révision manuelle',
+    },
+  },
+  {
+    id: 'sync-warehouse-catalog-pending',
+    code: 'SYNC-WAREHOUSE-DB-INIT-PENDING',
+    name: 'Initialisation Catalogue Entrepôt (En attente)',
+    connectorId: 'conn-internal-db-06',
+    source: 'Internal Warehouse DB / ProductCatalog',
+    target: 'Techzone Catalog DB / CatalogStock',
+    mode: 'PULL',
+    schedule: 'Quotidien à 04:00 UTC',
+    mappingRef: 'map-warehouse-tz-catalog-v1',
+    conflictPolicy: 'SOURCE_WINS',
+    batchSize: 1000,
+    status: 'PENDING',
+  },
+  {
+    id: 'sync-sap-inventory-running',
+    code: 'SYNC-SAP-INVENTORY-RUNNING',
+    name: 'Stock Articles SAP -> Techzone Hub (En cours)',
+    connectorId: 'conn-sap-erp',
+    source: 'SAP S/4HANA / MaterialStockSet',
+    target: 'Techzone Catalog DB / InventoryStock',
+    mode: 'INCREMENTAL',
+    schedule: 'Toutes les 15 minutes',
+    mappingRef: 'map-sap-tz-stock-v1',
+    conflictPolicy: 'SOURCE_WINS',
+    batchSize: 500,
+    status: 'RUNNING',
+    lastExecution: {
+      startedAt: 'Il y a 2 min',
+      duration: '2m 15s',
+      recordsRead: 890,
+      recordsWritten: 0,
+      conflicts: 0,
+      checkpoint: '2026-09-02T14:00:00Z_REC_0890',
+    },
+  },
+  {
+    id: 'sync-sf-customers-failed',
+    code: 'SYNC-SF-CUSTOMERS-FAILED',
+    name: 'Comptes Clients Salesforce -> Retail (Échec)',
+    connectorId: 'conn-salesforce-crm',
+    source: 'Salesforce Contact / Account',
+    target: 'Techzone CRM Store / Users',
+    mode: 'BIDIRECTIONAL',
+    schedule: 'Toutes les heures',
+    mappingRef: 'map-sf-tz-customer-v2',
+    conflictPolicy: 'NEWEST_WINS',
+    batchSize: 200,
+    status: 'FAILED',
+    lastExecution: {
+      startedAt: 'Il y a 35 min',
+      duration: '1m 18s',
+      recordsRead: 820,
+      recordsWritten: 795,
+      conflicts: 25,
+      checkpoint: 'SF_MOD_DATE_20260902_1330',
+      issue: 'Timeout sur 25 enregistrements. Code: INTEGRATION_TIMEOUT',
+    },
+  },
+  {
+    id: 'sync-orders-archive-paused',
+    code: 'SYNC-ORDERS-COLD-ARCHIVE-PAUSED',
+    name: 'Archivage Commandes Clôturées Kafka (En pause)',
+    connectorId: 'conn-kafka-events',
+    source: 'Techzone Orders Lake',
+    target: 'Kafka Topic orders.archive',
+    mode: 'PUSH',
+    schedule: 'Quotidien à 02:00 UTC',
+    mappingRef: 'map-orders-kafka-v1',
+    conflictPolicy: 'TARGET_WINS',
+    batchSize: 1000,
+    status: 'PAUSED',
+    lastExecution: {
+      startedAt: 'Il y a 12h',
+      duration: '3m 40s',
+      recordsRead: 12400,
+      recordsWritten: 12400,
+      conflicts: 0,
+      checkpoint: 'OFFSET_KAFKA_889021',
+      issue: 'Suspendu manuellement par l\'opérateur',
+    },
+  },
+  {
+    id: 'sync-partner-dispatch-cancelled',
+    code: 'SYNC-PARTNER-DISPATCH-CANCELLED',
+    name: 'Dispatch Expéditions Partenaires (Annulé)',
+    connectorId: 'conn-mock-logistics',
+    source: 'Transporteur Partenaire / ShipmentBatch',
+    target: 'Techzone Logistics Store / DispatchRecords',
+    mode: 'FULL',
+    schedule: 'Hebdomadaire (lundi 03:00 UTC)',
+    mappingRef: 'map-dispatch-stripe-full-v1',
+    conflictPolicy: 'MANUAL_REVIEW',
+    batchSize: 5000,
+    status: 'CANCELLED',
+    lastExecution: {
+      startedAt: 'Il y a 2 jours',
+      duration: '45s',
+      recordsRead: 0,
+      recordsWritten: 0,
+      conflicts: 0,
+      checkpoint: null,
+      issue: 'Annulé par l\'opérateur avant traitement du lot',
     },
   },
 ];
@@ -636,9 +892,34 @@ const integrationSlice = createSlice({
         cred.expiresAt = nextYear.toISOString().split('T')[0];
       }
     },
+    disableCredential: (state, action) => {
+      const { id } = action.payload;
+      const cred = state.credentials.find((c) => c.id === id);
+      if (cred) {
+        cred.status = 'REVOKED';
+      }
+    },
     // Synchronization Pipeline Simulator (API-CDC-06)
     addSyncJob: (state, action) => {
       state.syncJobs.push(action.payload);
+    },
+    pauseSyncJob: (state, action) => {
+      const sync = state.syncJobs.find((s) => s.id === action.payload);
+      if (sync && sync.status === 'RUNNING') {
+        sync.status = 'PAUSED';
+      }
+    },
+    resumeSyncJob: (state, action) => {
+      const sync = state.syncJobs.find((s) => s.id === action.payload);
+      if (sync && sync.status === 'PAUSED') {
+        sync.status = 'RUNNING';
+      }
+    },
+    cancelSyncJob: (state, action) => {
+      const sync = state.syncJobs.find((s) => s.id === action.payload);
+      if (sync && (sync.status === 'RUNNING' || sync.status === 'PENDING')) {
+        sync.status = 'CANCELLED';
+      }
     },
     startSyncPipeline: (state, action) => {
       const syncId = typeof action.payload === 'object' ? action.payload.jobId || action.payload.syncId : action.payload;
@@ -748,7 +1029,11 @@ export const {
   triggerTestWebhook,
   addCredentialReference,
   rotateCredential,
+  disableCredential,
   addSyncJob,
+  pauseSyncJob,
+  resumeSyncJob,
+  cancelSyncJob,
   startSyncPipeline,
   updatePipelineProgress,
   finishSyncPipeline,
