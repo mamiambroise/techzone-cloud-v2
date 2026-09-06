@@ -40,6 +40,8 @@ import { QualityController } from './quality/quality.controller';
 import { QualityService } from './quality/quality.service';
 import { RuntimeController } from './runtime/runtime.controller';
 import { RuntimeResolverService, RUNTIME_PROVIDERS } from './runtime/runtime-resolver.service';
+import { RUNTIME_MANIFEST_PROVIDER, RuntimeResolutionService } from './runtime/runtime-resolution.service';
+import { PackManifestProvider } from './runtime/providers/pack-manifest.provider';
 import {
   MockApplicationContextProvider,
   MockCapabilityProvider,
@@ -48,9 +50,11 @@ import {
 } from './runtime/providers/mock-runtime.providers';
 import { RuntimeCockpitController } from './runtime/cockpit/cockpit.controller';
 import { RuntimeCockpitService } from './runtime/cockpit/cockpit.service';
+import { PackManagerModule } from './pack-manager/pack-manager.module';
 
 @Module({
   imports: [
+    PackManagerModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
@@ -93,6 +97,9 @@ import { RuntimeCockpitService } from './runtime/cockpit/cockpit.service';
     ConfigurationService,
     RuntimeBridgeService,
     RuntimeResolverService,
+    RuntimeResolutionService,
+    PackManifestProvider,
+    { provide: RUNTIME_MANIFEST_PROVIDER, useExisting: PackManifestProvider },
     MockApplicationContextProvider,
     MockIamContextProvider,
     MockEntitlementProvider,
@@ -127,6 +134,7 @@ import { RuntimeCockpitService } from './runtime/cockpit/cockpit.service';
     ConfigurationService,
     RuntimeBridgeService,
     RuntimeResolverService,
+    RuntimeResolutionService,
     QualityService,
   ],
 })

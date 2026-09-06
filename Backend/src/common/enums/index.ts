@@ -239,6 +239,7 @@ export enum Permission {
   RUNTIME_CACHE_INVALIDATE = 'runtime.cache.invalidate',
   RUNTIME_MANIFEST_COMPARE = 'runtime.manifest.compare',
   RUNTIME_RESOLVE = 'runtime.resolve',
+  RUNTIME_RESOLVE_PREVIEW = 'runtime.resolve.preview',
   RUNTIME_READ = 'runtime.read',
   RUNTIME_DIAGNOSE = 'runtime.diagnose',
   RUNTIME_INVALIDATE_CACHE = 'runtime.invalidate-cache',
