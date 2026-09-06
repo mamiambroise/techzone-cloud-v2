@@ -1,3 +1,4 @@
+
 import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { PackSourceType, PackStatus } from '../../../common/enums';
 import { PackVersion } from './pack-version.entity';
@@ -26,4 +27,5 @@ export class Pack {
   @Column({ nullable: true, type: 'timestamp with time zone' }) archivedAt?: Date;
   @Column({ default: 1 }) version: number;
   @OneToMany(() => PackVersion, (packVersion) => packVersion.pack) versions: PackVersion[];
+
 }

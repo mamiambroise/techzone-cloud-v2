@@ -38,6 +38,7 @@ import { RuntimeBridgeController } from './runtime/runtime-bridge.controller';
 import { RuntimeBridgeService } from './runtime/runtime-bridge.service';
 import { QualityController } from './quality/quality.controller';
 import { QualityService } from './quality/quality.service';
+
 import { RuntimeController } from './runtime/runtime.controller';
 import { RuntimeResolverService, RUNTIME_PROVIDERS } from './runtime/runtime-resolver.service';
 import { RUNTIME_MANIFEST_PROVIDER, RuntimeResolutionService } from './runtime/runtime-resolution.service';
@@ -55,6 +56,7 @@ import { PackManagerModule } from './pack-manager/pack-manager.module';
 @Module({
   imports: [
     PackManagerModule,
+
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),

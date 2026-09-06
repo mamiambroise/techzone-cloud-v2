@@ -52,164 +52,79 @@ import { computeSnapshotHash } from '../lib/snapshotService';
 import { ValidationEngine } from '../lib/validationEngine';
 import { isVersionEditable } from '../lib/versionGuard';
 import { terminateSession } from '../lib/authService';
-import { api, setSession, clearAccessToken } from '../lib/api';
+import { api, setSession, setServerSession, clearAccessToken } from '../lib/api';
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   // 1. Central Persistence State
   const [applications, setApplications] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_applications');
-      return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
-    } catch {
-      return INITIAL_APPLICATIONS;
-    }
+    return [];
   });
 
   const [versions, setVersions] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_versions');
-      return saved ? JSON.parse(saved) : INITIAL_VERSIONS;
-    } catch {
-      return INITIAL_VERSIONS;
-    }
+    return [];
   });
 
   const [activities, setActivities] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_activities');
-      return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
-    } catch {
-      return INITIAL_AUDIT_LOGS;
-    }
+    return [];
   });
 
   const [dataModels, setDataModels] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_data_models');
-      return saved ? JSON.parse(saved) : INITIAL_DATA_MODELS;
-    } catch {
-      return INITIAL_DATA_MODELS;
-    }
+    return [];
   });
 
   const [features, setFeatures] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_features');
-      return saved ? JSON.parse(saved) : INITIAL_FEATURES;
-    } catch {
-      return INITIAL_FEATURES;
-    }
+    return [];
   });
 
   const [menus, setMenus] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_menus');
-      return saved ? JSON.parse(saved) : INITIAL_MENUS;
-    } catch {
-      return INITIAL_MENUS;
-    }
+    return [];
   });
 
   const [configs, setConfigs] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_configs');
-      return saved ? JSON.parse(saved) : INITIAL_CONFIG_DEFINITIONS;
-    } catch {
-      return INITIAL_CONFIG_DEFINITIONS;
-    }
+    return [];
   });
 
   const [integrations, setIntegrations] = useState(() => {
-    try {
-      const saved = localStorage.getItem('bm_integrations');
-      return saved ? JSON.parse(saved) : INITIAL_INTEGRATIONS;
-    } catch {
-      return INITIAL_INTEGRATIONS;
-    }
+    return [];
   });
 
   // Pack Manager Stores (PM-CDC-00, PM-CDC-01, PM-CDC-02)
   const [packs, setPacks] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_packs');
-      return saved ? JSON.parse(saved) : INITIAL_PACKS;
-    } catch {
-      return INITIAL_PACKS;
-    }
+    return [];
   });
 
   const [packVersions, setPackVersions] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_versions');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_VERSIONS;
-    } catch {
-      return INITIAL_PACK_VERSIONS;
-    }
+    return [];
   });
 
   const [packActivities, setPackActivities] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_activities');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_ACTIVITIES;
-    } catch {
-      return INITIAL_PACK_ACTIVITIES;
-    }
+    return [];
   });
 
   const [packAttentionItems, setPackAttentionItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_attention');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_ATTENTION_ITEMS;
-    } catch {
-      return INITIAL_PACK_ATTENTION_ITEMS;
-    }
+    return [];
   });
 
   const [packModules, setPackModules] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_modules');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_MODULES;
-    } catch {
-      return INITIAL_PACK_MODULES;
-    }
+    return [];
   });
 
   const [packFeatures, setPackFeatures] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_features');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_FEATURES;
-    } catch {
-      return INITIAL_PACK_FEATURES;
-    }
+    return [];
   });
 
   const [packCapabilities, setPackCapabilities] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_capabilities');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_CAPABILITIES;
-    } catch {
-      return INITIAL_PACK_CAPABILITIES;
-    }
+    return [];
   });
 
   const [packDependencies, setPackDependencies] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_dependencies');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_DEPENDENCIES;
-    } catch {
-      return INITIAL_PACK_DEPENDENCIES;
-    }
+    return [];
   });
 
   const [packRules, setPackRules] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pm_pack_rules');
-      return saved ? JSON.parse(saved) : INITIAL_PACK_RULES;
-    } catch {
-      return INITIAL_PACK_RULES;
-    }
+    return [];
   });
 
   // Pack Selection State
@@ -252,6 +167,8 @@ export function AppProvider({ children }) {
   const [selectedEnvironment, setSelectedEnvironment] = useState('ALL');
   const [globalSearch, setGlobalSearch] = useState('');
   const [toast, setToast] = useState(null);
+  const [backendSync, setBackendSync] = useState({ status: 'idle', syncedAt: null, error: null });
+  const packHydratedRef = React.useRef(false);
 
   const [userFullName, setUserFullName] = useState(() => {
     try {
@@ -295,7 +212,7 @@ export function AppProvider({ children }) {
 
   // Login handler — génération locale du JWT (signé HS256 avec le secret partagé
   // configuré côté backend). Aucun endpoint /auth/login n'est requis.
-  const login = useCallback(async ({ email = 'admin@techzone.io', role, name = '', staySignedIn = true } = {}) => {
+  const login = useCallback(async ({ email = 'admin@techzone.io', password, role, name = '', staySignedIn = true } = {}) => {
     let resolvedRole = role;
     if (!resolvedRole) {
       if (email.toLowerCase().includes('builder')) {
@@ -307,7 +224,12 @@ export function AppProvider({ children }) {
       }
     }
 
-    const session = await setSession({ email, name, role: resolvedRole }).catch((err) => {
+    const session = password
+      ? await api.login(email, password).then((response) => setServerSession(response?.data ?? response)).catch((err) => {
+        console.warn('[AppContext] server login failed:', err);
+        return null;
+      })
+      : await setSession({ email, name, role: resolvedRole }).catch((err) => {
       console.warn('[AppContext] setSession failed:', err);
       return null;
     });
@@ -387,145 +309,6 @@ export function AppProvider({ children }) {
   useEffect(() => {
     return undefined;
   }, [isAuthenticated]);
-
-  // Sync to LocalStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_applications', JSON.stringify(applications));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [applications]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_versions', JSON.stringify(versions));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [versions]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_activities', JSON.stringify(activities));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [activities]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_data_models', JSON.stringify(dataModels));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [dataModels]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_features', JSON.stringify(features));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [features]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_menus', JSON.stringify(menus));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [menus]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_configs', JSON.stringify(configs));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [configs]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('bm_integrations', JSON.stringify(integrations));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [integrations]);
-
-  // Pack Manager LocalStorage Sync
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_packs', JSON.stringify(packs));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packs]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_versions', JSON.stringify(packVersions));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packVersions]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_activities', JSON.stringify(packActivities));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packActivities]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_attention', JSON.stringify(packAttentionItems));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packAttentionItems]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_modules', JSON.stringify(packModules));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packModules]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_features', JSON.stringify(packFeatures));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packFeatures]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_capabilities', JSON.stringify(packCapabilities));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packCapabilities]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_dependencies', JSON.stringify(packDependencies));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packDependencies]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pm_pack_rules', JSON.stringify(packRules));
-    } catch (e) {
-      console.warn('LocalStorage error', e);
-    }
-  }, [packRules]);
-
 
   // Toast Notification helper
   const showToast = useCallback((message, type = 'success') => {
@@ -1617,6 +1400,34 @@ export function AppProvider({ children }) {
       });
 
       showToast(`Application "${name}" créée avec succès !`);
+
+      void api.createApplication({
+        code,
+        name,
+        description: input.description || 'Nouvelle application métier centralisée.',
+        category: input.category || 'Commerce',
+        icon: input.icon || 'ShoppingBag',
+        createdBy: currentUser.id,
+      }).then((response) => {
+        const persistedApp = response?.data ?? response;
+        if (!persistedApp?.id) throw new Error('Réponse API application invalide');
+        setApplications((prev) => prev.map((app) => (app.id === newAppId ? { ...newApp, ...persistedApp } : app)));
+        setSelectedAppId(persistedApp.id);
+        return api.createVersion(persistedApp.id, { versionNumber: '1.0.0', comment: 'Version initiale générée automatiquement' });
+      }).then((response) => {
+        const persistedVersion = response?.data ?? response;
+        if (persistedVersion?.id) {
+          setVersions((prev) => prev.map((version) => (version.id === initialVerId ? { ...version, ...persistedVersion } : version)));
+          setSelectedVersionId(persistedVersion.id);
+        }
+      }).catch((error) => {
+        setApplications((prev) => prev.filter((app) => app.id !== newAppId));
+        setVersions((prev) => prev.filter((version) => version.id !== initialVerId));
+        setSelectedAppId(null);
+        setSelectedVersionId(null);
+        showToast(`Échec de sauvegarde backend : ${error.message}`, 'error');
+      });
+
       return { success: true, data: newApp };
     },
     [applications, currentTenant, currentUser, hasPermission, logActivity, showToast]
@@ -1663,6 +1474,15 @@ export function AppProvider({ children }) {
       });
 
       showToast('Modifications enregistrées avec succès.');
+      void api.updateApplication(appId, {
+        name: updates.name,
+        description: updates.description,
+        category: updates.category,
+        icon: updates.icon,
+      }).catch((error) => {
+        setApplications((prev) => prev.map((app) => (app.id === appId ? existing : app)));
+        showToast(`Échec de sauvegarde backend : ${error.message}`, 'error');
+      });
       return { success: true, data: updated };
     },
     [applications, hasPermission, logActivity, showToast]
@@ -1709,10 +1529,28 @@ export function AppProvider({ children }) {
       });
 
       showToast(`Statut de ${updated.name} changé en ${targetStatus}`);
+      void api.transitionApplication(appId, { targetStatus }).catch((error) => {
+        setApplications((prev) => prev.map((app) => (app.id === appId ? existing : app)));
+        showToast(`Échec de transition backend : ${error.message}`, 'error');
+      });
       return { success: true, data: updated };
     },
     [applications, logActivity, showToast]
   );
+
+  const archiveApplication = useCallback((appId, expectedVersion) => {
+    const existing = applications.find((application) => application.id === appId);
+    if (!existing) return { success: false, error: { message: 'Application introuvable.' } };
+
+    setApplications((prev) => prev.map((application) => application.id === appId
+      ? { ...application, status: 'ARCHIVED', archivedAt: new Date().toISOString() }
+      : application));
+    void api.archiveApplication(appId, expectedVersion === undefined ? {} : { expectedVersion }).catch((error) => {
+      setApplications((prev) => prev.map((application) => application.id === appId ? existing : application));
+      showToast(`Échec d'archivage backend : ${error.message}`, 'error');
+    });
+    return { success: true, data: { ...existing, status: 'ARCHIVED' } };
+  }, [applications, showToast]);
 
   const cloneApplication = useCallback(
     (sourceAppId, newName, newCode, customDesc = '') => {
@@ -1888,6 +1726,26 @@ export function AppProvider({ children }) {
       });
 
       showToast(`Version v${vNum} créée en DRAFT.`);
+      void api.createVersion(appId, {
+        versionNumber: vNum,
+        comment: comment || `Préparation de la version ${vNum}`,
+        ...(sourceVersionId ? { sourceVersionId } : {}),
+      }).then((response) => {
+        const persistedVersion = response?.data ?? response;
+        if (!persistedVersion?.id) throw new Error('Réponse API version invalide');
+        setVersions((prev) => prev.map((version) => (version.id === newVerId ? { ...newVersion, ...persistedVersion } : version)));
+        setApplications((prev) => prev.map((application) => application.id === appId
+          ? { ...application, currentVersionId: persistedVersion.id, currentVersionNumber: persistedVersion.versionNumber }
+          : application));
+        setSelectedVersionId(persistedVersion.id);
+      }).catch((error) => {
+        setVersions((prev) => prev.filter((version) => version.id !== newVerId));
+        setApplications((prev) => prev.map((application) => application.id === appId
+          ? { ...application, currentVersionId: app.currentVersionId, currentVersionNumber: app.currentVersionNumber }
+          : application));
+        setSelectedVersionId(app.currentVersionId || null);
+        showToast(`Échec de sauvegarde backend : ${error.message}`, 'error');
+      });
       return { success: true, data: newVersion };
     },
     [applications, versions, currentUser, logActivity, showToast]
@@ -1944,6 +1802,11 @@ export function AppProvider({ children }) {
         metadata: {
           summary: validationResult.summary,
         },
+      });
+
+      void api.validateVersion(app.id, ver.id).catch((error) => {
+        setVersions((prev) => prev.map((version) => (version.id === targetVerId ? ver : version)));
+        showToast(`Échec de validation backend : ${error.message}`, 'error');
       });
 
       return { success: true, data: validationResult };
@@ -2060,6 +1923,11 @@ export function AppProvider({ children }) {
       });
 
       showToast(`Version v${ver.versionNumber} publiée avec succès en ${targetEnvironment} !`);
+      void api.publishVersion(app.id, ver.id, { environment: targetEnvironment }).catch((error) => {
+        setVersions((prev) => prev.map((version) => (version.id === ver.id ? ver : version)));
+        setApplications((prev) => prev.map((application) => (application.id === app.id ? app : application)));
+        showToast(`Échec de publication backend : ${error.message}`, 'error');
+      });
       return { success: true, data: updatedApp };
     },
     [applications, selectedApp, versions, selectedVersion, dataModels, features, menus, configs, integrations, logActivity, showToast]
@@ -2369,6 +2237,29 @@ export function AppProvider({ children }) {
       });
 
       showToast(`Pack "${newPack.name}" créé avec succès.`);
+      void api.createPack({
+        code: generatedCode,
+        name: newPack.name,
+        description: newPack.description,
+        status: newPack.status,
+        metadata: { ...newPack.metadata, category: newPack.category, iconKey: newPack.iconKey, color: newPack.color },
+      }).then((response) => {
+        const persistedPack = response?.data ?? response;
+        if (!persistedPack?.id) throw new Error('Réponse API pack invalide');
+        setPacks((prev) => prev.map((pack) => pack.id === newPackId ? { ...newPack, ...persistedPack, ...persistedPack.metadata } : pack));
+        setSelectedPackId(persistedPack.id);
+        return api.createPackVersion(persistedPack.id, { versionNumber: '0.1.0-draft', status: 'DRAFT' });
+      }).then((response) => {
+        const persistedVersion = response?.data ?? response;
+        if (persistedVersion?.id) {
+          setPackVersions((prev) => prev.map((version) => version.id === initialVersionId ? { ...version, ...persistedVersion } : version));
+          setSelectedPackVersionId(persistedVersion.id);
+        }
+      }).catch((error) => {
+        setPacks((prev) => prev.filter((pack) => pack.id !== newPackId));
+        setPackVersions((prev) => prev.filter((version) => version.id !== initialVersionId));
+        showToast(`Échec de sauvegarde du pack : ${error.message}`, 'error');
+      });
       return { success: true, data: newPack };
     },
     [packs, currentTenant, currentUser, showToast, logPackActivity]
@@ -2414,6 +2305,15 @@ export function AppProvider({ children }) {
       });
 
       showToast(`Pack "${updated.name}" mis à jour.`);
+      void api.updatePack(packId, {
+        name: updated.name,
+        description: updated.description,
+        status: updated.status,
+        metadata: { category: updated.category, iconKey: updated.iconKey, color: updated.color, ...(updated.metadata || {}) },
+      }).catch((error) => {
+        setPacks((prev) => prev.map((pack) => pack.id === packId ? existing : pack));
+        showToast(`Échec de sauvegarde du pack : ${error.message}`, 'error');
+      });
       return { success: true, data: updated };
     },
     [packs, currentUser, showToast, logPackActivity]
@@ -2726,6 +2626,28 @@ export function AppProvider({ children }) {
       });
 
       showToast(`Version ${versionNumber} créée.`);
+      void api.createPackVersion(packId, {
+        versionNumber,
+        status: PACK_VERSION_STATUS.DRAFT,
+        modules: clonedModules || [],
+        features: clonedFeatures || [],
+        capabilities: clonedCapabilities || [],
+        dependencies: clonedDeps || [],
+        rules: clonedRules || [],
+      }).then((response) => {
+        const persistedVersion = response?.data ?? response;
+        if (!persistedVersion?.id) throw new Error('Réponse API version pack invalide');
+        setPackVersions((prev) => prev.map((version) => version.id === newVersionId ? { ...newVersion, ...persistedVersion } : version));
+        setSelectedPackVersionId(persistedVersion.id);
+      }).catch((error) => {
+        setPackVersions((prev) => prev.filter((version) => version.id !== newVersionId));
+        setPackModules((prev) => prev.filter((item) => item.packVersionId !== newVersionId));
+        setPackFeatures((prev) => prev.filter((item) => item.packVersionId !== newVersionId));
+        setPackCapabilities((prev) => prev.filter((item) => item.packVersionId !== newVersionId));
+        setPackDependencies((prev) => prev.filter((item) => item.sourcePackVersionId !== newVersionId));
+        setPackRules((prev) => prev.filter((item) => item.packVersionId !== newVersionId));
+        showToast(`Échec de sauvegarde de la version : ${error.message}`, 'error');
+      });
       return { success: true, data: newVersion };
     },
     [
@@ -2794,7 +2716,7 @@ export function AppProvider({ children }) {
       });
 
       // 2. Core Modules Check
-      const coreModules = vModules.filter((m) => m.moduleType === 'CORE' || m.isRequired);
+      const coreModules = vModules.filter((m) => m.moduleType === 'CORE');
       checks.push({
         id: 'chk-modules',
         title: 'Composition des Modules & Éléments Obligatoires',
@@ -2812,7 +2734,7 @@ export function AppProvider({ children }) {
         allPacks: packs,
         allPackVersions: packVersions,
       });
-      const allCycles = detectCycles(packDependencies);
+      const allCycles = detectCycles(vDependencies);
       const unresolvedRequired = resolvedDeps.filter(
         (d) => d.dependencyType === 'REQUIRED' && d.resolutionStatus !== 'RESOLVED'
       );
@@ -2825,18 +2747,26 @@ export function AppProvider({ children }) {
         details:
           unresolvedRequired.length === 0 && allCycles.length === 0
             ? `${vDependencies.length} dépendance(s) évaluée(s), 0 cycle, 0 conflit bloquant.`
-            : `${unresolvedRequired.length} dépendance(s) requise(s) non résolue(s), ${allCycles.length} cycle(s) détecté(s).`,
+            : `${unresolvedRequired.length} dépendance(s) requise(s) non résolue(s), ${allCycles.length} cycle(s) détecté(s).${resolvedDeps.filter((d) => d.resolutionStatus !== 'RESOLVED').map((d) => ` ${d.targetPackCode}: ${d.error || d.resolutionStatus}.`).join('')}`,
       });
 
       // 4. Capabilities Consistency Check
+      const capabilityCodes = vCapabilities.map((capability) => capability.capabilityCode?.trim()).filter(Boolean);
+      const duplicateCapabilityCodes = capabilityCodes.filter((code, index) => capabilityCodes.indexOf(code) !== index);
+      const invalidCapabilities = vCapabilities.filter((capability) =>
+        !capability.capabilityCode?.trim() || !['PROVIDES', 'REQUIRES', 'USES'].includes(capability.relationType)
+      );
+      const capabilitiesValid = invalidCapabilities.length === 0 && duplicateCapabilityCodes.length === 0;
+      const providesCount = vCapabilities.filter((capability) => capability.relationType === 'PROVIDES').length;
+      const requiresCount = vCapabilities.filter((capability) => capability.relationType === 'REQUIRES').length;
       checks.push({
         id: 'chk-capabilities',
         title: 'Registre des Capabilities',
         category: 'CAPABILITIES',
-        passed: vCapabilities.length >= 0,
-        details: `${vCapabilities.length} capability(ies) déclarée(s) (PROVIDES: ${
-          vCapabilities.filter((c) => c.relationType === 'PROVIDES').length
-        }, REQUIRES: ${vCapabilities.filter((c) => c.relationType === 'REQUIRES').length}).`,
+        passed: capabilitiesValid,
+        details: capabilitiesValid
+          ? `${vCapabilities.length} capability(ies) déclarée(s) (PROVIDES: ${providesCount}, REQUIRES: ${requiresCount}).`
+          : `Registre invalide : ${invalidCapabilities.length} entrée(s) incomplète(s) et ${duplicateCapabilityCodes.length} code(s) dupliqué(s).`,
       });
 
       // 5. Rules & Conditions Simulation
@@ -3805,62 +3735,125 @@ export function AppProvider({ children }) {
     };
   }, [packs, packVersions, packAttentionItems, packActivities]);
 
-  // Reset seed (Extended to Pack Manager)
+  // Clear the local view without manufacturing business data.
   const resetToSeed = useCallback(() => {
-    setApplications(INITIAL_APPLICATIONS);
-    setVersions(INITIAL_VERSIONS);
-    setActivities(INITIAL_AUDIT_LOGS);
-    setDataModels(INITIAL_DATA_MODELS);
-    setFeatures(INITIAL_FEATURES);
-    setMenus(INITIAL_MENUS);
-    setConfigs(INITIAL_CONFIG_DEFINITIONS);
-    setIntegrations(INITIAL_INTEGRATIONS);
-    setPacks(INITIAL_PACKS);
-    setPackVersions(INITIAL_PACK_VERSIONS);
-    setPackActivities(INITIAL_PACK_ACTIVITIES);
-    setPackAttentionItems(INITIAL_PACK_ATTENTION_ITEMS);
-    setPackModules(INITIAL_PACK_MODULES);
-    setPackFeatures(INITIAL_PACK_FEATURES);
-    setPackCapabilities(INITIAL_PACK_CAPABILITIES);
-    setPackDependencies(INITIAL_PACK_DEPENDENCIES);
-    setPackRules(INITIAL_PACK_RULES);
-    setSelectedAppId('app-9720-prem');
-    setSelectedVersionId('ver-9720-120');
-    setSelectedPackId('pack-stock');
-    setSelectedPackVersionId('pver-stock-120');
-    showToast('Base réinitialisée aux données de configuration réelles.');
+    setApplications([]);
+    setVersions([]);
+    setActivities([]);
+    setDataModels([]);
+    setFeatures([]);
+    setMenus([]);
+    setConfigs([]);
+    setIntegrations([]);
+    setPacks([]);
+    setPackVersions([]);
+    setPackActivities([]);
+    setPackAttentionItems([]);
+    setPackModules([]);
+    setPackFeatures([]);
+    setPackCapabilities([]);
+    setPackDependencies([]);
+    setPackRules([]);
+    setSelectedAppId(null);
+    setSelectedVersionId(null);
+    setSelectedPackId(null);
+    setSelectedPackVersionId(null);
+    showToast('Vue locale vidée. Les données réelles doivent être rechargées depuis le backend.');
   }, [showToast]);
 
-  // Hydrate le contexte depuis l'API NestJS (best-effort, non-bloquant)
+  // Hydrate les domaines couverts par l'API NestJS sans bloquer l'affichage initial.
   const syncFromBackend = useCallback(async () => {
+    setBackendSync((current) => ({ ...current, status: 'syncing', error: null }));
     try {
       const appsRes = await api.listApplications({ limit: 100 });
-      const items = appsRes?.items || appsRes?.data?.items || [];
-      if (Array.isArray(items) && items.length > 0) {
+      const items = appsRes?.items || appsRes?.data?.items || appsRes?.data || appsRes || [];
+      if (Array.isArray(items)) {
         setApplications(items);
-        const firstAppId = items[0]?.id;
+        const firstAppId = items[0]?.id || null;
+        setSelectedAppId(firstAppId);
         if (firstAppId) {
-          try {
-            const versionsRes = await api.listVersions(firstAppId);
-            const vItems = versionsRes?.items || versionsRes?.data?.items || versionsRes || [];
-            if (Array.isArray(vItems) && vItems.length > 0) {
-              setVersions(vItems);
-            }
-          } catch (err) {
-            console.warn('[AppContext] versions fetch failed:', err?.message || err);
+          const versionResults = await Promise.allSettled(items.map((app) => api.listVersions(app.id)));
+          const allVersions = versionResults.flatMap((result) => {
+            if (result.status !== 'fulfilled') return [];
+            const value = result.value;
+            const versionsForApp = value?.items || value?.data?.items || value?.data || value || [];
+            return Array.isArray(versionsForApp) ? versionsForApp : [];
+          });
+          if (versionResults.some((result) => result.status === 'fulfilled')) {
+            setVersions(allVersions);
+            setSelectedVersionId(allVersions.find((version) => version.applicationId === firstAppId)?.id || null);
           }
-          try {
-            const activityRes = await api.recentActivity(firstAppId);
-            const aItems = activityRes?.items || activityRes?.data?.items || activityRes || [];
-            if (Array.isArray(aItems) && aItems.length > 0) {
-              setActivities(aItems);
-            }
-          } catch (err) {
-            console.warn('[AppContext] activity fetch failed:', err?.message || err);
+
+          const [activityResult] = await Promise.allSettled([api.recentActivity(firstAppId)]);
+          if (activityResult.status === 'fulfilled') {
+            const aItems = activityResult.value?.items || activityResult.value?.data?.items || activityResult.value?.data || activityResult.value || [];
+            if (Array.isArray(aItems)) setActivities(aItems);
           }
+
+          const firstVersionId = allVersions.find((version) => version.applicationId === firstAppId)?.id;
+          if (firstVersionId) {
+            const [modelsResult] = await Promise.allSettled([
+              api.listDataModels(firstAppId, firstVersionId),
+            ]);
+            if (modelsResult.status === 'fulfilled') {
+              const modelItems = modelsResult.value?.items || modelsResult.value?.data?.items || modelsResult.value?.data || modelsResult.value || [];
+              if (Array.isArray(modelItems)) setDataModels(modelItems);
+            }
+          } else if (versionResults.some((result) => result.status === 'fulfilled')) {
+            setDataModels([]);
+          }
+        } else {
+          setVersions([]);
+          setActivities([]);
+          setDataModels([]);
         }
       }
+
+      const [featuresResult, menusResult, configsResult, integrationsResult] = await Promise.allSettled([
+        api.listFeatures({ limit: 100 }),
+        api.listMenus({ limit: 100 }),
+        api.listConfigDefinitions({ limit: 100 }),
+        api.listIntegrations(),
+      ]);
+      const readItems = (result) => {
+        if (result.status !== 'fulfilled') return null;
+        const value = result.value;
+        return value?.items || value?.data?.items || value?.data || value || [];
+      };
+      const backendFeatures = readItems(featuresResult);
+      const backendMenus = readItems(menusResult);
+      const backendConfigs = readItems(configsResult);
+      const backendIntegrations = readItems(integrationsResult);
+      if (Array.isArray(backendFeatures)) setFeatures(backendFeatures);
+      if (Array.isArray(backendMenus)) setMenus(backendMenus);
+      if (Array.isArray(backendConfigs)) setConfigs(backendConfigs);
+      if (Array.isArray(backendIntegrations)) setIntegrations(backendIntegrations);
+
+      const packsResponse = await api.listPacks();
+      const backendPacks = packsResponse?.data ?? packsResponse ?? [];
+      if (Array.isArray(backendPacks)) {
+        const hydratedPacks = backendPacks.map((pack) => ({ ...pack, ...(pack.metadata || {}) }));
+        const versionResults = await Promise.allSettled(hydratedPacks.map((pack) => api.listPackVersions(pack.id)));
+        const hydratedVersions = versionResults.flatMap((result, index) => {
+          if (result.status !== 'fulfilled') return [];
+          const value = result.value?.data ?? result.value ?? [];
+          return (Array.isArray(value) ? value : []).map((version) => ({ ...version, packId: hydratedPacks[index].id }));
+        });
+        setPacks(hydratedPacks);
+        setPackVersions(hydratedVersions);
+        setPackModules(hydratedVersions.flatMap((version) => version.modules || []).map((item) => ({ ...item })));
+        setPackFeatures(hydratedVersions.flatMap((version) => version.features || []).map((item) => ({ ...item })));
+        setPackCapabilities(hydratedVersions.flatMap((version) => version.capabilities || []).map((item) => ({ ...item })));
+        setPackDependencies(hydratedVersions.flatMap((version) => version.dependencies || []).map((item) => ({ ...item })));
+        setPackRules(hydratedVersions.flatMap((version) => version.rules || []).map((item) => ({ ...item })));
+        setSelectedPackId(hydratedPacks[0]?.id || null);
+        setSelectedPackVersionId(hydratedVersions[0]?.id || null);
+        packHydratedRef.current = true;
+      }
+
+      setBackendSync({ status: 'synced', syncedAt: new Date().toISOString(), error: null });
     } catch (err) {
+      setBackendSync({ status: 'error', syncedAt: null, error: err?.message || 'Backend indisponible' });
       console.warn('[AppContext] backend sync indisponible:', err?.message || err);
     }
   }, []);
@@ -3871,6 +3864,20 @@ export function AppProvider({ children }) {
       syncFromBackend();
     }
   }, [isAuthenticated, syncFromBackend]);
+
+  // Persist every Pack Manager state change in the versioned PostgreSQL aggregate.
+  useEffect(() => {
+    if (!packHydratedRef.current || packVersions.length === 0) return;
+    for (const version of packVersions) {
+      void api.replacePackVersionState(version.id, {
+        modules: packModules.filter((item) => item.packVersionId === version.id),
+        features: packFeatures.filter((item) => item.packVersionId === version.id),
+        capabilities: packCapabilities.filter((item) => item.packVersionId === version.id),
+        dependencies: packDependencies.filter((item) => item.sourcePackVersionId === version.id || item.packVersionId === version.id),
+        rules: packRules.filter((item) => item.packVersionId === version.id),
+      }).catch((error) => console.warn('[AppContext] pack persistence failed:', error?.message || error));
+    }
+  }, [packVersions, packModules, packFeatures, packCapabilities, packDependencies, packRules]);
 
 
   const value = {
@@ -3883,6 +3890,7 @@ export function AppProvider({ children }) {
     menus,
     configs,
     integrations,
+    backendSync,
     // Scoped Data
     appDataModels,
     appFeatures,
@@ -3925,6 +3933,7 @@ export function AppProvider({ children }) {
     createApplication,
     updateApplication,
     transitionApplicationStatus,
+    archiveApplication,
     cloneApplication,
     createVersion,
     createNewVersion,

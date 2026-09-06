@@ -35,11 +35,15 @@ import { QualityIssue } from '../modules/business-manager/entities/quality-issue
 import { QualityWaiver } from '../modules/business-manager/entities/quality-waiver.entity';
 import { Pack } from '../modules/business-manager/entities/pack.entity';
 import { PackVersion } from '../modules/business-manager/entities/pack-version.entity';
+
+import { User } from '../auth/user.entity';
+
 import { PackOutboxEvent } from '../modules/business-manager/entities/pack-outbox-event.entity';
 import { PackModule } from '../modules/business-manager/entities/pack-module.entity';
 import { PackFeature } from '../modules/business-manager/entities/pack-feature.entity';
 import { PackCapability } from '../modules/business-manager/entities/pack-capability.entity';
 import { PackFeatureCapability } from '../modules/business-manager/entities/pack-feature-capability.entity';
+
 
 config();
 
@@ -71,8 +75,10 @@ export const dataSourceOptions: DataSourceOptions = {
     Menu, MenuItem, VersionMenu, VersionMenuItem,
     MenuItemFeatureRequirement, MenuItemCapabilityRequirement,
     ConfigurationDefinition, ConfigurationValue, MetadataDefinition, MetadataValue,
+
     ContractArtifact, RuntimeSnapshot, RuntimeResolution, RuntimeResolutionStep, IntegrationDefinition, IntegrationBinding,
     ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability,
+
   ],
   migrations: ['dist/migrations/*.js'],
 };

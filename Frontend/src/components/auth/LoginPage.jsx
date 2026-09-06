@@ -38,6 +38,7 @@ import {
   logSecurityEvent,
   recordUserLoginEvent
 } from '../../lib/authService';
+import { api } from '../../lib/api';
 
 /**
  * Calculates password strength and criteria in real-time
@@ -312,11 +313,14 @@ export function LoginPage({ onLoginSuccess }) {
     setIsLoading(true);
 
     try {
-      const authResult = await authenticateUser({
-        email: cleanEmail,
-        password,
-        staySignedIn,
-      });
+      let authResult;
+      try {
+        const response = await api.login(cleanEmail, password);
+        const serverSession = response?.data ?? response;
+        authResult = { success: true, user: { ...serverSession.user, is2FAEnabled: false } };
+      } catch (error) {
+        authResult = { success: false, error: error?.message || 'Identifiants invalides.' };
+      }
 
       if (!authResult.success) {
         setIsLoading(false);
@@ -344,6 +348,7 @@ export function LoginPage({ onLoginSuccess }) {
         setIsLoading(false);
         login({
           email: authResult.user.email,
+          password,
           role: authResult.user.role,
           name: authResult.user.name,
           staySignedIn,

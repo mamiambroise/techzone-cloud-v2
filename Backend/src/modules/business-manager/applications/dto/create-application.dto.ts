@@ -4,7 +4,6 @@ import {
   IsOptional,
   MaxLength,
   Matches,
-  IsUUID,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -64,6 +63,7 @@ export class CreateApplicationDto {
     example: 'user-uuid',
     description: 'ID de l\'utilisateur créateur',
   })
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   createdBy: string;
 }

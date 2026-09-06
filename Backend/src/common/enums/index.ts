@@ -151,6 +151,12 @@ export enum ConfigurationDataType { STRING = 'STRING', TEXT = 'TEXT', INTEGER = 
 export enum ConfigurationScope { PLATFORM = 'PLATFORM', TENANT = 'TENANT', APPLICATION = 'APPLICATION', APPLICATION_VERSION = 'APPLICATION_VERSION', ENVIRONMENT = 'ENVIRONMENT', RUNTIME_CONTEXT = 'RUNTIME_CONTEXT' }
 
 export enum Permission {
+  IAM_USER_READ = 'iam.user.read',
+  IAM_USER_CREATE = 'iam.user.create',
+  IAM_USER_UPDATE = 'iam.user.update',
+  IAM_USER_DISABLE = 'iam.user.disable',
+  PACK_READ = 'business.pack.read',
+  PACK_WRITE = 'business.pack.write',
   APPLICATION_READ = 'business.application.read',
   APPLICATION_CREATE = 'business.application.create',
   APPLICATION_UPDATE = 'business.application.update',

@@ -1,3 +1,4 @@
+
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { PackChangeType, PackManifestStatus, PackValidationStatus, PackVersionStatus } from '../../../common/enums';
 import { Pack } from './pack.entity';
@@ -42,4 +43,5 @@ export class PackVersion {
   @CreateDateColumn({ type: 'timestamp with time zone' }) createdAt: Date;
   @UpdateDateColumn({ type: 'timestamp with time zone' }) updatedAt: Date;
   @Column({ default: 1 }) version: number;
+
 }
