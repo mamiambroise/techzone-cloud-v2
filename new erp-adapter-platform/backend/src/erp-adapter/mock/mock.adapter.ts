@@ -1,4 +1,5 @@
-import { Logger, NotFoundException } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import {
   IErpAdapter,
   ErpClient,
@@ -8,6 +9,7 @@ import {
   StockInfo,
   HealthCheckResult,
 } from '../interfaces/erp-adapter.interface';
+import { ErpAdapterException } from '../interfaces/erp-adapter-contract-extensions';
 
 export class MockAdapter implements IErpAdapter {
   private readonly logger = new Logger(MockAdapter.name);
@@ -73,7 +75,14 @@ export class MockAdapter implements IErpAdapter {
 
   async getClientById(id: string): Promise<ErpClient> {
     const client = this.clients.find((c) => c.id === id);
-    if (!client) throw new NotFoundException(`Client "${id}" non trouve`);
+    if (!client) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Client "${id}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'clients', id },
+      });
+    }
     return { ...client };
   }
 
@@ -86,7 +95,14 @@ export class MockAdapter implements IErpAdapter {
 
   async updateClient(id: string, data: Partial<ErpClient>): Promise<ErpClient> {
     const index = this.clients.findIndex((c) => c.id === id);
-    if (index === -1) throw new NotFoundException(`Client "${id}" non trouve`);
+    if (index === -1) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Client "${id}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'clients', id },
+      });
+    }
     this.clients[index] = { ...this.clients[index], ...data };
     this.logger.log(`Client mis a jour: ${id}`);
     return { ...this.clients[index] };
@@ -94,7 +110,14 @@ export class MockAdapter implements IErpAdapter {
 
   async deleteClient(id: string): Promise<void> {
     const index = this.clients.findIndex((c) => c.id === id);
-    if (index === -1) throw new NotFoundException(`Client "${id}" non trouve`);
+    if (index === -1) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Client "${id}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'clients', id },
+      });
+    }
     this.clients.splice(index, 1);
     this.logger.log(`Client supprime: ${id}`);
   }
@@ -108,7 +131,14 @@ export class MockAdapter implements IErpAdapter {
 
   async getProductById(id: string): Promise<ErpProduct> {
     const product = this.products.find((p) => p.id === id);
-    if (!product) throw new NotFoundException(`Produit "${id}" non trouve`);
+    if (!product) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Produit "${id}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'products', id },
+      });
+    }
     return { ...product };
   }
 
@@ -121,7 +151,14 @@ export class MockAdapter implements IErpAdapter {
 
   async updateProduct(id: string, data: Partial<ErpProduct>): Promise<ErpProduct> {
     const index = this.products.findIndex((p) => p.id === id);
-    if (index === -1) throw new NotFoundException(`Produit "${id}" non trouve`);
+    if (index === -1) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Produit "${id}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'products', id },
+      });
+    }
     this.products[index] = { ...this.products[index], ...data };
     this.logger.log(`Produit mis a jour: ${id}`);
     return { ...this.products[index] };
@@ -129,7 +166,14 @@ export class MockAdapter implements IErpAdapter {
 
   async deleteProduct(id: string): Promise<void> {
     const index = this.products.findIndex((p) => p.id === id);
-    if (index === -1) throw new NotFoundException(`Produit "${id}" non trouve`);
+    if (index === -1) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Produit "${id}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'products', id },
+      });
+    }
     this.products.splice(index, 1);
     this.logger.log(`Produit supprime: ${id}`);
   }
@@ -143,7 +187,14 @@ export class MockAdapter implements IErpAdapter {
 
   async getOrderById(id: string): Promise<ErpOrder> {
     const order = this.orders.find((o) => o.id === id);
-    if (!order) throw new NotFoundException(`Commande "${id}" non trouvee`);
+    if (!order) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Commande "${id}" non trouvee`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'orders', id },
+      });
+    }
     return { ...order };
   }
 
@@ -165,7 +216,14 @@ export class MockAdapter implements IErpAdapter {
 
   async updateOrder(id: string, data: Partial<ErpOrder>): Promise<ErpOrder> {
     const index = this.orders.findIndex((o) => o.id === id);
-    if (index === -1) throw new NotFoundException(`Commande "${id}" non trouvee`);
+    if (index === -1) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Commande "${id}" non trouvee`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'orders', id },
+      });
+    }
     this.orders[index] = { ...this.orders[index], ...data };
     this.logger.log(`Commande mise a jour: ${id}`);
     return { ...this.orders[index] };
@@ -173,7 +231,14 @@ export class MockAdapter implements IErpAdapter {
 
   async deleteOrder(id: string): Promise<void> {
     const index = this.orders.findIndex((o) => o.id === id);
-    if (index === -1) throw new NotFoundException(`Commande "${id}" non trouvee`);
+    if (index === -1) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Commande "${id}" non trouvee`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'orders', id },
+      });
+    }
     this.orders.splice(index, 1);
     this.logger.log(`Commande supprimee: ${id}`);
   }
@@ -182,7 +247,14 @@ export class MockAdapter implements IErpAdapter {
 
   async getStock(productId: string): Promise<StockInfo> {
     const product = this.products.find((p) => p.id === productId);
-    if (!product) throw new NotFoundException(`Produit "${productId}" non trouve`);
+    if (!product) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Produit "${productId}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'products', id: productId },
+      });
+    }
     return {
       productId: product.id,
       currentStock: product.stock,
@@ -192,7 +264,14 @@ export class MockAdapter implements IErpAdapter {
 
   async updateStock(productId: string, quantity: number): Promise<StockInfo> {
     const index = this.products.findIndex((p) => p.id === productId);
-    if (index === -1) throw new NotFoundException(`Produit "${productId}" non trouve`);
+    if (index === -1) {
+      throw new ErpAdapterException({
+        code: 'ERP_RESOURCE_NOT_FOUND',
+        message: `Produit "${productId}" non trouve`,
+        traceId: randomUUID(),
+        details: { resourceCode: 'products', id: productId },
+      });
+    }
     this.products[index].stock = quantity;
     this.logger.log(`Stock mis a jour: ${productId} -> ${quantity}`);
     return {

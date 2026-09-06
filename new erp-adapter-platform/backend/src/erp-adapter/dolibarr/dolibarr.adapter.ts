@@ -1,5 +1,6 @@
 import { Logger, Injectable } from '@nestjs/common';
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import { randomUUID } from 'crypto';
 import {
   IErpAdapter,
   ErpClient,
@@ -9,9 +10,9 @@ import {
   StockInfo,
   HealthCheckResult,
 } from '../interfaces/erp-adapter.interface';
+import { ErpAdapterException, ErpErrorCode } from '../interfaces/erp-adapter-contract-extensions';
 import { DolibarrConfig, DEFAULT_DOLIBARR_CONFIG } from './dolibarr.config';
 import { DolibarrMapper } from './dolibarr.mapper';
-import { DolibarrError } from './dolibarr.error';
 import { DolibarrClient, DolibarrProduct, DolibarrOrder } from './dolibarr.dto';
 
 @Injectable()
@@ -218,17 +219,52 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   // === GESTION DES ERREURS ===
+  // Remplace l'ancien systeme DolibarrError par le contrat standardise
+  // ErpAdapterException / ErpErrorContract (CDC-00 / CDC-05).
+  // Aucun detail interne (stack, SQL, config Dolibarr) n'est jamais expose.
 
-  private handleError(error: AxiosError): DolibarrError {
+  private handleError(error: AxiosError): ErpAdapterException {
+    const traceId = randomUUID();
+
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-      return DolibarrError.TIMEOUT();
+      return new ErpAdapterException({
+        code: 'ERP_TIMEOUT',
+        message: 'Le serveur Dolibarr met trop de temps a repondre',
+        traceId,
+      });
     }
+
     if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-      return DolibarrError.CONNECTION_ERROR();
+      return new ErpAdapterException({
+        code: 'ERP_PROVIDER_UNAVAILABLE',
+        message: 'Impossible de joindre le serveur Dolibarr',
+        traceId,
+      });
     }
+
     if (error.response) {
-      return DolibarrMapper.mapDolibarrError(error.response.status, error.response.data);
+      const status = error.response.status;
+      const code: ErpErrorCode =
+        status === 401 || status === 403
+          ? 'ERP_AUTHENTICATION_FAILED'
+          : status === 404
+            ? 'ERP_RESOURCE_NOT_FOUND'
+            : status === 429
+              ? 'ERP_RATE_LIMITED'
+              : 'ERP_PROVIDER_UNAVAILABLE';
+
+      return new ErpAdapterException({
+        code,
+        message: `Dolibarr a repondu avec le statut ${status}`,
+        traceId,
+        details: { httpStatus: status },
+      });
     }
-    return DolibarrError.CONNECTION_ERROR(error.message);
+
+    return new ErpAdapterException({
+      code: 'ERP_PROVIDER_UNAVAILABLE',
+      message: 'Erreur de connexion au serveur Dolibarr',
+      traceId,
+    });
   }
 }
