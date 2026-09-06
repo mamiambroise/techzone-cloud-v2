@@ -2,11 +2,15 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const configuredApiUrl = env.VITE_API_URL?.trim();
+  const apiTarget = configuredApiUrl && /^https?:\/\//.test(configuredApiUrl)
+    ? configuredApiUrl
+    : 'http://localhost:3001';
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
@@ -25,7 +29,7 @@ export default defineConfig(({mode}) => {
       proxy: {
         '/api': {
 
-          target: process.env.VITE_API_URL || 'http://localhost:3002',
+          target: apiTarget,
 
           changeOrigin: true,
           secure: false,
