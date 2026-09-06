@@ -145,6 +145,18 @@ export class PackManagerService {
     return version;
   }
 
+  async getVersionByPackCode(tenantId: string, packCode: string, versionNumber: string): Promise<PackVersion> {
+    const version = await this.versions.findOne({ where: { tenantId, versionNumber, pack: { code: packCode, tenantId } }, relations: ['pack'] });
+    if (!version) throw new NotFoundException('PACK_VERSION_NOT_FOUND');
+    return version;
+  }
+
+  async getVersionByManifestHash(tenantId: string, manifestHash: string): Promise<PackVersion> {
+    const version = await this.versions.findOne({ where: { tenantId, manifestHash }, relations: ['pack'] });
+    if (!version) throw new NotFoundException('PACK_VERSION_NOT_FOUND');
+    return version;
+  }
+
   async updateVersion(tenantId: string, id: string, dto: UpdatePackVersionDto): Promise<PackVersion> {
     const version = await this.getVersion(tenantId, id);
     this.assertVersion(version.version, dto.expectedVersion);

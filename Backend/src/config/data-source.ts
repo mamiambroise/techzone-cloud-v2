@@ -26,6 +26,8 @@ import { MetadataDefinition } from '../modules/business-manager/entities/metadat
 import { MetadataValue } from '../modules/business-manager/entities/metadata-value.entity';
 import { ContractArtifact } from '../modules/business-manager/entities/contract-artifact.entity';
 import { RuntimeSnapshot } from '../modules/business-manager/entities/runtime-snapshot.entity';
+import { RuntimeResolution } from '../modules/business-manager/entities/runtime-resolution.entity';
+import { RuntimeResolutionStep } from '../modules/business-manager/entities/runtime-resolution-step.entity';
 import { IntegrationDefinition } from '../modules/business-manager/entities/integration-definition.entity';
 import { IntegrationBinding } from '../modules/business-manager/entities/integration-binding.entity';
 import { ValidationCampaign } from '../modules/business-manager/entities/validation-campaign.entity';
@@ -38,10 +40,6 @@ import { PackModule } from '../modules/business-manager/entities/pack-module.ent
 import { PackFeature } from '../modules/business-manager/entities/pack-feature.entity';
 import { PackCapability } from '../modules/business-manager/entities/pack-capability.entity';
 import { PackFeatureCapability } from '../modules/business-manager/entities/pack-feature-capability.entity';
-import { PackDependency } from '../modules/business-manager/entities/pack-dependency.entity';
-import { PackRule } from '../modules/business-manager/entities/pack-rule.entity';
-import { RuleCondition } from '../modules/business-manager/entities/rule-condition.entity';
-import { RuleTestCase } from '../modules/business-manager/entities/rule-test-case.entity';
 
 config();
 
@@ -73,8 +71,8 @@ export const dataSourceOptions: DataSourceOptions = {
     Menu, MenuItem, VersionMenu, VersionMenuItem,
     MenuItemFeatureRequirement, MenuItemCapabilityRequirement,
     ConfigurationDefinition, ConfigurationValue, MetadataDefinition, MetadataValue,
-    ContractArtifact, RuntimeSnapshot, IntegrationDefinition, IntegrationBinding,
-    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability, PackDependency, PackRule, RuleCondition, RuleTestCase,
+    ContractArtifact, RuntimeSnapshot, RuntimeResolution, RuntimeResolutionStep, IntegrationDefinition, IntegrationBinding,
+    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability,
   ],
   migrations: ['dist/migrations/*.js'],
 };
