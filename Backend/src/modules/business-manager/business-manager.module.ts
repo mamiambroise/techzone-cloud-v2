@@ -38,11 +38,25 @@ import { RuntimeBridgeController } from './runtime/runtime-bridge.controller';
 import { RuntimeBridgeService } from './runtime/runtime-bridge.service';
 import { QualityController } from './quality/quality.controller';
 import { QualityService } from './quality/quality.service';
-import { PackModule } from './pack/pack.module';
+
+import { RuntimeController } from './runtime/runtime.controller';
+import { RuntimeResolverService, RUNTIME_PROVIDERS } from './runtime/runtime-resolver.service';
+import { RUNTIME_MANIFEST_PROVIDER, RuntimeResolutionService } from './runtime/runtime-resolution.service';
+import { PackManifestProvider } from './runtime/providers/pack-manifest.provider';
+import {
+  MockApplicationContextProvider,
+  MockCapabilityProvider,
+  MockEntitlementProvider,
+  MockIamContextProvider,
+} from './runtime/providers/mock-runtime.providers';
+import { RuntimeCockpitController } from './runtime/cockpit/cockpit.controller';
+import { RuntimeCockpitService } from './runtime/cockpit/cockpit.service';
+import { PackManagerModule } from './pack-manager/pack-manager.module';
 
 @Module({
   imports: [
-    PackModule,
+    PackManagerModule,
+
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
@@ -66,7 +80,9 @@ import { PackModule } from './pack/pack.module';
     MenuController,
     ConfigurationController,
     RuntimeBridgeController,
+    RuntimeController,
     QualityController,
+    RuntimeCockpitController,
   ],
   providers: [
     ApplicationService,
@@ -82,7 +98,32 @@ import { PackModule } from './pack/pack.module';
     MenuService,
     ConfigurationService,
     RuntimeBridgeService,
+    RuntimeResolverService,
+    RuntimeResolutionService,
+    PackManifestProvider,
+    { provide: RUNTIME_MANIFEST_PROVIDER, useExisting: PackManifestProvider },
+    MockApplicationContextProvider,
+    MockIamContextProvider,
+    MockEntitlementProvider,
+    MockCapabilityProvider,
     QualityService,
+    RuntimeCockpitService,
+    {
+      provide: RUNTIME_PROVIDERS.application,
+      useExisting: MockApplicationContextProvider,
+    },
+    {
+      provide: RUNTIME_PROVIDERS.iam,
+      useExisting: MockIamContextProvider,
+    },
+    {
+      provide: RUNTIME_PROVIDERS.entitlement,
+      useExisting: MockEntitlementProvider,
+    },
+    {
+      provide: RUNTIME_PROVIDERS.capability,
+      useExisting: MockCapabilityProvider,
+    },
   ],
   exports: [
     ApplicationService,
@@ -94,6 +135,8 @@ import { PackModule } from './pack/pack.module';
     MenuService,
     ConfigurationService,
     RuntimeBridgeService,
+    RuntimeResolverService,
+    RuntimeResolutionService,
     QualityService,
   ],
 })

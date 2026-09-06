@@ -26,6 +26,8 @@ import { MetadataDefinition } from '../modules/business-manager/entities/metadat
 import { MetadataValue } from '../modules/business-manager/entities/metadata-value.entity';
 import { ContractArtifact } from '../modules/business-manager/entities/contract-artifact.entity';
 import { RuntimeSnapshot } from '../modules/business-manager/entities/runtime-snapshot.entity';
+import { RuntimeResolution } from '../modules/business-manager/entities/runtime-resolution.entity';
+import { RuntimeResolutionStep } from '../modules/business-manager/entities/runtime-resolution-step.entity';
 import { IntegrationDefinition } from '../modules/business-manager/entities/integration-definition.entity';
 import { IntegrationBinding } from '../modules/business-manager/entities/integration-binding.entity';
 import { ValidationCampaign } from '../modules/business-manager/entities/validation-campaign.entity';
@@ -33,7 +35,15 @@ import { QualityIssue } from '../modules/business-manager/entities/quality-issue
 import { QualityWaiver } from '../modules/business-manager/entities/quality-waiver.entity';
 import { Pack } from '../modules/business-manager/entities/pack.entity';
 import { PackVersion } from '../modules/business-manager/entities/pack-version.entity';
+
 import { User } from '../auth/user.entity';
+
+import { PackOutboxEvent } from '../modules/business-manager/entities/pack-outbox-event.entity';
+import { PackModule } from '../modules/business-manager/entities/pack-module.entity';
+import { PackFeature } from '../modules/business-manager/entities/pack-feature.entity';
+import { PackCapability } from '../modules/business-manager/entities/pack-capability.entity';
+import { PackFeatureCapability } from '../modules/business-manager/entities/pack-feature-capability.entity';
+
 
 config();
 
@@ -65,9 +75,10 @@ export const dataSourceOptions: DataSourceOptions = {
     Menu, MenuItem, VersionMenu, VersionMenuItem,
     MenuItemFeatureRequirement, MenuItemCapabilityRequirement,
     ConfigurationDefinition, ConfigurationValue, MetadataDefinition, MetadataValue,
-    ContractArtifact, RuntimeSnapshot, IntegrationDefinition, IntegrationBinding,
-    ValidationCampaign, QualityIssue, QualityWaiver,
-    Pack, PackVersion, User,
+
+    ContractArtifact, RuntimeSnapshot, RuntimeResolution, RuntimeResolutionStep, IntegrationDefinition, IntegrationBinding,
+    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability,
+
   ],
   migrations: ['dist/migrations/*.js'],
 };

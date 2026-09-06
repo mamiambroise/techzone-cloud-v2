@@ -7,7 +7,7 @@ import { dataSourceOptions } from './config/data-source';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import { BusinessManagerModule } from './modules/business-manager/business-manager.module';
-import { AuthModule } from './auth/auth.module';
+import { PackManagerModule } from './modules/business-manager/pack-manager/pack-manager.module';
 
 @Module({
   imports: [
@@ -18,7 +18,8 @@ import { AuthModule } from './auth/auth.module';
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     BusinessManagerModule,
-    AuthModule,
+
+    PackManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
