@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setActiveIntegrationTab,
   setProviderMode,
   toggleContractV1Lock,
+  fetchConnectors,
+  fetchApis,
+  fetchWebhooks,
+  fetchSynchronizations,
+  fetchDiagnosticsMetrics,
 } from '../../store/integrationSlice.js';
 import { addToast } from '../../store/platformSlice.js';
 import {
@@ -46,20 +51,63 @@ export default function IntegrationCockpitView({
   const providerMode = useSelector((state) => state.integration.providerMode);
   const contractV1Locked = useSelector((state) => state.integration.contractV1Locked);
   const activeTenant = useSelector((state) => state.platform.activeTenant);
+  const cockpitLoading = useSelector((state) => state.integration.cockpitLoading);
+  const cockpitErrors = useSelector((state) => state.integration.cockpitErrors);
+  const diagnosticsMetrics = useSelector((state) => state.integration.diagnosticsMetrics);
 
   const [showEndpointsModal, setShowEndpointsModal] = useState(false);
 
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchConnectors());
+      dispatch(fetchApis());
+      dispatch(fetchWebhooks());
+      dispatch(fetchSynchronizations());
+      dispatch(fetchDiagnosticsMetrics());
+    }
+  }, [dispatch, providerMode]);
+
   // Computed KPIs (API-CDC-01 Section 2)
   const activeConnectors = connectors.filter((c) => c.status === 'ACTIVE').length;
-  const activeApis = apis.filter((a) => a.status === 'PUBLISHED').length;
+  const activeApis = apis.length;
   const activeWebhooks = webhooks.filter((w) => w.status === 'ACTIVE').length;
-  const runningSyncs = syncJobs.filter((s) => s.status === 'RUNNING').length;
+  const totalSyncs = syncJobs.length;
 
-  const degradedConnectors = connectors.filter((c) => c.status === 'DEGRADED' || c.health?.status === 'DEGRADED');
-  const failureDiagnostics = diagnostics.filter((d) => d.status === 'FAILURE' || d.errorCode);
-  const timeoutDiagnostics = diagnostics.filter((d) => d.errorCode === 'INTEGRATION_TIMEOUT');
+  const successRate = diagnosticsMetrics?.successRate ?? null;
+  const failureRate = diagnosticsMetrics?.failureRate ?? null;
 
-  const attentionRequiredCount = degradedConnectors.length + failureDiagnostics.length;
+  const degradedConnectors = connectors.filter((c) => c.health?.status !== 'HEALTHY');
+  const showAttentionBanner = degradedConnectors.length > 0;
+
+  const renderSectionError = (section) => {
+    if (!cockpitErrors[section]) return null;
+    return (
+      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 mb-3">
+        Erreur chargement {section} : {cockpitErrors[section]}
+      </div>
+    );
+  };
+
+  if (cockpitLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="p-5 sm:p-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl text-white shadow-xl border border-indigo-900/40">
+          <div className="animate-pulse space-y-3">
+            <div className="h-6 bg-white/10 rounded w-1/3"></div>
+            <div className="h-4 bg-white/10 rounded w-1/2"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="p-3.5 bg-white rounded-2xl border border-slate-200/80 animate-pulse">
+              <div className="h-4 bg-slate-100 rounded w-1/2 mb-2"></div>
+              <div className="h-6 bg-slate-100 rounded w-1/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const handleToggleProvider = () => {
     const nextMode = providerMode === 'REAL' ? 'MOCK' : 'REAL';

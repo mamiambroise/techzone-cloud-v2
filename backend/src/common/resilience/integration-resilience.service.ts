@@ -117,7 +117,7 @@ export class IntegrationResilienceService {
       return operation();
     }
 
-    let timeoutHandle: ReturnType<typeof setTimeout>;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
     try {
       return await Promise.race([
@@ -129,7 +129,9 @@ export class IntegrationResilienceService {
         }),
       ]);
     } finally {
-      clearTimeout(timeoutHandle);
+      if (timeoutHandle !== undefined) {
+        clearTimeout(timeoutHandle);
+      }
     }
   }
 

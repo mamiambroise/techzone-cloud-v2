@@ -1,4 +1,18 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  getConnectors,
+  createConnector,
+  updateConnector,
+  validateConnector,
+  checkConnectorHealth,
+  activateConnector,
+  disableConnector,
+  archiveConnector,
+} from '../api/connectorsApi.js';
+import { getApis } from '../api/apisApi.js';
+import { getWebhooks } from '../api/webhooksApi.js';
+import { getSynchronizations } from '../api/synchronizationsApi.js';
+import { getDiagnosticsMetrics } from '../api/diagnosticsApi.js';
 
 // Standard Error Codes defined in API-CDC-00 Section 8 & API-CDC-07 Section 3
 export const INTEGRATION_ERROR_CODES = {
@@ -11,6 +25,20 @@ export const INTEGRATION_ERROR_CODES = {
   WEBHOOK_SIG_FAILED: 'WEBHOOK_SIGNATURE_FAILED',
   SYNC_CONFLICT: 'SYNCHRONIZATION_CONFLICT',
   INTERNAL_ERROR: 'INTERNAL_INTEGRATION_ERROR',
+};
+
+const normalizeConnector = (connector) => {
+  if (!connector || typeof connector !== 'object') return connector;
+  const health =
+    typeof connector.health === 'string'
+      ? { status: connector.health, lastChecked: 'Récemment', latencyMs: 0, availabilityPct: 100 }
+      : connector.health;
+  const capabilities = Array.isArray(connector.capabilities)
+    ? connector.capabilities
+    : connector.capabilities && typeof connector.capabilities === 'object'
+      ? Object.keys(connector.capabilities)
+      : [];
+  return { ...connector, health, capabilities };
 };
 
 // Initial Connectors (API-CDC-02)
@@ -787,7 +815,173 @@ const initialState = {
   selectedSyncId: initialSyncJobs[0].id,
   selectedTraceId: null,
   activePipelineRun: null, // For interactive sync pipeline simulator
+  cockpitLoading: false,
+  cockpitPendingCount: 0,
+  cockpitErrors: {},
 };
+
+export const fetchConnectors = createAsyncThunk(
+  'integration/fetchConnectors',
+  async (_, { getState }) => {
+    const { providerMode } = getState().integration;
+
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+
+    const rawConnectors = await getConnectors();
+    return rawConnectors.map((connector) => {
+      const health = typeof connector.health === 'string'
+        ? { status: connector.health, lastChecked: 'Récemment', latencyMs: 0, availabilityPct: 100 }
+        : connector.health;
+      return { ...connector, health, mode: 'REAL' };
+    });
+  }
+);
+
+export const fetchApis = createAsyncThunk(
+  'integration/fetchApis',
+  async (_, { getState }) => {
+    const { providerMode } = getState().integration;
+
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+
+    const response = await getApis();
+    const rawApis = response.data || [];
+    return rawApis.map((api) => ({
+      ...api,
+      status: api.status === 'ACTIVE' ? 'PUBLISHED' : api.status,
+      totalRequests24h: 0,
+      errorRatePct: 0,
+      p95LatencyMs: 0,
+    }));
+  }
+);
+
+export const fetchWebhooks = createAsyncThunk(
+  'integration/fetchWebhooks',
+  async (_, { getState }) => {
+    const { providerMode } = getState().integration;
+
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+
+    const rawWebhooks = await getWebhooks();
+    return rawWebhooks.map((webhook) => ({
+      ...webhook,
+      successRatePct: 100,
+      deliveriesCount24h: 0,
+    }));
+  }
+);
+
+export const fetchSynchronizations = createAsyncThunk(
+  'integration/fetchSynchronizations',
+  async (_, { getState }) => {
+    const { providerMode } = getState().integration;
+
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+
+    const rawSynchronizations = await getSynchronizations();
+    return rawSynchronizations;
+  }
+);
+
+export const fetchDiagnosticsMetrics = createAsyncThunk(
+  'integration/fetchDiagnosticsMetrics',
+  async (_, { getState }) => {
+    const { providerMode } = getState().integration;
+
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+
+    const metrics = await getDiagnosticsMetrics();
+    return metrics;
+  }
+);
+
+export const createConnectorAsync = createAsyncThunk(
+  'integration/createConnector',
+  async (body, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createConnector(body);
+  }
+);
+
+export const updateConnectorAsync = createAsyncThunk(
+  'integration/updateConnector',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateConnector(id, body);
+  }
+);
+
+export const validateConnectorAsync = createAsyncThunk(
+  'integration/validateConnector',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return validateConnector(id, body);
+  }
+);
+
+export const checkConnectorHealthAsync = createAsyncThunk(
+  'integration/checkConnectorHealth',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return checkConnectorHealth(id);
+  }
+);
+
+export const activateConnectorAsync = createAsyncThunk(
+  'integration/activateConnector',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return activateConnector(id);
+  }
+);
+
+export const disableConnectorAsync = createAsyncThunk(
+  'integration/disableConnector',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return disableConnector(id);
+  }
+);
+
+export const archiveConnectorAsync = createAsyncThunk(
+  'integration/archiveConnector',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return archiveConnector(id);
+  }
+);
 
 const integrationSlice = createSlice({
   name: 'integration',
@@ -1006,6 +1200,183 @@ const integrationSlice = createSlice({
         ...action.payload,
       });
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchConnectors.pending, (state) => {
+        state.cockpitPendingCount += 1;
+        state.cockpitLoading = true;
+      })
+      .addCase(fetchConnectors.fulfilled, (state, action) => {
+        if (!action.payload.skipped) {
+          state.connectors = action.payload;
+        }
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchConnectors.rejected, (state) => {
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchApis.pending, (state) => {
+        state.cockpitPendingCount += 1;
+        state.cockpitLoading = true;
+      })
+      .addCase(fetchApis.fulfilled, (state, action) => {
+        if (!action.payload.skipped) {
+          state.apis = action.payload;
+        }
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchApis.rejected, (state) => {
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchWebhooks.pending, (state) => {
+        state.cockpitPendingCount += 1;
+        state.cockpitLoading = true;
+      })
+      .addCase(fetchWebhooks.fulfilled, (state, action) => {
+        if (!action.payload.skipped) {
+          state.webhooks = action.payload;
+        }
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchWebhooks.rejected, (state) => {
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchSynchronizations.pending, (state) => {
+        state.cockpitPendingCount += 1;
+        state.cockpitLoading = true;
+      })
+      .addCase(fetchSynchronizations.fulfilled, (state, action) => {
+        if (!action.payload.skipped) {
+          state.syncJobs = action.payload;
+        }
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchSynchronizations.rejected, (state, action) => {
+        state.cockpitErrors = {
+          ...state.cockpitErrors,
+          synchronizations: action.error.message || 'Failed to fetch synchronizations',
+        };
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchDiagnosticsMetrics.pending, (state) => {
+        state.cockpitPendingCount += 1;
+        state.cockpitLoading = true;
+      })
+      .addCase(fetchDiagnosticsMetrics.fulfilled, (state, action) => {
+        if (!action.payload.skipped) {
+          state.diagnosticsMetrics = action.payload;
+        }
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(fetchDiagnosticsMetrics.rejected, (state, action) => {
+        state.cockpitErrors = {
+          ...state.cockpitErrors,
+          diagnostics: action.error.message || 'Failed to fetch diagnostics metrics',
+        };
+        state.cockpitPendingCount = Math.max(0, state.cockpitPendingCount - 1);
+        if (state.cockpitPendingCount === 0) {
+          state.cockpitLoading = false;
+        }
+      })
+      .addCase(createConnectorAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.connectors.push(normalizeConnector(action.payload));
+        }
+      })
+      .addCase(updateConnectorAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.connectors.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.connectors[index] = normalizeConnector({
+              ...state.connectors[index],
+              ...action.payload,
+            });
+          }
+        }
+      })
+      .addCase(validateConnectorAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.connectors.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.connectors[index] = normalizeConnector({
+              ...state.connectors[index],
+              ...action.payload,
+            });
+          }
+        }
+      })
+      .addCase(checkConnectorHealthAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.connectors.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.connectors[index] = normalizeConnector({
+              ...state.connectors[index],
+              ...action.payload,
+            });
+          }
+        }
+      })
+      .addCase(activateConnectorAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.connectors.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.connectors[index] = normalizeConnector({
+              ...state.connectors[index],
+              ...action.payload,
+            });
+          }
+        }
+      })
+      .addCase(disableConnectorAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.connectors.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.connectors[index] = normalizeConnector({
+              ...state.connectors[index],
+              ...action.payload,
+            });
+          }
+        }
+      })
+      .addCase(archiveConnectorAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.connectors.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.connectors[index] = normalizeConnector({
+              ...state.connectors[index],
+              ...action.payload,
+            });
+          }
+        }
+      });
   },
 });
 

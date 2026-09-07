@@ -36,7 +36,9 @@ export class RealIntegrationProvider implements IntegrationProvider {
     });
 
     if (!response.ok) {
-      throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Connection failed: ${response.status} ${response.statusText}`,
+      );
     }
   }
 
@@ -63,15 +65,24 @@ export class RealIntegrationProvider implements IntegrationProvider {
         return { status: 'DEGRADED' as const, message: 'Rate limited' };
       }
 
-      return { status: 'CRITICAL' as const, message: `HTTP ${response.status}` };
+      return {
+        status: 'CRITICAL' as const,
+        message: `HTTP ${response.status}`,
+      };
     } catch (error) {
       const err = error as Error;
 
       if (err.name === 'TimeoutError') {
-        return { status: 'DEGRADED' as const, message: 'Health check timed out' };
+        return {
+          status: 'DEGRADED' as const,
+          message: 'Health check timed out',
+        };
       }
 
-      return { status: 'CRITICAL' as const, message: `Health check failed: ${err.message}` };
+      return {
+        status: 'CRITICAL' as const,
+        message: `Health check failed: ${err.message}`,
+      };
     }
   }
 
@@ -100,7 +111,9 @@ export class RealIntegrationProvider implements IntegrationProvider {
           });
 
           if (!response.ok) {
-            throw new Error(`Operation failed: ${response.status} ${response.statusText}`);
+            throw new Error(
+              `Operation failed: ${response.status} ${response.statusText}`,
+            );
           }
 
           const result = await response.json();
@@ -114,7 +127,12 @@ export class RealIntegrationProvider implements IntegrationProvider {
         },
         {
           timeout: { timeoutMs: 10000 },
-          retry: { maxAttempts: 3, initialDelayMs: 500, maxDelayMs: 10000, backoffMultiplier: 2 },
+          retry: {
+            maxAttempts: 3,
+            initialDelayMs: 500,
+            maxDelayMs: 10000,
+            backoffMultiplier: 2,
+          },
           circuitBreaker: { failureThreshold: 5, resetTimeoutMs: 30000 },
         },
       );
