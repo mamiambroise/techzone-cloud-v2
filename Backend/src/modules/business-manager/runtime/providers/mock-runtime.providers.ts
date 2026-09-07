@@ -33,4 +33,9 @@ export class MockCapabilityProvider implements CapabilityProvider {
   resolve(context: RuntimeContext) {
     return Promise.resolve({ capabilities: context.capabilities ?? [] });
   }
+
+  resolveCapabilities(codes: string[], context: RuntimeContext) {
+    const available = new Set(context.capabilities ?? []);
+    return Promise.resolve({ capabilities: codes.map((code) => ({ code, state: available.has(code) ? 'AVAILABLE' : 'UNAVAILABLE', provider: 'mock-runtime' })) });
+  }
 }

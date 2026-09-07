@@ -7,25 +7,65 @@ export type RuntimeStatus =
   | 'DEGRADED'
   | 'ERROR';
 
+export type RuntimeResolutionState = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'DEGRADED' | 'HIDDEN' | 'UNAVAILABLE' | 'ERROR';
+
+export type RuntimeReasonCode =
+  | 'DECLARED_ENABLED'
+  | 'DECLARED_DISABLED'
+  | 'RULE_MATCHED'
+  | 'RULE_NOT_MATCHED'
+  | 'DEPENDENCY_MISSING'
+  | 'CAPABILITY_MISSING'
+  | 'ENTITLEMENT_MISSING'
+  | 'PERMISSION_MISSING'
+  | 'MODULE_INACTIVE'
+  | 'ENVIRONMENT_NOT_ALLOWED'
+  | 'FEATURE_NOT_AVAILABLE'
+  | 'CONFLICT'
+  | 'RUNTIME_DEPENDENCY_CYCLE'
+  | 'RUNTIME_FEATURE_REFERENCE_INVALID'
+  | 'RUNTIME_MODULE_REFERENCE_INVALID'
+  | 'RUNTIME_ERROR';
+
 export interface PackManifestModule {
   code: string;
   active?: boolean;
+  enabled?: boolean;
+  defaultEnabled?: boolean;
   required?: boolean;
+  displayOrder?: number;
+  environments?: string[];
+  visibility?: 'PUBLIC' | 'ADMIN' | 'INTERNAL' | 'HIDDEN';
+  dependencies?: string[];
+  capabilities?: string[];
 }
 
 export interface PackManifestFeature {
   code: string;
   moduleCode?: string;
   active?: boolean;
+  enabled?: boolean;
+  defaultEnabled?: boolean;
+  status?: string;
   required?: boolean;
   entitlement?: string;
   capability?: string;
+  capabilities?: string[];
+  requiredPermission?: string;
+  requiredPermissions?: string[];
+  environments?: string[];
+  visibility?: 'PUBLIC' | 'ADMIN' | 'INTERNAL' | 'HIDDEN';
+  dependencies?: string[];
+  optionalCapabilities?: string[];
+  configuration?: Record<string, unknown>;
 }
 
 export interface PackManifestDependency {
   code: string;
   type?: 'REQUIRED' | 'OPTIONAL' | 'CONFLICTS_WITH';
   source?: string;
+  targetType?: 'MODULE' | 'FEATURE' | 'CAPABILITY' | 'PACK';
+  targetRef?: string;
 }
 
 export interface PackManifestRule {
@@ -33,6 +73,16 @@ export interface PackManifestRule {
   featureCode?: string;
   moduleCode?: string;
   when?: Record<string, unknown>;
+  effect?: 'ENABLE' | 'DISABLE' | 'ALLOW' | 'DENY' | 'SHOW' | 'HIDE';
+}
+
+export interface RuntimeRuleDecision {
+  targetType: 'MODULE' | 'FEATURE';
+  targetRef: string;
+  effect: 'ENABLE' | 'DISABLE' | 'ALLOW' | 'DENY' | 'SHOW' | 'HIDE';
+  matched: boolean;
+  ruleCode?: string;
+  details?: Record<string, unknown>;
 }
 
 export interface PackManifest {
@@ -65,6 +115,8 @@ export interface RuntimeContext {
   contextRevision?: string;
   entitlementRevision?: string;
   capabilityRevision?: string;
+  ruleRevision?: string;
+  ruleDecisions?: RuntimeRuleDecision[];
 }
 
 export interface EffectiveRuntimeManifest {
@@ -72,11 +124,22 @@ export interface EffectiveRuntimeManifest {
   contractVersion: '1.0';
   sourceManifest: { packCode: string; packVersion: string; manifestHash: string };
   context: { tenantId: string; applicationId: string; environment: string };
-  modules: Array<{ code: string; active: boolean; reason: string }>;
-  features: Array<{ code: string; active: boolean; reason: string }>;
+  modules: Array<RuntimeResolutionItem & { features: number; activeFeatures: number; blockedFeatures: number }>;
+  features: Array<RuntimeResolutionItem & { moduleCode?: string; dependencyState: string; capabilityState: string; ruleDecisions: RuntimeRuleDecision[] }>;
   capabilities: { available: string[]; required: string[] };
+  capabilityDependencyResolution?: unknown;
   resolution: { status: RuntimeStatus; issues: RuntimeIssue[] };
+  summary?: { modules: Record<string, number>; features: Record<string, number> };
   effectiveManifestHash: string;
+}
+
+export interface RuntimeResolutionItem {
+  code: string;
+  active: boolean;
+  state: RuntimeResolutionState;
+  reason: string;
+  reasonCode: RuntimeReasonCode;
+  details: Record<string, unknown>;
 }
 
 export interface RuntimeIssue {
@@ -99,4 +162,5 @@ export interface EntitlementProvider {
 
 export interface CapabilityProvider {
   resolve(context: RuntimeContext): Promise<{ capabilities: string[] }>;
+  resolveCapabilities?(codes: string[], context: RuntimeContext): Promise<{ capabilities: Array<{ code: string; state?: string; provider?: string; version?: string; dependencies?: Array<{ code: string; type?: 'REQUIRED' | 'OPTIONAL' | 'RECOMMENDS' | 'IMPLIES'; versionRange?: string }> }>; providerRevision?: string }>;
 }
