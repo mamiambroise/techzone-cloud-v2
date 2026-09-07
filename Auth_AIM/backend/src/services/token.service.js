@@ -124,10 +124,14 @@ async function revokeTokensForSession({ sessionId, revokeReason }) {
     data: { status: 'REVOKED', revokedAt: new Date(), revokeReason },
   });
 }
+async function issueAccessTokenOnly(session) {
+  return signAccessToken(buildAccessPayload(session));
+}
 
 module.exports = {
   issueTokenPair,
   rotateRefreshToken,
   revokeTokenFamily,
   revokeTokensForSession,
+  issueAccessTokenOnly,
 };

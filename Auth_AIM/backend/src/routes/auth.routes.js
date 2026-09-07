@@ -13,5 +13,6 @@ router.post('/refresh', validate(validators.refreshSchema), controller.refresh);
 router.post('/logout', authenticate, controller.logout);
 router.post('/logout-all', authenticate, validate(validators.logoutAllSchema), controller.logoutAll);
 router.post('/change-password', authenticate, validate(validators.changePasswordSchema), controller.changePassword);
-
+router.post('/step-up', authenticate, validate(validators.stepUpSchema), controller.stepUp);
+router.post('/step-up/verify', authenticate, validate(validators.stepUpVerifySchema), controller.stepUpVerify);
 module.exports = router;

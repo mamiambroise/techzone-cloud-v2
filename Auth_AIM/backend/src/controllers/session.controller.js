@@ -1,7 +1,7 @@
 const sessionService = require('../services/session.service');
 const deviceService = require('../services/device.service');
 const { success } = require('../utils/response');
-
+const { verifyAccessToken } = require('../utils/jwt');
 async function listAllSessions(req, res, next) {
   try {
     const sessions = await sessionService.listSessions({ userId: req.query.userId, status: req.query.status });
@@ -158,6 +158,27 @@ async function blockDevice(req, res, next) {
   }
 }
 
+async function recalculateRisk(req, res, next) {
+  try {
+    const result = await sessionService.recalculateSessionRisk(req.params.id);
+    return success(res, { data: result, message: 'Risque recalculé' });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function validateSession(req, res, next) {
+  try {
+    const decoded = verifyAccessToken(req.body.accessToken);
+    const result = await sessionService.validateSessionToken(decoded.sessionId);
+    return success(res, {
+      data: { ...result, userId: decoded.userId, tenantId: decoded.tenantId },
+    });
+  } catch (err) {
+    return success(res, { data: { valid: false, reason: 'TOKEN_INVALID' } });
+  }
+}
+
 module.exports = {
   listAllSessions,
   getSessionById,
@@ -172,4 +193,7 @@ module.exports = {
   trustDevice,
   untrustDevice,
   blockDevice,
+  recalculateRisk,
+  validateSession,
+  
 };

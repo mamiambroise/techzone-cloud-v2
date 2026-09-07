@@ -81,4 +81,27 @@ async function changePassword(req, res, next) {
   }
 }
 
-module.exports = { register, login, verifyMfa, refresh, logout, logoutAll, changePassword };
+async function stepUp(req, res, next) {
+  try {
+    const result = await authService.initiateStepUp({
+      userId: req.auth.userId,
+      sessionId: req.auth.sessionId,
+      resource: req.body.resource,
+      action: req.body.action,
+    });
+    return success(res, { data: result, message: 'Step-up requis' });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function stepUpVerify(req, res, next) {
+  try {
+    const result = await authService.verifyStepUp({ ...req.body, requestingSessionId: req.auth.sessionId });
+    return success(res, { data: result, message: 'Session élevée' });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+module.exports = { register, login, verifyMfa, refresh, logout, logoutAll, changePassword, stepUp, stepUpVerify };

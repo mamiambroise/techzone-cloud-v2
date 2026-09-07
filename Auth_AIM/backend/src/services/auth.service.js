@@ -6,6 +6,58 @@ const sessionService = require('./session.service');
 const tokenService = require('./token.service');
 const { AppError } = require('../utils/response');
 const { signMfaChallengeToken, verifyMfaChallengeToken } = require('../utils/jwt');
+const { prisma } = require('../config/database');
+const { signStepUpChallengeToken, verifyStepUpChallengeToken } = require('../utils/jwt');
+
+async function initiateStepUp({ userId, sessionId, resource, action }) {
+  const mfaEnabled = await mfaService.hasMfaEnabled(userId);
+  if (!mfaEnabled) {
+    throw new AppError('Aucune méthode MFA active pour élever cette session', 409, 'MFA_NOT_ENROLLED');
+  }
+  const challengeToken = signStepUpChallengeToken({ userId, sessionId, resource, action });
+  return { challengeToken };
+}
+
+async function verifyStepUp({ challengeToken, mfaMethodId, code, requestingSessionId }) {
+  let decoded;
+  try {
+    decoded = verifyStepUpChallengeToken(challengeToken);
+  } catch (err) {
+    throw new AppError('Challenge step-up invalide ou expiré', 401, 'STEP_UP_CHALLENGE_INVALID');
+  }
+
+  if (requestingSessionId && decoded.sessionId !== requestingSessionId) {
+    throw new AppError('Ce challenge ne correspond pas à votre session', 403, 'STEP_UP_SESSION_MISMATCH');
+  }
+
+  await mfaService.verifyMfaCode({ userId: decoded.userId, methodId: mfaMethodId, code });
+
+  const session = await sessionService.getSessionById(decoded.sessionId);
+  await sessionService.assertSessionUsable(session);
+  if (session.userId !== decoded.userId) {
+    throw new AppError('Session ne correspond pas au sujet du challenge', 401, 'SESSION_MISMATCH');
+  }
+
+  const elevatedSession = await sessionService.elevateAuthenticationLevel({
+    sessionId: session.id,
+    level: 'MFA',
+  });
+
+  await prisma.securityEvent.create({
+    data: {
+      type: 'STEP_UP_SUCCESS',
+      severity: 'INFO',
+      userId: decoded.userId,
+      sessionId: session.id,
+      riskLevel: 'LOW',
+      metadata: { resource: decoded.resource, action: decoded.action },
+    },
+  });
+
+  const accessToken = await tokenService.issueAccessTokenOnly(elevatedSession);
+
+  return { session: elevatedSession, accessToken };
+}
 
 function sanitizeUser(user) {
   const { id, username, primaryEmail, phone, firstName, lastName, status } = user;
@@ -161,4 +213,6 @@ module.exports = {
   logout,
   logoutAll,
   changePassword,
+  initiateStepUp,
+  verifyStepUp,
 };

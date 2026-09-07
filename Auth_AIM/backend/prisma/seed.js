@@ -79,6 +79,24 @@ async function main() {
     },
   });
 
+  const adminPermissions = await Promise.all(
+    ['iam.sessions.manage', 'iam.users.manage', 'iam.security.manage', 'iam.context.manage'].map((code) =>
+      prisma.permission.create({ data: { code, resource: code.split('.')[1], action: 'manage', name: code } })
+    )
+  );
+
+  const adminRole = await prisma.role.create({
+    data: { tenantId: tenant.id, code: 'demo-admin', name: 'Demo Admin', status: 'ACTIVE' },
+  });
+
+  await prisma.rolePermission.createMany({
+    data: adminPermissions.map((p) => ({ roleId: adminRole.id, permissionId: p.id })),
+  });
+
+  await prisma.roleAssignment.create({
+    data: { roleId: adminRole.id, userId: user.id, tenantId: tenant.id },
+  });
+
   console.log('✅ Seed terminé');
   console.log({ tenantId: tenant.id, organizationId: organization.id, userId: user.id });
 }

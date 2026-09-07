@@ -46,6 +46,21 @@ function decodeToken(token) {
   return jwt.decode(token);
 }
 
+function signStepUpChallengeToken(payload) {
+  return jwt.sign({ ...payload, purpose: 'step_up' }, config.jwt.accessSecret, {
+    expiresIn: '5m',
+    issuer: 'techzone-cloud-iam',
+  });
+}
+
+function verifyStepUpChallengeToken(token) {
+  const decoded = jwt.verify(token, config.jwt.accessSecret, { issuer: 'techzone-cloud-iam' });
+  if (decoded.purpose !== 'step_up') {
+    throw new Error('Token de step-up invalide');
+  }
+  return decoded;
+}
+
 module.exports = {
   signAccessToken,
   verifyAccessToken,
@@ -54,4 +69,6 @@ module.exports = {
   signMfaChallengeToken,
   verifyMfaChallengeToken,
   decodeToken,
+  signStepUpChallengeToken,
+  verifyStepUpChallengeToken,
 };
