@@ -62,6 +62,7 @@ const initialState = {
   activeTenant: 'tenant-enterprise',
   searchQuery: '',
   platformHealth: 'HEALTHY',
+  apiStatus: 'CONNECTING',
   platformContractLocked: true,
   activeModuleId: '01', // 01 Application / Pack Manager
   sidebarCollapsed: false,
@@ -105,6 +106,9 @@ const platformSlice = createSlice({
     setPlatformHealth: (state, action) => {
       state.platformHealth = action.payload;
     },
+    setApiStatus: (state, action) => {
+      state.apiStatus = action.payload;
+    },
     togglePlatformContractLock: (state) => {
       state.platformContractLocked = !state.platformContractLocked;
     },
@@ -147,6 +151,7 @@ export const {
   setActiveTenant,
   setSearchQuery,
   setPlatformHealth,
+  setApiStatus,
   togglePlatformContractLock,
   toggleSidebarCollapsed,
   setSidebarCollapsed,

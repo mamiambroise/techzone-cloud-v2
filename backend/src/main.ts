@@ -3,10 +3,13 @@ import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { IntegrationErrorFilter } from './common/errors/integration-error.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN ?? 'http://localhost:3001',
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -15,8 +18,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
-  app.useGlobalFilters(new IntegrationErrorFilter());
 
   await app.listen(process.env.PORT ?? 3000);
 }

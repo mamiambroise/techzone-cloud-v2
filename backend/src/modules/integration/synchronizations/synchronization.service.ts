@@ -397,7 +397,7 @@ export class SynchronizationService {
               batchConflicts++;
             } else {
               throw new IntegrationException(
-                IntegrationErrorCode.INTERNAL_INTEGRATION_ERROR,
+                IntegrationErrorCode.INTEGRATION_INTERNAL_ERROR,
                 `Write failed for record: ${JSON.stringify(record)}`,
                 HttpStatus.FAILED_DEPENDENCY,
               );

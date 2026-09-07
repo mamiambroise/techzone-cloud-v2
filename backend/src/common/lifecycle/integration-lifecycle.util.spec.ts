@@ -1,7 +1,7 @@
 import {
   canTransitionIntegrationEntity,
   IntegrationEntityLifecycleStatus,
-} from './integration-lifecycle.util';
+} from '../lifecycle/inegration-lifecycle.util';
 
 describe('IntegrationLifecycleUtil', () => {
   describe('canTransitionIntegrationEntity', () => {
@@ -14,7 +14,9 @@ describe('IntegrationLifecycleUtil', () => {
     });
 
     it('should allow CONFIGURING → VALIDATING', () => {
-      expect(canTransitionIntegrationEntity('CONFIGURING', 'VALIDATING')).toBe(true);
+      expect(canTransitionIntegrationEntity('CONFIGURING', 'VALIDATING')).toBe(
+        true,
+      );
     });
 
     it('should allow VALIDATING → READY', () => {
