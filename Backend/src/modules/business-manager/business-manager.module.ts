@@ -38,9 +38,9 @@ import { RuntimeBridgeController } from './runtime/runtime-bridge.controller';
 import { RuntimeBridgeService } from './runtime/runtime-bridge.service';
 import { QualityController } from './quality/quality.controller';
 import { QualityService } from './quality/quality.service';
-
 import { RuntimeController } from './runtime/runtime.controller';
 import { RuntimeResolverService, RUNTIME_PROVIDERS } from './runtime/runtime-resolver.service';
+import { CapabilityDependencyResolverService, RUNTIME_CAPABILITY_AVAILABILITY_PROVIDER } from './runtime/capability-dependency-resolver.service';
 import { RUNTIME_MANIFEST_PROVIDER, RuntimeResolutionService } from './runtime/runtime-resolution.service';
 import { PackManifestProvider } from './runtime/providers/pack-manifest.provider';
 import {
@@ -56,7 +56,6 @@ import { PackManagerModule } from './pack-manager/pack-manager.module';
 @Module({
   imports: [
     PackManagerModule,
-
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
@@ -99,6 +98,7 @@ import { PackManagerModule } from './pack-manager/pack-manager.module';
     ConfigurationService,
     RuntimeBridgeService,
     RuntimeResolverService,
+    CapabilityDependencyResolverService,
     RuntimeResolutionService,
     PackManifestProvider,
     { provide: RUNTIME_MANIFEST_PROVIDER, useExisting: PackManifestProvider },
@@ -122,6 +122,10 @@ import { PackManagerModule } from './pack-manager/pack-manager.module';
     },
     {
       provide: RUNTIME_PROVIDERS.capability,
+      useExisting: MockCapabilityProvider,
+    },
+    {
+      provide: RUNTIME_CAPABILITY_AVAILABILITY_PROVIDER,
       useExisting: MockCapabilityProvider,
     },
   ],

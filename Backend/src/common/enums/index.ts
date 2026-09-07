@@ -153,10 +153,6 @@ export enum ConfigurationScope { PLATFORM = 'PLATFORM', TENANT = 'TENANT', APPLI
 export enum Permission {
   IAM_USER_READ = 'iam.user.read',
   IAM_USER_CREATE = 'iam.user.create',
-  IAM_USER_UPDATE = 'iam.user.update',
-  IAM_USER_DISABLE = 'iam.user.disable',
-  PACK_READ = 'business.pack.read',
-  PACK_WRITE = 'business.pack.write',
   APPLICATION_READ = 'business.application.read',
   APPLICATION_CREATE = 'business.application.create',
   APPLICATION_UPDATE = 'business.application.update',
@@ -188,6 +184,7 @@ export enum Permission {
   FEATURE_VALIDATION_RUN = 'business.feature.validation.run',
   FEATURE_SNAPSHOT_READ = 'business.feature.snapshot.read',
   PACK_READ = 'pack.read',
+  PACK_WRITE = 'pack.write',
   PACK_CREATE = 'pack.create',
   PACK_UPDATE = 'pack.update',
   PACK_ARCHIVE = 'pack.archive',

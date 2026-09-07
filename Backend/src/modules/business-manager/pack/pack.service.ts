@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { PackStatus, PackVersionStatus } from '../../../common/enums';
 import { Pack } from '../entities/pack.entity';
 import { PackVersion } from '../entities/pack-version.entity';
 
@@ -16,7 +17,7 @@ export class PackService {
 
   async createPack(input: Partial<Pack>) {
     if (await this.packs.findOne({ where: { code: input.code } })) throw new ConflictException('PACK_CODE_EXISTS');
-    return this.packs.save(this.packs.create({ code: String(input.code).trim(), name: String(input.name).trim(), description: input.description, status: input.status || 'DRAFT', metadata: input.metadata || {} }));
+    return this.packs.save(this.packs.create({ code: String(input.code).trim(), name: String(input.name).trim(), description: input.description, status: input.status || PackStatus.DRAFT, metadata: input.metadata || {} }));
   }
 
   async updatePack(id: string, input: Partial<Pack>) {
@@ -29,7 +30,7 @@ export class PackService {
   async createVersion(packId: string, input: Partial<PackVersion>) {
     await this.getPack(packId);
     if (await this.versions.findOne({ where: { packId, versionNumber: input.versionNumber } })) throw new ConflictException('PACK_VERSION_EXISTS');
-    return this.versions.save(this.versions.create({ packId, versionNumber: String(input.versionNumber), status: input.status || 'DRAFT', snapshot: input.snapshot || {}, modules: input.modules || [], features: input.features || [], capabilities: input.capabilities || [], dependencies: input.dependencies || [], rules: input.rules || [], validation: input.validation || {} }));
+    return this.versions.save(this.versions.create({ packId, versionNumber: String(input.versionNumber), status: input.status || PackVersionStatus.DRAFT, snapshot: input.snapshot || {}, modules: input.modules || [], features: input.features || [], capabilities: input.capabilities || [], dependencies: input.dependencies || [], activationRules: input.activationRules || [], validationDetails: input.validationDetails || {} }));
   }
 
   async getVersion(id: string) { const version = await this.versions.findOne({ where: { id } }); if (!version) throw new NotFoundException('PACK_VERSION_NOT_FOUND'); return version; }
@@ -41,6 +42,6 @@ export class PackService {
   }
 
   async replaceVersionState(id: string, state: Partial<PackVersion>) {
-    return this.updateVersion(id, { ...state, validation: state.validation || {} });
+    return this.updateVersion(id, { ...state, validationDetails: state.validationDetails || {} });
   }
 }
