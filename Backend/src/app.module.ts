@@ -8,6 +8,7 @@ import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import { BusinessManagerModule } from './modules/business-manager/business-manager.module';
 import { PackManagerModule } from './modules/business-manager/pack-manager/pack-manager.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PackManagerModule } from './modules/business-manager/pack-manager/pack-
       load: [appConfig, databaseConfig],
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
+    AuthModule,
     BusinessManagerModule,
 
     PackManagerModule,

@@ -40,6 +40,7 @@ import { PackModule } from '../modules/business-manager/entities/pack-module.ent
 import { PackFeature } from '../modules/business-manager/entities/pack-feature.entity';
 import { PackCapability } from '../modules/business-manager/entities/pack-capability.entity';
 import { PackFeatureCapability } from '../modules/business-manager/entities/pack-feature-capability.entity';
+import { User } from '../auth/user.entity';
 
 config();
 
@@ -72,7 +73,7 @@ export const dataSourceOptions: DataSourceOptions = {
     MenuItemFeatureRequirement, MenuItemCapabilityRequirement,
     ConfigurationDefinition, ConfigurationValue, MetadataDefinition, MetadataValue,
     ContractArtifact, RuntimeSnapshot, RuntimeResolution, RuntimeResolutionStep, IntegrationDefinition, IntegrationBinding,
-    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability,
+    ValidationCampaign, QualityIssue, QualityWaiver, Pack, PackVersion, PackOutboxEvent, PackModule, PackFeature, PackCapability, PackFeatureCapability, User,
   ],
   migrations: ['dist/migrations/*.js'],
 };
