@@ -9,10 +9,48 @@ import {
   disableConnector,
   archiveConnector,
 } from '../api/connectorsApi.js';
-import { getApis } from '../api/apisApi.js';
-import { getWebhooks } from '../api/webhooksApi.js';
-import { getSynchronizations } from '../api/synchronizationsApi.js';
-import { getDiagnosticsMetrics } from '../api/diagnosticsApi.js';
+import {
+  getApis,
+  createApi,
+  updateApi,
+  transitionApiStatus,
+  deleteApi,
+} from '../api/apisApi.js';
+import {
+  getWebhooks,
+  createWebhook,
+  updateWebhook,
+  transitionWebhookStatus,
+  deleteWebhook,
+  triggerInboundTest,
+  getDeliveries,
+} from '../api/webhooksApi.js';
+import {
+  getCredentials,
+  createCredential,
+  updateCredential,
+  rotateCredential as rotateCredentialApi,
+  disableCredential as disableCredentialApi,
+  archiveCredential as archiveCredentialApi,
+  testCredential,
+  associateCredential,
+} from '../api/credentialsApi.js';
+import {
+  getSynchronizations,
+  createSync,
+  updateSync,
+  runSync,
+  pauseSync,
+  resumeSync,
+  cancelSync,
+  getCheckpoint,
+  deleteSync,
+} from '../api/synchronizationsApi.js';
+import {
+  getDiagnosticsMetrics,
+  getLogs,
+  getTimeline,
+} from '../api/diagnosticsApi.js';
 
 // Standard Error Codes defined in API-CDC-00 Section 8 & API-CDC-07 Section 3
 export const INTEGRATION_ERROR_CODES = {
@@ -983,6 +1021,300 @@ export const archiveConnectorAsync = createAsyncThunk(
   }
 );
 
+// APIs Exposées (API-CDC-03)
+export const addApiAsync = createAsyncThunk(
+  'integration/addApi',
+  async (body, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createApi(body);
+  }
+);
+
+export const updateApiAsync = createAsyncThunk(
+  'integration/updateApi',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateApi(id, body);
+  }
+);
+
+export const transitionApiStatusAsync = createAsyncThunk(
+  'integration/transitionApiStatus',
+  async ({ id, status }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    const backendStatus = status === 'PUBLISHED' ? 'ACTIVE' : status;
+    const idempotencyKey = crypto.randomUUID();
+    return transitionApiStatus(id, backendStatus, idempotencyKey);
+  }
+);
+
+export const deleteApiAsync = createAsyncThunk(
+  'integration/deleteApi',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return deleteApi(id);
+  }
+);
+
+// Webhooks Manager (API-CDC-04)
+export const addWebhookAsync = createAsyncThunk(
+  'integration/addWebhook',
+  async (body, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createWebhook(body);
+  }
+);
+
+export const updateWebhookAsync = createAsyncThunk(
+  'integration/updateWebhook',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateWebhook(id, body);
+  }
+);
+
+export const transitionWebhookStatusAsync = createAsyncThunk(
+  'integration/transitionWebhookStatus',
+  async ({ id, status }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return transitionWebhookStatus(id, status);
+  }
+);
+
+export const deleteWebhookAsync = createAsyncThunk(
+  'integration/deleteWebhook',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return deleteWebhook(id);
+  }
+);
+
+export const triggerInboundTestAsync = createAsyncThunk(
+  'integration/triggerInboundTest',
+  async (code, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return triggerInboundTest(code);
+  }
+);
+
+export const getDeliveriesAsync = createAsyncThunk(
+  'integration/getDeliveries',
+  async ({ code, status }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return getDeliveries(code, status);
+  }
+);
+
+// Credentials & Secrets (API-CDC-05)
+export const addCredentialReferenceAsync = createAsyncThunk(
+  'integration/addCredentialReference',
+  async (body, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createCredential(body);
+  }
+);
+
+export const updateCredentialAsync = createAsyncThunk(
+  'integration/updateCredential',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateCredential(id, body);
+  }
+);
+
+export const rotateCredentialAsync = createAsyncThunk(
+  'integration/rotateCredential',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return rotateCredentialApi(id, body);
+  }
+);
+
+export const disableCredentialAsync = createAsyncThunk(
+  'integration/disableCredential',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return disableCredentialApi(id);
+  }
+);
+
+export const archiveCredentialAsync = createAsyncThunk(
+  'integration/archiveCredential',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return archiveCredentialApi(id);
+  }
+);
+
+export const testCredentialAsync = createAsyncThunk(
+  'integration/testCredential',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return testCredential(id);
+  }
+);
+
+export const associateCredentialAsync = createAsyncThunk(
+  'integration/associateCredential',
+  async ({ id, connectorId }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return associateCredential(id, connectorId);
+  }
+);
+
+// Synchronisation (API-CDC-06)
+export const addSyncJobAsync = createAsyncThunk(
+  'integration/addSyncJob',
+  async (body, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createSync(body);
+  }
+);
+
+export const updateSyncJobAsync = createAsyncThunk(
+  'integration/updateSyncJob',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateSync(id, body);
+  }
+);
+
+export const runSyncAsync = createAsyncThunk(
+  'integration/runSync',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    const result = await runSync(id);
+    return { id, ...result };
+  }
+);
+
+export const pauseSyncAsync = createAsyncThunk(
+  'integration/pauseSync',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return pauseSync(id);
+  }
+);
+
+export const resumeSyncAsync = createAsyncThunk(
+  'integration/resumeSync',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return resumeSync(id);
+  }
+);
+
+export const cancelSyncAsync = createAsyncThunk(
+  'integration/cancelSync',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return cancelSync(id);
+  }
+);
+
+export const getCheckpointAsync = createAsyncThunk(
+  'integration/getCheckpoint',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return getCheckpoint(id);
+  }
+);
+
+export const deleteSyncAsync = createAsyncThunk(
+  'integration/deleteSync',
+  async (id, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return deleteSync(id);
+  }
+);
+
+// Diagnostics & Logs (API-CDC-07)
+export const fetchDiagnosticLogs = createAsyncThunk(
+  'integration/fetchDiagnosticLogs',
+  async (filters, { getState }) => {
+    const { providerMode } = getState().integration;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return getLogs(filters);
+  }
+);
+
 const integrationSlice = createSlice({
   name: 'integration',
   initialState,
@@ -1077,20 +1409,24 @@ const integrationSlice = createSlice({
       state.credentials.push(action.payload);
     },
     rotateCredential: (state, action) => {
-      const { id } = action.payload;
+      const { id, body } = action.payload;
       const cred = state.credentials.find((c) => c.id === id);
       if (cred) {
         cred.lastRotatedAt = new Date().toISOString().split('T')[0];
         const nextYear = new Date();
         nextYear.setFullYear(nextYear.getFullYear() + 1);
-        cred.expiresAt = nextYear.toISOString().split('T')[0];
+        if (body?.secretValue) {
+          cred.expiresAt = nextYear.toISOString().split('T')[0];
+        } else {
+          cred.expiresAt = null;
+        }
       }
     },
     disableCredential: (state, action) => {
       const { id } = action.payload;
       const cred = state.credentials.find((c) => c.id === id);
       if (cred) {
-        cred.status = 'REVOKED';
+        cred.status = 'DISABLED';
       }
     },
     // Synchronization Pipeline Simulator (API-CDC-06)
@@ -1375,6 +1711,155 @@ const integrationSlice = createSlice({
               ...action.payload,
             });
           }
+        }
+      })
+      .addCase(addApiAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.apis.push(action.payload);
+        }
+      })
+      .addCase(updateApiAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.apis.findIndex((a) => a.id === action.payload.id);
+          if (index !== -1) {
+            state.apis[index] = { ...state.apis[index], ...action.payload };
+          }
+        }
+      })
+      .addCase(transitionApiStatusAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.apis.findIndex((a) => a.id === action.payload.id);
+          if (index !== -1) {
+            state.apis[index] = { ...state.apis[index], ...action.payload };
+          }
+        }
+      })
+      .addCase(deleteApiAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.apis = state.apis.filter((a) => a.id !== action.payload.id);
+        }
+      })
+      .addCase(addWebhookAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.webhooks.push(action.payload);
+        }
+      })
+      .addCase(updateWebhookAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.webhooks.findIndex((w) => w.id === action.payload.id);
+          if (index !== -1) {
+            state.webhooks[index] = { ...state.webhooks[index], ...action.payload };
+          }
+        }
+      })
+      .addCase(transitionWebhookStatusAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.webhooks.findIndex((w) => w.id === action.payload.id);
+          if (index !== -1) {
+            state.webhooks[index] = { ...state.webhooks[index], ...action.payload };
+          }
+        }
+      })
+      .addCase(deleteWebhookAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.webhooks = state.webhooks.filter((w) => w.id !== action.payload.id);
+        }
+      })
+      .addCase(addCredentialReferenceAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.credentials.push(action.payload);
+        }
+      })
+      .addCase(updateCredentialAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.credentials.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.credentials[index] = { ...state.credentials[index], ...action.payload };
+          }
+        }
+      })
+      .addCase(rotateCredentialAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.credentials.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.credentials[index] = { ...state.credentials[index], ...action.payload };
+          }
+        }
+      })
+      .addCase(disableCredentialAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.credentials.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.credentials[index].status = 'DISABLED';
+          }
+        }
+      })
+      .addCase(archiveCredentialAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.credentials.findIndex((c) => c.id === action.payload.id);
+          if (index !== -1) {
+            state.credentials[index].status = 'ARCHIVED';
+          }
+        }
+      })
+      .addCase(addSyncJobAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.syncJobs.push(action.payload);
+        }
+      })
+      .addCase(updateSyncJobAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.syncJobs.findIndex((s) => s.id === action.payload.id);
+          if (index !== -1) {
+            state.syncJobs[index] = { ...state.syncJobs[index], ...action.payload };
+          }
+        }
+      })
+      .addCase(runSyncAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const result = action.payload;
+          const syncId = result.syncId || result.id;
+          const sync = state.syncJobs.find((s) => s.id === syncId);
+          if (sync) {
+            sync.status = result.status || 'SUCCEEDED';
+            sync.lastExecution = {
+              startedAt: 'À l\'instant',
+              durationMs: result.duration || 0,
+              recordsRead: result.read || 0,
+              recordsWritten: result.written || 0,
+              conflictsCount: result.conflicts || 0,
+              status: result.status || 'SUCCEEDED',
+            };
+          }
+        }
+      })
+      .addCase(pauseSyncAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.syncJobs.findIndex((s) => s.id === action.payload.id);
+          if (index !== -1) {
+            state.syncJobs[index].status = 'PAUSED';
+          }
+        }
+      })
+      .addCase(resumeSyncAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.syncJobs.findIndex((s) => s.id === action.payload.id);
+          if (index !== -1) {
+            state.syncJobs[index].status = 'RUNNING';
+          }
+        }
+      })
+      .addCase(cancelSyncAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const index = state.syncJobs.findIndex((s) => s.id === action.payload.id);
+          if (index !== -1) {
+            state.syncJobs[index].status = 'CANCELLED';
+          }
+        }
+      })
+      .addCase(fetchDiagnosticLogs.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.diagnostics = action.payload;
         }
       });
   },

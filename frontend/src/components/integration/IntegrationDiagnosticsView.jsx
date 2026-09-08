@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setSearchQuery, addToast } from '../../store/platformSlice.js';
+import { fetchDiagnosticLogs } from '../../store/integrationSlice.js';
 import {
   Activity,
   Search,
@@ -57,7 +58,9 @@ export default function IntegrationDiagnosticsView() {
   const dispatch = useDispatch();
 
   const diagnostics = useSelector((state) => state.integration.diagnostics);
+  const connectors = useSelector((state) => state.integration.connectors);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   const [selectedErrorCode, setSelectedErrorCode] = useState('ALL');
   const [selectedDiagnostic, setSelectedDiagnostic] = useState(diagnostics[0] || null);
@@ -66,6 +69,20 @@ export default function IntegrationDiagnosticsView() {
   const [selectedTenant, setSelectedTenant] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedContext, setSelectedContext] = useState('ALL');
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(
+        fetchDiagnosticLogs({
+          errorCode: selectedErrorCode === 'ALL' ? null : selectedErrorCode,
+          status: selectedStatus === 'ALL' ? null : selectedStatus,
+          tenantId: selectedTenant === 'ALL' ? null : selectedTenant,
+          direction: selectedContext === 'ALL' ? null : selectedContext,
+          startDate: selectedPeriod === 'ALL' ? null : selectedPeriod === '24h' ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() : selectedPeriod === '7d' ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() : selectedPeriod === '30d' ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+        })
+      );
+    }
+  }, [dispatch, providerMode, selectedErrorCode, selectedStatus, selectedTenant, selectedContext, selectedPeriod]);
 
   const uniqueTenants = Array.from(new Set(diagnostics.map((d) => d.tenantId).filter(Boolean)));
 
@@ -373,9 +390,9 @@ export default function IntegrationDiagnosticsView() {
           ) : (
             filteredDiagnostics.map((diag) => {
               const isSelected = diag.id === selectedDiagnostic?.id;
-              const isSuccess = diag.status === 'SUCCESS';
-              const isWarning = diag.status === 'WARNING';
-              const isFailure = diag.status === 'FAILURE';
+              const isSuccess = diag.status === 'SUCCESS' || diag.status === 'SUCCEEDED' || diag.status === 'STARTED';
+              const isWarning = diag.status === 'WARNING' || diag.status === 'RETRYING';
+              const isFailure = diag.status === 'FAILURE' || diag.status === 'FAILED' || diag.status === 'TIMEOUT';
 
               return (
                 <div
@@ -397,7 +414,9 @@ export default function IntegrationDiagnosticsView() {
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : isWarning
                               ? 'bg-amber-50 text-amber-800 border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
+                              : isFailure
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
                           }`}
                         >
                           {diag.status}
@@ -454,15 +473,18 @@ export default function IntegrationDiagnosticsView() {
                     </button>
                   </div>
                   <h3 className="text-base font-bold text-slate-900 mt-1">
-                    {selectedDiagnostic.connector} : {selectedDiagnostic.operation}
+                    {selectedDiagnostic.connectorId
+                      ? (connectors.find((c) => c.id === selectedDiagnostic.connectorId)?.code || selectedDiagnostic.connectorId)
+                      : selectedDiagnostic.connector}{' '}
+                    : {selectedDiagnostic.operation}
                   </h3>
                 </div>
 
                 <span
                   className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${
-                    selectedDiagnostic.status === 'SUCCESS'
+                    selectedDiagnostic.status === 'SUCCESS' || selectedDiagnostic.status === 'SUCCEEDED' || selectedDiagnostic.status === 'STARTED'
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : selectedDiagnostic.status === 'WARNING'
+                      : selectedDiagnostic.status === 'WARNING' || selectedDiagnostic.status === 'RETRYING'
                       ? 'bg-amber-50 text-amber-800 border-amber-200'
                       : 'bg-rose-50 text-rose-700 border-rose-200'
                   }`}
@@ -481,7 +503,7 @@ export default function IntegrationDiagnosticsView() {
                     </span>
                   </div>
                   <p className="text-xs text-rose-800 leading-relaxed font-sans">
-                    {selectedDiagnostic.rootCause}
+                    {providerMode === 'REAL' ? '—' : selectedDiagnostic.rootCause}
                   </p>
                 </div>
               )}

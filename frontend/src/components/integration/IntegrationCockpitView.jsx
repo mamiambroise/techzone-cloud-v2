@@ -57,6 +57,11 @@ export default function IntegrationCockpitView({
 
   const [showEndpointsModal, setShowEndpointsModal] = useState(false);
 
+  const failureDiagnostics = diagnostics.filter((d) => d.status === 'FAILURE');
+  const timeoutDiagnostics = failureDiagnostics.filter(
+    (d) => d.errorCode === 'TIMEOUT' || /timeout/i.test(d.rootCause || '')
+  );
+
   useEffect(() => {
     if (providerMode === 'REAL') {
       dispatch(fetchConnectors());
@@ -78,6 +83,7 @@ export default function IntegrationCockpitView({
 
   const degradedConnectors = connectors.filter((c) => c.health?.status !== 'HEALTHY');
   const showAttentionBanner = degradedConnectors.length > 0;
+  const attentionRequiredCount = degradedConnectors.length + failureDiagnostics.length;
 
   const renderSectionError = (section) => {
     if (!cockpitErrors[section]) return null;
@@ -483,9 +489,9 @@ export default function IntegrationCockpitView({
                   <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1 font-mono">
                     <span>{c.code}</span>
                     <span>•</span>
-                    <span>Latence: {c.health.latencyMs}ms</span>
+                    <span>Latence: {c.health?.latencyMs ?? '—'}ms</span>
                     <span>•</span>
-                    <span className="text-emerald-600 font-semibold">{c.health.availabilityPct}% dispo</span>
+                    <span className="text-emerald-600 font-semibold">{c.health?.availabilityPct ?? '—'}% dispo</span>
                   </div>
                 </div>
 

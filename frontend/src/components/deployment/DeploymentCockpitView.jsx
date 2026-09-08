@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setActiveDeploymentTab,
   switchBlueGreenSlot,
   triggerNewDeployment,
+  fetchCockpitDashboardAsync,
+  fetchRecentReleasesAsync,
+  fetchRunningDeploymentsAsync,
+  fetchDeploymentActivityAsync,
+  fetchDeploymentHealthAsync,
 } from '../../store/deploymentSlice.js';
 import { addToast } from '../../store/platformSlice.js';
 import {
@@ -31,6 +36,17 @@ export default function DeploymentCockpitView() {
   const releases = useSelector((state) => state.deployment?.releases || []);
   const activeBlueGreenSlot = useSelector((state) => state.deployment?.activeBlueGreenSlot || 'BLUE');
   const canaryTrafficWeight = useSelector((state) => state.deployment?.canaryTrafficWeight || 20);
+  const providerMode = useSelector((state) => state.platform.providerMode);
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchCockpitDashboardAsync());
+      dispatch(fetchRecentReleasesAsync());
+      dispatch(fetchRunningDeploymentsAsync());
+      dispatch(fetchDeploymentActivityAsync());
+      dispatch(fetchDeploymentHealthAsync());
+    }
+  }, [dispatch, providerMode]);
 
   const [filterEnv, setFilterEnv] = useState('ALL');
 

@@ -82,7 +82,7 @@ export default function SubNavBar() {
   const dispatch = useDispatch();
   const activeTab = useSelector((state) => state.platform.activeTab);
   const activeModuleId = useSelector((state) => state.platform.activeModuleId || '01');
-  const activeIntegrationTab = useSelector((state) => state.integration?.activeTab || 'cockpit');
+  const activeIntegrationTab = useSelector((state) => state.integration?.activeIntegrationTab || 'cockpit');
   const activeDeploymentTab = useSelector((state) => state.deployment?.activeTab || 'cockpit');
 
   const isDepLayer = activeModuleId === 'dep-layer' || activeTab === 'deployment' || activeTab.startsWith('dep-');

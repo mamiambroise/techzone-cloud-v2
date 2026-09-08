@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToast } from '../../store/platformSlice.js';
+import {
+  fetchDeploymentHistoryAsync,
+  fetchDeploymentDiagnosticsAsync,
+} from '../../store/deploymentSlice.js';
 import {
   Activity,
   Terminal,
@@ -18,8 +22,16 @@ import {
 export default function DeploymentDiagnosticsView() {
   const dispatch = useDispatch();
   const logs = useSelector((state) => state.deployment?.logs || []);
+  const providerMode = useSelector((state) => state.platform.providerMode);
   const [filterLevel, setFilterLevel] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchDeploymentHistoryAsync());
+      dispatch(fetchDeploymentDiagnosticsAsync());
+    }
+  }, [dispatch, providerMode]);
 
   const filteredLogs = logs.filter((log) => {
     const matchesLevel = filterLevel === 'ALL' || log.level === filterLevel;

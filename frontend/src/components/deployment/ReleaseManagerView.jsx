@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToast } from '../../store/platformSlice.js';
+import {
+  fetchReleasesAsync,
+  createReleaseAsync,
+  assembleReleaseAsync,
+  validateReleaseAsync,
+  approveReleaseAsync,
+  publishReleaseAsync,
+  archiveReleaseAsync,
+} from '../../store/deploymentSlice.js';
 import {
   Package,
   Lock,
@@ -22,9 +31,17 @@ import {
 export default function ReleaseManagerView() {
   const dispatch = useDispatch();
   const releases = useSelector((state) => state.deployment?.releases || []);
+  const activeUser = useSelector((state) => state.platform.activeUser);
+  const providerMode = useSelector((state) => state.platform.providerMode);
   const [selectedRelease, setSelectedRelease] = useState(releases[0] || null);
   const [copiedHash, setCopiedHash] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchReleasesAsync());
+    }
+  }, [dispatch, providerMode]);
 
   const filteredReleases = releases.filter(
     (r) =>
@@ -47,13 +64,47 @@ export default function ReleaseManagerView() {
   };
 
   const handleSealNewRelease = () => {
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Manifeste Scellé avec Succès',
-        message: 'La release candidate v2.5.0-rc2 a été générée et signée cryptographiquement (SHA-256).',
-      })
-    );
+    const body = {
+      code: 'REL-2026-0905',
+      version: 'v2.5.0-rc2',
+      applicationId: 'app-0001',
+      applicationVersionId: 'ver-001',
+      snapshotId: 'snap-2026-09-04-rc2',
+      configurationVersion: '1.0.0',
+      createdBy: activeUser?.email || 'console-operator',
+      artifactRefs: {},
+      contractVersions: {},
+    };
+
+    if (providerMode === 'MOCK') {
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Manifeste Scellé avec Succès',
+          message: 'La release candidate v2.5.0-rc2 a été générée et signée cryptographiquement (SHA-256).',
+        })
+      );
+    } else {
+      dispatch(createReleaseAsync(body)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Manifeste Scellé avec Succès',
+              message: `La release ${result.payload.code} a été créée.`,
+            })
+          );
+        }
+      }).catch(() => {
+        dispatch(
+          addToast({
+            type: 'error',
+            title: 'Échec de création',
+            message: 'Impossible de créer la release.',
+          })
+        );
+      });
+    }
   };
 
   return (

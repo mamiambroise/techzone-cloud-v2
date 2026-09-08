@@ -4,6 +4,13 @@ import {
   rotateCredential,
   addCredentialReference,
   disableCredential,
+  addCredentialReferenceAsync,
+  updateCredentialAsync,
+  rotateCredentialAsync,
+  disableCredentialAsync,
+  archiveCredentialAsync,
+  testCredentialAsync,
+  associateCredentialAsync,
 } from '../../store/integrationSlice.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
@@ -32,12 +39,17 @@ export default function CredentialsManagerView() {
   const connectors = useSelector((state) => state.integration.connectors);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
   const activeUser = useSelector((state) => state.platform.activeUser);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   const [selectedCred, setSelectedCred] = useState(credentials[0] || null);
   const [showRotateModal, setShowRotateModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
+
+  const [newSecretValue, setNewSecretValue] = useState('');
+  const [newExpiresAt, setNewExpiresAt] = useState('');
+  const [showInvalidateWarning, setShowInvalidateWarning] = useState(false);
 
   // New credential reference state
   const [newCode, setNewCode] = useState('');
@@ -59,58 +71,189 @@ export default function CredentialsManagerView() {
 
   const handleRotate = () => {
     if (!selectedCred) return;
+
+    if (!newSecretValue.trim()) {
+      setShowInvalidateWarning(true);
+      return;
+    }
+
+    const body = {
+      secretValue: newSecretValue.trim(),
+      expiresAt: newExpiresAt || undefined,
+    };
+
     setIsRotating(true);
-    setTimeout(() => {
-      setIsRotating(false);
-      dispatch(rotateCredential({ id: selectedCred.id }));
-      setShowRotateModal(false);
+    if (providerMode === 'MOCK') {
+      setTimeout(() => {
+        setIsRotating(false);
+        dispatch(rotateCredential({ id: selectedCred.id, body }));
+        setShowRotateModal(false);
+        setNewSecretValue('');
+        setNewExpiresAt('');
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'Rotation des Clés Effectuée (API-CDC-05)',
+            message: `La référence ${selectedCred.code} a été régénérée dans ${selectedCred.provider} avec audit trail.`,
+          })
+        );
+        dispatch(
+          logAuditAction({
+            action: 'ROTATE_INTEGRATION_REDENTIAL',
+            resourceType: 'CREDENTIAL_REFERENCE',
+            resourceId: selectedCred.id,
+            user: activeUser,
+            details: {
+              code: selectedCred.code,
+              provider: selectedCred.provider,
+              lastRotatedAt: new Date().toISOString(),
+            },
+          })
+        );
+      }, 700);
+    } else {
+      dispatch(rotateCredentialAsync({ id: selectedCred.id, body })).then((result) => {
+        setIsRotating(false);
+        if (result.meta.requestStatus === 'fulfilled') {
+          setShowRotateModal(false);
+          setNewSecretValue('');
+          setNewExpiresAt('');
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Rotation des Clés Effectuée (API-CDC-05)',
+              message: `La référence ${selectedCred.code} a été régénérée dans ${selectedCred.provider} avec audit trail.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'ROTATE_INTEGRATION_REDENTIAL',
+              resourceType: 'CREDENTIAL_REFERENCE',
+              resourceId: selectedCred.id,
+              user: activeUser,
+              details: {
+                code: selectedCred.code,
+                provider: selectedCred.provider,
+                lastRotatedAt: new Date().toISOString(),
+              },
+            })
+          );
+        }
+      });
+    }
+  };
+
+  const handleConfirmInvalidate = () => {
+    setShowInvalidateWarning(false);
+    const body = { secretValue: '', expiresAt: newExpiresAt || undefined };
+
+    setIsRotating(true);
+    if (providerMode === 'MOCK') {
+      setTimeout(() => {
+        setIsRotating(false);
+        dispatch(rotateCredential({ id: selectedCred.id, body }));
+        setShowRotateModal(false);
+        setNewSecretValue('');
+        setNewExpiresAt('');
+        dispatch(
+          addToast({
+            type: 'warning',
+            title: 'Secret Invalydé (API-CDC-05)',
+            message: `La référence ${selectedCred.code} a été invalidée sans remplacement. Le connecteur associé perdra son accès.`,
+          })
+        );
+        dispatch(
+          logAuditAction({
+            action: 'INVALIDATE_CREDENTIAL_REFERENCE',
+            resourceType: 'CREDENTIAL_REFERENCE',
+            resourceId: selectedCred.id,
+            user: activeUser,
+            details: {
+              code: selectedCred.code,
+              provider: selectedCred.provider,
+              lastRotatedAt: new Date().toISOString(),
+            },
+          })
+        );
+      }, 700);
+    } else {
+      dispatch(rotateCredentialAsync({ id: selectedCred.id, body })).then((result) => {
+        setIsRotating(false);
+        if (result.meta.requestStatus === 'fulfilled') {
+          setShowRotateModal(false);
+          setNewSecretValue('');
+          setNewExpiresAt('');
+          dispatch(
+            addToast({
+              type: 'warning',
+              title: 'Secret Invalydé (API-CDC-05)',
+              message: `La référence ${selectedCred.code} a été invalidée sans remplacement. Le connecteur associé perdra son accès.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'INVALIDATE_CREDENTIAL_REFERENCE',
+              resourceType: 'CREDENTIAL_REFERENCE',
+              resourceId: selectedCred.id,
+              user: activeUser,
+              details: {
+                code: selectedCred.code,
+                provider: selectedCred.provider,
+                lastRotatedAt: new Date().toISOString(),
+              },
+            })
+          );
+        }
+      });
+    }
+  };
+
+  const handleDisableCredential = () => {
+    if (!selectedCred) return;
+    if (providerMode === 'MOCK') {
+      dispatch(disableCredential({ id: selectedCred.id }));
+      setShowDisableModal(false);
 
       dispatch(
         addToast({
-          type: 'success',
-          title: 'Rotation des Clés Effectuée (API-CDC-05)',
-          message: `La référence ${selectedCred.code} a été régénérée dans ${selectedCred.provider} avec audit trail.`,
+          type: 'warning',
+          title: 'Référence Révoquée (API-CDC-05)',
+          message: `La référence ${selectedCred.code} a été révoquée et n'est plus utilisable.`,
         })
       );
 
       dispatch(
         logAuditAction({
-          action: 'ROTATE_INTEGRATION_REDENTIAL',
+          action: 'DISABLE_CREDENTIAL_REFERENCE',
           resourceType: 'CREDENTIAL_REFERENCE',
           resourceId: selectedCred.id,
           user: activeUser,
-          details: {
-            code: selectedCred.code,
-            provider: selectedCred.provider,
-            lastRotatedAt: new Date().toISOString(),
-          },
+          details: { code: selectedCred.code, type: selectedCred.type, provider: selectedCred.provider },
         })
       );
-    }, 700);
-  };
-
-  const handleDisableCredential = () => {
-    if (!selectedCred) return;
-    dispatch(disableCredential({ id: selectedCred.id }));
-    setShowDisableModal(false);
-
-    dispatch(
-      addToast({
-        type: 'warning',
-        title: 'Référence Révoquée (API-CDC-05)',
-        message: `La référence ${selectedCred.code} a été révoquée et n'est plus utilisable.`,
-      })
-    );
-
-    dispatch(
-      logAuditAction({
-        action: 'DISABLE_CREDENTIAL_REFERENCE',
-        resourceType: 'CREDENTIAL_REFERENCE',
-        resourceId: selectedCred.id,
-        user: activeUser,
-        details: { code: selectedCred.code, type: selectedCred.type, provider: selectedCred.provider },
-      })
-    );
+    } else {
+      dispatch(disableCredentialAsync(selectedCred.id)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          setShowDisableModal(false);
+          dispatch(
+            addToast({
+              type: 'warning',
+              title: 'Référence Révoquée (API-CDC-05)',
+              message: `La référence ${selectedCred.code} a été révoquée et n'est plus utilisable.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'DISABLE_CREDENTIAL_REFERENCE',
+              resourceType: 'CREDENTIAL_REFERENCE',
+              resourceId: selectedCred.id,
+              user: activeUser,
+              details: { code: selectedCred.code, type: selectedCred.type, provider: selectedCred.provider },
+            })
+          );
+        }
+      });
+    }
   };
 
   const handleCreateCredential = (e) => {
@@ -118,15 +261,10 @@ export default function CredentialsManagerView() {
     if (!newCode.trim()) return;
 
     const newId = 'cred-ref-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newCred = {
-      id: newId,
+    const body = {
       code: newCode.toUpperCase().trim(),
       type: newType,
       provider: newProvider,
-      status: 'ACTIVE',
-      associatedConnector: newConnectorId,
-      lastRotatedAt: new Date().toISOString().split('T')[0],
-      expiresAt: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().split('T')[0],
       metadataSafe: {
         keyPrefix: newKeyPrefix,
         maskedSecret: `${newKeyPrefix}•••••••••••• (Masqué)`,
@@ -134,27 +272,62 @@ export default function CredentialsManagerView() {
       },
     };
 
-    dispatch(addCredentialReference(newCred));
-    dispatch(
-      logAuditAction({
-        action: 'CREATE_CREDENTIAL_REFERENCE',
-        resourceType: 'CREDENTIAL_REFERENCE',
-        resourceId: newId,
-        user: activeUser,
-        details: { code: newCred.code, type: newCred.type, provider: newCred.provider },
-      })
-    );
-    setShowCreateModal(false);
-    setNewCode('');
-    setSelectedCred(newCred);
+    if (providerMode === 'MOCK') {
+      const newCred = {
+        id: newId,
+        ...body,
+        status: 'ACTIVE',
+        associatedConnector: newConnectorId,
+        lastRotatedAt: new Date().toISOString().split('T')[0],
+        expiresAt: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().split('T')[0],
+      };
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Référence de Secret Enregistrée (API-CDC-05)',
-        message: `Référence ${newCred.code} ajoutée en toute sécurité sans divulgation de secret.`,
-      })
-    );
+      dispatch(addCredentialReference(newCred));
+      dispatch(
+        logAuditAction({
+          action: 'CREATE_CREDENTIAL_REFERENCE',
+          resourceType: 'CREDENTIAL_REFERENCE',
+          resourceId: newId,
+          user: activeUser,
+          details: { code: newCred.code, type: newCred.type, provider: newCred.provider },
+        })
+      );
+      setShowCreateModal(false);
+      setNewCode('');
+      setSelectedCred(newCred);
+
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Référence de Secret Enregistrée (API-CDC-05)',
+          message: `Référence ${newCred.code} ajoutée en toute sécurité sans divulgation de secret.`,
+        })
+      );
+    } else {
+      dispatch(addCredentialReferenceAsync(body)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          setShowCreateModal(false);
+          setNewCode('');
+          setSelectedCred(result.payload);
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Référence de Secret Enregistrée (API-CDC-05)',
+              message: `Référence ${result.payload.code} ajoutée en toute sécurité sans divulgation de secret.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'CREATE_CREDENTIAL_REFERENCE',
+              resourceType: 'CREDENTIAL_REFERENCE',
+              resourceId: result.payload.id,
+              user: activeUser,
+              details: { code: result.payload.code, type: result.payload.type, provider: result.payload.provider },
+            })
+          );
+        }
+      });
+    }
   };
 
   return (
@@ -406,6 +579,28 @@ export default function CredentialsManagerView() {
               <strong>{selectedCred?.provider}</strong>. L'ancienne clé restera active pendant une période de grâce de 24h avant révocation définitive.
             </p>
 
+            <div className="space-y-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Nouvelle Valeur du Secret *</label>
+                <input
+                  type="password"
+                  value={newSecretValue}
+                  onChange={(e) => setNewSecretValue(e.target.value)}
+                  placeholder="Saisir la nouvelle valeur du secret..."
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Date d'Expiration (optionnelle)</label>
+                <input
+                  type="date"
+                  value={newExpiresAt}
+                  onChange={(e) => setNewExpiresAt(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+            </div>
+
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-mono">
               Action auditée sous l'identité : <strong>{activeUser.name} ({activeUser.role})</strong>
             </div>
@@ -413,7 +608,7 @@ export default function CredentialsManagerView() {
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setShowRotateModal(false)}
+                onClick={() => { setShowRotateModal(false); setNewSecretValue(''); setNewExpiresAt(''); }}
                 className="px-4 py-2 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-xs"
               >
                 Annuler
@@ -426,6 +621,50 @@ export default function CredentialsManagerView() {
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin' : ''}`} />
                 <span>{isRotating ? 'Rotation en cours...' : 'Confirmer la rotation'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invalidate Warning Modal */}
+      {showInvalidateWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-3xl border border-slate-200 p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-800">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Confirmer l'Invalidation</h3>
+                <p className="text-[11px] text-slate-500 font-mono">{selectedCred?.code}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Aucune valeur fournie : le secret existant sera invalidé et non remplacé. Le connecteur associé perdra son accès. Continuer ?
+            </p>
+
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 font-mono">
+              Action auditée sous l'identité : <strong>{activeUser.name} ({activeUser.role})</strong>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowInvalidateWarning(false)}
+                className="px-4 py-2 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-xs"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmInvalidate}
+                disabled={isRotating}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs shadow-sm flex items-center gap-1.5"
+              >
+                <AlertTriangle className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin' : ''}`} />
+                <span>{isRotating ? 'Invalidation en cours...' : 'Confirmer l\'invalidation'}</span>
               </button>
             </div>
           </div>

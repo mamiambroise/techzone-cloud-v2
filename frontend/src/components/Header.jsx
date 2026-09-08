@@ -28,7 +28,7 @@ import {
 export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
   const dispatch = useDispatch();
   const activeTab = useSelector((state) => state.platform.activeTab);
-  const activeIntegrationTab = useSelector((state) => state.integration?.activeTab || 'cockpit');
+  const activeIntegrationTab = useSelector((state) => state.integration?.activeIntegrationTab || 'cockpit');
   const activeDeploymentTab = useSelector((state) => state.deployment?.activeTab || 'cockpit');
   const activeModuleId = useSelector((state) => state.platform.activeModuleId || '01');
   const activeUser = useSelector((state) => state.platform.activeUser);

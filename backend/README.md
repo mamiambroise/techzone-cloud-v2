@@ -48,6 +48,21 @@ Le système est structuré en trois grands packs :
 - Node.js (v20+)
 - npm ou bun
 
+### Configuration des variables d'environnement
+Le fichier .env contient les variables de configuration locales et ne doit pas être versionné dans Git.
+
+Un fichier .env.example est fourni comme modèle.
+
+Créer le fichier .env
+
+Après avoir cloné le projet, copiez le fichier .env.example :
+
+```bash
+cp .env.example .env
+```
+
+Vous pouvez ensuite modifier les valeurs dans .env selon votre environnement local.
+
 ### Installation
 ```bash
 npm install

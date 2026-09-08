@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { approvePromotionGate } from '../../store/deploymentSlice.js';
+import { approvePromotionGate, fetchGatesAsync, approveGateAsync } from '../../store/deploymentSlice.js';
 import { addToast } from '../../store/platformSlice.js';
 import {
   ShieldCheck,
@@ -19,21 +19,59 @@ import {
 export default function PromotionGatewaysView() {
   const dispatch = useDispatch();
   const promotionGates = useSelector((state) => state.deployment?.promotionGates || []);
+  const providerMode = useSelector((state) => state.platform.providerMode);
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchGatesAsync('dep-101'));
+    }
+  }, [dispatch, providerMode]);
 
   const handleApprove = (gateId) => {
-    dispatch(
-      approvePromotionGate({
-        gateId,
-        approverName: 'SecOps + Platform Lead (You)',
-      })
-    );
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Porte de Sécurité Validée',
-        message: 'La release a reçu les approbations requises et est éligible au déploiement en Production.',
-      })
-    );
+    if (providerMode === 'MOCK') {
+      dispatch(
+        approvePromotionGate({
+          gateId,
+          approverName: 'SecOps + Platform Lead (You)',
+        })
+      );
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Porte de Sécurité Validée',
+          message: 'La release a reçu les approbations requises et est éligible au déploiement en Production.',
+        })
+      );
+    } else {
+      dispatch(
+        approveGateAsync({
+          deploymentId: 'dep-101',
+          gateId,
+          body: {
+            approvedBy: 'SecOps + Platform Lead (You)',
+            comment: 'Approbation via PromotionGatewaysView',
+          },
+        })
+      ).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Porte de Sécurité Validée',
+              message: 'La release a reçu les approbations requises et est éligible au déploiement en Production.',
+            })
+          );
+        }
+      }).catch(() => {
+        dispatch(
+          addToast({
+            type: 'error',
+            title: 'Échec de l\'approbation',
+            message: 'Impossible d\'approuver la gate de déploiement.',
+          })
+        );
+      });
+    }
   };
 
   return (

@@ -111,27 +111,38 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
         );
       }, 600);
     } else {
-      dispatch(checkConnectorHealthAsync(connectorId)).then((result) => {
-        setIsPinging(false);
-        if (result.meta.requestStatus === 'fulfilled') {
+      dispatch(checkConnectorHealthAsync(connectorId))
+        .then((result) => {
+          setIsPinging(false);
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Health Check Réussi (API-CDC-02)',
+                message: `Connectivité, auth et conformité de contrat validées pour ${selectedConnector?.code}.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'CONNECTOR_HEALTH_PING',
+                resourceType: 'CONNECTOR',
+                resourceId: connectorId,
+                user: activeUser,
+                details: { latencyMs: 54, status: 'HEALTHY' },
+              })
+            );
+          }
+        })
+        .catch((error) => {
+          setIsPinging(false);
           dispatch(
             addToast({
-              type: 'success',
-              title: 'Health Check Réussi (API-CDC-02)',
-              message: `Connectivité, auth et conformité de contrat validées pour ${selectedConnector?.code}.`,
+              type: 'error',
+              title: 'Échec du health check',
+              message: error.message || 'Impossible de vérifier la santé du connecteur.',
             })
           );
-          dispatch(
-            logAuditAction({
-              action: 'CONNECTOR_HEALTH_PING',
-              resourceType: 'CONNECTOR',
-              resourceId: connectorId,
-              user: activeUser,
-              details: { latencyMs: 54, status: 'HEALTHY' },
-            })
-          );
-        }
-      });
+        });
     }
   };
 
@@ -157,26 +168,36 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
       );
     } else {
       const thunk = newStatus === 'ACTIVE' ? activateConnectorAsync(connector.id) : disableConnectorAsync(connector.id);
-      dispatch(thunk).then((result) => {
-        if (result.meta.requestStatus === 'fulfilled') {
+      dispatch(thunk)
+        .then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(
+              addToast({
+                type: newStatus === 'ACTIVE' ? 'success' : 'warning',
+                title: `Connecteur ${newStatus === 'ACTIVE' ? 'Activé' : 'Désactivé'}`,
+                message: `${connector.code} est désormais ${newStatus}.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'UPDATE_CONNECTOR_STATUS',
+                resourceType: 'CONNECTOR',
+                resourceId: connector.id,
+                user: activeUser,
+                details: { previousStatus: connector.status, newStatus },
+              })
+            );
+          }
+        })
+        .catch((error) => {
           dispatch(
             addToast({
-              type: newStatus === 'ACTIVE' ? 'success' : 'warning',
-              title: `Connecteur ${newStatus === 'ACTIVE' ? 'Activé' : 'Désactivé'}`,
-              message: `${connector.code} est désormais ${newStatus}.`,
+              type: 'error',
+              title: `Échec de ${newStatus === 'ACTIVE' ? "l'activation" : "la désactivation"} du connecteur`,
+              message: error.message || `Impossible de passer ${connector.code} à ${newStatus}.`,
             })
           );
-          dispatch(
-            logAuditAction({
-              action: 'UPDATE_CONNECTOR_STATUS',
-              resourceType: 'CONNECTOR',
-              resourceId: connector.id,
-              user: activeUser,
-              details: { previousStatus: connector.status, newStatus },
-            })
-          );
-        }
-      });
+        });
     }
   };
 
@@ -235,29 +256,39 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
         })
       );
     } else {
-      dispatch(createConnectorAsync(body)).then((result) => {
-        if (result.meta.requestStatus === 'fulfilled') {
-          setShowCreateModal(false);
-          setNewCode('');
-          setNewName('');
+      dispatch(createConnectorAsync(body))
+        .then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            setShowCreateModal(false);
+            setNewCode('');
+            setNewName('');
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Connecteur Enregistré (API-CDC-02)',
+                message: `Le connecteur ${result.payload.code} a été ajouté avec succès.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'CREATE_CONNECTOR',
+                resourceType: 'CONNECTOR',
+                resourceId: result.payload.id,
+                user: activeUser,
+                details: { code: result.payload.code, providerType: result.payload.providerType },
+              })
+            );
+          }
+        })
+        .catch((error) => {
           dispatch(
             addToast({
-              type: 'success',
-              title: 'Connecteur Enregistré (API-CDC-02)',
-              message: `Le connecteur ${result.payload.code} a été ajouté avec succès.`,
+              type: 'error',
+              title: 'Échec de création du connecteur',
+              message: error.message || 'Impossible de créer le connecteur.',
             })
           );
-          dispatch(
-            logAuditAction({
-              action: 'CREATE_CONNECTOR',
-              resourceType: 'CONNECTOR',
-              resourceId: result.payload.id,
-              user: activeUser,
-              details: { code: result.payload.code, providerType: result.payload.providerType },
-            })
-          );
-        }
-      });
+        });
     }
   };
 
