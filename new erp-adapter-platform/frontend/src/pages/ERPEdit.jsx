@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import {
+  ChevronLeftIcon,
+  PencilSquareIcon,
+  CheckIcon,
+  XMarkIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
 import { erpRegistryService } from '../services/api';
 
 const TYPES = ['CLOUD', 'ON_PREMISE', 'MOCK', 'HYBRID'];
 const ENVIRONMENTS = ['DEVELOPMENT', 'TEST', 'STAGING', 'PRODUCTION'];
+
+const inputClass =
+  'w-full border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 dark:bg-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1';
 
 function ERPEdit() {
   const { id } = useParams();
@@ -76,104 +87,116 @@ function ERPEdit() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 text-lg">Chargement...</div>
+        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+          <span className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 border-t-blue-500 rounded-full animate-spin" />
+          <span>Chargement...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Modifier l'ERP</h1>
-      <p className="text-gray-500 mb-6">Code: <span className="font-mono font-medium">{formData.code}</span></p>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <button
+        onClick={() => navigate('/erps')}
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 font-medium"
+      >
+        <ChevronLeftIcon className="w-4 h-4" />
+        Retour
+      </button>
+
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md">
+          <PencilSquareIcon className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Modifier l'ERP</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            Code : <span className="font-mono font-medium text-slate-700 dark:text-slate-200">{formData.code}</span>
+          </p>
+        </div>
+      </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4">
+          <ExclamationTriangleIcon className="w-5 h-5 text-red-500 shrink-0" />
           <p className="text-red-600">{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow border border-gray-200 p-6 space-y-6">
-        {/* Code (lecture seule) */}
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+          <label className={labelClass}>Code</label>
           <input
             type="text"
             value={formData.code}
             disabled
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 bg-slate-50 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 cursor-not-allowed"
           />
-          <p className="text-xs text-gray-400 mt-1">Le code ne peut pas etre modifie</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Le code ne peut pas être modifié</p>
         </div>
 
-        {/* Nom */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+          <label className={labelClass}>Nom *</label>
           <input
             type="text"
             name="nom"
             value={formData.nom}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
           />
         </div>
 
-        {/* Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Type</label>
+            <select name="type" value={formData.type} onChange={handleChange} className={inputClass}>
+              {TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Environnement</label>
+            <select name="environment" value={formData.environment} onChange={handleChange} className={inputClass}>
+              {ENVIRONMENTS.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* URL */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+          <label className={labelClass}>URL</label>
           <input
             type="text"
             name="url"
             value={formData.url}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
           />
         </div>
 
-        {/* Environnement */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Environnement</label>
-          <select
-            name="environment"
-            value={formData.environment}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {ENVIRONMENTS.map((e) => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Boutons */}
         <div className="flex space-x-4 pt-4">
           <button
             type="submit"
             disabled={saving}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
           >
+            {saving ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <CheckIcon className="w-5 h-5" />
+            )}
             {saving ? 'Enregistrement...' : 'Enregistrer'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/erps')}
-            className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium"
           >
+            <XMarkIcon className="w-5 h-5" />
             Annuler
           </button>
         </div>

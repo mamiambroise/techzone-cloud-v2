@@ -13,6 +13,6 @@ import { DolibarrAdapter } from './dolibarr/dolibarr.adapter';
     MockAdapter,
     DolibarrAdapter,
   ],
-  exports: [ErpAdapterService],
+  exports: [ErpAdapterService, MockAdapter, DolibarrAdapter],
 })
 export class ErpAdapterModule {}
