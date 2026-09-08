@@ -15,8 +15,15 @@ const errorMessage = (err) => {
   return msg || 'Erreur de connexion. Vérifiez votre réseau.';
 };
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'Bonjour';
+  if (hour >= 12 && hour < 18) return 'Bon après-midi';
+  return 'Bonsoir';
+};
+
 const MESSAGES = [
-  'Bonjour !',
+  `${getGreeting()} !`,
   'Bienvenue sur votre espace de travail',
   'Votre espace vous attend',
   'Gestion sécurisée de votre environnement',
