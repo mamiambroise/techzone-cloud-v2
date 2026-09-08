@@ -336,7 +336,7 @@ function Dashboard() {
       </div>
 
       {/* Second rang: finance + stock + états commandes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Finance */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
@@ -433,7 +433,7 @@ function Dashboard() {
       </div>
 
       {/* Graphiques : analyse reelle */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -539,7 +539,7 @@ function Dashboard() {
       </div>
 
       {/* Dernières commandes + factures */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -626,7 +626,7 @@ function Dashboard() {
       </div>
 
       {/* Automation + État ERP */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">

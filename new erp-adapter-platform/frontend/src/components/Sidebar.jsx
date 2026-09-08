@@ -114,7 +114,7 @@ const navGroups = [
   },
 ];
 
-function Sidebar({ isOpen, onToggle }) {
+function Sidebar({ isOpen, onToggle, mobileOpen = false }) {
   const location = useLocation();
   const { user } = useAuth();
 
@@ -125,8 +125,12 @@ function Sidebar({ isOpen, onToggle }) {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-full bg-[#0B132B] text-slate-300 shadow-xl z-50 flex flex-col transition-all duration-300 ${
-        isOpen ? 'w-64' : 'w-[68px]'
+      className={`fixed left-0 top-0 h-full bg-[#0B132B] text-slate-300 shadow-xl z-50 flex flex-col transition-all duration-300 w-64 ${
+        isOpen ? 'lg:w-64' : 'lg:w-[68px]'
+      } ${
+        mobileOpen
+          ? 'translate-x-0'
+          : '-translate-x-full lg:translate-x-0'
       }`}
     >
       {/* Logo */}
@@ -147,7 +151,7 @@ function Sidebar({ isOpen, onToggle }) {
         ) : null}
         <button
           onClick={onToggle}
-          className="text-slate-400 hover:text-white p-1 rounded transition-colors"
+          className="hidden lg:inline-flex text-slate-400 hover:text-white p-1 rounded transition-colors"
           title={isOpen ? 'Replier' : 'Déplier'}
         >
           {isOpen ? (

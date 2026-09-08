@@ -12,6 +12,7 @@ import {
   CogIcon,
   ArrowLeftOnRectangleIcon,
   BellSlashIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline';
 import { useTheme } from '../ThemeContext';
 import { automationService } from '../services/api';
@@ -49,7 +50,7 @@ const timeAgo = (iso) => {
   return `il y a ${Math.floor(h / 24)} j`;
 };
 
-function Header({ onToggleSidebar }) {
+function Header({ onToggleSidebar, onOpenMobile }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -152,6 +153,13 @@ function Header({ onToggleSidebar }) {
   return (
     <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-800 h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
       <div className="flex items-center min-w-0">
+        <button
+          onClick={onOpenMobile}
+          title="Menu"
+          className="lg:hidden mr-2 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <Bars3Icon className="w-5 h-5" />
+        </button>
         <p className="text-xs text-slate-400 hidden md:block mr-4">
           Accueil <span className="mx-1">/</span>
           <span className="text-slate-600 dark:text-slate-300 font-medium">{getTitle()}</span>

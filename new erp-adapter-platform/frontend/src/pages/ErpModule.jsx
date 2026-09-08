@@ -6,11 +6,9 @@ import {
   ExclamationTriangleIcon,
   ArrowLeftIcon,
   CheckCircleIcon,
-  XMarkIcon,
   PencilIcon,
   MagnifyingGlassIcon,
   InboxIcon,
-  ArrowTopRightOnSquareIcon,
   ArrowPathRoundedSquareIcon,
 } from '@heroicons/react/24/outline';
 import { MODULES_BY_KEY, DEFAULT_ERP } from '../erp/modulesConfig';
@@ -271,7 +269,7 @@ function ErpModule() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700/60">
+            <table className="w-full min-w-[720px] divide-y divide-slate-100 dark:divide-slate-700/60">
               <thead className="bg-slate-50 dark:bg-slate-700/40">
                 <tr>
                   {mod.columns.map((c) => (
@@ -321,7 +319,7 @@ function ErpModule() {
                       ))}
                       {hasActions && (
                         <td className="px-5 py-3 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="inline-flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                             {canEdit && (
                               <button
                                 onClick={() => handleEdit(row)}
