@@ -7,7 +7,7 @@
 :root {
   --color-primary: #5469D4;
   --color-primary-hover: #4A5EC7;
-  --color-primary-gradient: linear-gradient(135deg, #3B4BA8 0%, #5469D4 100%);
+  --color-primary-gradient: linear-gradient(135deg, #0B132B 0%, #1B2B57 100%);
   --color-focus-ring: rgba(84, 105, 212, 0.25);
   --color-text: #1E293B;
   --color-text-secondary: #64748B;
@@ -29,7 +29,7 @@
 
 .login-left {
   flex: 1;
-  background: linear-gradient(135deg, #3B4BA8 0%, #5469D4 100%);
+  background: var(--color-primary-gradient);
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -356,7 +356,7 @@
   animation: loginFadeSlideUp 0.5s ease-out 0.42s both;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(84, 105, 212, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(11, 19, 43, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   min-height: 2.5rem;
 }
 
@@ -374,14 +374,14 @@
 }
 
 .login-submit:hover:not(:disabled) {
-  filter: brightness(1.07);
+  filter: brightness(1.4);
   transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(84, 105, 212, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 22px rgba(11, 19, 43, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .login-submit:active:not(:disabled) {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 3px 10px rgba(84, 105, 212, 0.35);
+  box-shadow: 0 3px 10px rgba(11, 19, 43, 0.3);
 }
 
 .login-submit:disabled {
@@ -421,7 +421,7 @@
 
 .login-submit:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px var(--color-focus-ring), 0 8px 22px rgba(84, 105, 212, 0.45);
+  box-shadow: 0 0 0 4px var(--color-focus-ring), 0 8px 22px rgba(11, 19, 43, 0.4);
 }
 
 .login-error {
