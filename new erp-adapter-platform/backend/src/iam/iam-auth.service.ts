@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { MailService } from '../common/mail/mail.service';
 import { IamError } from './iam-error';
 import {
   ABSOLUTE_TIMEOUT_MS,
@@ -19,6 +21,8 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { IamAuthContext } from './decorators/current-user.decorator';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
@@ -29,11 +33,16 @@ const PASSWORD_POLICY = {
   historyCount: 5,
 };
 
+const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
+
 @Injectable()
 export class IamAuthService {
   private readonly logger = new Logger(IamAuthService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
 
   // ================= Helpers =================
 
@@ -261,6 +270,139 @@ export class IamAuthService {
     });
 
     return { success: true, message: 'Mot de passe modifié' };
+  }
+
+  // ================= Forgot / Reset password =================
+
+  private async findUserForPasswordReset(identifier: string) {
+    const normalized = identifier?.trim().toLowerCase();
+    if (!normalized) return null;
+    return this.prisma.iamUser.findFirst({
+      where: {
+        OR: [
+          { username: normalized },
+          { primaryEmail: normalized },
+          { phone: normalized },
+        ],
+      },
+    });
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    this.assertEnv();
+
+    const user = await this.findUserForPasswordReset(dto.identifier);
+    if (!user || user.status === 'ARCHIVED' || user.status === 'DISABLED') {
+      return { success: true, message: 'Si le compte existe, un email de réinitialisation a été envoyé.' };
+    }
+
+    const rawToken = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+
+    await this.prisma.iamUser.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: hashValue(rawToken),
+        passwordResetExpiresAt: expiresAt,
+      },
+    });
+
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3003').replace(/\/$/, '');
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    const displayName = user.displayName || user.firstName || user.username;
+
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;background:#F8FAFC;border-radius:12px;overflow:hidden;border:1px solid #E2E8F0;">
+        <div style="background:linear-gradient(135deg,#0B132B,#1B2B57);padding:24px 32px;text-align:center;">
+          <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700;">Réinitialisation du mot de passe</h1>
+        </div>
+        <div style="padding:32px;">
+          <p style="margin:0 0 16px;color:#1E293B;font-size:15px;line-height:1.6;">Bonjour <strong>${displayName}</strong>,</p>
+          <p style="margin:0 0 24px;color:#475569;font-size:14px;line-height:1.6;">
+            Nous avons reçu une demande de réinitialisation de votre mot de passe pour votre compte Techzone Cloud.
+            Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe.
+          </p>
+          <div style="text-align:center;margin:0 0 24px;">
+            <a href="${resetUrl}" style="display:inline-block;background:linear-gradient(135deg,#0B132B,#1B2B57);color:#fff;padding:12px 28px;border-radius:9999px;text-decoration:none;font-size:14px;font-weight:600;">Réinitialiser mon mot de passe</a>
+          </div>
+          <p style="margin:0 0 8px;color:#64748B;font-size:13px;line-height:1.6;">Ce lien expire dans <strong>30 minutes</strong>.</p>
+          <p style="margin:0 0 8px;color:#64748B;font-size:13px;line-height:1.6;">Si vous n'êtes pas à l'origine de cette demande, ignorez cet email, votre mot de passe restera inchangé.</p>
+          <p style="margin:0;color:#94A3B8;font-size:12px;">Lien direct : <a href="${resetUrl}" style="color:#5469D4;">${resetUrl}</a></p>
+        </div>
+      </div>
+    `;
+
+    const sent = await this.mailService.send({
+      to: user.primaryEmail,
+      subject: 'Réinitialisation de votre mot de passe — Techzone Cloud',
+      html,
+    });
+
+    if (!sent) {
+      await this.prisma.iamUser.update({
+        where: { id: user.id },
+        data: { passwordResetToken: null, passwordResetExpiresAt: null },
+      });
+      throw new IamError(
+        `Impossible d'envoyer l'email de réinitialisation à ${user.primaryEmail}. Vérifiez la configuration SMTP.`,
+        500,
+        'MAIL_SEND_FAILED',
+      );
+    }
+
+    return { success: true, message: 'Un email de réinitialisation a été envoyé.' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    this.assertEnv();
+    this.validatePasswordStrength(dto.newPassword);
+
+    const tokenHash = hashValue(dto.token);
+
+    const user = await this.prisma.iamUser.findFirst({
+      where: {
+        passwordResetToken: tokenHash,
+        passwordResetExpiresAt: { gt: new Date() },
+      },
+    });
+    if (!user) {
+      throw new IamError(
+        'Lien de réinitialisation invalide ou expiré',
+        400,
+        'INVALID_RESET_TOKEN',
+      );
+    }
+
+    await this.assertPasswordNotReused(user.id, dto.newPassword);
+
+    const newHash = await bcrypt.hash(dto.newPassword, SALT_ROUNDS);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.iamCredential.updateMany({
+        where: { userId: user.id, type: 'PASSWORD', status: 'ACTIVE' },
+        data: { status: 'REVOKED', revokedAt: new Date(), revokeReason: 'PASSWORD_RESET' },
+      });
+      await tx.iamCredential.create({
+        data: { userId: user.id, type: 'PASSWORD', status: 'ACTIVE', secretHash: newHash },
+      });
+      await tx.iamPasswordHistory.create({ data: { userId: user.id, passwordHash: newHash } });
+      await tx.iamUser.update({
+        where: { id: user.id },
+        data: { passwordResetToken: null, passwordResetExpiresAt: null },
+      });
+      await tx.iamSession.updateMany({
+        where: { userId: user.id, status: 'ACTIVE' },
+        data: {
+          status: 'REVOKED',
+          revokedAt: new Date(),
+          revokedBy: user.id,
+          revokeReason: 'PASSWORD_RESET',
+          statusChangedAt: new Date(),
+        },
+      });
+    });
+
+    return { success: true, message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' };
   }
 
   // ================= Me =================

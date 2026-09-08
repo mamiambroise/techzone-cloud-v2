@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon, XMarkIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../auth/AuthContext';
+import { iamAuthService } from '../services/api';
 import './Login.css';
 
 const errorMessage = (err) => {
@@ -34,15 +35,22 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [identifier, setIdentifier] = useState('');
+  const REMEMBER_KEY = 'iam_remember_identifier';
+
+  const [identifier, setIdentifier] = useState(() => localStorage.getItem(REMEMBER_KEY) || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem(REMEMBER_KEY)));
   const [isDark, setIsDark] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [messageIndex, setMessageIndex] = useState(0);
   const [fade, setFade] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotDone, setForgotDone] = useState(false);
+  const [forgotError, setForgotError] = useState('');
   const timeoutRef = useRef(null);
 
   const from = location.state?.from?.pathname || '/';
@@ -82,6 +90,11 @@ function Login() {
       setError('Veuillez renseigner votre identifiant et votre mot de passe.');
       return;
     }
+    if (rememberMe) {
+      localStorage.setItem(REMEMBER_KEY, identifier.trim());
+    } else {
+      localStorage.removeItem(REMEMBER_KEY);
+    }
     setLoading(true);
     try {
       await login(identifier, password);
@@ -89,6 +102,32 @@ function Login() {
     } catch (err) {
       setError(errorMessage(err));
       setLoading(false);
+    }
+  };
+
+  const openForgot = () => {
+    setForgotIdentifier(identifier || '');
+    setForgotDone(false);
+    setForgotError('');
+    setForgotOpen(true);
+  };
+
+  const submitForgot = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    if (!forgotIdentifier.trim()) {
+      setForgotError('Veuillez renseigner votre email ou identifiant.');
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      await iamAuthService.forgotPassword({ identifier: forgotIdentifier.trim() });
+      setForgotDone(true);
+    } catch (err) {
+      const body = err?.response?.data;
+      setForgotError(body?.message || 'Échec de l\'envoi. Vérifiez la configuration SMTP.');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -267,7 +306,7 @@ function Login() {
                 />
                 <span>Se souvenir de moi</span>
               </label>
-              <a href="#forgot" className="login-forgot">
+              <a href="#forgot" className="login-forgot" onClick={(e) => { e.preventDefault(); openForgot(); }}>
                 Mot de passe oublié ?
               </a>
             </div>
@@ -292,6 +331,67 @@ function Login() {
           </div>
         </div>
       </div>
+
+      {forgotOpen && (
+        <div className="forgot-overlay" onClick={() => setForgotOpen(false)}>
+          <div className="forgot-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Mot de passe oublié">
+            <button
+              type="button"
+              className="forgot-close"
+              onClick={() => setForgotOpen(false)}
+              aria-label="Fermer"
+            >
+              <XMarkIcon className="forgot-close-icon" />
+            </button>
+
+            {forgotDone ? (
+              <div className="forgot-done">
+                <div className="forgot-done-icon-wrap">
+                  <EnvelopeIcon className="forgot-done-icon" />
+                </div>
+                <h3 className="forgot-title">Email envoyé</h3>
+                <p className="forgot-text">
+                  Si un compte correspond à cet identifiant, un email de réinitialisation a été envoyé. Vérifiez votre boîte de réception (et les spam). Le lien est valable 30 minutes.
+                </p>
+                <button type="button" className="login-submit" onClick={() => setForgotOpen(false)}>
+                  Fermer
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="forgot-icon-wrap">
+                  <EnvelopeIcon className="forgot-icon" />
+                </div>
+                <h3 className="forgot-title">Mot de passe oublié ?</h3>
+                <p className="forgot-text">
+                  Saisissez votre adresse email ou votre identifiant. Nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                </p>
+                <form onSubmit={submitForgot}>
+                  <div className="login-field">
+                    <label htmlFor="forgot-identifier" className="login-field-label">
+                      Email ou identifiant
+                    </label>
+                    <input
+                      id="forgot-identifier"
+                      type="text"
+                      className="login-field-input"
+                      placeholder="vous@entreprise.com"
+                      value={forgotIdentifier}
+                      onChange={(e) => setForgotIdentifier(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  {forgotError && <div className="login-error" role="alert">{forgotError}</div>}
+                  <button type="submit" className="login-submit" disabled={forgotLoading}>
+                    {forgotLoading && <span className="login-spinner" aria-hidden="true" />}
+                    {forgotLoading ? 'Envoi...' : 'Envoyer le lien'}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

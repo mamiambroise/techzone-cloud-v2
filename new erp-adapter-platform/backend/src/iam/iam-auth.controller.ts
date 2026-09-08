@@ -10,6 +10,8 @@ import { RefreshDto } from './dto/refresh.dto';
 import { LogoutAllDto } from './dto/logout-all.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('iam-auth')
 @Controller('iam/auth')
@@ -63,6 +65,20 @@ export class IamAuthController {
   @HttpCode(HttpStatus.OK)
   async changePassword(@CurrentUser() ctx: IamAuthContext, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(ctx, dto);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @Get('me')
