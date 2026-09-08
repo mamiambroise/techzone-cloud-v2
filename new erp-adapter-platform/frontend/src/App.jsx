@@ -18,18 +18,21 @@ import Adapters from './pages/Adapters';
 import Mapping from './pages/Mapping';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import IamOverview from './pages/iam/IamOverview';
 import IamUsers from './pages/iam/IamUsers';
 import IamSessions from './pages/iam/IamSessions';
 import IamProfile from './pages/iam/IamProfile';
 import { ThemeProvider } from './ThemeContext';
 import { AuthProvider } from './auth/AuthContext';
+import { ToastProvider } from './components/ui/ToastProvider';
 import ProtectedRoute from './auth/ProtectedRoute';
 
 function AppContent() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         path="/*"
         element={
@@ -68,11 +71,13 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

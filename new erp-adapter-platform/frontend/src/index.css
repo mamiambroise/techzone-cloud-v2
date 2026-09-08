@@ -80,3 +80,25 @@ body {
   background-size: 800px 100%;
   animation: skeleton-shimmer 1.6s linear infinite;
 }
+
+/* ===== Toast & modals (notifications proeminentes) ===== */
+
+@keyframes toast-enter {
+  0% { opacity: 0; transform: translateX(24px) scale(0.97); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.toast-enter {
+  animation: toast-enter 0.3s cubic-bezier(0.2, 0.8, 0.4, 1) both;
+}
+
+.toast-progress {
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}

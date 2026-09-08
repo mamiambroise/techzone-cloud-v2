@@ -175,6 +175,8 @@
   justify-content: center;
   padding: 2.5rem;
   transition: background-color 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme="dark"] .login-right {
@@ -185,6 +187,8 @@
   width: 100%;
   max-width: 24rem;
   animation: loginFadeSlideUp 0.7s ease-out 0.15s both;
+  position: relative;
+  z-index: 5;
 }
 
 .login-right-title {
@@ -235,6 +239,10 @@
   outline: none;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+  pointer-events: auto;
+  cursor: text;
+  position: relative;
+  z-index: 2;
 }
 
 .login-field-input:hover {
@@ -385,17 +393,19 @@
 }
 
 .login-submit:disabled {
-  opacity: 0.7;
+  opacity: 0.85;
   cursor: not-allowed;
+  animation: loginFadeSlideUp 0.5s ease-out 0.42s both, loginSubmitPulse 1.2s ease-in-out infinite;
 }
 
 .login-submit:disabled .login-spinner {
-  animation: loginSpinnerSpin 0.8s linear infinite;
+  animation: loginSpinnerSpin 0.7s linear infinite;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-width: 2.5px;
 }
 
 .login-spinner {
-  width: 1rem;
-  height: 1rem;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.35);
   border-top-color: #ffffff;
@@ -406,6 +416,15 @@
 @keyframes loginSpinnerSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes loginSubmitPulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(11, 19, 43, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    box-shadow: 0 2px 14px rgba(11, 19, 43, 0.5), 0 0 0 6px rgba(84, 105, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 }
 

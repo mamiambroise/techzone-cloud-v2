@@ -8,6 +8,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { erpRegistryService } from '../services/api';
+import { useToast } from '../components/ui/ToastProvider';
 
 const TYPES = ['CLOUD', 'ON_PREMISE', 'MOCK', 'HYBRID'];
 const ENVIRONMENTS = ['DEVELOPMENT', 'TEST', 'STAGING', 'PRODUCTION'];
@@ -19,6 +20,7 @@ const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-200
 function ERPEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     code: '',
     nom: '',
@@ -75,10 +77,11 @@ function ERPEdit() {
         url: formData.url.trim(),
         environment: formData.environment,
       });
+      toast.success(`L'ERP « ${formData.code.trim()} » a été mis à jour.`);
       navigate('/erps');
     } catch (err) {
       const msg = err.response?.data?.message || 'Erreur lors de la mise a jour';
-      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+      toast.error(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setSaving(false);
     }

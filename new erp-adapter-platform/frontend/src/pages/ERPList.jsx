@@ -12,16 +12,20 @@ import {
 } from '@heroicons/react/24/outline';
 import { erpRegistryService } from '../services/api';
 import { ModernSpinner } from '../components/Loaders';
+import { useToast } from '../components/ui/ToastProvider';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 const ITEMS_PER_PAGE = 5;
 
 function ERPList() {
+  const { toast } = useToast();
   const [erps, setErps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [confirmTarget, setConfirmTarget] = useState(null);
 
   const fetchErps = useCallback(async () => {
     try {
@@ -41,18 +45,19 @@ function ERPList() {
   }, [fetchErps]);
 
   const handleDelete = async (id, code) => {
-    if (!window.confirm(`Supprimer l'ERP "${code}" ?`)) return;
-    try {
-      setDeleteLoading(id);
-      await erpRegistryService.delete(id);
-      setErps((prev) => prev.filter((e) => e.id !== id));
-    } catch (err) {
-      alert('Erreur lors de la suppression');
-      console.error(err);
-    } finally {
-      setDeleteLoading(null);
-    }
-  };
+  try {
+    setDeleteLoading(id);
+    await erpRegistryService.delete(id);
+    setErps((prev) => prev.filter((e) => e.id !== id));
+    toast.success(`L'ERP « ${code} » a été supprimé.`);
+  } catch (err) {
+    toast.error('Erreur lors de la suppression de l\'ERP.');
+    console.error(err);
+  } finally {
+    setDeleteLoading(null);
+    setConfirmTarget(null);
+  }
+};
 
   const filtered = erps.filter((erp) => {
     const term = search.toLowerCase();
@@ -164,7 +169,7 @@ function ERPList() {
                           <PencilSquareIcon className="w-5 h-5" />
                         </Link>
                         <button
-                          onClick={() => handleDelete(erp.id, erp.code)}
+                          onClick={() => setConfirmTarget(erp)}
                           disabled={deleteLoading === erp.id}
                           title="Supprimer"
                           className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
@@ -210,6 +215,18 @@ function ERPList() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={Boolean(confirmTarget)}
+        title="Supprimer cet ERP"
+        message={`Voulez-vous vraiment supprimer l'ERP « ${confirmTarget?.code ?? ''} » ? Cette action est irréversible.`}
+        confirmLabel={deleteLoading ? 'Suppression...' : 'Supprimer'}
+        cancelLabel="Annuler"
+        danger
+        loading={Boolean(deleteLoading)}
+        onConfirm={() => handleDelete(confirmTarget.id, confirmTarget.code)}
+        onCancel={() => setConfirmTarget(null)}
+      />
     </div>
   );
 }
