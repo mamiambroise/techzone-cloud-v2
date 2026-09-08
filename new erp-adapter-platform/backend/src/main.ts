@@ -42,6 +42,9 @@ async function bootstrap() {
     .addTag('erp-adapter', 'Gestion des adaptateurs ERP (Mock, Dolibarr)')
     .addTag('data-runtime', 'Data Runtime Contract v1 - Query, Execution, Binding')
     .addTag('automation', 'Automation Contract v1 - Rules, Workflow, Trigger, Action')
+    .addTag('iam-auth', 'IAM · Authentification (login, refresh, logout, mot de passe)')
+    .addTag('iam-users', 'IAM · Gestion des utilisateurs (admin)')
+    .addTag('iam-sessions', "IAM · Gestion des sessions (admin)")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -18,6 +18,10 @@ import Adapters from './pages/Adapters';
 import Mapping from './pages/Mapping';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import IamOverview from './pages/iam/IamOverview';
+import IamUsers from './pages/iam/IamUsers';
+import IamSessions from './pages/iam/IamSessions';
+import IamProfile from './pages/iam/IamProfile';
 import { ThemeProvider } from './ThemeContext';
 import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
@@ -48,6 +52,10 @@ function AppContent() {
                 <Route path="/automation/history" element={<AutomationHistory />} />
                 <Route path="/erp/:moduleKey" element={<ErpModule />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/iam" element={<IamOverview />} />
+                <Route path="/iam/users" element={<IamUsers />} />
+                <Route path="/iam/sessions" element={<IamSessions />} />
+                <Route path="/iam/profile" element={<IamProfile />} />
               </Routes>
             </Layout>
           </ProtectedRoute>

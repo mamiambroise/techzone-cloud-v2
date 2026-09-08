@@ -135,6 +135,7 @@ model IamUser {
   locale              String?
   timezone            String?
   status              UserStatus @default(PENDING)
+  isAdmin             Boolean    @default(false)
   defaultTenantId     String?
   metadata            Json?
   statusChangedAt     DateTime?

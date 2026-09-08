@@ -1,0 +1,16 @@
+# Dépendances
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Environnements (secrets) - ne jamais versionner
+.env
+.env.*
+!.env.example
+
+# Système
+.DS_Store
+*.log
+npm-debug.log*

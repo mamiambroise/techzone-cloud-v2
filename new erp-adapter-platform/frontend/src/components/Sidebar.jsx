@@ -21,7 +21,11 @@ import {
   TruckIcon,
   DocumentTextIcon,
   ArchiveBoxIcon,
+  ShieldCheckIcon,
+  LinkIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
+import { useAuth } from '../auth/AuthContext';
 
 const navGroups = [
   {
@@ -76,6 +80,15 @@ const navGroups = [
     ],
   },
   {
+    label: 'IAM',
+    items: [
+      { path: '/iam', label: 'Vue d\'ensemble', icon: ShieldCheckIcon, end: true },
+      { path: '/iam/users', label: 'Utilisateurs', icon: UsersIcon },
+      { path: '/iam/sessions', label: 'Sessions', icon: LinkIcon },
+      { path: '/iam/profile', label: 'Mon profil', icon: UserCircleIcon },
+    ],
+  },
+  {
     label: 'Système',
     items: [{ path: '/settings', label: 'Paramètres', icon: Cog6ToothIcon }],
   },
@@ -83,6 +96,7 @@ const navGroups = [
 
 function Sidebar({ isOpen, onToggle }) {
   const location = useLocation();
+  const { user } = useAuth();
 
   const isActive = (item) =>
     item.end
@@ -163,11 +177,11 @@ function Sidebar({ isOpen, onToggle }) {
         <div className="shrink-0 p-4 border-t border-slate-800/60">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#3B4BA8] to-[#5469D4] flex items-center justify-center text-sm font-bold text-white">
-              A
+              {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '') || user?.username?.[0] || 'A').toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">Admin</p>
-              <p className="text-xs text-slate-400 truncate">admin@erp.local</p>
+              <p className="text-sm font-medium text-white truncate">{user?.firstName || user?.username || 'Admin'}</p>
+              <p className="text-xs text-slate-400 truncate">{user?.primaryEmail || user?.username || 'admin@erp.local'}</p>
             </div>
           </div>
         </div>

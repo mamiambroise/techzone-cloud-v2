@@ -112,6 +112,19 @@ export const iamAuthService = {
   sessions: () => api.get('/iam/auth/sessions'),
 };
 
+// === IAM Admin (utilisateurs + sessions) ===
+
+export const iamAdminService = {
+  users: (params) => api.get('/iam/users', { params }),
+  user: (id) => api.get(`/iam/users/${id}`),
+  createUser: (body) => api.post('/iam/users', body),
+  updateUserStatus: (id, body) => api.patch(`/iam/users/${id}/status`, body),
+  deleteUser: (id) => api.delete(`/iam/users/${id}`),
+  stats: () => api.get('/iam/users/stats'),
+  sessions: (params) => api.get('/iam/sessions', { params }),
+  revokeSession: (id) => api.delete(`/iam/sessions/${id}`),
+};
+
 // === ERP Registry (PostgreSQL) ===
 
 export const erpRegistryService = {

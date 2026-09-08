@@ -32,6 +32,10 @@ const pageTitles = {
   '/automation/triggers': 'Triggers',
   '/automation/conditions': 'Conditions',
   '/automation/history': 'Historique d\'automation',
+  '/iam': 'IAM · Vue d\'ensemble',
+  '/iam/users': 'IAM · Utilisateurs',
+  '/iam/sessions': 'IAM · Sessions',
+  '/iam/profile': 'IAM · Mon profil',
 };
 
 const timeAgo = (iso) => {
@@ -265,6 +269,13 @@ function Header({ onToggleSidebar }) {
                 </div>
               </div>
               <div className="py-1.5">
+                <button
+                  onClick={() => { setProfileOpen(false); navigate('/iam/profile'); }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                >
+                  <CogIcon className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                  Mon profil
+                </button>
                 <button
                   onClick={() => { setProfileOpen(false); navigate('/settings'); }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"

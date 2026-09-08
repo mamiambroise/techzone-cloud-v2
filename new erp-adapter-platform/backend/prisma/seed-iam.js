@@ -39,6 +39,7 @@ async function main() {
         lastName: 'TechCloud',
         displayName: 'Administrateur TechCloud',
         status: 'ACTIVE',
+        isAdmin: true,
         statusChangedAt: new Date(),
         statusChangedBy: 'seed',
         statusChangedReason: 'Seed initial',
@@ -48,7 +49,7 @@ async function main() {
   } else {
     await prisma.iamUser.update({
       where: { id: user.id },
-      data: { status: 'ACTIVE', statusChangedAt: new Date() },
+      data: { status: 'ACTIVE', isAdmin: true, statusChangedAt: new Date() },
     });
     console.log(`[seed] Utilisateur IAM existant activé: username=${user.username}`);
   }
