@@ -411,7 +411,9 @@
 
 @media (min-width: 769px) {
   .login-submit {
-    max-width: 13.5rem;
+    max-width: 10rem;
+    min-height: 2.25rem;
+    padding: 0.5rem 1.25rem;
   }
 }
 
