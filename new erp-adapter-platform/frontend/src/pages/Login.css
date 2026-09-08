@@ -417,6 +417,12 @@
   height: 0.875rem;
 }
 
+@media (min-width: 769px) {
+  .login-submit {
+    max-width: 13.5rem;
+  }
+}
+
 @keyframes loginFadeSlideUp {
   from {
     opacity: 0;
