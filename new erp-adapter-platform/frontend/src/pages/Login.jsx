@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { SunIcon, MoonIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../auth/AuthContext';
 import './Login.css';
 
@@ -15,10 +16,10 @@ const errorMessage = (err) => {
 };
 
 const MESSAGES = [
-  'Bonjour ! 😊',
+  'Bonjour !',
   'Bienvenue sur votre espace de travail',
   'Votre espace vous attend',
-  'Gérer votre environnement en toute sécurité',
+  'Gestion sécurisée de votre environnement',
 ];
 
 function Login() {
@@ -102,7 +103,8 @@ function Login() {
             onClick={toggleTheme}
             aria-label={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
           >
-            {isDark ? '☀️ Clair' : '🌙 Sombre'}
+            {isDark ? <SunIcon className="login-toggle-icon" /> : <MoonIcon className="login-toggle-icon" />}
+            {isDark ? 'Clair' : 'Sombre'}
           </button>
         </div>
 
@@ -265,7 +267,7 @@ function Login() {
 
             <button type="submit" className="login-submit" disabled={loading}>
               {loading ? 'Connexion...' : 'Se connecter'}
-              {!loading && <span>→</span>}
+              {!loading && <ArrowRightIcon className="login-submit-icon" />}
             </button>
             {error && (
               <div className="login-error" role="alert">
