@@ -257,6 +257,95 @@ export const purchaseService = {
   update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/purchases/${id}`, data, { params: { erp } }),
 };
 
+// === ERP Adapter - Variantes de produits ===
+
+export const productVariantService = {
+  getAll: (erp = 'DOLIBARR', productId) => api.get('/erp/product-variants', { params: { erp, productId } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/product-variants', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/product-variants/${id}`, data, { params: { erp } }),
+  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/product-variants/${id}`, { params: { erp } }),
+};
+
+// === ERP Adapter - Services ===
+
+export const serviceService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/services', { params: { erp } }),
+  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/services/${id}`, { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/services', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/services/${id}`, data, { params: { erp } }),
+  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/services/${id}`, { params: { erp } }),
+};
+
+// === ERP Adapter - Transferts de stock ===
+
+export const stockTransferService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/stock-transfers', { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/stock-transfers', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/stock-transfers/${id}`, data, { params: { erp } }),
+};
+
+// === ERP Adapter - Inventaires ===
+
+export const inventoryService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/inventories', { params: { erp } }),
+  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/inventories/${id}`, { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/inventories', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/inventories/${id}`, data, { params: { erp } }),
+};
+
+// === ERP Adapter - Alertes de stock ===
+
+export const stockAlertService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/stock-alerts', { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/stock-alerts', data, { params: { erp } }),
+};
+
+// === ERP Adapter - Retours ===
+
+export const returnService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/returns', { params: { erp } }),
+  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/returns/${id}`, { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/returns', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/returns/${id}`, data, { params: { erp } }),
+};
+
+// === ERP Adapter - Promotions ===
+
+export const promotionService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/promotions', { params: { erp } }),
+  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/promotions/${id}`, { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/promotions', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/promotions/${id}`, data, { params: { erp } }),
+  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/promotions/${id}`, { params: { erp } }),
+};
+
+// === ERP Adapter - Caisses (POS) ===
+
+export const cashRegisterService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/cash-registers', { params: { erp } }),
+  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/cash-registers/${id}`, { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/cash-registers', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/cash-registers/${id}`, data, { params: { erp } }),
+};
+
+// === ERP Adapter - Depenses ===
+
+export const expenseService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/expenses', { params: { erp } }),
+  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/expenses/${id}`, { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/expenses', data, { params: { erp } }),
+  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/expenses/${id}`, { params: { erp } }),
+};
+
+// === ERP Adapter - Reservations ===
+
+export const reservationService = {
+  getAll: (erp = 'DOLIBARR') => api.get('/erp/reservations', { params: { erp } }),
+  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/reservations/${id}`, { params: { erp } }),
+  create: (data, erp = 'DOLIBARR') => api.post('/erp/reservations', data, { params: { erp } }),
+  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/reservations/${id}`, data, { params: { erp } }),
+};
+
 // === ERP Adapter - Projets ===
 
 export const projectService = {

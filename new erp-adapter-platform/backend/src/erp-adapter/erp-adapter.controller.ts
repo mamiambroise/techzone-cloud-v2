@@ -722,6 +722,412 @@ export class ErpAdapterController {
     return { success: true, id };
   }
 
+  // === VARIANTS DE PRODUITS ===
+
+  @Get('product-variants')
+  @ApiOperation({ summary: 'Lister les variantes de produits depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiQuery({ name: 'productId', required: false, description: 'Filtrer par produit' })
+  @ApiResponse({ status: 200, description: 'Liste des variantes' })
+  async getProductVariants(@Query('erp') erpCode = 'MOCK', @Query('productId') productId?: string) {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    if (productId) return adapter.getProductVariantsByProduct(productId);
+    return adapter.getProductVariants();
+  }
+
+  @Post('product-variants')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer une variante de produit' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Variante creee' })
+  async createProductVariant(@Body() dto: CreateProductVariantDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createProductVariant(dto);
+  }
+
+  @Put('product-variants/:id')
+  @ApiOperation({ summary: 'Mettre a jour une variante de produit' })
+  @ApiParam({ name: 'id', description: 'ID de la variante' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Variante mise a jour' })
+  async updateProductVariant(@Param('id') id: string, @Body() dto: Partial<CreateProductVariantDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updateProductVariant(id, dto);
+  }
+
+  @Delete('product-variants/:id')
+  @ApiOperation({ summary: 'Supprimer une variante de produit' })
+  @ApiParam({ name: 'id', description: 'ID de la variante' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Variante supprimee' })
+  async deleteProductVariant(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    await adapter.deleteProductVariant(id);
+    return { success: true, id };
+  }
+
+  // === SERVICES ===
+
+  @Get('services')
+  @ApiOperation({ summary: 'Lister les services depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des services' })
+  async getServices(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getServices();
+  }
+
+  @Get('services/:id')
+  @ApiOperation({ summary: 'Details d un service' })
+  @ApiParam({ name: 'id', description: 'ID du service' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Service trouve' })
+  async getServiceById(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getServiceById(id);
+  }
+
+  @Post('services')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer un service' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Service cree' })
+  async createService(@Body() dto: CreateServiceDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createService(dto);
+  }
+
+  @Put('services/:id')
+  @ApiOperation({ summary: 'Mettre a jour un service' })
+  @ApiParam({ name: 'id', description: 'ID du service' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Service mis a jour' })
+  async updateService(@Param('id') id: string, @Body() dto: Partial<CreateServiceDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updateService(id, dto);
+  }
+
+  @Delete('services/:id')
+  @ApiOperation({ summary: 'Supprimer un service' })
+  @ApiParam({ name: 'id', description: 'ID du service' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Service supprime' })
+  async deleteService(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    await adapter.deleteService(id);
+    return { success: true, id };
+  }
+
+  // === TRANSFERTS DE STOCK ===
+
+  @Get('stock-transfers')
+  @ApiOperation({ summary: 'Lister les transferts de stock depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des transferts' })
+  async getStockTransfers(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getStockTransfers();
+  }
+
+  @Post('stock-transfers')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer un transfert de stock' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Transfert cree' })
+  async createStockTransfer(@Body() dto: CreateStockTransferDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createStockTransfer(dto);
+  }
+
+  @Put('stock-transfers/:id')
+  @ApiOperation({ summary: 'Mettre a jour un transfert de stock' })
+  @ApiParam({ name: 'id', description: 'ID du transfert' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Transfert mis a jour' })
+  async updateStockTransfer(@Param('id') id: string, @Body() dto: Partial<CreateStockTransferDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updateStockTransfer(id, dto);
+  }
+
+  // === INVENTAIRES ===
+
+  @Get('inventories')
+  @ApiOperation({ summary: 'Lister les inventaires depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des inventaires' })
+  async getInventories(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getInventories();
+  }
+
+  @Get('inventories/:id')
+  @ApiOperation({ summary: 'Details d un inventaire' })
+  @ApiParam({ name: 'id', description: 'ID de l inventaire' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Inventaire trouve' })
+  async getInventoryById(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getInventoryById(id);
+  }
+
+  @Post('inventories')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer un inventaire' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Inventaire cree' })
+  async createInventory(@Body() dto: CreateInventoryDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createInventory(dto);
+  }
+
+  @Put('inventories/:id')
+  @ApiOperation({ summary: 'Mettre a jour un inventaire' })
+  @ApiParam({ name: 'id', description: 'ID de l inventaire' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Inventaire mis a jour' })
+  async updateInventory(@Param('id') id: string, @Body() dto: Partial<CreateInventoryDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updateInventory(id, dto);
+  }
+
+  // === ALERTES STOCK ===
+
+  @Get('stock-alerts')
+  @ApiOperation({ summary: 'Lister les alertes de stock depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des alertes' })
+  async getStockAlerts(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getStockAlerts();
+  }
+
+  @Post('stock-alerts')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer une alerte de stock' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Alerte creee' })
+  async createStockAlert(@Body() dto: CreateStockAlertDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createStockAlert(dto);
+  }
+
+  // === RETOURS ===
+
+  @Get('returns')
+  @ApiOperation({ summary: 'Lister les retours depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des retours' })
+  async getReturns(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getReturns();
+  }
+
+  @Get('returns/:id')
+  @ApiOperation({ summary: 'Details d un retour' })
+  @ApiParam({ name: 'id', description: 'ID du retour' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Retour trouve' })
+  async getReturnById(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getReturnById(id);
+  }
+
+  @Post('returns')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer un retour' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Retour cree' })
+  async createReturn(@Body() dto: CreateReturnDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createReturn(dto);
+  }
+
+  @Put('returns/:id')
+  @ApiOperation({ summary: 'Mettre a jour un retour' })
+  @ApiParam({ name: 'id', description: 'ID du retour' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Retour mis a jour' })
+  async updateReturn(@Param('id') id: string, @Body() dto: Partial<CreateReturnDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updateReturn(id, dto);
+  }
+
+  // === PROMOTIONS ===
+
+  @Get('promotions')
+  @ApiOperation({ summary: 'Lister les promotions depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des promotions' })
+  async getPromotions(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getPromotions();
+  }
+
+  @Get('promotions/:id')
+  @ApiOperation({ summary: 'Details d une promotion' })
+  @ApiParam({ name: 'id', description: 'ID de la promotion' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Promotion trouvee' })
+  async getPromotionById(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getPromotionById(id);
+  }
+
+  @Post('promotions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer une promotion' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Promotion creee' })
+  async createPromotion(@Body() dto: CreatePromotionDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createPromotion(dto);
+  }
+
+  @Put('promotions/:id')
+  @ApiOperation({ summary: 'Mettre a jour une promotion' })
+  @ApiParam({ name: 'id', description: 'ID de la promotion' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Promotion mise a jour' })
+  async updatePromotion(@Param('id') id: string, @Body() dto: Partial<CreatePromotionDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updatePromotion(id, dto);
+  }
+
+  @Delete('promotions/:id')
+  @ApiOperation({ summary: 'Supprimer une promotion' })
+  @ApiParam({ name: 'id', description: 'ID de la promotion' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Promotion supprimee' })
+  async deletePromotion(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    await adapter.deletePromotion(id);
+    return { success: true, id };
+  }
+
+  // === CAISSES ===
+
+  @Get('cash-registers')
+  @ApiOperation({ summary: 'Lister les caisses depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des caisses' })
+  async getCashRegisters(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getCashRegisters();
+  }
+
+  @Get('cash-registers/:id')
+  @ApiOperation({ summary: 'Details d une caisse' })
+  @ApiParam({ name: 'id', description: 'ID de la caisse' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Caisse trouvee' })
+  async getCashRegisterById(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getCashRegisterById(id);
+  }
+
+  @Post('cash-registers')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer une caisse' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Caisse creee' })
+  async createCashRegister(@Body() dto: CreateCashRegisterDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createCashRegister(dto);
+  }
+
+  @Put('cash-registers/:id')
+  @ApiOperation({ summary: 'Mettre a jour une caisse' })
+  @ApiParam({ name: 'id', description: 'ID de la caisse' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Caisse mise a jour' })
+  async updateCashRegister(@Param('id') id: string, @Body() dto: Partial<CreateCashRegisterDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updateCashRegister(id, dto);
+  }
+
+  // === DEPENSES ===
+
+  @Get('expenses')
+  @ApiOperation({ summary: 'Lister les depenses depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des depenses' })
+  async getExpenses(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getExpenses();
+  }
+
+  @Get('expenses/:id')
+  @ApiOperation({ summary: 'Details d une depense' })
+  @ApiParam({ name: 'id', description: 'ID de la depense' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Depense trouvee' })
+  async getExpenseById(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getExpenseById(id);
+  }
+
+  @Post('expenses')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer une depense' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Depense creee' })
+  async createExpense(@Body() dto: CreateExpenseDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createExpense(dto);
+  }
+
+  @Delete('expenses/:id')
+  @ApiOperation({ summary: 'Supprimer une depense' })
+  @ApiParam({ name: 'id', description: 'ID de la depense' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Depense supprimee' })
+  async deleteExpense(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    await adapter.deleteExpense(id);
+    return { success: true, id };
+  }
+
+  // === RESERVATIONS ===
+
+  @Get('reservations')
+  @ApiOperation({ summary: 'Lister les reservations depuis un ERP' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des reservations' })
+  async getReservations(@Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getReservations();
+  }
+
+  @Get('reservations/:id')
+  @ApiOperation({ summary: 'Details d une reservation' })
+  @ApiParam({ name: 'id', description: 'ID de la reservation' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Reservation trouvee' })
+  async getReservationById(@Param('id') id: string, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.getReservationById(id);
+  }
+
+  @Post('reservations')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Creer une reservation' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 201, description: 'Reservation creee' })
+  async createReservation(@Body() dto: CreateReservationDto, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.createReservation(dto);
+  }
+
+  @Put('reservations/:id')
+  @ApiOperation({ summary: 'Mettre a jour une reservation' })
+  @ApiParam({ name: 'id', description: 'ID de la reservation' })
+  @ApiQuery({ name: 'erp', required: false })
+  @ApiResponse({ status: 200, description: 'Reservation mise a jour' })
+  async updateReservation(@Param('id') id: string, @Body() dto: Partial<CreateReservationDto>, @Query('erp') erpCode = 'MOCK') {
+    const adapter = this.adapterService.getAdapter(erpCode);
+    return adapter.updateReservation(id, dto);
+  }
+
   // === UTILISATEURS ===
 
   @Get('users')
