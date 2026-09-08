@@ -109,6 +109,7 @@ export const iamAuthService = {
   logoutAll: (keepCurrentSession) => api.post('/iam/auth/logout-all', { keepCurrentSession }),
   changePassword: (body) => api.post('/iam/auth/change-password', body),
   me: () => api.get('/iam/auth/me'),
+  updateProfile: (body) => api.patch('/iam/auth/profile', body),
   sessions: () => api.get('/iam/auth/sessions'),
 };
 

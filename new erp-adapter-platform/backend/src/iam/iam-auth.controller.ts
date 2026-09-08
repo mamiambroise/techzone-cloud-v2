@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { IamAuthService } from './iam-auth.service';
@@ -9,6 +9,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { LogoutAllDto } from './dto/logout-all.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('iam-auth')
 @Controller('iam/auth')
@@ -68,6 +69,12 @@ export class IamAuthController {
   async me(@CurrentUser() ctx: IamAuthContext) {
     const data = await this.authService.me(ctx);
     return { success: true, message: 'OK', data };
+  }
+
+  @Patch('profile')
+  async updateProfile(@CurrentUser() ctx: IamAuthContext, @Body() dto: UpdateProfileDto) {
+    const data = await this.authService.updateProfile(ctx, dto);
+    return { success: true, message: 'Profil mis à jour', data };
   }
 
   @Get('sessions')

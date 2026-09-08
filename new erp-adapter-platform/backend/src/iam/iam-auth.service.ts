@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { IamError } from './iam-error';
 import {
   ABSOLUTE_TIMEOUT_MS,
@@ -17,6 +18,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { IamAuthContext } from './decorators/current-user.decorator';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
@@ -52,6 +54,7 @@ export class IamAuthService {
     lastName?: string | null;
     displayName?: string | null;
     status: string;
+    isAdmin?: boolean;
   }) {
     return {
       id: user.id,
@@ -62,6 +65,7 @@ export class IamAuthService {
       lastName: user.lastName ?? null,
       displayName: user.displayName ?? null,
       status: user.status,
+      isAdmin: Boolean(user.isAdmin),
     };
   }
 
@@ -288,6 +292,39 @@ export class IamAuthService {
       where: { userId: ctx.userId },
       orderBy: { lastActivityAt: 'desc' },
     });
+  }
+
+  async updateProfile(ctx: IamAuthContext, dto: UpdateProfileDto) {
+    const user = await this.prisma.iamUser.findUnique({ where: { id: ctx.userId } });
+    if (!user) {
+      throw new IamError('Utilisateur introuvable', 404, 'USER_NOT_FOUND');
+    }
+    this.assertUserIsActive(user);
+
+    const data: Prisma.IamUserUpdateInput = {};
+    if (dto.firstName !== undefined) data.firstName = dto.firstName;
+    if (dto.lastName !== undefined) data.lastName = dto.lastName;
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.displayName !== undefined) data.displayName = dto.displayName;
+    if (dto.locale !== undefined) data.locale = dto.locale;
+    if (dto.timezone !== undefined) data.timezone = dto.timezone;
+
+    if (dto.primaryEmail !== undefined && dto.primaryEmail.trim() !== user.primaryEmail) {
+      const existing = await this.prisma.iamUser.findUnique({
+        where: { primaryEmail: dto.primaryEmail.trim() },
+      });
+      if (existing && existing.id !== user.id) {
+        throw new IamError('Cet email est déjà utilisé', 409, 'EMAIL_TAKEN');
+      }
+      data.primaryEmail = dto.primaryEmail.trim();
+    }
+
+    const updated = await this.prisma.iamUser.update({
+      where: { id: user.id },
+      data,
+    });
+
+    return { user: this.sanitizeUser(updated) };
   }
 
   // ================= Internals =================
