@@ -339,57 +339,85 @@
 
 .login-submit {
   width: 100%;
-  padding: 0.625rem 1rem;
+  padding: 0.625rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
   color: #ffffff;
   background: var(--color-primary-gradient);
   border: none;
-  border-radius: 0.625rem;
+  border-radius: 9999px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  display: flex;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.25s ease, filter 0.25s ease;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   animation: loginFadeSlideUp 0.5s ease-out 0.42s both;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 3px 10px rgba(84, 105, 212, 0.35);
+  box-shadow: 0 2px 8px rgba(84, 105, 212, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  min-height: 2.5rem;
 }
 
 .login-submit::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.18) 50%, transparent 60%);
-  transform: translateX(-100%);
-  transition: transform 0.4s ease;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.5s ease;
 }
 
 .login-submit:hover::before {
-  transform: translateX(100%);
+  transform: translateX(120%);
 }
 
 .login-submit:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(84, 105, 212, 0.45);
+  filter: brightness(1.07);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(84, 105, 212, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .login-submit:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 4px 12px rgba(84, 105, 212, 0.35);
-}
-
-.login-submit:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px var(--color-focus-ring), 0 10px 28px rgba(84, 105, 212, 0.45);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 3px 10px rgba(84, 105, 212, 0.35);
 }
 
 .login-submit:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.login-submit:disabled .login-spinner {
+  animation: loginSpinnerSpin 0.8s linear infinite;
+}
+
+.login-spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes loginSpinnerSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 769px) {
+  .login-submit {
+    max-width: 13.5rem;
+  }
+}
+
+.login-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--color-focus-ring), 0 8px 22px rgba(84, 105, 212, 0.45);
 }
 
 .login-error {
@@ -415,12 +443,6 @@
 .login-footer svg {
   width: 0.875rem;
   height: 0.875rem;
-}
-
-@media (min-width: 769px) {
-  .login-submit {
-    max-width: 13.5rem;
-  }
 }
 
 @keyframes loginFadeSlideUp {

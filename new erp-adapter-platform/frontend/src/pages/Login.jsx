@@ -266,6 +266,7 @@ function Login() {
             </div>
 
             <button type="submit" className="login-submit" disabled={loading}>
+              {loading && <span className="login-spinner" aria-hidden="true" />}
               {loading ? 'Connexion...' : 'Se connecter'}
               {!loading && <ArrowRightIcon className="login-submit-icon" />}
             </button>
