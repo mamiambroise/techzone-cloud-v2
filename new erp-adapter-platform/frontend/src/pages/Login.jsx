@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SunIcon, MoonIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../auth/AuthContext';
 import './Login.css';
 
@@ -268,7 +268,6 @@ function Login() {
             <button type="submit" className="login-submit" disabled={loading}>
               {loading && <span className="login-spinner" aria-hidden="true" />}
               {loading ? 'Connexion...' : 'Se connecter'}
-              {!loading && <ArrowRightIcon className="login-submit-icon" />}
             </button>
             {error && (
               <div className="login-error" role="alert">
