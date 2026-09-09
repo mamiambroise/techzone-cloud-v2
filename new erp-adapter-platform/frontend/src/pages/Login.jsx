@@ -311,19 +311,17 @@ function Login() {
               </a>
             </div>
 
-            <button type="submit" className="login-submit" disabled={loading}>
+            <button type="submit" className={`login-submit${loading ? ' loading' : ''}`} disabled={loading}>
               {loading ? (
-                <>
-                  <span className="login-loader" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <circle className="login-loader-track" cx="12" cy="12" r="10" />
-                      <circle className="login-loader-bar" cx="12" cy="12" r="10" />
-                    </svg>
-                  </span>
-                  Connexion
-                  <span className="login-loader-dots" aria-hidden="true"><i /><i /><i /></span>
-                </>
-              ) : 'Se connecter'}
+                <span className="login-loader" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle className="login-loader-track" cx="12" cy="12" r="10" />
+                    <circle className="login-loader-bar" cx="12" cy="12" r="10" />
+                  </svg>
+                </span>
+              ) : (
+                <span className="login-btn-label">Se connecter</span>
+              )}
             </button>
             {error && (
               <div className="login-error" role="alert">
@@ -392,16 +390,17 @@ function Login() {
                     />
                   </div>
                   {forgotError && <div className="login-error" role="alert">{forgotError}</div>}
-                  <button type="submit" className="login-submit" disabled={forgotLoading}>
-                    {forgotLoading && (
+                  <button type="submit" className={`login-submit${forgotLoading ? ' loading' : ''}`} disabled={forgotLoading}>
+                    {forgotLoading ? (
                       <span className="login-loader" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                           <circle className="login-loader-track" cx="12" cy="12" r="10" />
                           <circle className="login-loader-bar" cx="12" cy="12" r="10" />
                         </svg>
                       </span>
+                    ) : (
+                      <span className="login-btn-label">Envoyer le lien</span>
                     )}
-                    {forgotLoading ? 'Envoi...' : 'Envoyer le lien'}
                   </button>
                 </form>
               </>
