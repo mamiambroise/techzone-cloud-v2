@@ -96,10 +96,24 @@ async function main() {
   await prisma.roleAssignment.create({
     data: { roleId: adminRole.id, userId: user.id, tenantId: tenant.id },
   });
+  const billingPermissions = await Promise.all(
+  ['billing.plans.manage', 'billing.subscriptions.manage', 'billing.invoices.manage'].map((code) =>
+    prisma.permission.create({ data: { code, resource: code.split('.')[1], action: 'manage', name: code } })
+  )
+);
+
+await prisma.rolePermission.createMany({
+  data: billingPermissions.map((p) => ({ roleId: adminRole.id, permissionId: p.id })),
+});
+const paymentPermission = await prisma.permission.create({
+  data: { code: 'billing.payments.manage', resource: 'payments', action: 'manage', name: 'billing.payments.manage' },
+});
+await prisma.rolePermission.create({ data: { roleId: adminRole.id, permissionId: paymentPermission.id } });
 
   console.log('✅ Seed terminé');
   console.log({ tenantId: tenant.id, organizationId: organization.id, userId: user.id });
 }
+
 
 main()
   .catch((err) => {
