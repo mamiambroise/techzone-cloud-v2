@@ -395,29 +395,112 @@
 }
 
 .login-submit:disabled {
-  opacity: 0.85;
+  opacity: 0.9;
   cursor: not-allowed;
-  animation: loginFadeSlideUp 0.5s ease-out 0.42s both, loginSubmitPulse 1.2s ease-in-out infinite;
+  animation: loginFadeSlideUp 0.5s ease-out 0.42s both, loginSubmitPulse 1.6s ease-in-out infinite;
 }
 
-.login-submit:disabled .login-spinner {
-  animation: loginSpinnerSpin 0.7s linear infinite;
-  width: 1.125rem;
-  height: 1.125rem;
-  border-width: 2.5px;
+.login-submit:disabled::before,
+.login-submit:disabled::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
-.login-spinner {
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
-  display: inline-block;
+.login-submit:disabled::after {
+  background: linear-gradient(120deg, transparent 25%, rgba(255, 255, 255, 0.4) 50%, transparent 75%);
+  transform: translateX(-150%);
+  animation: loginSheen 1.4s ease-in-out infinite;
+}
+
+/* Loader moderne: arc SVG lisse */
+.login-loader {
+  width: 1.15rem;
+  height: 1.15rem;
   flex-shrink: 0;
+  display: inline-flex;
 }
 
-@keyframes loginSpinnerSpin {
+.login-loader svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: loginLoaderSpin 0.9s linear infinite;
+}
+
+.login-loader-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 2.5;
+}
+
+.login-loader-bar {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: loginLoaderDash 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.login-loader-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: baseline;
+}
+
+.login-loader-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: inline-block;
+  animation: loginLoaderDot 1s ease-in-out infinite;
+}
+
+.login-loader-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.login-loader-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes loginLoaderSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes loginLoaderDash {
+  0% {
+    stroke-dashoffset: 40;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -40;
+  }
+}
+
+@keyframes loginLoaderDot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+
+@keyframes loginSheen {
+  to {
+    transform: translateX(150%);
   }
 }
 
@@ -426,7 +509,7 @@
     box-shadow: 0 2px 8px rgba(11, 19, 43, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
   50% {
-    box-shadow: 0 2px 14px rgba(11, 19, 43, 0.5), 0 0 0 6px rgba(84, 105, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    box-shadow: 0 2px 16px rgba(84, 105, 212, 0.4), 0 0 0 5px rgba(84, 105, 212, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 }
 

@@ -163,7 +163,14 @@ function ResetPassword() {
                 </div>
 
                 <button type="submit" className="login-submit" disabled={loading}>
-                  {loading && <span className="login-spinner" aria-hidden="true" />}
+                  {loading && (
+                    <span className="login-loader" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <circle className="login-loader-track" cx="12" cy="12" r="10" />
+                        <circle className="login-loader-bar" cx="12" cy="12" r="10" />
+                      </svg>
+                    </span>
+                  )}
                   {loading ? 'Réinitialisation...' : 'Réinitialiser le mot de passe'}
                 </button>
                 {error && <div className="login-error" role="alert">{error}</div>}
