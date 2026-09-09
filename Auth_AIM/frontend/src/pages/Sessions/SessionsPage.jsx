@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { sessions as initialSessions, sessionStatusConfig, sessionsStats } from '../../data/mock';
 import './SessionsPage.css';
 
 function getDeviceIcon(device) {
-  const lower = device.toLowerCase();
+  const lower = String(device || '').toLowerCase();
   if (lower.includes('iphone') || lower.includes('ipad') || lower.includes('android')) {
     return (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,13 +59,67 @@ function StatIcon({ name }) {
   return null;
 }
 
+function ActionMenu({ session, onRevoke, onView }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useMemo(() => {
+    if (!open) return undefined;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="sessions-action-menu" ref={ref}>
+      <button
+        type="button"
+        className="sessions-action-btn"
+        title="Actions"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="19" cy="12" r="1" />
+          <circle cx="5" cy="12" r="1" />
+        </svg>
+      </button>
+      {open && (
+        <div className="sessions-action-dropdown" role="menu">
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); onView(session); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Voir détails
+          </button>
+          {!session.isCurrent && session.status !== 'REVOKED' && (
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); onRevoke(session); }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a2 2 0 012-2h2a2 2 0 012 2v2" />
+              </svg>
+              Révoquer
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SessionsPage() {
   const [sessions, setSessions] = useState(() => initialSessions);
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [revokeAllOpen, setRevokeAllOpen] = useState(false);
 
   const revocableSessions = useMemo(
-    () => sessions.filter((s) => !s.isCurrent),
+    () => sessions.filter((s) => !s.isCurrent && s.status !== 'REVOKED'),
     [sessions]
   );
 
@@ -90,6 +144,10 @@ function SessionsPage() {
       )
     );
     setRevokeAllOpen(false);
+  };
+
+  const handleView = (session) => {
+    alert(`Détails de la session :\nUtilisateur : Utilisateur #${session.userId}\nAppareil : ${session.device}\nIP : ${session.ip}\nLocalisation : ${session.location}\nDernière activité : ${session.lastActiveAt}\nStatut : ${sessionStatusConfig[session.status]?.label || session.status}`);
   };
 
   return (
@@ -196,14 +254,11 @@ function SessionsPage() {
                   </td>
                   <td>
                     <div className="sessions-actions-cell">
-                      <button
-                        type="button"
-                        className="sessions-revoke-btn"
-                        disabled={session.isCurrent || session.status === 'REVOKED'}
-                        onClick={() => handleRevoke(session)}
-                      >
-                        Révoquer
-                      </button>
+                      <ActionMenu
+                        session={session}
+                        onRevoke={handleRevoke}
+                        onView={handleView}
+                      />
                     </div>
                   </td>
                 </tr>

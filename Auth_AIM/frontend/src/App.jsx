@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { IamProvider } from './context/IamContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminLayout from './layouts/AdminLayout';
 import LoginPage from './pages/LoginPage';
@@ -17,6 +18,12 @@ import SessionsPage from './pages/Sessions/SessionsPage';
 import ContextsPage from './pages/Contexts/ContextsPage';
 import InvitationPage from './pages/Invitation/InvitationPage';
 import IamOverviewPage from './pages/IamOverview/IamOverviewPage';
+import ObservabilityOverview from './pages/Observability/ObservabilityOverview';
+import LogsPage from './pages/Observability/LogsPage';
+import AuditPage from './pages/Observability/AuditPage';
+import SecurityEventsPage from './pages/Observability/SecurityEventsPage';
+import MonitoringPage from './pages/Observability/MonitoringPage';
+import AlertManagerPage from './pages/Observability/AlertManagerPage';
 
 function AppRoutes() {
   return (
@@ -46,6 +53,12 @@ function AppRoutes() {
         <Route path="/sessions" element={<SessionsPage />} />
         <Route path="/contexts" element={<ContextsPage />} />
         <Route path="/audit" element={<Placeholder title="Audit & Logs" />} />
+        <Route path="/observability" element={<ObservabilityOverview />} />
+        <Route path="/observability/logs" element={<LogsPage />} />
+        <Route path="/observability/audit" element={<AuditPage />} />
+        <Route path="/observability/security-events" element={<SecurityEventsPage />} />
+        <Route path="/observability/monitoring" element={<MonitoringPage />} />
+        <Route path="/observability/alerts" element={<AlertManagerPage />} />
         <Route path="/erps" element={<Placeholder title="ERP Registry" />} />
         <Route path="/mapping" element={<Placeholder title="Mapping" />} />
         <Route path="/adapters" element={<Placeholder title="Adapters" />} />
@@ -62,7 +75,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <IamProvider>
+          <AppRoutes />
+        </IamProvider>
       </AuthProvider>
     </Router>
   );

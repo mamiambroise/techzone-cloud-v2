@@ -267,6 +267,66 @@
   filter: brightness(1.08);
 }
 
+.context-action-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.context-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.context-action-btn:hover {
+  background-color: var(--color-table-header);
+  color: var(--color-text);
+}
+
+.context-action-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 180px;
+  padding: 0.25rem;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--color-dropdown-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.context-action-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.context-action-dropdown button:hover {
+  background-color: var(--color-table-header);
+}
+
 @media (max-width: 1280px) {
   .context-current-grid {
     grid-template-columns: repeat(2, 1fr);

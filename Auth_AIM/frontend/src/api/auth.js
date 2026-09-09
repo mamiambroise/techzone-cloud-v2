@@ -1,4 +1,3 @@
-const API_BASE = '/api/iam/auth';
 const SESSION_KEY = 'iam_auth_session';
 
 function generateDeviceFingerprint() {
@@ -25,7 +24,7 @@ export function getDeviceFingerprint() {
 }
 
 async function request(path, options = {}) {
-  const url = `${API_BASE}${path}`;
+  const url = `/api/iam/auth${path.startsWith('/') ? path : `/${path}`}`;
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -146,6 +145,56 @@ export async function logout() {
   }
 }
 
+export async function logoutAll() {
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (raw) {
+    try {
+      const sessionData = JSON.parse(raw);
+      if (sessionData.session?.id) {
+        await request('/logout-all', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sessionData.accessToken}`,
+          },
+          body: JSON.stringify({ keepCurrentSession: false }),
+        });
+      }
+    } catch {
+      // ignore logout-all errors
+    }
+  }
+
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // ignore storage errors
+  }
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (!raw) {
+    throw new Error('Session expirée');
+  }
+
+  let sessionData;
+  try {
+    sessionData = JSON.parse(raw);
+  } catch {
+    throw new Error('Session invalide');
+  }
+
+  const result = await request('/change-password', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionData.accessToken}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  return result;
+}
+
 export async function getSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -168,4 +217,4 @@ export async function verifyMfaChallenge(challengeToken, mfaMethodId, code) {
   });
 }
 
-export default { login, logout, getSession, refreshToken, verifyMfaChallenge };
+export default { login, logout, getSession, refreshToken, verifyMfaChallenge, logoutAll, changePassword };

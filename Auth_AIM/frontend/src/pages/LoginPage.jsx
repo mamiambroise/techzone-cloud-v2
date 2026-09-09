@@ -270,6 +270,8 @@ function LoginPage() {
                 {error}
               </div>
             )}
+
+           
           </form>
 
           <div className="login-footer">

@@ -56,9 +56,12 @@ const menuSections = [
       {
         title: 'Observability & Security',
         items: [
-          { path: '/obs/overview', label: 'Vue d\'ensemble', disabled: true },
-          { path: '/obs/logs', label: 'Logs', disabled: true },
-          { path: '/obs/metrics', label: 'Métriques', disabled: true },
+          { path: '/observability', label: 'Vue d\'ensemble' },
+          { path: '/observability/logs', label: 'Logs' },
+          { path: '/observability/audit', label: 'Audit' },
+          { path: '/observability/security-events', label: 'Security Events' },
+          { path: '/observability/monitoring', label: 'Monitoring' },
+          { path: '/observability/alerts', label: 'Alert Manager' },
         ],
       },
     ],
@@ -317,7 +320,7 @@ function Sidebar({ isOpen, onToggle }) {
 
   const isActive = (path) => {
     if (path === '/dashboard') return location.pathname === '/dashboard';
-    return location.pathname.startsWith(path);
+    return location.pathname === path;
   };
 
   return (

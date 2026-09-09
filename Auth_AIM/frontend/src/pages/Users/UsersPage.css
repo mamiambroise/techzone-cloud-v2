@@ -848,3 +848,20 @@
     gap: 0.5rem;
   }
 }
+
+.users-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.users-error {
+  text-align: center;
+  padding: 1rem;
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+}

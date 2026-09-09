@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roleColors, statusConfig, identityTypeLabels, roleStats, connections24h, topUsers } from '../../data/mock';
-import * as usersService from '../../services/usersMockService';
+import * as usersService from '../../services/usersService';
 import UserDetailPanel from '../../components/UserDetailPanel';
 import DonutChart from '../../components/DonutChart';
 import LineChart from '../../components/LineChart';
@@ -344,7 +344,9 @@ function ActionMenu({ user, onView, onEdit, onToggleStatus, onDelete }) {
 }
 
 function UsersPage() {
-  const [users, setUsers] = useState(() => usersService.listUsers());
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('Tous');
   const [statusFilter, setStatusFilter] = useState('Tous');
@@ -356,10 +358,37 @@ function UsersPage() {
   const [editTarget, setEditTarget] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await usersService.listUsers();
+        if (!cancelled) setUsers(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setUsers([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
   const syncSelection = (list) => {
     if (!selectedUser) return;
     const refreshed = list.find((u) => u.id === selectedUser.id) || null;
     setSelectedUser(refreshed);
+  };
+
+  const refresh = async () => {
+    try {
+      const data = await usersService.listUsers();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch {
+      // keep current users on refresh error
+    }
   };
 
   const filtered = useMemo(() => {
@@ -388,36 +417,37 @@ function UsersPage() {
     setSelectedUser(user);
   };
 
-  const handleCreate = (payload) => {
-    const created = usersService.createUser(payload);
-    setUsers(usersService.listUsers());
+  const handleCreate = async (payload) => {
+    const created = await usersService.createUser(payload);
+    const next = await usersService.listUsers();
+    setUsers(Array.isArray(next) ? next : []);
     setCreateOpen(false);
     setSelectedUser(created);
     setPage(1);
   };
 
-  const handleSave = (payload) => {
-    usersService.updateUser(editTarget.id, payload);
-    const next = usersService.listUsers();
-    setUsers(next);
+  const handleSave = async (payload) => {
+    await usersService.updateUser(editTarget.id, payload);
+    const next = await usersService.listUsers();
+    setUsers(Array.isArray(next) ? next : []);
     syncSelection(next);
     setEditTarget(null);
   };
 
-  const handleToggleStatus = (user) => {
+  const handleToggleStatus = async (user) => {
     const nextStatus = user.status === 'active' ? 'suspended' : 'active';
-    usersService.setUserStatus(user.id, nextStatus);
-    const next = usersService.listUsers();
-    setUsers(next);
+    await usersService.setUserStatus(user.id, nextStatus);
+    const next = await usersService.listUsers();
+    setUsers(Array.isArray(next) ? next : []);
     syncSelection(next);
   };
 
-  const handleDelete = (user) => {
+  const handleDelete = async (user) => {
     const ok = window.confirm(`Supprimer définitivement ${user.firstName} ${user.lastName} ?`);
     if (!ok) return;
-    usersService.deleteUser(user.id);
-    const next = usersService.listUsers();
-    setUsers(next);
+    await usersService.deleteUser(user.id);
+    const next = await usersService.listUsers();
+    setUsers(Array.isArray(next) ? next : []);
     if (selectedUser?.id === user.id) {
       setSelectedUser(null);
       navigate('/users');
@@ -463,7 +493,14 @@ function UsersPage() {
         </div>
       </div>
 
-      <div className="users-stats">
+      {loading && (
+        <div className="users-loading">Chargement des utilisateurs…</div>
+      )}
+      {error && (
+        <div className="users-error" role="alert">{error}</div>
+      )}
+      {!loading && !error && (
+        <div className="users-stats">
         {stats.map((stat) => (
           <div key={stat.label} className="users-stat-card">
             <div className="users-stat-icon" style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
@@ -476,7 +513,8 @@ function UsersPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       <div className="users-toolbar">
         <div className="users-toolbar-left">

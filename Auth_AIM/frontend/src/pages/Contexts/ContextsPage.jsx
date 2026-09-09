@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { memberships, tenants, organisations } from '../../data/mock';
 import './ContextsPage.css';
 
@@ -12,6 +12,56 @@ function getTenantOrg(tenantId) {
   if (!tenant) return null;
   const org = organisations.find((o) => o.id === tenant.organisationId);
   return { tenant, org };
+}
+
+function ActionMenu({ tenant, isCurrent, onSwitch, onView }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="ctx-action-menu" ref={ref}>
+      <button
+        type="button"
+        className="ctx-action-btn"
+        title="Actions"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="19" cy="12" r="1" />
+          <circle cx="5" cy="12" r="1" />
+        </svg>
+      </button>
+      {open && (
+        <div className="ctx-action-dropdown" role="menu">
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); onView(tenant); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Voir
+          </button>
+          {!isCurrent && (
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); onSwitch(tenant.id); }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+              </svg>
+              Basculer vers ce tenant
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ContextsPage() {
@@ -34,6 +84,10 @@ function ContextsPage() {
 
   const handleSwitch = (tenantId) => {
     setCurrentTenantId(tenantId);
+  };
+
+  const handleView = (tenant) => {
+    alert(`Détails du tenant : ${tenant.name}\nOrganisation : ${organisations.find(o => o.id === tenant.organisationId)?.name || '—'}\nRôle : ${memberships.find(m => m.tenantId === tenant.id && m.userId === CURRENT_USER_ID)?.role || '—'}`);
   };
 
   return (
@@ -113,6 +167,12 @@ function ContextsPage() {
                   {isCurrent && (
                     <span className="context-tenant-current-badge">Actuel</span>
                   )}
+                  <ActionMenu
+                    tenant={info.tenant}
+                    isCurrent={isCurrent}
+                    onSwitch={handleSwitch}
+                    onView={handleView}
+                  />
                 </div>
                 <div className="context-tenant-meta">
                   <span className="context-tenant-role">{membership.role}</span>
