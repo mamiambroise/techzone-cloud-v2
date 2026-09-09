@@ -12,7 +12,7 @@ export class MockIntegrationProvider implements IntegrationProvider {
     private readonly idempotencyService: IdempotencyService,
   ) {}
 
-  async connect(config: Record<string, unknown>): Promise<void> {
+  async connect(_config: Record<string, unknown>): Promise<void> {
     // Mock connection: no external system is contacted.
   }
 
