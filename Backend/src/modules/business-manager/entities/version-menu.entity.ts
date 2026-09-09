@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+@Entity({ name: 'version_menus' }) @Index(['applicationVersionId', 'menuId'], { unique: true })
+export class VersionMenu { @PrimaryGeneratedColumn('uuid') id: string; @Column() applicationVersionId: string; @Column() menuId: string; @Column({ default: true }) enabled: boolean; @Column({ type: 'json', nullable: true }) configuration?: Record<string, unknown>; @Column({ nullable: true }) createdBy?: string; @CreateDateColumn({ type: 'timestamp with time zone' }) createdAt: Date; @UpdateDateColumn({ type: 'timestamp with time zone' }) updatedAt: Date; @Column({ default: 1 }) version: number; }

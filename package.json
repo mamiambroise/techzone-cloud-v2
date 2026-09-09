@@ -1,0 +1,20 @@
+{
+    "name": "business-manager",
+    "private": true,
+    "scripts": {
+        "start": "npm --prefix Backend run start",
+        "start:dev": "npm --prefix Backend run start:dev",
+        "start:debug": "npm --prefix Backend run start:debug",
+        "build": "npm --prefix Backend run build",
+        "test": "npm --prefix Backend run test",
+        "test:e2e": "npm --prefix Backend run test:e2e",
+        "seed": "npm --prefix Backend run seed",
+        "dev:backend": "npm --prefix Backend run start:dev",
+        "dev:frontend": "npm --prefix Frontend run dev",
+        "dev": "concurrently -k -n backend,frontend -c blue,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
+        "install:all": "npm install && npm --prefix Backend install && npm --prefix Frontend install"
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.0"
+    }
+}

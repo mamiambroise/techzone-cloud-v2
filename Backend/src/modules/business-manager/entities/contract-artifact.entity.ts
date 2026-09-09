@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+@Entity({ name: 'bm_contract_artifacts' }) @Index(['applicationVersionId', 'contractType', 'contentHash'], { unique: true })
+export class ContractArtifact { @PrimaryGeneratedColumn('uuid') id: string; @Column() applicationId: string; @Column() applicationVersionId: string; @Column() contractType: string; @Column({ default: '1.0.0' }) contractVersion: string; @Column({ default: 1 }) schemaVersion: number; @Column({ default: 1 }) revision: number; @Column() contentHash: string; @Column({ type: 'json' }) content: unknown; @Column({ default: 'VALID' }) status: string; @CreateDateColumn({ type: 'timestamp with time zone' }) generatedAt: Date; }

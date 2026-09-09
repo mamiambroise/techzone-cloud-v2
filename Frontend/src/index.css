@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+  
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom sleek scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.6);
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* =========================================================================
+   Techzone IT Solution — Animated Stripe-Style Login Background & Grid Styles
+   ========================================================================= */
+
+.tz-login-root {
+  background: #ffffff;
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.tz-loginbackground {
+  min-height: 692px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tz-loginbackground-gridContainer {
+  display: grid;
+  grid-template-columns: [start] 1fr [left-gutter] repeat(16, 86.6px) [left-gutter] 1fr [end];
+  grid-template-rows: [top] 1fr [top-gutter] repeat(8, 64px) [bottom-gutter] 1fr [bottom];
+  justify-content: center;
+  margin: 0 -2%;
+  transform: rotate(-12deg) skew(-12deg);
+}
+
+.tz-box-root {
+  box-sizing: border-box;
+}
+
+.tz-box-divider--light-all-2 {
+  box-shadow: inset 0 0 0 2px #e3e8ee;
+}
+
+.tz-box-background--blue {
+  background-color: #5469d4;
+}
+
+.tz-box-background--white {
+  background-color: #ffffff;
+}
+
+.tz-box-background--blue800 {
+  background-color: #212d63;
+}
+
+.tz-box-background--gray100 {
+  background-color: #e3e8ee;
+}
+
+.tz-box-background--cyan200 {
+  background-color: #7fd3ed;
+}
+
+.tz-animationRightLeft {
+  animation: tzAnimationRightLeft 4s ease-in-out infinite;
+}
+
+.tz-animationLeftRight {
+  animation: tzAnimationLeftRight 4s ease-in-out infinite;
+}
+
+.tz-tans3s {
+  animation: tzAnimationLeftRight 6s ease-in-out infinite;
+}
+
+.tz-tans4s {
+  animation: tzAnimationRightLeft 7s ease-in-out infinite;
+}
+
+@keyframes tzAnimationLeftRight {
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(120px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+@keyframes tzAnimationRightLeft {
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(-120px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+.tz-formbg {
+  margin: 0px auto;
+  width: 100%;
+  max-width: 448px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: rgba(60, 66, 87, 0.12) 0px 7px 14px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px 0px;
+}
+
+.tz-field input[type="text"],
+.tz-field input[type="email"],
+.tz-field input[type="password"] {
+  font-size: 15px;
+  line-height: 24px;
+  padding: 10px 16px;
+  width: 100%;
+  min-height: 44px;
+  border: unset;
+  border-radius: 6px;
+  outline-color: rgba(84, 105, 212, 0.5);
+  background-color: #ffffff;
+  color: #1a1f36;
+  box-shadow: rgba(60, 66, 87, 0.16) 0px 0px 0px 1px;
+  transition: all 0.15s ease-in-out;
+}
+
+.tz-field input[type="text"]:focus,
+.tz-field input[type="email"]:focus,
+.tz-field input[type="password"]:focus {
+  box-shadow: rgba(84, 105, 212, 0.5) 0px 0px 0px 2px, rgba(60, 66, 87, 0.08) 0px 2px 5px 0px;
+  outline: none;
+}
+
+.tz-submit-btn {
+  background-color: #5469d4;
+  box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 1px 0px, #5469d4 0px 0px 0px 1px, rgba(60, 66, 87, 0.08) 0px 2px 5px 0px;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tz-submit-btn:hover:not(:disabled) {
+  background-color: #4355b9;
+}
+
+.tz-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  filter: saturate(0.85);
+}
+

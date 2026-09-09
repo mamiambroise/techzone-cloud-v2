@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+@Entity({ name: 'bm_validation_campaigns' }) @Index(['applicationVersionId', 'createdAt'])
+export class ValidationCampaign { @PrimaryGeneratedColumn('uuid') id: string; @Column() applicationId: string; @Column() applicationVersionId: string; @Column() mode: string; @Column({ default: 'PENDING' }) status: string; @Column({ type: 'json', nullable: true }) summary?: unknown; @Column({ nullable: true }) createdBy?: string; @CreateDateColumn({ type: 'timestamp with time zone' }) createdAt: Date; @UpdateDateColumn({ type: 'timestamp with time zone' }) updatedAt: Date; }
