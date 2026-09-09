@@ -52,7 +52,7 @@ import { computeSnapshotHash } from '../lib/snapshotService';
 import { ValidationEngine } from '../lib/validationEngine';
 import { isVersionEditable } from '../lib/versionGuard';
 import { terminateSession } from '../lib/authService';
-import { api, setSession, setServerSession, clearAccessToken } from '../lib/api';
+import { api, getAccessToken, setSession, setServerSession, clearAccessToken } from '../lib/api';
 
 const AppContext = createContext(null);
 
@@ -133,12 +133,7 @@ export function AppProvider({ children }) {
 
   // IAM & Context
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    try {
-      const stored = localStorage.getItem('bm_is_authenticated');
-      return stored !== null ? stored === 'true' : true;
-    } catch {
-      return true;
-    }
+    return Boolean(getAccessToken());
   });
   const [userEmail, setUserEmail] = useState(() => {
     try {
@@ -3830,7 +3825,7 @@ export function AppProvider({ children }) {
       if (Array.isArray(backendIntegrations)) setIntegrations(backendIntegrations);
 
       const packsResponse = await api.listPacks();
-      const backendPacks = packsResponse?.data ?? packsResponse ?? [];
+      const backendPacks = packsResponse?.items || packsResponse?.data?.items || packsResponse?.data || packsResponse || [];
       if (Array.isArray(backendPacks)) {
         const hydratedPacks = backendPacks.map((pack) => ({ ...pack, ...(pack.metadata || {}) }));
         const versionResults = await Promise.allSettled(hydratedPacks.map((pack) => api.listPackVersions(pack.id)));
@@ -3845,7 +3840,7 @@ export function AppProvider({ children }) {
         setPackFeatures(hydratedVersions.flatMap((version) => version.features || []).map((item) => ({ ...item })));
         setPackCapabilities(hydratedVersions.flatMap((version) => version.capabilities || []).map((item) => ({ ...item })));
         setPackDependencies(hydratedVersions.flatMap((version) => version.dependencies || []).map((item) => ({ ...item })));
-        setPackRules(hydratedVersions.flatMap((version) => version.rules || []).map((item) => ({ ...item })));
+        setPackRules(hydratedVersions.flatMap((version) => version.activationRules || []).map((item) => ({ ...item })));
         setSelectedPackId(hydratedPacks[0]?.id || null);
         setSelectedPackVersionId(hydratedVersions[0]?.id || null);
         packHydratedRef.current = true;
@@ -3869,12 +3864,12 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!packHydratedRef.current || packVersions.length === 0) return;
     for (const version of packVersions) {
-      void api.replacePackVersionState(version.id, {
+      void api.updatePackVersion(version.id, {
         modules: packModules.filter((item) => item.packVersionId === version.id),
         features: packFeatures.filter((item) => item.packVersionId === version.id),
         capabilities: packCapabilities.filter((item) => item.packVersionId === version.id),
         dependencies: packDependencies.filter((item) => item.sourcePackVersionId === version.id || item.packVersionId === version.id),
-        rules: packRules.filter((item) => item.packVersionId === version.id),
+        activationRules: packRules.filter((item) => item.packVersionId === version.id),
       }).catch((error) => console.warn('[AppContext] pack persistence failed:', error?.message || error));
     }
   }, [packVersions, packModules, packFeatures, packCapabilities, packDependencies, packRules]);
