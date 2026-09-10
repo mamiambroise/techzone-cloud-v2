@@ -1342,3 +1342,16 @@ model PlatformMaintenance {
   @@index([startsAt])
   @@index([environment])
 }
+model Feature {
+  code String @id
+  name String
+  description String?
+  status String @default("ACTIVE")
+  metered Boolean @default(false)
+  quotaCode String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}

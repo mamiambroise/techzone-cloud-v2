@@ -1,6 +1,6 @@
 const { prisma } = require('../config/database');
 const { AppError } = require('../utils/response');
-
+const featureService = require('./feature.service');
 async function createPlan({ code, name, description, billingInterval, price, currency, trialDays, metadata }) {
   const existing = await prisma.plan.findUnique({ where: { code } });
   if (existing) {
@@ -102,6 +102,7 @@ async function addEntitlement({ planId, featureCode, valueType, enabled, integer
   if (plan.status === 'ACTIVE') {
     throw new AppError('Impossible d\'ajouter une entitlement à un plan déjà actif', 409, 'PLAN_ACTIVE_IMMUTABLE');
   }
+  await featureService.assertFeatureUsable(featureCode);
   return prisma.planEntitlement.create({
     data: { planId, featureCode, valueType, enabled, integerValue, decimalValue, stringValue, jsonValue },
   });

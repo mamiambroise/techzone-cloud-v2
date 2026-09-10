@@ -9,7 +9,9 @@ const errorMiddleware = require('./middlewares/error.middleware');
 const app = express();
 
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => { req.rawBody = buf; },
+}));
 
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));

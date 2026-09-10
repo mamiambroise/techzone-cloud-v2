@@ -268,7 +268,17 @@ async function expire(subscriptionId) {
   await logSubscriptionEvent({ tenantId: subscription.tenantId, subscriptionId, eventType: 'SUBSCRIPTION_EXPIRED', payload: {} });
   return updated;
 }
-
+async function findActiveSubscriptionForTenant(tenantId, applicationCode) {
+  return prisma.subscription.findFirst({
+    where: {
+      tenantId,
+      status: { in: ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED'] },
+      ...(applicationCode ? { applicationCode } : {}),
+    },
+    include: { plan: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
 module.exports = {
   getSubscriptionById,
   listSubscriptionsForTenant,
@@ -281,4 +291,5 @@ module.exports = {
   renew,
   markPastDue,
   expire,
+  findActiveSubscriptionForTenant,
 };
