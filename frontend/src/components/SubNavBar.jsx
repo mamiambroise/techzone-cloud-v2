@@ -32,37 +32,37 @@ import {
 } from 'lucide-react';
 
 const PF_MAIN_TABS = [
-  { id: 'platform-contract', code: 'PF-00', label: 'Socle & Contrat v1', icon: Lock, aliases: ['platform-contract', 'contract-v1'] },
-  { id: 'cockpit', code: 'PF-01', label: 'Platform Cockpit', icon: LayoutDashboard, aliases: ['cockpit', 'overview'] },
-  { id: 'applications', code: 'PF-02', label: 'Applications & Versions', icon: Boxes, aliases: ['applications', 'workspace', 'versions', 'validation', 'publication'] },
-  { id: 'environments', code: 'PF-03', label: 'Environnements', icon: Server, aliases: ['environments'] },
-  { id: 'contracts', code: 'PF-04', label: 'Registre Contrats', icon: FileCode2, aliases: ['contracts'] },
-  { id: 'config', code: 'PF-05', label: 'Configuration Manager', icon: Sliders, aliases: ['config'] },
-  { id: 'snapshots', code: 'PF-06', label: 'Snapshots & Historique', icon: Camera, aliases: ['snapshots', 'history'] },
-  { id: 'specifications', code: 'PF-DOC', label: 'Index CDC & Specs', icon: BookOpen, aliases: ['specifications'] },
+  { id: 'platform-contract', label: 'Socle & Contrat v1', icon: Lock, aliases: ['platform-contract', 'contract-v1'] },
+  { id: 'cockpit', label: 'Platform Cockpit', icon: LayoutDashboard, aliases: ['cockpit', 'overview'] },
+  { id: 'applications', label: 'Applications & Versions', icon: Boxes, aliases: ['applications', 'workspace', 'versions', 'validation', 'publication'] },
+  { id: 'environments', label: 'Environnements', icon: Server, aliases: ['environments'] },
+  { id: 'contracts', label: 'Registre Contrats', icon: FileCode2, aliases: ['contracts'] },
+  { id: 'config', label: 'Configuration Manager', icon: Sliders, aliases: ['config'] },
+  { id: 'snapshots', label: 'Snapshots & Historique', icon: Camera, aliases: ['snapshots', 'history'] },
+  { id: 'specifications', label: 'Index CDC & Specs', icon: BookOpen, aliases: ['specifications'] },
 ];
 
 const API_MAIN_TABS = [
-  { id: 'contracts-v1', code: 'API-00', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck, integrationTab: 'contracts-v1' },
-  { id: 'cockpit', code: 'API-01', label: 'Integration Cockpit', icon: LayoutDashboard, integrationTab: 'cockpit' },
-  { id: 'connectors', code: 'API-02', label: 'Connecteurs', icon: Network, integrationTab: 'connectors' },
-  { id: 'apis', code: 'API-03', label: 'APIs Exposées', icon: Cpu, integrationTab: 'apis' },
-  { id: 'webhooks', code: 'API-04', label: 'Webhooks', icon: Webhook, integrationTab: 'webhooks' },
-  { id: 'credentials', code: 'API-05', label: 'Credentials & Secrets', icon: KeyRound, integrationTab: 'credentials' },
-  { id: 'sync', code: 'API-06', label: 'Synchronisation', icon: RefreshCw, integrationTab: 'sync' },
-  { id: 'diagnostics', code: 'API-07', label: 'Diagnostics & Traces', icon: Activity, integrationTab: 'diagnostics' },
-  { id: 'specifications', code: 'API-DOC', label: 'Index CDC & Specs', icon: BookOpen, integrationTab: 'specifications' },
+  { id: 'contracts-v1',  label: 'Socle & Contrat v1 🔒', icon: ShieldCheck, integrationTab: 'contracts-v1' },
+  { id: 'cockpit',  label: 'Integration Cockpit', icon: LayoutDashboard, integrationTab: 'cockpit' },
+  { id: 'connectors', label: 'Connecteurs', icon: Network, integrationTab: 'connectors' },
+  { id: 'apis', label: 'APIs Exposées', icon: Cpu, integrationTab: 'apis' },
+  { id: 'webhooks', label: 'Webhooks', icon: Webhook, integrationTab: 'webhooks' },
+  { id: 'credentials', label: 'Credentials & Secrets', icon: KeyRound, integrationTab: 'credentials' },
+  { id: 'sync', label: 'Synchronisation', icon: RefreshCw, integrationTab: 'sync' },
+  { id: 'diagnostics', label: 'Diagnostics & Traces', icon: Activity, integrationTab: 'diagnostics' },
+  { id: 'specifications', label: 'Index CDC & Specs', icon: BookOpen, integrationTab: 'specifications' },
 ];
 
 const DEP_MAIN_TABS = [
-  { id: 'contracts-v1', code: 'DEP-00', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck, depTab: 'contracts-v1' },
-  { id: 'cockpit', code: 'DEP-01', label: 'Deployment Cockpit', icon: Rocket, depTab: 'cockpit' },
-  { id: 'releases', code: 'DEP-02', label: 'Release Manager', icon: Package, depTab: 'releases' },
-  { id: 'pipelines', code: 'DEP-03', label: 'Pipelines & Stratégies', icon: GitBranch, depTab: 'pipelines' },
-  { id: 'promotions', code: 'DEP-04', label: 'Portes & Promotions', icon: CheckCircle2, depTab: 'promotions' },
-  { id: 'rollback', code: 'DEP-05', label: 'Rollback & Reprise', icon: CornerUpLeft, depTab: 'rollback' },
-  { id: 'diagnostics', code: 'DEP-06', label: 'Diagnostics & Traces', icon: Activity, depTab: 'diagnostics' },
-  { id: 'specifications', code: 'DEP-DOC', label: 'Index CDC & Specs', icon: BookOpen, depTab: 'specifications' },
+  { id: 'contracts-v1', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck, depTab: 'contracts-v1' },
+  { id: 'cockpit', label: 'Deployment Cockpit', icon: Rocket, depTab: 'cockpit' },
+  { id: 'releases', label: 'Release Manager', icon: Package, depTab: 'releases' },
+  { id: 'pipelines', label: 'Pipelines & Stratégies', icon: GitBranch, depTab: 'pipelines' },
+  { id: 'promotions', label: 'Portes & Promotions', icon: CheckCircle2, depTab: 'promotions' },
+  { id: 'rollback', label: 'Rollback & Reprise', icon: CornerUpLeft, depTab: 'rollback' },
+  { id: 'diagnostics', label: 'Diagnostics & Traces', icon: Activity, depTab: 'diagnostics' },
+  { id: 'specifications', label: 'Index CDC & Specs', icon: BookOpen, depTab: 'specifications' },
 ];
 
 const APP_SUB_VIEWS = [
@@ -82,7 +82,7 @@ export default function SubNavBar() {
   const dispatch = useDispatch();
   const activeTab = useSelector((state) => state.platform.activeTab);
   const activeModuleId = useSelector((state) => state.platform.activeModuleId || '01');
-  const activeIntegrationTab = useSelector((state) => state.integration?.activeTab || 'cockpit');
+  const activeIntegrationTab = useSelector((state) => state.integration?.activeIntegrationTab || 'cockpit');
   const activeDeploymentTab = useSelector((state) => state.deployment?.activeTab || 'cockpit');
 
   const isDepLayer = activeModuleId === 'dep-layer' || activeTab === 'deployment' || activeTab.startsWith('dep-');
@@ -125,9 +125,9 @@ export default function SubNavBar() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
             <span>Platform Foundation</span>
-            <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-blue-950 text-sky-300">
+            {/*<span className="text-[10px] font-mono px-1 py-0.2 rounded bg-blue-950 text-sky-300">
               PF-CDC
-            </span>
+            </span>*/}
           </button>
 
           <span className="text-slate-600">/</span>
@@ -146,9 +146,9 @@ export default function SubNavBar() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
             <span>API_Integration_Layer</span>
-            <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-indigo-950 text-indigo-300">
+            {/*<span className="text-[10px] font-mono px-1 py-0.2 rounded bg-indigo-950 text-indigo-300">
               API-CDC
-            </span>
+            </span>*/}
           </button>
 
           <span className="text-slate-600">/</span>
@@ -167,9 +167,9 @@ export default function SubNavBar() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             <span>DEP Publication</span>
-            <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-amber-950 text-amber-300">
+            {/* <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-amber-950 text-amber-300">
               DEP-CDC
-            </span>
+            </span>*/}
           </button>
         </div>
 

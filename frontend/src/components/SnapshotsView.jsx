@@ -105,9 +105,9 @@ export default function SnapshotsView({ onOpenCreateSnapshot }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80">
+            {/*<span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80">
               PF-CDC-06
-            </span>
+            </span>*/}
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">Snapshots & Historique Reproductible</h1>
           </div>
           <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">

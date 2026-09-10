@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addApplication } from '../store/applicationsSlice.js';
+import { addApplication, addApplicationAsync } from '../store/applicationsSlice.js';
 import { logAuditAction } from '../store/auditSlice.js';
 import { addToast, TENANTS } from '../store/platformSlice.js';
 import { Boxes, X } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Boxes, X } from 'lucide-react';
 export default function CreateAppModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
   const activeUser = useSelector((state) => state.platform.activeUser);
+  const providerMode = useSelector((state) => state.platform.providerMode);
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -20,39 +21,65 @@ export default function CreateAppModal({ isOpen, onClose }) {
     e.preventDefault();
     if (!code.trim() || !name.trim()) return;
 
-    dispatch(
-      addApplication({
-        code: code.trim().toUpperCase(),
-        name: name.trim(),
-        description: description.trim() || 'Composant applicatif enregistré sur la plateforme Techzone Cloud.',
-        tenantScope,
-      })
-    );
+    const body = {
+      code: code.trim().toUpperCase(),
+      name: name.trim(),
+      description: description.trim() || 'Composant applicatif enregistré sur la plateforme Techzone Cloud.',
+      tenantScope,
+    };
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Application enregistrée',
-        message: `${name} (${code.toUpperCase()}) a été créée avec une version DRAFT 1.0.0.`,
-      })
-    );
-
-    dispatch(
-      logAuditAction({
-        actor: activeUser.email,
-        role: activeUser.role,
-        action: 'CREATE_APPLICATION',
-        resourceType: 'APPLICATION',
-        resourceId: code.toUpperCase(),
-        details: `Création de l'application ${name} avec scope tenant ${tenantScope}.`,
-        status: 'SUCCESS',
-      })
-    );
-
-    onClose();
-    setCode('');
-    setName('');
-    setDescription('');
+    if (providerMode === 'MOCK') {
+      dispatch(addApplication(body));
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Application enregistrée',
+          message: `${name} (${code.toUpperCase()}) a été créée avec une version DRAFT 1.0.0.`,
+        })
+      );
+      dispatch(
+        logAuditAction({
+          actor: activeUser.email,
+          role: activeUser.role,
+          action: 'CREATE_APPLICATION',
+          resourceType: 'APPLICATION',
+          resourceId: code.toUpperCase(),
+          details: `Création de l'application ${name} avec scope tenant ${tenantScope}.`,
+          status: 'SUCCESS',
+        })
+      );
+      onClose();
+      setCode('');
+      setName('');
+      setDescription('');
+    } else {
+      dispatch(addApplicationAsync(body)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Application enregistrée',
+              message: `${name} (${code.toUpperCase()}) a été créée avec une version DRAFT 1.0.0.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              actor: activeUser.email,
+              role: activeUser.role,
+              action: 'CREATE_APPLICATION',
+              resourceType: 'APPLICATION',
+              resourceId: code.toUpperCase(),
+              details: `Création de l'application ${name} avec scope tenant ${tenantScope}.`,
+              status: 'SUCCESS',
+            })
+          );
+          onClose();
+          setCode('');
+          setName('');
+          setDescription('');
+        }
+      });
+    }
   };
 
   return (

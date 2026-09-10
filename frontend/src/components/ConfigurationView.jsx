@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setSelectedScope,
@@ -8,6 +8,9 @@ import {
   CONFIG_SCOPES,
   CONFIG_TYPES,
   validateConfigEntry,
+  fetchConfigsAsync,
+  addConfigItemAsync,
+  updateConfigItemAsync,
 } from '../store/configSlice.js';
 import { logAuditAction } from '../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../store/platformSlice.js';
@@ -39,6 +42,13 @@ export default function ConfigurationView() {
   const environments = useSelector((state) => state.environments.environments);
   const activeUser = useSelector((state) => state.platform.activeUser);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
+  const providerMode = useSelector((state) => state.platform.providerMode);
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchConfigsAsync());
+    }
+  }, [dispatch, providerMode]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -108,51 +118,100 @@ export default function ConfigurationView() {
     e.preventDefault();
 
     if (editingItem) {
-      dispatch(
-        updateConfigItem({
-          id: editingItem.id,
-          key: formKey.trim(),
-          scope: formScope,
-          scopeId: formScopeId,
-          type: formType,
-          value: formValue.trim(),
-          defaultValue: formDefaultValue.trim(),
-          required: formRequired,
-          isSecret: formIsSecret,
-          description: formDesc.trim(),
-          updatedBy: activeUser.email,
-        })
-      );
-      dispatch(
-        addToast({
-          type: 'success',
-          title: 'Configuration mise à jour',
-          message: `La clé ${formKey} a été réévaluée et validée.`,
-        })
-      );
-      setEditingItem(null);
+      if (providerMode === 'MOCK') {
+        dispatch(
+          updateConfigItem({
+            id: editingItem.id,
+            key: formKey.trim(),
+            scope: formScope,
+            scopeId: formScopeId,
+            type: formType,
+            value: formValue.trim(),
+            defaultValue: formDefaultValue.trim(),
+            required: formRequired,
+            isSecret: formIsSecret,
+            description: formDesc.trim(),
+            updatedBy: activeUser.email,
+          })
+        );
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'Configuration mise à jour',
+            message: `La clé ${formKey} a été réévaluée et validée.`,
+          })
+        );
+        setEditingItem(null);
+      } else {
+        dispatch(
+          updateConfigItemAsync({
+            id: editingItem.id,
+            key: formKey.trim(),
+            value: formValue.trim(),
+            defaultValue: formDefaultValue.trim() || formValue.trim(),
+            required: formRequired,
+            schema: editingItem.schema,
+          })
+        ).then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Configuration mise à jour',
+                message: `La clé ${formKey} a été réévaluée et validée.`,
+              })
+            );
+            setEditingItem(null);
+          }
+        });
+      }
     } else {
-      dispatch(
-        addConfigItem({
-          key: formKey.trim(),
-          scope: formScope,
-          scopeId: formScopeId,
-          type: formType,
-          value: formValue.trim(),
-          defaultValue: formDefaultValue.trim() || formValue.trim(),
-          required: formRequired,
-          isSecret: formIsSecret,
-          description: formDesc.trim(),
-          updatedBy: activeUser.email,
-        })
-      );
-      dispatch(
-        addToast({
-          type: 'success',
-          title: 'Nouvelle configuration ajoutée',
-          message: `Clé ${formKey} déclarée sur le scope ${formScope}.`,
-        })
-      );
+      if (providerMode === 'MOCK') {
+        dispatch(
+          addConfigItem({
+            key: formKey.trim(),
+            scope: formScope,
+            scopeId: formScopeId,
+            type: formType,
+            value: formValue.trim(),
+            defaultValue: formDefaultValue.trim() || formValue.trim(),
+            required: formRequired,
+            isSecret: formIsSecret,
+            description: formDesc.trim(),
+            updatedBy: activeUser.email,
+          })
+        );
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'Nouvelle configuration ajoutée',
+            message: `Clé ${formKey} déclarée sur le scope ${formScope}.`,
+          })
+        );
+      } else {
+        dispatch(
+          addConfigItemAsync({
+            key: formKey.trim(),
+            scope: formScope,
+            scopeId: formScopeId,
+            type: formType,
+            value: formValue.trim(),
+            defaultValue: formDefaultValue.trim() || formValue.trim(),
+            required: formRequired,
+            schema: {},
+          })
+        ).then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Nouvelle configuration ajoutée',
+                message: `Clé ${formKey} déclarée sur le scope ${formScope}.`,
+              })
+            );
+          }
+        });
+      }
     }
 
     dispatch(
@@ -462,13 +521,27 @@ export default function ConfigurationView() {
                         </button>
                         <button
                           onClick={() => {
+                            if (providerMode === 'REAL') {
+                              dispatch(
+                                addToast({
+                                  type: 'warning',
+                                  title: 'Suppression désactivée',
+                                  message: 'La suppression de configuration n\'est pas disponible en mode réel (pas d\'endpoint DELETE).',
+                                })
+                              );
+                              return;
+                            }
                             if (window.confirm(`Supprimer la clé ${item.key} ?`)) {
                               dispatch(deleteConfigItem(item.id));
                               dispatch(addToast({ type: 'info', title: 'Clé supprimée', message: item.key }));
                             }
                           }}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
-                          title="Supprimer"
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            providerMode === 'REAL'
+                              ? 'text-slate-300 cursor-not-allowed'
+                              : 'text-slate-400 hover:text-rose-600 hover:bg-slate-100'
+                          }`}
+                          title={providerMode === 'REAL' ? 'Non disponible en mode réel' : 'Supprimer'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

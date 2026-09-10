@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export const INTEGRATION_NAV_TABS = [
-  { id: 'contracts-v1', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck, badge: 'API-00' },
+  { id: 'contracts-v1', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck },
   { id: 'cockpit', label: 'Integration Cockpit', icon: LayoutDashboard, badge: 'API-01' },
   { id: 'connectors', label: 'Connecteurs', icon: Network, badge: 'API-02' },
   { id: 'apis', label: 'APIs Exposées', icon: Cpu, badge: 'API-03' },
@@ -37,7 +37,7 @@ export const INTEGRATION_NAV_TABS = [
 
 export default function IntegrationsView() {
   const dispatch = useDispatch();
-  const activeTab = useSelector((state) => state.integration.activeTab || 'cockpit');
+  const activeTab = useSelector((state) => state.integration.activeIntegrationTab || 'cockpit');
   const contractV1Locked = useSelector((state) => state.integration.contractV1Locked);
 
   return (

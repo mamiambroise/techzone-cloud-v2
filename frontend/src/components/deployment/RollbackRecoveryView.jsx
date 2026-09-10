@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { executeEmergencyRollback } from '../../store/deploymentSlice.js';
+import { executeEmergencyRollback, rollbackDeploymentAsync, fetchRollbacksAsync } from '../../store/deploymentSlice.js';
 import { addToast } from '../../store/platformSlice.js';
 import {
   CornerUpLeft,
@@ -17,25 +17,66 @@ import {
 export default function RollbackRecoveryView() {
   const dispatch = useDispatch();
   const checkpoints = useSelector((state) => state.deployment?.rollbackCheckpoints || []);
+  const providerMode = useSelector((state) => state.platform.providerMode);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(checkpoints[0]?.id || '');
   const [rollbackReason, setRollbackReason] = useState('Anomalie de latence détectée post-déploiement');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchRollbacksAsync());
+    }
+  }, [dispatch, providerMode]);
+
   const handleTriggerRollback = () => {
-    dispatch(
-      executeEmergencyRollback({
-        checkpointId: selectedCheckpoint,
-        reason: rollbackReason,
-      })
-    );
-    setShowConfirmModal(false);
-    dispatch(
-      addToast({
-        type: 'warning',
-        title: 'Rollback d’Urgence Exécuté',
-        message: 'Restauration logique instantanée effectuée en 5.4s sans coupure de service.',
-      })
-    );
+    if (providerMode === 'MOCK') {
+      dispatch(
+        executeEmergencyRollback({
+          checkpointId: selectedCheckpoint,
+          reason: rollbackReason,
+        })
+      );
+      setShowConfirmModal(false);
+      dispatch(
+        addToast({
+          type: 'warning',
+          title: 'Rollback d\'Urgence Exécuté',
+          message: 'Restauration logique instantanée effectuée en 5.4s sans coupure de service.',
+        })
+      );
+    } else {
+      const checkpoint = checkpoints.find((cp) => cp.id === selectedCheckpoint);
+      dispatch(
+        rollbackDeploymentAsync({
+          deploymentId: checkpoint?.snapshotId || selectedCheckpoint,
+          body: {
+            reason: rollbackReason,
+            startedBy: 'console-operator',
+            toReleaseId: checkpoint?.version,
+          },
+        })
+      ).then((result) => {
+        setShowConfirmModal(false);
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'warning',
+              title: 'Rollback d\'Urgence Exécuté',
+              message: `Rollback effectué vers ${checkpoint?.version || 'la version précédente'}.`,
+            })
+          );
+        }
+      }).catch(() => {
+        setShowConfirmModal(false);
+        dispatch(
+          addToast({
+            type: 'error',
+            title: 'Échec du rollback',
+            message: 'Impossible d\'exécuter le rollback.',
+          })
+        );
+      });
+    }
   };
 
   return (

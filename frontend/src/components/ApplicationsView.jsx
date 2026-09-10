@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setSelectedAppId,
@@ -8,7 +8,10 @@ import {
   addVersion,
   updateVersionStatus,
   cloneVersion,
-  VERSION_LIFECYCLE,
+  fetchApplicationsAsync,
+  addApplicationAsync,
+  updateApplicationAsync,
+  archiveApplicationAsync,
 } from '../store/applicationsSlice.js';
 import { logAuditAction } from '../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../store/platformSlice.js';
@@ -42,6 +45,13 @@ export default function ApplicationsView({ onOpenNewAppModal, onOpenCreateApp })
   const activeUser = useSelector((state) => state.platform.activeUser);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
   const activeTenant = useSelector((state) => state.platform.activeTenant);
+  const providerMode = useSelector((state) => state.platform.providerMode);
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchApplicationsAsync());
+    }
+  }, [dispatch, providerMode]);
 
   // Local state for modals & forms
   const [showNewVersionModal, setShowNewVersionModal] = useState(false);

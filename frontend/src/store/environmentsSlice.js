@@ -1,4 +1,10 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  getEnvironments,
+  createEnvironment,
+  updateEnvironment,
+  getEnvironmentHistory,
+} from '../api/platform/environmentsApi.js';
 
 const initialEnvironments = [
   {
@@ -92,6 +98,50 @@ const initialEnvironments = [
   },
 ];
 
+export const fetchEnvironmentsAsync = createAsyncThunk(
+  'environments/fetchEnvironments',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return getEnvironments();
+  }
+);
+
+export const addEnvironmentAsync = createAsyncThunk(
+  'environments/addEnvironment',
+  async (body, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createEnvironment(body);
+  }
+);
+
+export const updateEnvironmentAsync = createAsyncThunk(
+  'environments/updateEnvironment',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateEnvironment(id, body);
+  }
+);
+
+export const setEnvironmentStatusAsync = createAsyncThunk(
+  'environments/setEnvironmentStatus',
+  async ({ id, status }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateEnvironment(id, { status });
+  }
+);
+
 const environmentsSlice = createSlice({
   name: 'environments',
   initialState: {
@@ -143,6 +193,42 @@ const environmentsSlice = createSlice({
         });
       }
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchEnvironmentsAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.environments = action.payload;
+        }
+      })
+      .addCase(addEnvironmentAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.environments.unshift({
+            ...action.payload,
+            securityTier: action.payload.region === 'fr-par-1' ? 'TIER1' : action.payload.region === 'eu-west-1' ? 'TIER2' : 'TIER3',
+            accessRule: 'IAM_RESTRICTED',
+            allowedRoles: ['PLATFORM_SUPER_ADMIN', 'TEAM4_DEVELOPER', 'TEAM4_OPERATOR'],
+            deployedApps: [],
+            history: [],
+          });
+        }
+      })
+      .addCase(updateEnvironmentAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.environments.findIndex((e) => e.id === action.payload.id);
+          if (idx !== -1) {
+            state.environments[idx] = { ...state.environments[idx], ...action.payload };
+          }
+        }
+      })
+      .addCase(setEnvironmentStatusAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.environments.findIndex((e) => e.id === action.payload.id);
+          if (idx !== -1) {
+            state.environments[idx].status = action.payload.status;
+          }
+        }
+      });
   },
 });
 

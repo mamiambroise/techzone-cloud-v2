@@ -1,4 +1,10 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  getApplications as getApplicationsApi,
+  createApplication as createApplicationApi,
+  updateApplication as updateApplicationApi,
+  archiveApplication as archiveApplicationApi,
+} from '../api/platform/applicationsApi.js';
 
 export const VERSION_LIFECYCLE = [
   'DRAFT',
@@ -350,6 +356,50 @@ const initialVersions = [
   },
 ];
 
+export const fetchApplicationsAsync = createAsyncThunk(
+  'applications/fetchApplications',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return getApplicationsApi();
+  }
+);
+
+export const addApplicationAsync = createAsyncThunk(
+  'applications/addApplication',
+  async (body, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createApplicationApi(body);
+  }
+);
+
+export const updateApplicationAsync = createAsyncThunk(
+  'applications/updateApplication',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateApplicationApi(id, body);
+  }
+);
+
+export const archiveApplicationAsync = createAsyncThunk(
+  'applications/archiveApplication',
+  async (id, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return archiveApplicationApi(id);
+  }
+);
+
 const applicationsSlice = createSlice({
   name: 'applications',
   initialState: {
@@ -445,6 +495,60 @@ const applicationsSlice = createSlice({
         state.versions.unshift(cloned);
       }
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchApplicationsAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.applications = action.payload;
+        }
+      })
+      .addCase(addApplicationAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const newApp = {
+            ...action.payload,
+            appNumber: action.payload.code,
+            activeVersion: '—',
+            workspaceState: '—',
+            workspaceVersion: '—',
+            workspaceConfigPct: 0,
+            owner: '—',
+            ownerInitials: '—',
+            team: [],
+            teamExtraCount: 0,
+            lastModifiedBy: '—',
+            lastModifiedUserInitials: '—',
+            lastModifiedDate: action.payload.updatedAt ? new Date(action.payload.updatedAt).toLocaleString('fr-FR') : '—',
+            lastModifiedText: '—',
+            iconType: 'Boxes',
+            tags: [],
+            category: '—',
+            categoryColor: 'bg-slate-50 text-slate-600 border-slate-200',
+          };
+          state.applications.unshift(newApp);
+          state.selectedAppId = newApp.id;
+        }
+      })
+      .addCase(updateApplicationAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.applications.findIndex((a) => a.id === action.payload.id);
+          if (idx !== -1) {
+            state.applications[idx] = {
+              ...state.applications[idx],
+              ...action.payload,
+              lastModifiedDate: action.payload.updatedAt ? new Date(action.payload.updatedAt).toLocaleString('fr-FR') : state.applications[idx].lastModifiedDate,
+            };
+          }
+        }
+      })
+      .addCase(archiveApplicationAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.applications.findIndex((a) => a.id === action.payload.id);
+          if (idx !== -1) {
+            state.applications[idx].status = 'ARCHIVÉE';
+          }
+        }
+      });
   },
 });
 
