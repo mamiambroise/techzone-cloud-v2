@@ -19,7 +19,11 @@ import {
   DeploymentGateResult,
   DeploymentHistoryAction,
 } from '../generated/prisma/enums';
+
 import { Prisma, PrismaClient } from '../generated/prisma/client';
+
+import { PrismaClient } from '../generated/prisma/client';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const prisma = new PrismaClient({
