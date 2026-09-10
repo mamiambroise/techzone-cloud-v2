@@ -1,0 +1,47 @@
+.admin-risk-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-risk-critical {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.admin-risk-high {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.admin-risk-medium {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.admin-risk-low {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.admin-reason-input {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-table-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-reason-input:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}

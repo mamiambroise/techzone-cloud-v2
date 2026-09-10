@@ -709,3 +709,138 @@ export const iamOverview = {
   }),
   recentActivity: dashboardActivity,
 };
+
+export const adminOverview = {
+  platformHealth: 'HEALTHY',
+  stats: [
+    { label: 'Utilisateurs totaux', value: String(users.length), context: 'Tous comptes', icon: 'users', color: '#2563eb' },
+    { label: 'Tenants actifs', value: String(tenants.filter((t) => t.status === 'ACTIVE').length), context: 'Opérationnels', icon: 'tenant', color: '#10b981' },
+    { label: 'Incidents actifs', value: '3', context: '1 critique · 2 moyens', icon: 'alert', color: '#ef4444' },
+    { label: 'Health plateforme', value: 'HEALTHY', context: 'Tous services opérationnels', icon: 'health', color: '#10b981' },
+  ],
+  services: [
+    { name: 'API Gateway', status: 'OPERATIONAL', latency: '24ms', errors: '0.02%', dependencies: ['Auth', 'IAM', 'Context'] },
+    { name: 'Auth Service', status: 'OPERATIONAL', latency: '12ms', errors: '0.01%', dependencies: ['Database', 'Cache'] },
+    { name: 'IAM Service', status: 'OPERATIONAL', latency: '18ms', errors: '0.01%', dependencies: ['Database', 'Audit'] },
+    { name: 'Context Resolver', status: 'DEGRADED', latency: '145ms', errors: '1.2%', dependencies: ['Cache', 'ERP'] },
+    { name: 'ERP Adapter', status: 'OPERATIONAL', latency: '89ms', errors: '0.05%', dependencies: ['External'] },
+    { name: 'Notification Service', status: 'OPERATIONAL', latency: '35ms', errors: '0.00%', dependencies: ['Queue'] },
+  ],
+  incidents: [
+    { id: 'inc-01', severity: 'critical', title: 'Latence élevée sur Context Resolver', service: 'Context Resolver', detectedAt: '2026-09-10 08:15', status: 'investigating' },
+    { id: 'inc-02', severity: 'medium', title: "Erreurs intermittentes ERP Adapter", service: 'ERP Adapter', detectedAt: '2026-09-10 07:42', status: 'monitoring' },
+    { id: 'inc-03', severity: 'medium', title: 'Queue de notifications saturée', service: 'Notification Service', detectedAt: '2026-09-09 22:10', status: 'resolved' },
+  ],
+  charts: {
+    serviceHealthDistribution: [
+      { name: 'Opérationnel', value: 4, color: '#10b981' },
+      { name: 'Dégradé', value: 1, color: '#f59e0b' },
+      { name: 'En panne', value: 0, color: '#ef4444' },
+    ],
+    incidentTrend: [
+      { hour: '00h', incidents: 0 },
+      { hour: '02h', incidents: 0 },
+      { hour: '04h', incidents: 1 },
+      { hour: '06h', incidents: 0 },
+      { hour: '08h', incidents: 2 },
+      { hour: '10h', incidents: 1 },
+      { hour: '12h', incidents: 0 },
+      { hour: '14h', incidents: 1 },
+      { hour: '16h', incidents: 0 },
+      { hour: '18h', incidents: 1 },
+      { hour: '20h', incidents: 0 },
+      { hour: '22h', incidents: 0 },
+    ],
+  },
+};
+
+export const adminUsers = [
+  { id: 101, firstName: 'Alice', lastName: 'Admin', email: 'alice.admin@techzone.cloud', avatarInitials: 'AA', identityType: 'EMAIL', status: 'active', isLocked: false, tenant: 'Boutique A', lastActivity: '2026-09-10 09:15', createdAt: '2024-01-05', roles: ['Super Admin'], memberships: [{ tenantId: 1, role: 'Super Admin' }, { tenantId: 2, role: 'Admin' }], sessions: 2 },
+  { id: 102, firstName: 'Bob', lastName: 'Support', email: 'bob.support@techzone.cloud', avatarInitials: 'BS', identityType: 'EMAIL', status: 'active', isLocked: false, tenant: 'Boutique A', lastActivity: '2026-09-10 08:45', createdAt: '2024-02-12', roles: ['Admin'], memberships: [{ tenantId: 1, role: 'Admin' }], sessions: 1 },
+  { id: 103, firstName: 'Charlie', lastName: 'Ops', email: 'charlie.ops@techzone.cloud', avatarInitials: 'CO', identityType: 'SYSTEM', status: 'suspended', isLocked: true, tenant: 'Boutique B', lastActivity: '2026-09-08 14:20', createdAt: '2024-03-18', roles: ['Manager'], memberships: [{ tenantId: 4, role: 'Manager' }], sessions: 0 },
+  { id: 104, firstName: 'Diana', lastName: 'Viewer', email: 'diana.viewer@techzone.cloud', avatarInitials: 'DV', identityType: 'GOOGLE', status: 'active', isLocked: false, tenant: 'Boutique C', lastActivity: '2026-09-09 16:05', createdAt: '2024-04-22', roles: ['Viewer'], memberships: [{ tenantId: 6, role: 'Viewer' }], sessions: 1 },
+  { id: 105, firstName: 'Evan', lastName: 'Editor', email: 'evan.editor@techzone.cloud', avatarInitials: 'EE', identityType: 'EMAIL', status: 'active', isLocked: false, tenant: 'Boutique A', lastActivity: '2026-09-10 07:55', createdAt: '2024-05-30', roles: ['Éditeur'], memberships: [{ tenantId: 1, role: 'Éditeur' }], sessions: 1 },
+];
+
+export const adminTenants = [
+  { id: 201, name: 'Boutique A - Admin', organisationId: 1, organisationName: 'Boutique A', status: 'ACTIVE', plan: 'Premium', usage: { users: 12, storage: '45GB', apiCalls: '2.3M' }, quotas: { users: 50, storage: '100GB', apiCalls: '5M' }, memberships: 12, createdAt: '2024-01-12', incidents: 1 },
+  { id: 202, name: 'Boutique B - Support', organisationId: 2, organisationName: 'Boutique B', status: 'ACTIVE', plan: 'Standard', usage: { users: 6, storage: '18GB', apiCalls: '800K' }, quotas: { users: 25, storage: '50GB', apiCalls: '2M' }, memberships: 6, createdAt: '2024-02-01', incidents: 0 },
+  { id: 203, name: 'Boutique C - Readonly', organisationId: 3, organisationName: 'Boutique C', status: 'SUSPENDED', plan: 'Standard', usage: { users: 3, storage: '8GB', apiCalls: '150K' }, quotas: { users: 25, storage: '50GB', apiCalls: '2M' }, memberships: 3, createdAt: '2024-03-05', incidents: 2 },
+];
+
+export const accessGovernance = {
+  roles: [
+    { id: 'role-01', name: 'Super Admin', scope: 'global', riskLevel: 'CRITICAL', excessivePrivilege: true, assignees: 2 },
+    { id: 'role-02', name: 'Admin', scope: 'global', riskLevel: 'HIGH', excessivePrivilege: false, assignees: 5 },
+    { id: 'role-03', name: 'Manager', scope: 'tenant', riskLevel: 'MEDIUM', excessivePrivilege: false, assignees: 14 },
+    { id: 'role-04', name: 'Éditeur', scope: 'tenant', riskLevel: 'LOW', excessivePrivilege: false, assignees: 32 },
+    { id: 'role-05', name: 'Viewer', scope: 'global', riskLevel: 'LOW', excessivePrivilege: false, assignees: 48 },
+  ],
+  reviews: [
+    { id: 'rev-01', subject: 'Alice Admin', role: 'Super Admin', status: 'pending', requestedAt: '2026-09-10 08:00', reason: 'Revue trimestrielle' },
+    { id: 'rev-02', subject: 'Bob Support', role: 'Admin', status: 'pending', requestedAt: '2026-09-09 17:30', reason: 'Changement de périmètre' },
+    { id: 'rev-03', subject: 'Charlie Ops', role: 'Manager', status: 'approved', requestedAt: '2026-09-08 09:15', reason: 'Fin de période probatoire' },
+  ],
+};
+
+export const delegations = [
+  { id: 'del-01', delegationId: 'DEL-001', grantedTo: 'Bob Support', scopeType: 'tenant', scopeId: 201, permissions: ['users.read', 'sessions.read'], startsAt: '2026-09-01 00:00', endsAt: '2026-09-30 23:59', status: 'ACTIVE', grantedBy: 'Alice Admin', delegatorMaxPermission: 'users.write' },
+  { id: 'del-02', delegationId: 'DEL-002', grantedTo: 'Diana Viewer', scopeType: 'application', scopeId: 1, permissions: ['reports.read'], startsAt: '2026-09-05 00:00', endsAt: '2026-09-12 23:59', status: 'ACTIVE', grantedBy: 'Alice Admin', delegatorMaxPermission: 'reports.admin' },
+  { id: 'del-03', delegationId: 'DEL-003', grantedTo: 'Evan Editor', scopeType: 'support', scopeId: 1, permissions: ['support.tickets.write'], startsAt: '2026-08-20 00:00', endsAt: '2026-09-05 23:59', status: 'EXPIRED', grantedBy: 'Bob Support', delegatorMaxPermission: 'support.tickets.admin' },
+];
+
+export const securityAudit = {
+  events: [
+    { id: 'se-01', traceId: 'trace-abc-123', severity: 'critical', tenant: 'Boutique A', user: 'Alice Admin', action: 'tentative.connexion.admin', result: 'DENIED', detectedAt: '2026-09-10 08:22', investigation: false },
+    { id: 'se-02', traceId: 'trace-abc-124', severity: 'medium', tenant: 'Boutique B', user: 'Bob Support', action: 'acces.donnees.sensibles', result: 'ALLOWED', detectedAt: '2026-09-10 07:55', investigation: true },
+    { id: 'se-03', traceId: 'trace-abc-125', severity: 'low', tenant: 'Boutique A', user: 'Evan Editor', action: 'modification.profil', result: 'ALLOWED', detectedAt: '2026-09-09 19:10', investigation: false },
+  ],
+  auditTrail: [
+    { id: 'at-01', traceId: 'trace-abc-120', actor: 'Alice Admin', action: 'suspendre.utilisateur', target: 'Charlie Ops', result: 'SUCCESS', timestamp: '2026-09-08 14:00' },
+    { id: 'at-02', traceId: 'trace-abc-121', actor: 'Bob Support', action: 'creer.delegation', target: 'DEL-001', result: 'SUCCESS', timestamp: '2026-09-01 08:30' },
+    { id: 'at-03', traceId: 'trace-abc-122', actor: 'System', action: 'invalidation.cache', target: 'Context Resolver', result: 'SUCCESS', timestamp: '2026-09-09 03:00' },
+  ],
+};
+
+export const monitoring = {
+  health: {
+    global: 'HEALTHY',
+    score: 98,
+    criticalErrors: 0,
+    latency: '34ms',
+    degradedDependencies: ['Context Resolver'],
+  },
+  services: [
+    { name: 'API Gateway', status: 'OPERATIONAL', latency: '24ms', errors: '0.02%', uptime: '99.99%' },
+    { name: 'Auth Service', status: 'OPERATIONAL', latency: '12ms', errors: '0.01%', uptime: '99.99%' },
+    { name: 'IAM Service', status: 'OPERATIONAL', latency: '18ms', errors: '0.01%', uptime: '99.98%' },
+    { name: 'Context Resolver', status: 'DEGRADED', latency: '145ms', errors: '1.2%', uptime: '98.50%' },
+    { name: 'ERP Adapter', status: 'OPERATIONAL', latency: '89ms', errors: '0.05%', uptime: '99.95%' },
+    { name: 'Notification Service', status: 'OPERATIONAL', latency: '35ms', errors: '0.00%', uptime: '99.99%' },
+  ],
+  incidents: [
+    { id: 'inc-01', severity: 'critical', title: 'Latence élevée sur Context Resolver', service: 'Context Resolver', detectedAt: '2026-09-10 08:15', status: 'investigating' },
+    { id: 'inc-02', severity: 'medium', title: 'Erreurs intermittentes ERP Adapter', service: 'ERP Adapter', detectedAt: '2026-09-10 07:42', status: 'monitoring' },
+    { id: 'inc-03', severity: 'medium', title: 'Queue de notifications saturée', service: 'Notification Service', detectedAt: '2026-09-09 22:10', status: 'resolved' },
+  ],
+};
+
+export const adminActions = {
+  actions: [
+    { id: 'aa-01', label: 'Suspendre utilisateur', critical: true, pipeline: ['Permission Check', 'Context Validation', 'User Lock'] },
+    { id: 'aa-02', label: 'Suspendre tenant', critical: true, pipeline: ['Permission Check', 'Context Validation', 'Tenant Lock'] },
+    { id: 'aa-03', label: 'Forcer révocation de sessions', critical: true, pipeline: ['Permission Check', 'Session Revoke'] },
+    { id: 'aa-04', label: 'Réinitialiser état de sécurité', critical: true, pipeline: ['Permission Check', 'Security Reset'] },
+    { id: 'aa-05', label: 'Relancer synchronisation', critical: false, pipeline: ['Sync Trigger'] },
+    { id: 'aa-06', label: 'Débloquer opération', critical: false, pipeline: ['Unlock Operation'] },
+    { id: 'aa-07', label: 'Lancer diagnostic', critical: false, pipeline: ['Diagnostic Run'] },
+    { id: 'aa-08', label: 'Appliquer override', critical: true, pipeline: ['Permission Check', 'Override Apply'] },
+    { id: 'aa-09', label: 'Forcer invalidation cache', critical: false, pipeline: ['Cache Invalidation'] },
+    { id: 'aa-10', label: 'Déclencher rollback administratif', critical: true, pipeline: ['Permission Check', 'Rollback Trigger'] },
+  ],
+  history: [
+    { id: 'ah-01', action: 'Forcer invalidation cache', actor: 'Alice Admin', result: 'SUCCESS', timestamp: '2026-09-09 03:00', reason: 'Nettoyage post-incident' },
+    { id: 'ah-02', action: 'Lancer diagnostic', actor: 'Bob Support', result: 'SUCCESS', timestamp: '2026-09-08 16:45', reason: 'Investigation performance' },
+    { id: 'ah-03', action: 'Relancer synchronisation', actor: 'System', result: 'FAILED', timestamp: '2026-09-08 04:00', reason: 'Timeout ERP' },
+  ],
+};

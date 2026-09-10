@@ -29,8 +29,8 @@ function UserDetailPanel({ user }) {
       </div>
 
       <div className="user-detail-pills">
-        <span className="user-detail-pill user-detail-pill-role">{user.roles[0]}</span>
-        <span className="user-detail-pill user-detail-pill-tenant">{user.tenant}</span>
+        <span className="user-detail-pill user-detail-pill-role">{user.roles?.[0] || '—'}</span>
+        <span className="user-detail-pill user-detail-pill-tenant">{user.tenant || '—'}</span>
       </div>
 
       <div className="user-detail-tabs">
@@ -45,12 +45,12 @@ function UserDetailPanel({ user }) {
         {[
           { label: 'Identité principale', value: user.email },
           { label: 'Identités liées', value: user.identityType },
-          { label: 'Téléphone', value: user.phone },
+          { label: 'Téléphone', value: user.phone || '—' },
           { label: 'Créé le', value: user.createdAt },
-          { label: 'Dernière connexion', value: user.lastLogin },
-          { label: 'Langue', value: user.language.toUpperCase() },
-          { label: 'Fuseau horaire', value: user.timezone },
-          { label: 'Préférences', value: user.preferences },
+          { label: 'Dernière connexion', value: user.lastLogin || '—' },
+          { label: 'Langue', value: String(user.language || '—').toUpperCase() },
+          { label: 'Fuseau horaire', value: user.timezone || '—' },
+          { label: 'Préférences', value: user.preferences || '—' },
         ].map((field) => (
           <div key={field.label} className="user-detail-field">
             <span className="user-detail-field-label">{field.label}</span>

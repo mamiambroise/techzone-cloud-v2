@@ -24,6 +24,14 @@ import AuditPage from './pages/Observability/AuditPage';
 import SecurityEventsPage from './pages/Observability/SecurityEventsPage';
 import MonitoringPage from './pages/Observability/MonitoringPage';
 import AlertManagerPage from './pages/Observability/AlertManagerPage';
+import OverviewPage from './pages/Admin/OverviewPage';
+import UsersAdminPage from './pages/Admin/UsersAdminPage';
+import OrganisationsTenantsAdminPage from './pages/Admin/OrganisationsTenantsAdminPage';
+import AccessGovernancePage from './pages/Admin/AccessGovernancePage';
+import DelegationPage from './pages/Admin/DelegationPage';
+import SecurityAuditPage from './pages/Admin/SecurityAuditPage';
+import AdminMonitoringPage from './pages/Admin/MonitoringPage';
+import AdminActionsPage from './pages/Admin/AdminActionsPage';
 
 function AppRoutes() {
   return (
@@ -59,6 +67,14 @@ function AppRoutes() {
         <Route path="/observability/security-events" element={<SecurityEventsPage />} />
         <Route path="/observability/monitoring" element={<MonitoringPage />} />
         <Route path="/observability/alerts" element={<AlertManagerPage />} />
+        <Route path="/admin/overview" element={<OverviewPage />} />
+        <Route path="/admin/users" element={<UsersAdminPage />} />
+        <Route path="/admin/organisations-tenants" element={<OrganisationsTenantsAdminPage />} />
+        <Route path="/admin/access-governance" element={<AccessGovernancePage />} />
+        <Route path="/admin/delegation" element={<DelegationPage />} />
+        <Route path="/admin/security-audit" element={<SecurityAuditPage />} />
+        <Route path="/admin/monitoring" element={<AdminMonitoringPage />} />
+        <Route path="/admin/actions" element={<AdminActionsPage />} />
         <Route path="/erps" element={<Placeholder title="ERP Registry" />} />
         <Route path="/mapping" element={<Placeholder title="Mapping" />} />
         <Route path="/adapters" element={<Placeholder title="Adapters" />} />

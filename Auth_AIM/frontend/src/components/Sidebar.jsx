@@ -54,9 +54,23 @@ const menuSections = [
         ],
       },
       {
+        title: 'Platform Administration',
+        defaultOpen: false,
+        items: [
+          { path: '/admin/overview', label: "Vue d'ensemble" },
+          { path: '/admin/users', label: 'Utilisateurs' },
+          { path: '/admin/organisations-tenants', label: 'Organisations & Tenants' },
+          { path: '/admin/access-governance', label: 'Gouvernance des Accès' },
+          { path: '/admin/delegation', label: 'Délégation' },
+          { path: '/admin/security-audit', label: 'Sécurité & Audit' },
+          { path: '/admin/monitoring', label: 'Monitoring & Diagnostics' },
+          { path: '/admin/actions', label: 'Actions Administratives' },
+        ],
+      },
+      {
         title: 'Observability & Security',
         items: [
-          { path: '/observability', label: 'Vue d\'ensemble' },
+          { path: '/observability', label: "Vue d'ensemble" },
           { path: '/observability/logs', label: 'Logs' },
           { path: '/observability/audit', label: 'Audit' },
           { path: '/observability/security-events', label: 'Security Events' },
@@ -304,6 +318,7 @@ function Sidebar({ isOpen, onToggle }) {
     if (normalized.includes('platform foundation')) return 'platform-foundation';
     if (normalized.includes('auth')) return 'iam';
     if (normalized.includes('observability') || normalized.includes('security')) return 'observability';
+    if (normalized.includes('platform administration')) return 'platform';
     if (normalized.includes('conception')) return 'conception';
     if (normalized.includes('business manager')) return 'business';
     if (normalized.includes('pack manager')) return 'pack';
