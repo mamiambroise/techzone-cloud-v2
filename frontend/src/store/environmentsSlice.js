@@ -101,7 +101,7 @@ const initialEnvironments = [
 export const fetchEnvironmentsAsync = createAsyncThunk(
   'environments/fetchEnvironments',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -112,7 +112,7 @@ export const fetchEnvironmentsAsync = createAsyncThunk(
 export const addEnvironmentAsync = createAsyncThunk(
   'environments/addEnvironment',
   async (body, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -123,7 +123,7 @@ export const addEnvironmentAsync = createAsyncThunk(
 export const updateEnvironmentAsync = createAsyncThunk(
   'environments/updateEnvironment',
   async ({ id, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -134,7 +134,7 @@ export const updateEnvironmentAsync = createAsyncThunk(
 export const setEnvironmentStatusAsync = createAsyncThunk(
   'environments/setEnvironmentStatus',
   async ({ id, status }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }

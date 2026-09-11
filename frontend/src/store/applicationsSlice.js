@@ -254,7 +254,7 @@ const initialVersions = [
     applicationId: 'app-core-api',
     version: '1.1.0',
     status: 'ACTIVE',
-    releaseNotes: 'Migration complète vers Platform Contract v1 🔒 et renforcement du rate-limiting.',
+    releaseNotes: 'Migration complète vers Platform Contract v1 et renforcement du rate-limiting.',
     createdFrom: 'ver-core-1.0.0',
     createdAt: '2026-06-01T09:00:00Z',
     publishedAt: '2026-06-10T14:00:00Z',
@@ -359,7 +359,7 @@ const initialVersions = [
 export const fetchApplicationsAsync = createAsyncThunk(
   'applications/fetchApplications',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -370,7 +370,7 @@ export const fetchApplicationsAsync = createAsyncThunk(
 export const addApplicationAsync = createAsyncThunk(
   'applications/addApplication',
   async (body, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -381,7 +381,7 @@ export const addApplicationAsync = createAsyncThunk(
 export const updateApplicationAsync = createAsyncThunk(
   'applications/updateApplication',
   async ({ id, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -392,7 +392,7 @@ export const updateApplicationAsync = createAsyncThunk(
 export const archiveApplicationAsync = createAsyncThunk(
   'applications/archiveApplication',
   async (id, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }

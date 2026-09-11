@@ -357,7 +357,7 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
                 onClick={() => setShowEndpointsModal(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
-                ✕
+                X
               </button>
             </div>
 
@@ -667,7 +667,7 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
                     <span className="text-xs font-bold text-amber-950">Référence d'Authentification Liée</span>
                   </div>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-200/70 text-amber-900 font-semibold">
-                    Backend-Only 🔒
+                    Backend-Only
                   </span>
                 </div>
                 <div className="text-xs font-mono text-amber-900 flex items-center justify-between">

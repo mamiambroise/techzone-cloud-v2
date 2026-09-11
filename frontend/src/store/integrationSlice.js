@@ -886,14 +886,8 @@ export const fetchApis = createAsyncThunk(
     }
 
     const response = await getApis();
-    const rawApis = response.data || [];
-    return rawApis.map((api) => ({
-      ...api,
-      status: api.status === 'ACTIVE' ? 'PUBLISHED' : api.status,
-      totalRequests24h: 0,
-      errorRatePct: 0,
-      p95LatencyMs: 0,
-    }));
+    const rawApis = Array.isArray(response) ? response : [];
+    return rawApis;
   }
 );
 

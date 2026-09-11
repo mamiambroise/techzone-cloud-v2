@@ -74,7 +74,7 @@ export default function ContractsView() {
     dispatch(
       addToast({
         type: 'success',
-        title: `Contrat verrouillé 🔒`,
+        title: `Contrat verrouillé`,
         message: `${contr.contractCode} v${contr.contractVersion} est maintenant immuable.`,
       })
     );
@@ -237,7 +237,7 @@ export default function ContractsView() {
               className="text-[11px] px-2.5 py-1 bg-white border border-slate-200/80 rounded-xl font-semibold text-slate-700 shadow-2xs"
             >
               <option value="ALL">Tous les statuts</option>
-              <option value="LOCKED">LOCKED 🔒</option>
+              <option value="LOCKED">LOCKED</option>
               <option value="ACTIVE">ACTIVE</option>
               <option value="VALIDATING">VALIDATING</option>
               <option value="DRAFT">DRAFT</option>
@@ -264,7 +264,7 @@ export default function ContractsView() {
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-xs text-slate-900">{contr.contractCode}</span>
                         {contr.status === 'LOCKED' && (
-                          <Lock className="w-3.5 h-3.5 text-emerald-600" title="Contrat verrouillé 🔒" />
+                          <Lock className="w-3.5 h-3.5 text-emerald-600" title="Contrat verrouillé" />
                         )}
                       </div>
                       <span className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{contr.name}</span>
@@ -313,12 +313,12 @@ export default function ContractsView() {
                         title="Verrouiller ce contrat pour interdire toute modification silencieuse"
                       >
                         <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Verrouiller (LOCK 🔒)</span>
+                        <span>Verrouiller (LOCK)</span>
                       </button>
                     ) : (
                       <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                         <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Contrat Scellé 🔒</span>
+                        <span>Contrat Scellé</span>
                       </span>
                     )}
 
@@ -385,7 +385,7 @@ export default function ContractsView() {
               <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Relation Provider ➔ Contrat ➔ Consumers
+                    Relation Provider {'>'} Contrat {'>'} Consumers
                   </h3>
                   <span className="text-[11px] text-slate-400 font-medium">Découplage strict garanti</span>
                 </div>

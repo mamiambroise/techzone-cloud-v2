@@ -9,6 +9,30 @@ import SyncManagerView from './integration/SyncManagerView.jsx';
 import IntegrationDiagnosticsView from './integration/IntegrationDiagnosticsView.jsx';
 import IntegrationContractsV1View from './integration/IntegrationContractsV1View.jsx';
 import ApiSpecificationsView from './integration/ApiSpecificationsView.jsx';
+import {
+  LayoutDashboard,
+  Network,
+  Cpu,
+  Webhook,
+  KeyRound,
+  RefreshCw,
+  Activity,
+  ShieldCheck,
+  Lock,
+  BookOpen,
+} from 'lucide-react';
+
+export const INTEGRATION_NAV_TABS = [
+  { id: 'contracts-v1', label: 'Socle & Contrat v1', icon: ShieldCheck },
+  { id: 'cockpit', label: 'Integration Cockpit', icon: LayoutDashboard, badge: 'API-01' },
+  { id: 'connectors', label: 'Connecteurs', icon: Network, badge: 'API-02' },
+  { id: 'apis', label: 'APIs Exposées', icon: Cpu, badge: 'API-03' },
+  { id: 'webhooks', label: 'Webhooks', icon: Webhook, badge: 'API-04' },
+  { id: 'credentials', label: 'Credentials & Secrets', icon: KeyRound, badge: 'API-05' },
+  { id: 'sync', label: 'Synchronisation', icon: RefreshCw, badge: 'API-06' },
+  { id: 'diagnostics', label: 'Diagnostics & Traces', icon: Activity, badge: 'API-07' },
+  { id: 'specifications', label: 'Index CDC & Specs', icon: BookOpen, badge: 'API-DOC' },
+];
 
 export default function IntegrationsView() {
   const activeTab = useSelector((state) => state.integration.activeIntegrationTab || 'cockpit');

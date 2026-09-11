@@ -37,7 +37,7 @@ import { setActiveIntegrationTab } from '../store/integrationSlice.js';
 import { setActiveDeploymentTab } from '../store/deploymentSlice.js';
 
 export const PF_SUBSECTIONS = [
-  { id: 'platform-contract', name: 'Socle & Contrat v1 🔒', tab: 'platform-contract', icon: Lock, badge: 'LOCKED' },
+  { id: 'platform-contract', name: 'Socle & Contrat v1', tab: 'platform-contract', icon: Lock, badge: 'LOCKED' },
   { id: 'cockpit',  name: 'Platform Cockpit', tab: 'cockpit', icon: LayoutDashboard },
   { id: 'applications', name: 'Applications & Versions', tab: 'applications', icon: Boxes },
   { id: 'environments', name: 'Environnements', tab: 'environments', icon: Server },
@@ -48,7 +48,7 @@ export const PF_SUBSECTIONS = [
 ];
 
 export const API_SUBSECTIONS = [
-  { id: 'contracts-v1', name: 'Socle & Contrats v1 🔒', tab: 'integrations', integrationTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
+  { id: 'contracts-v1', name: 'Socle & Contrats v1', tab: 'integrations', integrationTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
   { id: 'cockpit', name: 'Integration Cockpit', tab: 'integrations', integrationTab: 'cockpit', icon: LayoutDashboard },
   { id: 'connectors', name: 'Connecteurs Externes', tab: 'integrations', integrationTab: 'connectors', icon: Network },
   { id: 'apis', name: 'APIs Exposées', tab: 'integrations', integrationTab: 'apis', icon: Cpu },
@@ -60,7 +60,7 @@ export const API_SUBSECTIONS = [
 ];
 
 export const DEP_SUBSECTIONS = [
-  { id: 'contracts-v1', name: 'Socle & Contrat v1 🔒', tab: 'deployment', depTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
+  { id: 'contracts-v1', name: 'Socle & Contrat v1', tab: 'deployment', depTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
   { id: 'cockpit', name: 'Deployment Cockpit', tab: 'deployment', depTab: 'cockpit', icon: Rocket },
   { id: 'releases', name: 'Release Manager', tab: 'deployment', depTab: 'releases', icon: Package },
   { id: 'pipelines', name: 'Pipelines & Stratégies', tab: 'deployment', depTab: 'pipelines', icon: GitBranch },
@@ -267,7 +267,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   <span className="truncate font-semibold tracking-tight">Socle Commun Techzone</span>
                   {platformContractLocked && (
                     <span className="text-[10px] font-mono bg-blue-950 text-sky-300 px-1 rounded border border-blue-800/80">
-                      v1 🔒
+                      v1
                     </span>
                   )}
                 </div>
@@ -360,7 +360,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   <span className="truncate font-semibold tracking-tight">API / Integration Layer</span>
                   {integrationContractLocked && (
                     <span className="text-[10px] font-mono bg-indigo-950 text-indigo-300 px-1 rounded border border-indigo-800/80">
-                      v1 🔒
+                      v1
                     </span>
                   )}
                 </div>
@@ -453,7 +453,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   <span className="truncate font-semibold tracking-tight">DEP Publication</span>
                   {deploymentContractLocked && (
                     <span className="text-[10px] font-mono bg-amber-950 text-amber-300 px-1 rounded border border-amber-800/80">
-                      v1 🔒
+                      v1
                     </span>
                   )}
                 </div>

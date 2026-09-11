@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { api } from './utils/api.js';
+import { setApiStatus } from './store/platformSlice.js';
 import Header from './components/Header.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import SubNavBar from './components/SubNavBar.jsx';
@@ -31,10 +33,17 @@ import CreateSnapshotModal from './components/CreateSnapshotModal.jsx';
 import AuditLogModal from './components/AuditLogModal.jsx';
 
 export default function App() {
+  const dispatch = useDispatch();
   const activeTab = useSelector((state) => state.platform.activeTab);
   const activeModuleId = useSelector((state) => state.platform.activeModuleId || '01');
   const sidebarCollapsed = useSelector((state) => state.platform.sidebarCollapsed);
   const activeUser = useSelector((state) => state.platform.activeUser);
+
+  useEffect(() => {
+    api.health()
+      .then(() => dispatch(setApiStatus('CONNECTED')))
+      .catch(() => dispatch(setApiStatus('OFFLINE')));
+  }, [dispatch]);
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showCreateAppModal, setShowCreateAppModal] = useState(false);
@@ -161,7 +170,7 @@ export default function App() {
               </span>
               <span className="text-slate-300 hidden sm:inline">•</span>
               <span className="text-emerald-700 font-medium px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 shrink-0">
-                Platform Contract v1 🔒 Locked
+                Platform Contract v1 Locked
               </span>
             </div>
 

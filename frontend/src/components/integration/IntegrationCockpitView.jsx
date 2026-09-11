@@ -159,7 +159,7 @@ export default function IntegrationCockpitView({
               }`}
               title="Cliquer pour basculer Mock vs Real Provider"
             >
-              Mode: {providerMode === 'REAL' ? 'RealProvider 🌐' : 'MockProvider 🧪'}
+              Mode: {providerMode === 'REAL' ? 'RealProvider' : 'MockProvider'}
             </button>
           </div>
 
@@ -189,7 +189,7 @@ export default function IntegrationCockpitView({
             className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-indigo-200" />
-            <span>Contrats v1 🔒</span>
+            <span>Contrats v1</span>
           </button>
 
           <button
@@ -217,7 +217,7 @@ export default function IntegrationCockpitView({
                 onClick={() => setShowEndpointsModal(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
-                ✕
+                X
               </button>
             </div>
 

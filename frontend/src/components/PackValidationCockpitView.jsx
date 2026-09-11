@@ -266,12 +266,12 @@ export default function PackValidationCockpitView({ onOpenNewApp }) {
           </button>
         </div>
 
-        {/* Summary Card 3: Pack Manifests v1 🔒 (PM-CDC-00) */}
+        {/* Summary Card 3: Pack Manifests v1 (PM-CDC-00) */}
         <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-3 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900">
-                Pack Manifests v1 🔒 (PM-CDC-00)
+                Pack Manifests v1 (PM-CDC-00)
               </span>
               <span className="w-2 h-2 rounded-full bg-blue-500" />
             </div>

@@ -71,7 +71,7 @@ export default function SnapshotsView({ onOpenCreateSnapshot }) {
     dispatch(
       addToast({
         type: 'success',
-        title: 'Nouvelle Baseline certifiée 🎯',
+        title: 'Nouvelle Baseline certifiée',
         message: `${snap.name} est maintenant la baseline officielle de ${snap.environmentCode}.`,
       })
     );
@@ -394,13 +394,13 @@ export default function SnapshotsView({ onOpenCreateSnapshot }) {
                     <div>
                       <span className="text-slate-400 text-[10px] block">Application :</span>
                       <span className={diffResult.application.changed ? 'text-amber-700 font-bold' : 'text-slate-700'}>
-                        {diffResult.application.left} ➔ {diffResult.application.right}
+                        {diffResult.application.left} {'>'} {diffResult.application.right}
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-400 text-[10px] block">Environnement :</span>
                       <span className={diffResult.environment.changed ? 'text-amber-700 font-bold' : 'text-slate-700'}>
-                        {diffResult.environment.left} ➔ {diffResult.environment.right}
+                        {diffResult.environment.left} {'>'} {diffResult.environment.right}
                       </span>
                     </div>
                   </div>
@@ -424,7 +424,7 @@ export default function SnapshotsView({ onOpenCreateSnapshot }) {
                             <span className="font-mono font-bold">{c.id}</span>
                             <div className="flex items-center gap-4 text-right">
                               <span className="text-[11px] font-mono">
-                                {c.left} ➔ {c.right}
+                                {c.left} {'>'} {c.right}
                               </span>
                               <span className="text-[10px] px-2 py-0.5 rounded-md border border-current font-mono">
                                 {c.status}
@@ -455,7 +455,7 @@ export default function SnapshotsView({ onOpenCreateSnapshot }) {
                             <span className="font-mono font-bold">{cfg.key}</span>
                             <div className="flex items-center gap-4 text-right">
                               <span className="text-[11px] font-mono">
-                                {cfg.left} ➔ {cfg.right}
+                                {cfg.left} {'>'} {cfg.right}
                               </span>
                               <span className="text-[10px] px-2 py-0.5 rounded-md border border-current font-mono">
                                 {cfg.status}

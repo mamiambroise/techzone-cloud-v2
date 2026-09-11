@@ -9,6 +9,29 @@ import RollbackRecoveryView from './RollbackRecoveryView.jsx';
 import DeploymentDiagnosticsView from './DeploymentDiagnosticsView.jsx';
 import DepSpecificationsView from './DepSpecificationsView.jsx';
 
+import {
+  Rocket,
+  ShieldCheck,
+  Package,
+  GitBranch,
+  CheckCircle2,
+  CornerUpLeft,
+  Activity,
+  BookOpen,
+  Lock,
+} from 'lucide-react';
+
+const DEP_TABS = [
+  { id: 'contracts-v1', code: 'DEP-00', label: 'Socle & Contrat v1', icon: ShieldCheck },
+  { id: 'cockpit', code: 'DEP-01', label: 'Deployment Cockpit', icon: Rocket },
+  { id: 'releases', code: 'DEP-02', label: 'Release Manager', icon: Package },
+  { id: 'pipelines', code: 'DEP-03', label: 'Pipelines & Stratégies', icon: GitBranch },
+  { id: 'promotions', code: 'DEP-04', label: 'Portes & Promotions', icon: CheckCircle2 },
+  { id: 'rollback', code: 'DEP-05', label: 'Rollback & Reprise', icon: CornerUpLeft },
+  { id: 'diagnostics', code: 'DEP-06', label: 'Diagnostics & Audit', icon: Activity },
+  { id: 'specifications', code: 'DEP-DOC', label: 'Index CDC (00 à 06)', icon: BookOpen },
+];
+
 export default function DeploymentPublicationView() {
   const activeTab = useSelector((state) => state.deployment?.activeTab || 'cockpit');
 
