@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 const DEP_TABS = [
-  { id: 'contracts-v1', code: 'DEP-00', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck },
+  { id: 'contracts-v1', code: 'DEP-00', label: 'Socle & Contrat v1', icon: ShieldCheck },
   { id: 'cockpit', code: 'DEP-01', label: 'Deployment Cockpit', icon: Rocket },
   { id: 'releases', code: 'DEP-02', label: 'Release Manager', icon: Package },
   { id: 'pipelines', code: 'DEP-03', label: 'Pipelines & Stratégies', icon: GitBranch },

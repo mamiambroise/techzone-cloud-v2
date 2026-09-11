@@ -20,7 +20,7 @@ const DEP_SPECS = [
     code: 'DEP-CDC-00',
     title: 'Socle, Architecture & Deployment Contract',
     status: 'LOCKED_V1',
-    statusLabel: 'Contrat v1 🔒 Scellé',
+    statusLabel: 'Contrat v1 Scellé',
     summary:
       'Définit le contrat de déploiement universel, les manifestes signés par KMS, les politiques de non-régression et le cadre de sécurité inter-packs.',
     sections: [

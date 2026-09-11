@@ -254,7 +254,7 @@ const initialVersions = [
     applicationId: 'app-core-api',
     version: '1.1.0',
     status: 'ACTIVE',
-    releaseNotes: 'Migration complète vers Platform Contract v1 🔒 et renforcement du rate-limiting.',
+    releaseNotes: 'Migration complète vers Platform Contract v1 et renforcement du rate-limiting.',
     createdFrom: 'ver-core-1.0.0',
     createdAt: '2026-06-01T09:00:00Z',
     publishedAt: '2026-06-10T14:00:00Z',

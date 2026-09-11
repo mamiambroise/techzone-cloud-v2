@@ -298,7 +298,7 @@ export default function WebhookManagerView() {
                 onClick={() => setShowEndpointsModal(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
-                ✕
+                X
               </button>
             </div>
 
@@ -528,7 +528,7 @@ export default function WebhookManagerView() {
                     <span className="font-bold text-amber-950">{selectedWebhook.secretRef}</span>
                   </div>
                   <span className="text-[10px] px-2 py-0.5 bg-amber-200/70 text-amber-900 rounded font-semibold">
-                    Masqué 🔒
+                    Masqué
                   </span>
                 </div>
               </div>

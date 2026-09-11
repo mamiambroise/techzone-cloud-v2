@@ -306,7 +306,7 @@ export default function ConfigurationView() {
             <div>
               <h2 className="text-sm font-bold text-white tracking-tight">Inspecteur de Résolution d'Héritage (Precedence Cascade)</h2>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Ordre canonique : Platform Default ➔ Application ➔ App Version ➔ Environment ➔ Tenant Override
+                Ordre canonique : Platform Default {'>'} Application {'>'} App Version {'>'} Environment {'>'} Tenant Override
               </p>
             </div>
           </div>

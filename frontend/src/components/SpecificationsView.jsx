@@ -32,7 +32,7 @@ const PF_CDCS = [
     objective: 'Définir le socle commun de Techzone Cloud : architecture, contrats transverses, conventions, configuration, environnements, versioning, snapshots, sécurité, observabilité et règles d\'intégration inter-packs.',
     positioning: `PLATFORM FOUNDATION
         ↓
-Platform Contract v1 🔒
+Platform Contract v1
         ↓
 ┌─────────────┬─────────────┬─────────────┐
 IAM        Business      ERP/Data      Pack/Runtime
@@ -180,7 +180,7 @@ Toutes les équipes dépendent du Platform Contract, jamais des détails interne
     team: 'Team 4 — Platform, API & Deployment',
     ref: 'PF-CDC-04',
     objective: 'Centraliser les contrats techniques versionnés utilisés entre packs et équipes.',
-    positioning: `Provider → Contract 🔒 → Consumer
+    positioning: `Provider → Contract → Consumer
 Le consumer dépend du contrat, jamais de l'implémentation du provider.
 Toute rupture de compatibilité nécessite une nouvelle version majeure de contrat.`,
     model: 'contractCode, contractVersion, ownerTeam, status, schema, compatibilityPolicy, publishedAt, deprecatedAt, hash',
@@ -272,7 +272,7 @@ export default function SpecificationsView() {
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                 <Lock className="w-3 h-3 text-emerald-600" />
-                <span>Platform Contract v1 🔒 Verrouillé</span>
+                <span>Platform Contract v1 Verrouillé</span>
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-2">

@@ -170,7 +170,7 @@ export default function App() {
               </span>
               <span className="text-slate-300 hidden sm:inline">•</span>
               <span className="text-emerald-700 font-medium px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 shrink-0">
-                Platform Contract v1 🔒 Locked
+                Platform Contract v1 Locked
               </span>
             </div>
 

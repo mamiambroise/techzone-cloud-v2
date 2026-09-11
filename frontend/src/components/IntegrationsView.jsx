@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export const INTEGRATION_NAV_TABS = [
-  { id: 'contracts-v1', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck },
+  { id: 'contracts-v1', label: 'Socle & Contrat v1', icon: ShieldCheck },
   { id: 'cockpit', label: 'Integration Cockpit', icon: LayoutDashboard, badge: 'API-01' },
   { id: 'connectors', label: 'Connecteurs', icon: Network, badge: 'API-02' },
   { id: 'apis', label: 'APIs Exposées', icon: Cpu, badge: 'API-03' },

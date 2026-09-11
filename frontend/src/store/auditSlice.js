@@ -9,7 +9,7 @@ const initialLogs = [
     action: 'LOCK_CONTRACT',
     resourceType: 'CONTRACT',
     resourceId: 'PF-CONTR-001@1.0.0',
-    details: 'Verrouillage officiel du Platform Contract v1 🔒 pour Team 4 et consommateurs.',
+    details: 'Verrouillage officiel du Platform Contract v1 pour Team 4 et consommateurs.',
     tenantId: 'tenant-core-global',
     status: 'SUCCESS',
     timestamp: '2026-06-15T09:00:00Z',

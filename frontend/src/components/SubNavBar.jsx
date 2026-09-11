@@ -43,7 +43,7 @@ const PF_MAIN_TABS = [
 ];
 
 const API_MAIN_TABS = [
-  { id: 'contracts-v1',  label: 'Socle & Contrat v1 🔒', icon: ShieldCheck, integrationTab: 'contracts-v1' },
+  { id: 'contracts-v1',  label: 'Socle & Contrat v1', icon: ShieldCheck, integrationTab: 'contracts-v1' },
   { id: 'cockpit',  label: 'Integration Cockpit', icon: LayoutDashboard, integrationTab: 'cockpit' },
   { id: 'connectors', label: 'Connecteurs', icon: Network, integrationTab: 'connectors' },
   { id: 'apis', label: 'APIs Exposées', icon: Cpu, integrationTab: 'apis' },
@@ -55,7 +55,7 @@ const API_MAIN_TABS = [
 ];
 
 const DEP_MAIN_TABS = [
-  { id: 'contracts-v1', label: 'Socle & Contrat v1 🔒', icon: ShieldCheck, depTab: 'contracts-v1' },
+  { id: 'contracts-v1', label: 'Socle & Contrat v1', icon: ShieldCheck, depTab: 'contracts-v1' },
   { id: 'cockpit', label: 'Deployment Cockpit', icon: Rocket, depTab: 'cockpit' },
   { id: 'releases', label: 'Release Manager', icon: Package, depTab: 'releases' },
   { id: 'pipelines', label: 'Pipelines & Stratégies', icon: GitBranch, depTab: 'pipelines' },
@@ -176,7 +176,7 @@ export default function SubNavBar() {
         <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono text-slate-400 shrink-0 ml-4">
           <span>Architecture Team 4</span>
           <span>•</span>
-          <span className="text-emerald-400 font-semibold">Contrats v1 🔒 Scellés</span>
+          <span className="text-emerald-400 font-semibold">Contrats v1 Scellés</span>
         </div>
       </div>
 

@@ -67,7 +67,7 @@ export default function PlatformContractView() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-mono font-semibold shadow-xs">
             <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Platform Contract v1 🔒 {platformContractLocked ? 'VERROUILLÉ' : 'OUVERT'}</span>
+            <span>Platform Contract v1 {platformContractLocked ? 'VERROUILLÉ' : 'OUVERT'}</span>
           </div>
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function PlatformContractView() {
             <div className="flex items-center justify-center gap-2">
               <Lock className="w-4 h-4 text-emerald-300" />
               <span className="text-sm font-bold text-white tracking-tight font-mono">
-                Platform Contract v1 🔒
+                Platform Contract v1
               </span>
             </div>
             <span className="text-[10px] text-indigo-200 block mt-0.5">
@@ -242,7 +242,7 @@ export default function PlatformContractView() {
                     onClick={() => handleSimulateError(key)}
                     className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
                   >
-                    Simuler cette erreur ➔
+                    Simuler cette erreur {'>'}
                   </button>
                 </div>
               </div>

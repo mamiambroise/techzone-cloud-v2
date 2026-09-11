@@ -60,7 +60,7 @@ export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
     if (isDepLayer) {
       switch (activeDeploymentTab) {
         case 'contracts-v1':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-00', title: 'Socle & Deployment Contracts v1 🔒', color: 'amber' };
+          return { section: 'DEP Publication', cdc: 'DEP-CDC-00', title: 'Socle & Deployment Contracts v1', color: 'amber' };
         case 'cockpit':
           return { section: 'DEP Publication', cdc: 'DEP-CDC-01', title: 'Deployment Cockpit', color: 'amber' };
         case 'releases':
@@ -83,7 +83,7 @@ export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
     if (isApiLayer) {
       switch (activeIntegrationTab) {
         case 'contracts-v1':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-00', title: 'Socle & Integration Contracts v1 🔒', color: 'indigo' };
+          return { section: 'API_Integration_Layer', cdc: 'API-CDC-00', title: 'Socle & Integration Contracts v1', color: 'indigo' };
         case 'cockpit':
           return { section: 'API_Integration_Layer', cdc: 'API-CDC-01', title: 'Vue d’ensemble / Integration Cockpit', color: 'indigo' };
         case 'connectors':
@@ -108,7 +108,7 @@ export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
     switch (activeTab) {
       case 'platform-contract':
       case 'contract-v1':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-00', title: 'Socle & Platform Contract v1 🔒', color: 'blue' };
+        return { section: 'Platform Foundation', cdc: 'PF-CDC-00', title: 'Socle & Platform Contract v1', color: 'blue' };
       case 'cockpit':
       case 'overview':
         return { section: 'Platform Foundation', cdc: 'PF-CDC-01', title: 'Platform Cockpit', color: 'blue' };

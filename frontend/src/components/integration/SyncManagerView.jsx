@@ -452,7 +452,7 @@ export default function SyncManagerView() {
               </div>
             </div>
             <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-emerald-800/80 text-emerald-200 border border-emerald-700">
-              LEASING_ACTIVE 🔒
+              LEASING_ACTIVE
             </span>
           </div>
 
