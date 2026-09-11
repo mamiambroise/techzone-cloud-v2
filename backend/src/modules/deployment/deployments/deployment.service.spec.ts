@@ -53,6 +53,8 @@ describe('DeploymentService (DEP-CDC-03)', () => {
         configurationVersion: '1.0.0',
         status: 'DRAFT',
         createdBy: 'test-user',
+        artifactRefs: [],
+        contractVersions: [],
       },
     });
 
