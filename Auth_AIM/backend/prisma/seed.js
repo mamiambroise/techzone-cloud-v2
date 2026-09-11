@@ -180,7 +180,10 @@ await prisma.feature.create({
       }),
     ),
   );
-
+const adminUserPermission = await prisma.permission.create({
+  data: { code: 'admin.users.manage', resource: 'admin-users', action: 'manage', name: 'admin.users.manage' },
+});
+await prisma.rolePermission.create({ data: { roleId: adminRole.id, permissionId: adminUserPermission.id } });
   await prisma.rolePermission.createMany({
     data: billingPermissions.map((p) => ({
       roleId: adminRole.id,

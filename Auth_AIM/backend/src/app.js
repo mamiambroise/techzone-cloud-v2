@@ -13,6 +13,7 @@ app.use(express.json({
   verify: (req, res, buf) => { req.rawBody = buf; },
 }));
 
+
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));
 app.get('/api-docs.json', (req, res) => res.json(openapi));

@@ -1355,3 +1355,15 @@ model Feature {
 
   @@index([status])
 }
+model WebhookEvent {
+  id String @id @default(uuid())
+  provider String
+  providerEventId String @unique
+  signatureValid Boolean
+  processed Boolean @default(false)
+  processedAt DateTime?
+  payload Json
+  receivedAt DateTime @default(now())
+
+  @@index([provider])
+}
