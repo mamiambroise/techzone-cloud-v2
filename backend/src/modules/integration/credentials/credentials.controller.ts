@@ -4,11 +4,16 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
 import { CredentialService } from './credentials.service';
-import { CreateCredentialDto, UpdateCredentialDto, RotateCredentialDto } from './dto/create-credential.dto';
+import {
+  CreateCredentialDto,
+  UpdateCredentialDto,
+  RotateCredentialDto,
+} from './dto/create-credential.dto';
 
 @Controller('api/integrations/credentials')
 export class CredentialsController {
@@ -25,45 +30,51 @@ export class CredentialsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.credentialService.findOne(id);
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateCredentialDto) {
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateCredentialDto,
+  ) {
     return this.credentialService.update(id, dto);
   }
 
   @Post(':id/rotate')
-  async rotate(@Param('id') id: string, @Body() dto: RotateCredentialDto) {
+  async rotate(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: RotateCredentialDto,
+  ) {
     return this.credentialService.rotate(id, dto);
   }
 
   @Post(':id/disable')
-  async disable(@Param('id') id: string) {
+  async disable(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.credentialService.disable(id);
   }
 
   @Post(':id/archive')
-  async archive(@Param('id') id: string) {
+  async archive(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.credentialService.archive(id);
   }
 
   @Post(':id/test')
-  async test(@Param('id') id: string) {
+  async test(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.credentialService.test(id);
   }
 
   @Post(':id/associate/:connectorId')
   async associateToConnector(
-    @Param('id') id: string,
-    @Param('connectorId') connectorId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('connectorId', new ParseUUIDPipe()) connectorId: string,
   ) {
     return this.credentialService.associateToConnector(id, connectorId);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.credentialService.archive(id);
   }
 }
