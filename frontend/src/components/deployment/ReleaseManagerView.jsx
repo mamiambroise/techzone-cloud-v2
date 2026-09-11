@@ -32,7 +32,7 @@ export default function ReleaseManagerView() {
   const dispatch = useDispatch();
   const releases = useSelector((state) => state.deployment?.releases || []);
   const activeUser = useSelector((state) => state.platform.activeUser);
-  const providerMode = useSelector((state) => state.platform.providerMode);
+  const providerMode = useSelector((state) => state.integration.providerMode);
   const [selectedRelease, setSelectedRelease] = useState(releases[0] || null);
   const [copiedHash, setCopiedHash] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

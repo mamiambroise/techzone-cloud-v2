@@ -19,7 +19,7 @@ import {
 export default function PromotionGatewaysView() {
   const dispatch = useDispatch();
   const promotionGates = useSelector((state) => state.deployment?.promotionGates || []);
-  const providerMode = useSelector((state) => state.platform.providerMode);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   useEffect(() => {
     if (providerMode === 'REAL') {

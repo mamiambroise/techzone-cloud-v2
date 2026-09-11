@@ -22,7 +22,7 @@ import {
 export default function DeploymentDiagnosticsView() {
   const dispatch = useDispatch();
   const logs = useSelector((state) => state.deployment?.logs || []);
-  const providerMode = useSelector((state) => state.platform.providerMode);
+  const providerMode = useSelector((state) => state.integration.providerMode);
   const [filterLevel, setFilterLevel] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 

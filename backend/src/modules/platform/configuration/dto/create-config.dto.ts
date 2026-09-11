@@ -1,14 +1,13 @@
 import {
   IsBoolean,
   IsEnum,
-  IsInt,
   IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
-  Min,
+
 } from 'class-validator';
 
 import {

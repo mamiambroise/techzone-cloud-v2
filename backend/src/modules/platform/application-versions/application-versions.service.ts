@@ -1,4 +1,4 @@
-import { ConflictException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';

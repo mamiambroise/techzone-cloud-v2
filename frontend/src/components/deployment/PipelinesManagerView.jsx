@@ -28,7 +28,7 @@ export default function PipelinesManagerView() {
   const activeBlueGreenSlot = useSelector((state) => state.deployment?.activeBlueGreenSlot || 'BLUE');
   const canaryTrafficWeight = useSelector((state) => state.deployment?.canaryTrafficWeight || 20);
   const releases = useSelector((state) => state.deployment?.releases || []);
-  const providerMode = useSelector((state) => state.platform.providerMode);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   useEffect(() => {
     if (providerMode === 'REAL') {

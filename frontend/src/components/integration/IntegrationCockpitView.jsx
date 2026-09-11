@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   SlidersHorizontal,
 } from 'lucide-react';
+import StaleDataBanner from '../common/StaleDataBanner.jsx';
 
 export default function IntegrationCockpitView({
   onOpenNewConnector,
@@ -85,6 +86,8 @@ export default function IntegrationCockpitView({
   const showAttentionBanner = degradedConnectors.length > 0;
   const attentionRequiredCount = degradedConnectors.length + failureDiagnostics.length;
 
+  const isStale = providerMode === 'REAL' && !connectors.some((c) => c.mode === 'REAL');
+
   const renderSectionError = (section) => {
     if (!cockpitErrors[section]) return null;
     return (
@@ -129,6 +132,8 @@ export default function IntegrationCockpitView({
 
   return (
     <div className="space-y-6">
+      <StaleDataBanner isStale={isStale} />
+
       {/* Top Banner / Integration Context Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl text-white shadow-xl border border-indigo-900/40 relative overflow-hidden">
         {/* Subtle grid pattern background */}
