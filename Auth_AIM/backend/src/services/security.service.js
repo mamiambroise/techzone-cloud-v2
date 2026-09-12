@@ -173,6 +173,32 @@ async function getSecurityEventById(id) {
   };
 }
 
+async function setSecurityEventStatus({ id, status, actorId, reason } = {}) {
+  const targetStatus = normalizeLifecycle(status);
+  const event = await getSecurityEventById(id);
+  const metadata = {
+    ...(event.metadata || {}),
+    status: targetStatus,
+    updatedAt: new Date().toISOString(),
+    updatedBy: actorId || null,
+    investigationReason: reason || (event.metadata && event.metadata.investigationReason) || 'ADMIN_REVIEW',
+  };
+
+  const updated = await prisma.securityEvent.update({
+    where: { id },
+    data: { metadata },
+  });
+
+  return {
+    ...updated,
+    eventType: updated.type,
+    timestamp: updated.occurredAt,
+    status: updated.metadata?.status || targetStatus,
+    resource: updated.metadata?.resource || 'unknown',
+    detailsSafe: updated.metadata?.detailsSafe || 'No additional details',
+  };
+}
+
 async function acknowledgeSecurityEvent({ id, acknowledgedBy }) {
   const event = await getSecurityEventById(id);
   const metadata = {
@@ -272,10 +298,13 @@ async function getSecurityEventCorrelation({ tenantId, userId, sessionId, traceI
     },
   }));
 }
-
+async function listQuotaUsageForSubscription(subscriptionId) {
+  return prisma.quotaUsage.findMany({ where: { subscriptionId }, orderBy: { featureCode: 'asc' } });
+}
 module.exports = {
   listSecurityEvents,
   getSecurityEventById,
+  setSecurityEventStatus,
   acknowledgeSecurityEvent,
   resolveSecurityEvent,
   createSecurityEvent,
@@ -284,4 +313,5 @@ module.exports = {
   getSecurityEventCorrelation,
   SECURITY_EVENT_LIFECYCLE,
   SECURITY_SEVERITIES,
+  listQuotaUsageForSubscription,
 };
