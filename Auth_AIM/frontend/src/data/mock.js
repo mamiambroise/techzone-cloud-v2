@@ -844,3 +844,137 @@ export const adminActions = {
     { id: 'ah-03', action: 'Relancer synchronisation', actor: 'System', result: 'FAILED', timestamp: '2026-09-08 04:00', reason: 'Timeout ERP' },
   ],
 };
+
+export const billingPlans = [
+  { id: 1, code: 'FREE', name: 'Gratuit', description: 'Plan gratuit pour les petits utilisateurs', status: 'ACTIVE', billingPeriod: 'MONTHLY', currency: 'EUR', basePrice: 0, trialDays: 0, version: 3, features: ['API_ACCESS'], modules: ['IAM'], capabilities: ['users.read'], quotas: [{ quotaCode: 'API_CALLS', limit: 1000 }], options: {}, createdAt: '2024-01-01', updatedAt: '2025-06-15' },
+  { id: 2, code: 'STARTER', name: 'Starter', description: 'Plan starter pour les startups', status: 'ACTIVE', billingPeriod: 'MONTHLY', currency: 'EUR', basePrice: 29, trialDays: 14, version: 2, features: ['API_ACCESS', 'EMAIL_SUPPORT', 'BASIC_ANALYTICS'], modules: ['IAM', 'ANALYTICS'], capabilities: ['users.read', 'users.write', 'analytics.read'], quotas: [{ quotaCode: 'API_CALLS', limit: 10000 }, { quotaCode: 'STORAGE', limit: 10737418240 }], options: {}, createdAt: '2024-01-15', updatedAt: '2025-07-20' },
+  { id: 3, code: 'PRO', name: 'Professional', description: 'Plan professionnel pour les équipes', status: 'ACTIVE', billingPeriod: 'MONTHLY', currency: 'EUR', basePrice: 99, trialDays: 14, version: 4, features: ['API_ACCESS', 'PRIORITY_SUPPORT', 'ADVANCED_ANALYTICS', 'AUDIT_LOG'], modules: ['IAM', 'ANALYTICS', 'AUDIT'], capabilities: ['users.read', 'users.write', 'users.delete', 'analytics.read', 'analytics.write', 'audit.read'], quotas: [{ quotaCode: 'API_CALLS', limit: 100000 }, { quotaCode: 'STORAGE', limit: 107374182400 }], options: {}, createdAt: '2024-02-01', updatedAt: '2025-08-10' },
+  { id: 4, code: 'ENTERPRISE', name: 'Enterprise', description: 'Plan enterprise sur mesure', status: 'VALIDATING', billingPeriod: 'ANNUAL', currency: 'EUR', basePrice: 499, trialDays: 30, version: 1, features: ['API_ACCESS', 'PRIORITY_SUPPORT', 'ADVANCED_ANALYTICS', 'AUDIT_LOG', 'SSO', 'SLA'], modules: ['IAM', 'ANALYTICS', 'AUDIT', 'SSO'], capabilities: ['users.read', 'users.write', 'users.delete', 'analytics.read', 'analytics.write', 'audit.read', 'sso.configure'], quotas: [{ quotaCode: 'API_CALLS', limit: 1000000 }, { quotaCode: 'STORAGE', limit: 1073741824000 }], options: {}, createdAt: '2025-03-01', updatedAt: '2025-09-01' },
+  { id: 5, code: 'LEGACY', name: 'Legacy', description: 'Plan legacy en fin de vie', status: 'DEPRECATED', billingPeriod: 'MONTHLY', currency: 'EUR', basePrice: 49, trialDays: 0, version: 1, features: ['API_ACCESS'], modules: ['IAM'], capabilities: ['users.read'], quotas: [{ quotaCode: 'API_CALLS', limit: 5000 }], options: {}, createdAt: '2023-06-01', updatedAt: '2025-01-15' },
+];
+
+export const billingSubscriptions = [
+  { id: 1, tenantId: 1, tenantName: 'Boutique A - Paris', planCode: 'PRO', planName: 'Professional', status: 'ACTIVE', currentPeriodStart: '2025-09-01', currentPeriodEnd: '2025-10-01', autoRenewal: true, createdAt: '2024-06-15', updatedAt: '2025-09-01' },
+  { id: 2, tenantId: 2, tenantName: 'Boutique A - Lyon', planCode: 'STARTER', planName: 'Starter', status: 'ACTIVE', currentPeriodStart: '2025-09-01', currentPeriodEnd: '2025-10-01', autoRenewal: true, createdAt: '2024-09-10', updatedAt: '2025-09-01' },
+  { id: 3, tenantId: 3, tenantName: 'Boutique A - Bordeaux', planCode: 'FREE', planName: 'Gratuit', status: 'TRIAL', currentPeriodStart: '2025-09-01', currentPeriodEnd: '2025-10-01', autoRenewal: false, createdAt: '2025-09-01', updatedAt: '2025-09-01' },
+  { id: 4, tenantId: 4, tenantName: 'Boutique B - Berlin', planCode: 'ENTERPRISE', planName: 'Enterprise', status: 'ACTIVE', currentPeriodStart: '2025-01-01', currentPeriodEnd: '2026-01-01', autoRenewal: true, createdAt: '2025-01-05', updatedAt: '2025-09-01' },
+  { id: 5, tenantId: 5, tenantName: 'Boutique B - Munich', planCode: 'STARTER', planName: 'Starter', status: 'PAST_DUE', currentPeriodStart: '2025-08-01', currentPeriodEnd: '2025-09-01', autoRenewal: true, createdAt: '2024-11-20', updatedAt: '2025-09-15' },
+  { id: 6, tenantId: 6, tenantName: 'Boutique C - Montreal', planCode: 'PRO', planName: 'Professional', status: 'ACTIVE', currentPeriodStart: '2025-09-01', currentPeriodEnd: '2025-10-01', autoRenewal: true, createdAt: '2024-08-12', updatedAt: '2025-09-01' },
+  { id: 7, tenantId: 7, tenantName: 'Boutique C - Toronto', planCode: 'STARTER', planName: 'Starter', status: 'SUSPENDED', currentPeriodStart: '2025-07-01', currentPeriodEnd: '2025-08-01', autoRenewal: false, createdAt: '2024-10-01', updatedAt: '2025-08-10' },
+  { id: 8, tenantId: 8, tenantName: 'Boutique D - Paris', planCode: 'FREE', planName: 'Gratuit', status: 'CANCEL_PENDING', currentPeriodStart: '2025-09-01', currentPeriodEnd: '2025-10-01', autoRenewal: false, createdAt: '2025-04-20', updatedAt: '2025-09-20' },
+  { id: 9, tenantId: 9, tenantName: 'Boutique E - Nice', planCode: 'LEGACY', planName: 'Legacy', status: 'EXPIRED', currentPeriodStart: '2024-01-01', currentPeriodEnd: '2024-02-01', autoRenewal: false, createdAt: '2023-12-15', updatedAt: '2024-02-01' },
+  { id: 10, tenantId: 10, tenantName: 'Boutique F - Marseille', planCode: 'PRO', planName: 'Professional', status: 'DRAFT', currentPeriodStart: null, currentPeriodEnd: null, autoRenewal: false, createdAt: '2025-09-10', updatedAt: '2025-09-10' },
+];
+
+export const billingInvoices = [
+  { id: 1, subscriptionId: 1, tenantName: 'Boutique A - Paris', periodLabel: 'Septembre 2025', amount: 99.00, currency: 'EUR', dueDate: '2025-10-01', status: 'PAID', createdAt: '2025-09-01' },
+  { id: 2, subscriptionId: 2, tenantName: 'Boutique A - Lyon', periodLabel: 'Septembre 2025', amount: 29.00, currency: 'EUR', dueDate: '2025-10-01', status: 'PAID', createdAt: '2025-09-01' },
+  { id: 3, subscriptionId: 4, tenantName: 'Boutique B - Berlin', periodLabel: 'Janvier 2026', amount: 499.00, currency: 'EUR', dueDate: '2025-12-31', status: 'DUE', createdAt: '2025-12-01' },
+  { id: 4, subscriptionId: 5, tenantName: 'Boutique B - Munich', periodLabel: 'Août 2025', amount: 29.00, currency: 'EUR', dueDate: '2025-09-01', status: 'PAST_DUE', createdAt: '2025-08-01' },
+  { id: 5, subscriptionId: 6, tenantName: 'Boutique C - Montreal', periodLabel: 'Septembre 2025', amount: 99.00, currency: 'EUR', dueDate: '2025-10-01', status: 'PENDING', createdAt: '2025-09-01' },
+  { id: 6, subscriptionId: 1, tenantName: 'Boutique A - Paris', periodLabel: 'Octobre 2025', amount: 99.00, currency: 'EUR', dueDate: '2025-11-01', status: 'PENDING', createdAt: '2025-10-01' },
+  { id: 7, subscriptionId: 3, tenantName: 'Boutique A - Bordeaux', periodLabel: 'Septembre 2025', amount: 0.00, currency: 'EUR', dueDate: '2025-10-01', status: 'PAID', createdAt: '2025-09-01' },
+  { id: 8, subscriptionId: 7, tenantName: 'Boutique C - Toronto', periodLabel: 'Juillet 2025', amount: 29.00, currency: 'EUR', dueDate: '2025-08-01', status: 'VOID', createdAt: '2025-07-01' },
+  { id: 9, subscriptionId: 8, tenantName: 'Boutique D - Paris', periodLabel: 'Septembre 2025', amount: 0.00, currency: 'EUR', dueDate: '2025-10-01', status: 'FAILED', createdAt: '2025-09-01' },
+  { id: 10, subscriptionId: 6, tenantName: 'Boutique C - Montreal', periodLabel: 'Octobre 2025', amount: 99.00, currency: 'EUR', dueDate: '2025-11-01', status: 'PARTIALLY_PAID', createdAt: '2025-10-01' },
+];
+
+export const billingPayments = [
+  { id: 1, invoiceId: 1, provider: 'stripe', reference: 'pi_mock_001', amount: 99.00, currency: 'EUR', status: 'SUCCEEDED', createdAt: '2025-09-15', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-09-15 10:00' }, { event: 'PAYMENT_AUTHORIZED', timestamp: '2025-09-15 10:01' }, { event: 'PAYMENT_SUCCEEDED', timestamp: '2025-09-15 10:02' }] },
+  { id: 2, invoiceId: 2, provider: 'stripe', reference: 'pi_mock_002', amount: 29.00, currency: 'EUR', status: 'SUCCEEDED', createdAt: '2025-09-28', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-09-28 09:00' }, { event: 'PAYMENT_SUCCEEDED', timestamp: '2025-09-28 09:01' }] },
+  { id: 3, invoiceId: 3, provider: 'paypal', reference: 'pp_mock_001', amount: 499.00, currency: 'EUR', status: 'AUTHORIZED', createdAt: '2025-12-01', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-12-01 14:00' }, { event: 'PAYMENT_AUTHORIZED', timestamp: '2025-12-01 14:02' }] },
+  { id: 4, invoiceId: 4, provider: 'stripe', reference: 'pi_mock_004', amount: 29.00, currency: 'EUR', status: 'FAILED', createdAt: '2025-08-30', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-08-30 11:00' }, { event: 'PAYMENT_FAILED', timestamp: '2025-08-30 11:01' }] },
+  { id: 5, invoiceId: 5, provider: 'bank_transfer', reference: 'bt_mock_001', amount: 99.00, currency: 'EUR', status: 'PENDING', createdAt: '2025-10-01', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-10-01 08:00' }] },
+  { id: 6, invoiceId: 1, provider: 'stripe', reference: 'ref_mock_001', amount: 99.00, currency: 'EUR', status: 'REFUNDED', createdAt: '2025-09-20', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-09-15 10:00' }, { event: 'PAYMENT_SUCCEEDED', timestamp: '2025-09-15 10:02' }, { event: 'REFUND_SUCCEEDED', timestamp: '2025-09-20 15:00' }] },
+  { id: 7, invoiceId: 10, provider: 'stripe', reference: 'pi_mock_007', amount: 99.00, currency: 'EUR', status: 'CANCELLED', createdAt: '2025-10-01', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-10-01 08:00' }, { event: 'PAYMENT_CANCELLED', timestamp: '2025-10-01 08:05' }] },
+  { id: 8, invoiceId: 6, provider: 'stripe', reference: 'pi_mock_008', amount: 99.00, currency: 'EUR', status: 'PENDING', createdAt: '2025-10-05', timeline: [{ event: 'PAYMENT_CREATED', timestamp: '2025-10-05 10:00' }] },
+];
+
+export const billingWebhooks = [
+  { id: 1, provider: 'stripe', eventType: 'invoice.payment_succeeded', status: 'PROCESSED', retryCount: 0, timestamp: '2025-09-15 10:02:30', payload: { object_type: 'invoice', id: 'inv_mock_001', amount_paid: 9900, currency: 'eur' } },
+  { id: 2, provider: 'stripe', eventType: 'customer.subscription.updated', status: 'PROCESSED', retryCount: 0, timestamp: '2025-09-14 08:30:00', payload: { object_type: 'subscription', id: 'sub_mock_001', status: 'active' } },
+  { id: 3, provider: 'paypal', eventType: 'payment.captured', status: 'PROCESSED', retryCount: 0, timestamp: '2025-09-13 14:15:00', payload: { object_type: 'payment', id: 'pay_mock_001', amount: 499.00 } },
+  { id: 4, provider: 'stripe', eventType: 'invoice.payment_failed', status: 'FAILED', retryCount: 3, timestamp: '2025-09-12 11:00:00', payload: { object_type: 'invoice', id: 'inv_mock_004', failure_code: 'card_declined' } },
+  { id: 5, provider: 'stripe', eventType: 'checkout.session.completed', status: 'PROCESSED', retryCount: 0, timestamp: '2025-09-11 16:45:00', payload: { object_type: 'checkout_session', id: 'cs_mock_001', mode: 'subscription' } },
+  { id: 6, provider: 'paypal', eventType: 'refund.created', status: 'PROCESSED', retryCount: 0, timestamp: '2025-09-10 09:20:00', payload: { object_type: 'refund', id: 'ref_mock_001', amount: 99.00 } },
+  { id: 7, provider: 'stripe', eventType: 'customer.created', status: 'FAILED', retryCount: 2, timestamp: '2025-09-09 07:30:00', payload: { object_type: 'customer', id: 'cus_mock_001', email: 'test@example.com' } },
+];
+
+export const billingEntitlements = [
+  { id: 1, tenantId: 1, tenantName: 'Boutique A - Paris', capability: 'users.read', granted: true, source: 'subscription', validFrom: '2024-06-15', validTo: '2026-06-15' },
+  { id: 2, tenantId: 1, tenantName: 'Boutique A - Paris', capability: 'users.write', granted: true, source: 'subscription', validFrom: '2024-06-15', validTo: '2026-06-15' },
+  { id: 3, tenantId: 1, tenantName: 'Boutique A - Paris', capability: 'analytics.write', granted: true, source: 'subscription', validFrom: '2024-06-15', validTo: '2026-06-15' },
+  { id: 4, tenantId: 2, tenantName: 'Boutique A - Lyon', capability: 'users.read', granted: true, source: 'subscription', validFrom: '2024-09-10', validTo: '2025-09-10' },
+  { id: 5, tenantId: 2, tenantName: 'Boutique A - Lyon', capability: 'users.write', granted: true, source: 'subscription', validFrom: '2024-09-10', validTo: '2025-09-10' },
+  { id: 6, tenantId: 3, tenantName: 'Boutique A - Bordeaux', capability: 'users.read', granted: true, source: 'trial', validFrom: '2025-09-01', validTo: '2025-10-01' },
+  { id: 7, tenantId: 4, tenantName: 'Boutique B - Berlin', capability: 'sso.configure', granted: true, source: 'subscription', validFrom: '2025-01-05', validTo: '2026-01-05' },
+  { id: 8, tenantId: 5, tenantName: 'Boutique B - Munich', capability: 'users.read', granted: true, source: 'subscription', validFrom: '2024-11-20', validTo: '2025-11-20' },
+  { id: 9, tenantId: 5, tenantName: 'Boutique B - Munich', capability: 'users.write', granted: false, source: 'policy', validFrom: null, validTo: null },
+  { id: 10, tenantId: 7, tenantName: 'Boutique C - Toronto', capability: 'users.read', granted: false, source: 'policy', validFrom: null, validTo: null },
+];
+
+export const billingQuotas = [
+  { id: 1, tenantId: 1, tenantName: 'Boutique A - Paris', code: 'API_CALLS', limit: 100000, used: 45600, remaining: 54400, resetPolicy: 'MONTHLY' },
+  { id: 2, tenantId: 1, tenantName: 'Boutique A - Paris', code: 'STORAGE', limit: 107374182400, used: 32212254720, remaining: 75161927680, resetPolicy: 'MONTHLY' },
+  { id: 3, tenantId: 2, tenantName: 'Boutique A - Lyon', code: 'API_CALLS', limit: 10000, used: 8200, remaining: 1800, resetPolicy: 'MONTHLY' },
+  { id: 4, tenantId: 3, tenantName: 'Boutique A - Bordeaux', code: 'API_CALLS', limit: 1000, used: 340, remaining: 660, resetPolicy: 'MONTHLY' },
+  { id: 5, tenantId: 4, tenantName: 'Boutique B - Berlin', code: 'API_CALLS', limit: 1000000, used: 125000, remaining: 875000, resetPolicy: 'MONTHLY' },
+  { id: 6, tenantId: 4, tenantName: 'Boutique B - Berlin', code: 'STORAGE', limit: 1073741824000, used: 0, remaining: 1073741824000, resetPolicy: 'MONTHLY' },
+  { id: 7, tenantId: 5, tenantName: 'Boutique B - Munich', code: 'API_CALLS', limit: 10000, used: 10000, remaining: 0, resetPolicy: 'MONTHLY' },
+  { id: 8, tenantId: 6, tenantName: 'Boutique C - Montreal', code: 'API_CALLS', limit: 100000, used: 67800, remaining: 32200, resetPolicy: 'MONTHLY' },
+];
+
+export const billingAccessRules = [
+  { id: 1, planCode: 'FREE', capability: 'users.read', decision: 'ALLOW', reasonCode: 'INCLUDED_IN_PLAN', conditions: 'always', createdAt: '2024-01-01' },
+  { id: 2, planCode: 'FREE', capability: 'users.write', decision: 'DENY', reasonCode: 'FEATURE_NOT_INCLUDED', conditions: 'always', createdAt: '2024-01-01' },
+  { id: 3, planCode: 'STARTER', capability: 'users.write', decision: 'ALLOW', reasonCode: 'INCLUDED_IN_PLAN', conditions: 'always', createdAt: '2024-01-15' },
+  { id: 4, planCode: 'STARTER', capability: 'analytics.write', decision: 'DENY', reasonCode: 'FEATURE_NOT_INCLUDED', conditions: 'always', createdAt: '2024-01-15' },
+  { id: 5, planCode: 'PRO', capability: 'analytics.write', decision: 'ALLOW', reasonCode: 'INCLUDED_IN_PLAN', conditions: 'always', createdAt: '2024-02-01' },
+  { id: 6, planCode: 'PRO', capability: 'audit.read', decision: 'ALLOW', reasonCode: 'INCLUDED_IN_PLAN', conditions: 'always', createdAt: '2024-02-01' },
+  { id: 7, planCode: 'PRO', capability: 'users.delete', decision: 'ALLOW', reasonCode: 'INCLUDED_IN_PLAN', conditions: 'always', createdAt: '2024-02-01' },
+  { id: 8, planCode: 'ENTERPRISE', capability: 'sso.configure', decision: 'ALLOW', reasonCode: 'INCLUDED_IN_PLAN', conditions: 'always', createdAt: '2025-03-01' },
+  { id: 9, planCode: 'ENTERPRISE', capability: 'api.custom.integration', decision: 'ALLOW', reasonCode: 'INCLUDED_IN_PLAN', conditions: 'always', createdAt: '2025-03-01' },
+  { id: 10, planCode: 'STARTER', capability: 'api.custom.integration', decision: 'DENY', reasonCode: 'FEATURE_NOT_INCLUDED', conditions: 'always', createdAt: '2024-01-15' },
+];
+
+export const billingFeatures = [
+  { id: 1, code: 'API_ACCESS', name: 'Accès API', status: 'ACTIVE', measured: true, quotaCode: 'API_CALLS', plans: ['FREE', 'STARTER', 'PRO', 'ENTERPRISE'], createdAt: '2024-01-01', updatedAt: '2025-01-01' },
+  { id: 2, code: 'EMAIL_SUPPORT', name: 'Support Email', status: 'ACTIVE', measured: false, quotaCode: null, plans: ['STARTER', 'PRO', 'ENTERPRISE'], createdAt: '2024-01-15', updatedAt: '2025-01-15' },
+  { id: 3, code: 'PRIORITY_SUPPORT', name: 'Support Prioritaire', status: 'ACTIVE', measured: false, quotaCode: null, plans: ['PRO', 'ENTERPRISE'], createdAt: '2024-02-01', updatedAt: '2025-02-01' },
+  { id: 4, code: 'BASIC_ANALYTICS', name: 'Analytique de Base', status: 'ACTIVE', measured: true, quotaCode: 'API_CALLS', plans: ['STARTER'], createdAt: '2024-01-15', updatedAt: '2025-01-15' },
+  { id: 5, code: 'ADVANCED_ANALYTICS', name: 'Analytique Avancée', status: 'ACTIVE', measured: true, quotaCode: 'API_CALLS', plans: ['PRO', 'ENTERPRISE'], createdAt: '2024-02-01', updatedAt: '2025-02-01' },
+  { id: 6, code: 'AUDIT_LOG', name: 'Journal d\'Audit', status: 'ACTIVE', measured: false, quotaCode: null, plans: ['PRO', 'ENTERPRISE'], createdAt: '2024-02-01', updatedAt: '2025-02-01' },
+  { id: 7, code: 'SSO', name: 'Single Sign-On', status: 'ACTIVE', measured: false, quotaCode: null, plans: ['ENTERPRISE'], createdAt: '2025-03-01', updatedAt: '2025-03-01' },
+  { id: 8, code: 'SLA', name: 'SLA Enterprise', status: 'ACTIVE', measured: false, quotaCode: null, plans: ['ENTERPRISE'], createdAt: '2025-03-01', updatedAt: '2025-03-01' },
+  { id: 9, code: 'TRIAL_EXTENDED', name: 'Essai Étendu', status: 'INACTIVE', measured: false, quotaCode: null, plans: [], createdAt: '2024-06-01', updatedAt: '2024-12-01' },
+];
+
+export const billingFeatureOverrides = [
+  { id: 1, featureCode: 'API_ACCESS', tenantName: 'Boutique B - Munich', granted: true, date: '2025-08-15', reason: 'Contrat entreprise ponctuel', author: 'Alice Admin' },
+  { id: 2, featureCode: 'EMAIL_SUPPORT', tenantName: 'Boutique C - Toronto', granted: false, date: '2025-07-20', reason: 'Résiliation anticipée', author: 'Bob Support' },
+  { id: 3, featureCode: 'SSO', tenantName: 'Boutique A - Lyon', granted: true, date: '2025-09-01', reason: 'Déploiement exceptionnel SSO', author: 'Alice Admin' },
+];
+
+export const billingOverview = {
+  stats: [
+    { label: 'Plans actifs', value: String(billingPlans.filter((p) => p.status === 'ACTIVE').length + billingPlans.filter((p) => p.status === 'VALIDATING').length), context: 'sur 5 plans', color: '#2563eb' },
+    { label: 'Abonnements actifs', value: String(billingSubscriptions.filter((s) => s.status === 'ACTIVE').length), context: `${billingSubscriptions.filter((s) => s.status === 'TRIAL').length} en essai`, color: '#10b981' },
+    { label: 'MRR mock', value: '€1 856', context: '€22 272 / an', color: '#7c3aed' },
+    { label: 'Paiements en échec', value: String(billingPayments.filter((p) => p.status === 'FAILED').length), context: '3 tentatives récentes', color: '#ef4444' },
+    { label: 'Tenants past-due', value: String(billingSubscriptions.filter((s) => s.status === 'PAST_DUE').length), context: 'À résoudre', color: '#f59e0b' },
+  ],
+  flow: ['Plan', 'Abonnement', 'Facturation', 'Paiement', 'Entitlements'],
+  charts: {
+    mrrTrend: [
+      { month: 'Jan', value: 1200 }, { month: 'Feb', value: 1350 }, { month: 'Mar', value: 1400 },
+      { month: 'Apr', value: 1550 }, { month: 'May', value: 1600 }, { month: 'Jun', value: 1680 },
+      { month: 'Jul', value: 1720 }, { month: 'Aug', value: 1750 }, { month: 'Sep', value: 1856 },
+    ],
+    statusDistribution: [
+      { name: 'ACTIF', value: 3, color: '#10b981' },
+      { name: 'PAST_DUE', value: 1, color: '#ef4444' },
+      { name: 'SUSPENDU', value: 1, color: '#f59e0b' },
+      { name: 'AUTRES', value: 5, color: '#6b7280' },
+    ],
+  },
+};

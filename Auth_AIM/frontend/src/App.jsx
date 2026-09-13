@@ -32,6 +32,15 @@ import DelegationPage from './pages/Admin/DelegationPage';
 import SecurityAuditPage from './pages/Admin/SecurityAuditPage';
 import AdminMonitoringPage from './pages/Admin/MonitoringPage';
 import AdminActionsPage from './pages/Admin/AdminActionsPage';
+import BillingOverviewPage from './pages/Billing/OverviewPage';
+import PlansPage from './pages/Billing/PlansPage';
+import SubscriptionsPage from './pages/Billing/SubscriptionsPage';
+import InvoicesPage from './pages/Billing/InvoicesPage';
+import PaymentsPage from './pages/Billing/PaymentsPage';
+import WebhooksPage from './pages/Billing/WebhooksPage';
+import EntitlementsPage from './pages/Billing/EntitlementsPage';
+import AccessRulesPage from './pages/Billing/AccessRulesPage';
+import FeaturesPage from './pages/Billing/FeaturesPage';
 
 function AppRoutes() {
   return (
@@ -75,6 +84,15 @@ function AppRoutes() {
         <Route path="/admin/security-audit" element={<SecurityAuditPage />} />
         <Route path="/admin/monitoring" element={<AdminMonitoringPage />} />
         <Route path="/admin/actions" element={<AdminActionsPage />} />
+        <Route path="/billing/overview" element={<BillingOverviewPage />} />
+        <Route path="/billing/plans" element={<PlansPage />} />
+        <Route path="/billing/subscriptions" element={<SubscriptionsPage />} />
+        <Route path="/billing/invoices" element={<InvoicesPage />} />
+        <Route path="/billing/payments" element={<PaymentsPage />} />
+        <Route path="/billing/webhooks" element={<WebhooksPage />} />
+        <Route path="/billing/entitlements" element={<EntitlementsPage />} />
+        <Route path="/billing/access-rules" element={<AccessRulesPage />} />
+        <Route path="/billing/features" element={<FeaturesPage />} />
         <Route path="/erps" element={<Placeholder title="ERP Registry" />} />
         <Route path="/mapping" element={<Placeholder title="Mapping" />} />
         <Route path="/adapters" element={<Placeholder title="Adapters" />} />

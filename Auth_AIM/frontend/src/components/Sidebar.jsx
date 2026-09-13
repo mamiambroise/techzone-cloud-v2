@@ -68,6 +68,21 @@ const menuSections = [
         ],
       },
       {
+        title: 'Tenant / Subscription / Billing',
+        defaultOpen: false,
+        items: [
+          { path: '/billing/overview', label: "Vue d'ensemble" },
+          { path: '/billing/plans', label: 'Plans & Offres' },
+          { path: '/billing/subscriptions', label: 'Abonnements' },
+          { path: '/billing/invoices', label: 'Facturation' },
+          { path: '/billing/payments', label: 'Paiements' },
+          { path: '/billing/webhooks', label: 'Intégration & Webhooks' },
+          { path: '/billing/entitlements', label: 'Entitlements & Quotas' },
+          { path: '/billing/access-rules', label: "Règles d'accès par plan" },
+          { path: '/billing/features', label: 'Gestion des Features' },
+        ],
+      },
+      {
         title: 'Observability & Security',
         items: [
           { path: '/observability', label: "Vue d'ensemble" },
@@ -177,6 +192,14 @@ function GroupIcon({ name, size = 16 }) {
       <svg {...props}>
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+  if (name === 'users') {
+    return (
+      <svg {...props}>
+        <path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
       </svg>
     );
   }
@@ -307,6 +330,7 @@ function Sidebar({ isOpen, onToggle }) {
     });
     return initial;
   });
+  const [isHoverExpanded, setIsHoverExpanded] = useState(false);
 
   const toggleGroup = (title) => {
     setOpenGroups((prev) => ({ ...prev, [title]: !prev[title] }));
@@ -317,9 +341,11 @@ function Sidebar({ isOpen, onToggle }) {
     if (normalized.includes('plateforme') || normalized.includes('platform')) return 'platform';
     if (normalized.includes('platform foundation')) return 'platform-foundation';
     if (normalized.includes('auth')) return 'iam';
+    if (normalized.includes('utilisateurs') || normalized.includes('users')) return 'users';
     if (normalized.includes('observability') || normalized.includes('security')) return 'observability';
-    if (normalized.includes('platform administration')) return 'platform';
-    if (normalized.includes('conception')) return 'conception';
+if (normalized.includes('platform administration')) return 'platform';
+  if (normalized.includes('tenant') || normalized.includes('subscription') || normalized.includes('billing')) return 'business';
+  if (normalized.includes('conception')) return 'conception';
     if (normalized.includes('business manager')) return 'business';
     if (normalized.includes('pack manager')) return 'pack';
     if (normalized.includes('erp') && normalized.includes('runtime')) return 'erp';
@@ -338,8 +364,14 @@ function Sidebar({ isOpen, onToggle }) {
     return location.pathname === path;
   };
 
+  const effectiveOpen = isOpen || isHoverExpanded;
+
   return (
-    <aside className={`sidebar ${isOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
+    <aside
+      className={`sidebar ${effectiveOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}
+      onMouseEnter={() => !isOpen && setIsHoverExpanded(true)}
+      onMouseLeave={() => !isOpen && setIsHoverExpanded(false)}
+    >
       <div className="sidebar-header">
         <div className="sidebar-brand">
           <div className="sidebar-logo">
@@ -349,7 +381,7 @@ function Sidebar({ isOpen, onToggle }) {
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          {isOpen && (
+          {effectiveOpen && (
             <div className="sidebar-brand-text">
               <span className="sidebar-title">TECHZONE CLOUD</span>
               <span className="sidebar-subtitle">ADMIN</span>
@@ -361,7 +393,7 @@ function Sidebar({ isOpen, onToggle }) {
       <nav className="sidebar-nav">
         {menuSections.map((section) => (
           <div key={section.title} className="sidebar-section">
-            {isOpen && <div className="sidebar-section-title">{section.title}</div>}
+            {effectiveOpen && <div className="sidebar-section-title">{section.title}</div>}
             {section.items && !section.groups && (
               <div className="sidebar-items">
                 {section.items.map((item) => (
@@ -372,8 +404,8 @@ function Sidebar({ isOpen, onToggle }) {
                     title={item.label}
                   >
                     <span className="sidebar-item-icon"><Icon name={item.icon} /></span>
-                    {isOpen && <span className="sidebar-item-label">{item.label}</span>}
-                    {item.badge && isOpen && <span className="sidebar-badge">{item.badge}</span>}
+                    {effectiveOpen && <span className="sidebar-item-label">{item.label}</span>}
+                    {item.badge && effectiveOpen && <span className="sidebar-badge">{item.badge}</span>}
                   </Link>
                 ))}
               </div>
@@ -386,14 +418,14 @@ function Sidebar({ isOpen, onToggle }) {
                       type="button"
                       className={`sidebar-group-title ${openGroups[group.title] ? 'sidebar-group-open' : ''}`}
                       onClick={() => toggleGroup(group.title)}
-                      title={isOpen ? group.title : ''}
+                      title={effectiveOpen ? group.title : ''}
                     >
-                      {isOpen && <span className="sidebar-group-icon"><GroupIcon name={groupIconName(group.title)} size={16} /></span>}
-                      {isOpen && <span className="sidebar-group-label">{group.title}</span>}
-                      {isOpen && <span className={`sidebar-group-chevron ${openGroups[group.title] ? 'sidebar-group-chevron-open' : ''}`}><Icon name="chevron-down" size={14} /></span>}
-                      {!isOpen && <span className="sidebar-item-icon"><Icon name={group.title === 'Dashboard' ? 'home' : 'chevron-right'} /></span>}
+                      {effectiveOpen && <span className="sidebar-group-icon"><GroupIcon name={groupIconName(group.title)} size={16} /></span>}
+                      {effectiveOpen && <span className="sidebar-group-label">{group.title}</span>}
+                      {effectiveOpen && <span className={`sidebar-group-chevron ${openGroups[group.title] ? 'sidebar-group-chevron-open' : ''}`}><Icon name="chevron-down" size={14} /></span>}
+                      {!effectiveOpen && <span className="sidebar-item-icon"><Icon name={group.title === 'Dashboard' ? 'home' : 'chevron-right'} /></span>}
                     </button>
-                    {openGroups[group.title] && isOpen && (
+                    {openGroups[group.title] && effectiveOpen && (
                       <div className="sidebar-group-items">
                         {group.items.map((item) => {
                           if (item.items) {
@@ -403,14 +435,14 @@ function Sidebar({ isOpen, onToggle }) {
                                   type="button"
                                   className={`sidebar-group-title sidebar-group-title-nested ${openGroups[item.title] ? 'sidebar-group-open' : ''}`}
                                   onClick={() => toggleGroup(item.title)}
-                                  title={isOpen ? item.title : ''}
+                                  title={effectiveOpen ? item.title : ''}
                                 >
-                                  {isOpen && <span className="sidebar-group-icon"><GroupIcon name={groupIconName(item.title)} size={16} /></span>}
-                                  {isOpen && <span className="sidebar-group-label">{item.title}</span>}
-                                  {isOpen && <span className={`sidebar-group-chevron ${openGroups[item.title] ? 'sidebar-group-chevron-open' : ''}`}><Icon name="chevron-down" size={14} /></span>}
-                                  {!isOpen && <span className="sidebar-item-icon"><Icon name="chevron-right" /></span>}
+                                  {effectiveOpen && <span className="sidebar-group-icon"><GroupIcon name={groupIconName(item.title)} size={16} /></span>}
+                                  {effectiveOpen && <span className="sidebar-group-label">{item.title}</span>}
+                                  {effectiveOpen && <span className={`sidebar-group-chevron ${openGroups[item.title] ? 'sidebar-group-chevron-open' : ''}`}><Icon name="chevron-down" size={14} /></span>}
+                                  {!effectiveOpen && <span className="sidebar-item-icon"><Icon name="chevron-right" /></span>}
                                 </button>
-                                {openGroups[item.title] && isOpen && (
+                                {openGroups[item.title] && effectiveOpen && (
                                   <div className="sidebar-group-items">
                                     {item.items.map((subItem) => (
                                       <Link
@@ -422,7 +454,7 @@ function Sidebar({ isOpen, onToggle }) {
                                       >
                                         <span className="sidebar-item-dot" />
                                         <span className="sidebar-item-label">{subItem.label}</span>
-                                        {subItem.badge && isOpen && <span className="sidebar-badge">{subItem.badge}</span>}
+                                        {subItem.badge && effectiveOpen && <span className="sidebar-badge">{subItem.badge}</span>}
                                       </Link>
                                     ))}
                                   </div>
@@ -440,7 +472,7 @@ function Sidebar({ isOpen, onToggle }) {
                             >
                               <span className="sidebar-item-dot" />
                               <span className="sidebar-item-label">{item.label}</span>
-                              {item.badge && isOpen && <span className="sidebar-badge">{item.badge}</span>}
+                              {item.badge && effectiveOpen && <span className="sidebar-badge">{item.badge}</span>}
                             </Link>
                           );
                         })}
@@ -455,9 +487,9 @@ function Sidebar({ isOpen, onToggle }) {
       </nav>
 
       <div className="sidebar-footer">
-        <button type="button" className="sidebar-collapse-btn" onClick={onToggle} title={isOpen ? 'Réduire le menu' : 'Développer le menu'}>
-          <Icon name="chevron-right" size={16} />
-          {isOpen && <span>Réduire le menu</span>}
+        <button type="button" className="sidebar-collapse-btn" onClick={onToggle} title={effectiveOpen ? 'Réduire le menu' : 'Développer le menu'}>
+          <Icon name={effectiveOpen ? 'chevron-right' : 'chevron-left'} size={16} />
+          {effectiveOpen && <span>Réduire le menu</span>}
         </button>
       </div>
     </aside>

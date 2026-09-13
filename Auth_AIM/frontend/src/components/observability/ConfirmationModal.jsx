@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 
 export function ConfirmationModal({ open, title, message, onConfirm, onCancel, confirmLabel = 'Confirmer', cancelLabel = 'Annuler', danger = false }) {
-  if (!open) return null;
-
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === 'Escape') onCancel?.();
@@ -10,6 +8,8 @@ export function ConfirmationModal({ open, title, message, onConfirm, onCancel, c
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onCancel]);
+
+  if (!open) return null;
 
   return (
     <div className="obs-modal-backdrop" onClick={onCancel}>
