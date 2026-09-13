@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 
 import { EnvironmentsService } from '../environments/environment.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
@@ -19,17 +27,20 @@ export class EnvironmentsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.environmentsService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateEnvironmentDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateEnvironmentDto,
+  ) {
     return this.environmentsService.update(id, dto);
   }
 
   @Get(':id/history')
-  getHistory(@Param('id') id: string) {
+  getHistory(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.environmentsService.getHistory(id);
   }
 }
