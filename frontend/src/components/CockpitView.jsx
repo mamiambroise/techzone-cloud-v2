@@ -61,7 +61,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
     {
       label: 'Contrats Actifs',
       value: activeContractsCount,
-      subtext: `${lockedContractsCount} verrouillés 🔒`,
+      subtext: `${lockedContractsCount} verrouillés`,
       icon: FileCode2,
       color: 'text-violet-600 bg-violet-50 border-violet-200',
       tab: 'contracts',
@@ -112,7 +112,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
               Techzone Cloud Platform Cockpit
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Supervision unifiée de l’état de la plateforme : intégrité du <strong className="text-indigo-200 font-semibold">Platform Contract v1 🔒</strong>,
+              Supervision unifiée de l’état de la plateforme : intégrité du <strong className="text-indigo-200 font-semibold">Platform Contract v1</strong>,
               cycle de vie des applications, isolation des 4 environnements, registre de contrats et snapshots canoniques.
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
           <div className="flex items-center gap-3 text-slate-400 text-xs">
             <span className="flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-emerald-400" />
-              Platform Contract v1 🔒 : <span className="text-slate-200 font-semibold">{platformContractLocked ? 'VERROUILLÉ' : 'OUVERT'}</span>
+              Platform Contract v1 : <span className="text-slate-200 font-semibold">{platformContractLocked ? 'VERROUILLÉ' : 'OUVERT'}</span>
             </span>
             <span>•</span>
             <span className="hidden sm:inline">Garantie d'absence de breaking change silencieux</span>
@@ -330,7 +330,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
               className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl hover:bg-white transition-all border border-transparent hover:border-slate-200/80 shadow-none hover:shadow-sm"
             >
               <Shield className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Consulter la spécification Platform Contract v1 🔒</span>
+              <span>Consulter la spécification Platform Contract v1</span>
             </button>
           </div>
         </div>

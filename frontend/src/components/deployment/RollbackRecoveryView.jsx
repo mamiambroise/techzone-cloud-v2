@@ -17,7 +17,7 @@ import {
 export default function RollbackRecoveryView() {
   const dispatch = useDispatch();
   const checkpoints = useSelector((state) => state.deployment?.rollbackCheckpoints || []);
-  const providerMode = useSelector((state) => state.platform.providerMode);
+  const providerMode = useSelector((state) => state.integration.providerMode);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(checkpoints[0]?.id || '');
   const [rollbackReason, setRollbackReason] = useState('Anomalie de latence détectée post-déploiement');
   const [showConfirmModal, setShowConfirmModal] = useState(false);

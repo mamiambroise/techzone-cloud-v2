@@ -83,7 +83,7 @@ export default function PublicationView() {
             520/520 tests automatisés passés sur l'environnement Staging. Aucune régression critique.
           </p>
           <div className="pt-2 border-t border-slate-100 text-xs text-emerald-700 font-semibold">
-            ✓ Certifié conforme par CI/CD
+            OK Certifié conforme par CI/CD
           </div>
         </div>
 

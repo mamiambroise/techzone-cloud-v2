@@ -305,7 +305,7 @@ const initialState = {
 export const fetchCockpitDashboardAsync = createAsyncThunk(
   'deployment/fetchCockpitDashboard',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getCockpitDashboard();
   }
@@ -314,7 +314,7 @@ export const fetchCockpitDashboardAsync = createAsyncThunk(
 export const fetchRecentReleasesAsync = createAsyncThunk(
   'deployment/fetchRecentReleases',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getRecentReleases();
   }
@@ -323,7 +323,7 @@ export const fetchRecentReleasesAsync = createAsyncThunk(
 export const fetchRunningDeploymentsAsync = createAsyncThunk(
   'deployment/fetchRunningDeployments',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getRunningDeployments();
   }
@@ -332,7 +332,7 @@ export const fetchRunningDeploymentsAsync = createAsyncThunk(
 export const fetchDeploymentActivityAsync = createAsyncThunk(
   'deployment/fetchDeploymentActivity',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getDeploymentActivity();
   }
@@ -341,7 +341,7 @@ export const fetchDeploymentActivityAsync = createAsyncThunk(
 export const fetchDeploymentHealthAsync = createAsyncThunk(
   'deployment/fetchDeploymentHealth',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getDeploymentHealth();
   }
@@ -351,7 +351,7 @@ export const fetchDeploymentHealthAsync = createAsyncThunk(
 export const fetchReleasesAsync = createAsyncThunk(
   'deployment/fetchReleases',
   async (query, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getReleases(query);
   }
@@ -360,7 +360,7 @@ export const fetchReleasesAsync = createAsyncThunk(
 export const createReleaseAsync = createAsyncThunk(
   'deployment/createRelease',
   async (body, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return createRelease(body);
   }
@@ -369,7 +369,7 @@ export const createReleaseAsync = createAsyncThunk(
 export const assembleReleaseAsync = createAsyncThunk(
   'deployment/assembleRelease',
   async (id, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return assembleRelease(id);
   }
@@ -378,7 +378,7 @@ export const assembleReleaseAsync = createAsyncThunk(
 export const validateReleaseAsync = createAsyncThunk(
   'deployment/validateRelease',
   async (id, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return validateRelease(id);
   }
@@ -387,7 +387,7 @@ export const validateReleaseAsync = createAsyncThunk(
 export const approveReleaseAsync = createAsyncThunk(
   'deployment/approveRelease',
   async ({ id, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return approveRelease(id, body);
   }
@@ -396,7 +396,7 @@ export const approveReleaseAsync = createAsyncThunk(
 export const publishReleaseAsync = createAsyncThunk(
   'deployment/publishRelease',
   async (id, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return publishRelease(id);
   }
@@ -405,7 +405,7 @@ export const publishReleaseAsync = createAsyncThunk(
 export const archiveReleaseAsync = createAsyncThunk(
   'deployment/archiveRelease',
   async (id, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return archiveRelease(id);
   }
@@ -415,7 +415,7 @@ export const archiveReleaseAsync = createAsyncThunk(
 export const fetchDeploymentsAsync = createAsyncThunk(
   'deployment/fetchDeployments',
   async (query, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getDeployments(query);
   }
@@ -424,7 +424,7 @@ export const fetchDeploymentsAsync = createAsyncThunk(
 export const createDeploymentAsync = createAsyncThunk(
   'deployment/createDeployment',
   async (body, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return createDeployment(body);
   }
@@ -433,7 +433,7 @@ export const createDeploymentAsync = createAsyncThunk(
 export const verifyDeploymentAsync = createAsyncThunk(
   'deployment/verifyDeployment',
   async ({ id, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return verifyDeployment(id, body);
   }
@@ -442,7 +442,7 @@ export const verifyDeploymentAsync = createAsyncThunk(
 export const cancelDeploymentAsync = createAsyncThunk(
   'deployment/cancelDeployment',
   async ({ id, actor }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return cancelDeployment(id, actor);
   }
@@ -451,7 +451,7 @@ export const cancelDeploymentAsync = createAsyncThunk(
 export const retryDeploymentAsync = createAsyncThunk(
   'deployment/retryDeployment',
   async ({ id, actor }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return retryDeployment(id, actor);
   }
@@ -461,7 +461,7 @@ export const retryDeploymentAsync = createAsyncThunk(
 export const fetchRollbacksAsync = createAsyncThunk(
   'deployment/fetchRollbacks',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getRollbacks();
   }
@@ -470,7 +470,7 @@ export const fetchRollbacksAsync = createAsyncThunk(
 export const rollbackDeploymentAsync = createAsyncThunk(
   'deployment/rollbackDeployment',
   async ({ deploymentId, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return rollbackDeployment(deploymentId, body);
   }
@@ -479,7 +479,7 @@ export const rollbackDeploymentAsync = createAsyncThunk(
 export const rollbackEnvironmentAsync = createAsyncThunk(
   'deployment/rollbackEnvironment',
   async ({ environmentId, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return rollbackEnvironment(environmentId, body);
   }
@@ -489,7 +489,7 @@ export const rollbackEnvironmentAsync = createAsyncThunk(
 export const fetchGatesAsync = createAsyncThunk(
   'deployment/fetchGates',
   async (deploymentId, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getGates(deploymentId);
   }
@@ -498,7 +498,7 @@ export const fetchGatesAsync = createAsyncThunk(
 export const evaluateGateAsync = createAsyncThunk(
   'deployment/evaluateGate',
   async ({ deploymentId, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return evaluateGate(deploymentId, body);
   }
@@ -507,7 +507,7 @@ export const evaluateGateAsync = createAsyncThunk(
 export const approveGateAsync = createAsyncThunk(
   'deployment/approveGate',
   async ({ deploymentId, gateId, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return approveGate(deploymentId, gateId, body);
   }
@@ -516,7 +516,7 @@ export const approveGateAsync = createAsyncThunk(
 export const bypassGateAsync = createAsyncThunk(
   'deployment/bypassGate',
   async ({ deploymentId, gateId, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return bypassGate(deploymentId, gateId, body);
   }
@@ -526,7 +526,7 @@ export const bypassGateAsync = createAsyncThunk(
 export const fetchEnvironmentDeploymentsAsync = createAsyncThunk(
   'deployment/fetchEnvironmentDeployments',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getEnvironmentDeployments();
   }
@@ -535,7 +535,7 @@ export const fetchEnvironmentDeploymentsAsync = createAsyncThunk(
 export const promoteReleaseAsync = createAsyncThunk(
   'deployment/promoteRelease',
   async (body, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return promoteReleaseApi(body);
   }
@@ -544,7 +544,7 @@ export const promoteReleaseAsync = createAsyncThunk(
 export const lockEnvironmentAsync = createAsyncThunk(
   'deployment/lockEnvironment',
   async ({ environmentId, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return lockEnvironment(environmentId, body);
   }
@@ -553,7 +553,7 @@ export const lockEnvironmentAsync = createAsyncThunk(
 export const unlockEnvironmentAsync = createAsyncThunk(
   'deployment/unlockEnvironment',
   async ({ environmentId, actor }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return unlockEnvironment(environmentId, actor);
   }
@@ -563,7 +563,7 @@ export const unlockEnvironmentAsync = createAsyncThunk(
 export const fetchDeploymentHistoryAsync = createAsyncThunk(
   'deployment/fetchDeploymentHistory',
   async (query, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getDeploymentHistory(query);
   }
@@ -572,7 +572,7 @@ export const fetchDeploymentHistoryAsync = createAsyncThunk(
 export const fetchDeploymentTimelineAsync = createAsyncThunk(
   'deployment/fetchDeploymentTimeline',
   async (deploymentId, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getDeploymentTimeline(deploymentId);
   }
@@ -581,7 +581,7 @@ export const fetchDeploymentTimelineAsync = createAsyncThunk(
 export const fetchDeploymentDiagnosticsAsync = createAsyncThunk(
   'deployment/fetchDeploymentDiagnostics',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') return { skipped: true };
     return getDeploymentDiagnostics();
   }

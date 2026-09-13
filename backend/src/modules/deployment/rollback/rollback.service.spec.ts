@@ -38,6 +38,8 @@ describe('RollbackService (DEP-CDC-06)', () => {
         configurationVersion: '0.9.0',
         status: 'RELEASED',
         createdBy: 'system',
+        artifactRefs: [],
+        contractVersions: [],
       },
     });
 

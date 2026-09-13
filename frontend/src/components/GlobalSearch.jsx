@@ -517,7 +517,7 @@ export default function GlobalSearch({ isMobileExpanded = false, onCloseMobile }
                           </span>
                           {cfg.isSecret && (
                             <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
-                              SECRET 🔒
+                              SECRET
                             </span>
                           )}
                         </div>

@@ -270,7 +270,7 @@ export default function IntegrationContractsV1View() {
     dispatch(
       addToast({
         type: contractV1Locked ? 'warning' : 'success',
-        title: contractV1Locked ? 'Contrat v1 Déverrouillé' : 'Contrat v1 Verrouillé 🔒',
+        title: contractV1Locked ? 'Contrat v1 Déverrouillé' : 'Contrat v1 Verrouillé',
         message: contractV1Locked
           ? 'Attention : le contrat est désormais modifiable.'
           : 'Le contrat v1 est scellé conformément aux exigences d\'audit Team 4.',
@@ -346,7 +346,7 @@ export default function IntegrationContractsV1View() {
             <span className="text-xs text-slate-400 font-mono">•</span>
             <span className="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Contrats v1 Scellés 🔒
+              Contrats v1 Scellés
             </span>
             <span className="text-xs text-slate-400 font-mono">•</span>
             <span className="text-xs font-mono text-slate-300">Team 4 — Platform, API & Deployment</span>
@@ -371,7 +371,7 @@ export default function IntegrationContractsV1View() {
             }`}
           >
             {contractV1Locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-            <span>{contractV1Locked ? 'Verrouillé 🔒' : 'Déverrouillé 🔓'}</span>
+            <span>{contractV1Locked ? 'Verrouillé' : 'Déverrouillé'}</span>
           </button>
 
           <button
@@ -544,7 +544,7 @@ SYSTÈMES EXTERNES`}
             </p>
           </div>
           <span className="text-xs font-mono text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 font-semibold">
-            SemVer v1.0.0 LOCKED 🔒
+            SemVer v1.0.0 LOCKED
           </span>
         </div>
 
@@ -641,7 +641,7 @@ SYSTÈMES EXTERNES`}
                     : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
                 }`}
               >
-                MockProvider 🧪
+                MockProvider
               </button>
               <button
                 onClick={() => dispatch(setProviderMode('REAL'))}
@@ -651,7 +651,7 @@ SYSTÈMES EXTERNES`}
                     : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
                 }`}
               >
-                RealProvider 🌐
+                RealProvider
               </button>
             </div>
           </div>

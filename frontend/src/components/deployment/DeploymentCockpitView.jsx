@@ -10,6 +10,7 @@ import {
   fetchDeploymentActivityAsync,
   fetchDeploymentHealthAsync,
 } from '../../store/deploymentSlice.js';
+import { setProviderMode } from '../../store/integrationSlice.js';
 import { addToast } from '../../store/platformSlice.js';
 import {
   Rocket,
@@ -36,7 +37,7 @@ export default function DeploymentCockpitView() {
   const releases = useSelector((state) => state.deployment?.releases || []);
   const activeBlueGreenSlot = useSelector((state) => state.deployment?.activeBlueGreenSlot || 'BLUE');
   const canaryTrafficWeight = useSelector((state) => state.deployment?.canaryTrafficWeight || 20);
-  const providerMode = useSelector((state) => state.platform.providerMode);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   useEffect(() => {
     if (providerMode === 'REAL') {
@@ -54,6 +55,18 @@ export default function DeploymentCockpitView() {
     filterEnv === 'ALL'
       ? deployments
       : deployments.filter((d) => d.environment === filterEnv);
+
+  const handleToggleProvider = () => {
+    const nextMode = providerMode === 'REAL' ? 'MOCK' : 'REAL';
+    dispatch(setProviderMode(nextMode));
+    dispatch(
+      addToast({
+        type: 'info',
+        title: 'Provider Pattern basculé',
+        message: `La couche de déploiement utilise désormais le ${nextMode === 'REAL' ? 'RealDeploymentProvider' : 'MockDeploymentProvider (Sandbox)'}.`,
+      })
+    );
+  };
 
   const environments = [
     {
@@ -137,6 +150,17 @@ export default function DeploymentCockpitView() {
             >
               <Rocket className="w-3.5 h-3.5" />
               <span>Gérer les Pipelines</span>
+            </button>
+            <button
+              onClick={handleToggleProvider}
+              className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold transition-all border ${
+                providerMode === 'REAL'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+              }`}
+              title="Cliquer pour basculer Mock vs Real Provider"
+            >
+              Mode: {providerMode === 'REAL' ? 'RealProvider 🌐' : 'MockProvider 🧪'}
             </button>
           </div>
         </div>

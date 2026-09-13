@@ -80,7 +80,7 @@ const initialState = {
     {
       id: 'alt-2',
       type: 'info',
-      title: 'Platform Contract v1 verrouillé 🔒',
+      title: 'Platform Contract v1 verrouillé',
       message: 'Intégrité certifiée par Team 4. Aucune rupture détectée.',
       timestamp: 'Il y a 45 min',
       code: 'PLATFORM_CONTRACT_LOCKED',

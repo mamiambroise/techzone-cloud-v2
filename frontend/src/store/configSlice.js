@@ -292,7 +292,7 @@ export function validateConfigEntry(config) {
 export const fetchConfigsAsync = createAsyncThunk(
   'config/fetchConfigs',
   async (_, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -303,7 +303,7 @@ export const fetchConfigsAsync = createAsyncThunk(
 export const addConfigItemAsync = createAsyncThunk(
   'config/addConfigItem',
   async (body, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }
@@ -314,7 +314,7 @@ export const addConfigItemAsync = createAsyncThunk(
 export const updateConfigItemAsync = createAsyncThunk(
   'config/updateConfigItem',
   async ({ id, body }, { getState }) => {
-    const { providerMode } = getState().platform;
+    const { providerMode } = getState().integration;
     if (providerMode === 'MOCK') {
       return { skipped: true };
     }

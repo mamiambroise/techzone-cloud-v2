@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   SlidersHorizontal,
 } from 'lucide-react';
+import StaleDataBanner from '../common/StaleDataBanner.jsx';
 
 export default function IntegrationCockpitView({
   onOpenNewConnector,
@@ -85,6 +86,8 @@ export default function IntegrationCockpitView({
   const showAttentionBanner = degradedConnectors.length > 0;
   const attentionRequiredCount = degradedConnectors.length + failureDiagnostics.length;
 
+  const isStale = providerMode === 'REAL' && !connectors.some((c) => c.mode === 'REAL');
+
   const renderSectionError = (section) => {
     if (!cockpitErrors[section]) return null;
     return (
@@ -129,6 +132,8 @@ export default function IntegrationCockpitView({
 
   return (
     <div className="space-y-6">
+      <StaleDataBanner isStale={isStale} />
+
       {/* Top Banner / Integration Context Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl text-white shadow-xl border border-indigo-900/40 relative overflow-hidden">
         {/* Subtle grid pattern background */}
@@ -154,7 +159,7 @@ export default function IntegrationCockpitView({
               }`}
               title="Cliquer pour basculer Mock vs Real Provider"
             >
-              Mode: {providerMode === 'REAL' ? 'RealProvider 🌐' : 'MockProvider 🧪'}
+              Mode: {providerMode === 'REAL' ? 'RealProvider' : 'MockProvider'}
             </button>
           </div>
 
@@ -184,7 +189,7 @@ export default function IntegrationCockpitView({
             className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-indigo-200" />
-            <span>Contrats v1 🔒</span>
+            <span>Contrats v1</span>
           </button>
 
           <button
@@ -212,7 +217,7 @@ export default function IntegrationCockpitView({
                 onClick={() => setShowEndpointsModal(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
-                ✕
+                X
               </button>
             </div>
 

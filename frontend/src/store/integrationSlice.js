@@ -49,7 +49,6 @@ import {
 import {
   getDiagnosticsMetrics,
   getLogs,
-  getTimeline,
 } from '../api/diagnosticsApi.js';
 
 // Standard Error Codes defined in API-CDC-00 Section 8 & API-CDC-07 Section 3
@@ -76,7 +75,7 @@ const normalizeConnector = (connector) => {
     : connector.capabilities && typeof connector.capabilities === 'object'
       ? Object.keys(connector.capabilities)
       : [];
-  return { ...connector, health, capabilities };
+  return { ...connector, health, capabilities, mode: 'REAL' };
 };
 
 // Initial Connectors (API-CDC-02)
@@ -887,14 +886,8 @@ export const fetchApis = createAsyncThunk(
     }
 
     const response = await getApis();
-    const rawApis = response.data || [];
-    return rawApis.map((api) => ({
-      ...api,
-      status: api.status === 'ACTIVE' ? 'PUBLISHED' : api.status,
-      totalRequests24h: 0,
-      errorRatePct: 0,
-      p95LatencyMs: 0,
-    }));
+    const rawApis = Array.isArray(response) ? response : [];
+    return rawApis;
   }
 );
 
