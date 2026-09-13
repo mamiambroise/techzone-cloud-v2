@@ -37,43 +37,43 @@ import { setActiveIntegrationTab } from '../store/integrationSlice.js';
 import { setActiveDeploymentTab } from '../store/deploymentSlice.js';
 
 export const PF_SUBSECTIONS = [
-  { id: 'platform-contract', code: 'PF-00', name: 'Socle & Contrat v1 🔒', tab: 'platform-contract', icon: Lock, badge: 'LOCKED' },
-  { id: 'cockpit', code: 'PF-01', name: 'Platform Cockpit', tab: 'cockpit', icon: LayoutDashboard },
-  { id: 'applications', code: 'PF-02', name: 'Applications & Versions', tab: 'applications', icon: Boxes },
-  { id: 'environments', code: 'PF-03', name: 'Environnements', tab: 'environments', icon: Server },
-  { id: 'contracts', code: 'PF-04', name: 'Registre Contrats', tab: 'contracts', icon: FileCode2 },
-  { id: 'config', code: 'PF-05', name: 'Configuration Manager', tab: 'config', icon: Sliders },
-  { id: 'snapshots', code: 'PF-06', name: 'Snapshots & Historique', tab: 'snapshots', icon: Camera },
-  { id: 'specifications', code: 'PF-DOC', name: 'Index CDC & Specs', tab: 'specifications', icon: BookOpen },
+  { id: 'platform-contract', name: 'Socle & Contrat v1 🔒', tab: 'platform-contract', icon: Lock, badge: 'LOCKED' },
+  { id: 'cockpit',  name: 'Platform Cockpit', tab: 'cockpit', icon: LayoutDashboard },
+  { id: 'applications', name: 'Applications & Versions', tab: 'applications', icon: Boxes },
+  { id: 'environments', name: 'Environnements', tab: 'environments', icon: Server },
+  { id: 'contracts', name: 'Registre Contrats', tab: 'contracts', icon: FileCode2 },
+  { id: 'config', name: 'Configuration Manager', tab: 'config', icon: Sliders },
+  { id: 'snapshots', name: 'Snapshots & Historique', tab: 'snapshots', icon: Camera },
+  { id: 'specifications', name: 'Index CDC & Specs', tab: 'specifications', icon: BookOpen },
 ];
 
 export const API_SUBSECTIONS = [
-  { id: 'contracts-v1', code: 'API-00', name: 'Socle & Contrats v1 🔒', tab: 'integrations', integrationTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
-  { id: 'cockpit', code: 'API-01', name: 'Integration Cockpit', tab: 'integrations', integrationTab: 'cockpit', icon: LayoutDashboard },
-  { id: 'connectors', code: 'API-02', name: 'Connecteurs Externes', tab: 'integrations', integrationTab: 'connectors', icon: Network },
-  { id: 'apis', code: 'API-03', name: 'APIs Exposées', tab: 'integrations', integrationTab: 'apis', icon: Cpu },
-  { id: 'webhooks', code: 'API-04', name: 'Webhooks Manager', tab: 'integrations', integrationTab: 'webhooks', icon: Webhook },
-  { id: 'credentials', code: 'API-05', name: 'Credentials & Secrets', tab: 'integrations', integrationTab: 'credentials', icon: KeyRound },
-  { id: 'sync', code: 'API-06', name: 'Synchronisation', tab: 'integrations', integrationTab: 'sync', icon: RefreshCw },
-  { id: 'diagnostics', code: 'API-07', name: 'Logs & Diagnostics', tab: 'integrations', integrationTab: 'diagnostics', icon: Activity },
-  { id: 'specifications', code: 'API-DOC', name: 'Index CDC & Specs', tab: 'integrations', integrationTab: 'specifications', icon: BookOpen },
+  { id: 'contracts-v1', name: 'Socle & Contrats v1 🔒', tab: 'integrations', integrationTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
+  { id: 'cockpit', name: 'Integration Cockpit', tab: 'integrations', integrationTab: 'cockpit', icon: LayoutDashboard },
+  { id: 'connectors', name: 'Connecteurs Externes', tab: 'integrations', integrationTab: 'connectors', icon: Network },
+  { id: 'apis', name: 'APIs Exposées', tab: 'integrations', integrationTab: 'apis', icon: Cpu },
+  { id: 'webhooks', name: 'Webhooks Manager', tab: 'integrations', integrationTab: 'webhooks', icon: Webhook },
+  { id: 'credentials', name: 'Credentials & Secrets', tab: 'integrations', integrationTab: 'credentials', icon: KeyRound },
+  { id: 'sync', name: 'Synchronisation', tab: 'integrations', integrationTab: 'sync', icon: RefreshCw },
+  { id: 'diagnostics', name: 'Logs & Diagnostics', tab: 'integrations', integrationTab: 'diagnostics', icon: Activity },
+  { id: 'specifications', name: 'Index CDC & Specs', tab: 'integrations', integrationTab: 'specifications', icon: BookOpen },
 ];
 
 export const DEP_SUBSECTIONS = [
-  { id: 'contracts-v1', code: 'DEP-00', name: 'Socle & Contrat v1 🔒', tab: 'deployment', depTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
-  { id: 'cockpit', code: 'DEP-01', name: 'Deployment Cockpit', tab: 'deployment', depTab: 'cockpit', icon: Rocket },
-  { id: 'releases', code: 'DEP-02', name: 'Release Manager', tab: 'deployment', depTab: 'releases', icon: Package },
-  { id: 'pipelines', code: 'DEP-03', name: 'Pipelines & Stratégies', tab: 'deployment', depTab: 'pipelines', icon: GitBranch },
-  { id: 'promotions', code: 'DEP-04', name: 'Portes & Promotions', tab: 'deployment', depTab: 'promotions', icon: CheckCircle2 },
-  { id: 'rollback', code: 'DEP-05', name: 'Rollback & Reprise', tab: 'deployment', depTab: 'rollback', icon: CornerUpLeft },
-  { id: 'diagnostics', code: 'DEP-06', name: 'Diagnostics & Audit', tab: 'deployment', depTab: 'diagnostics', icon: Activity },
-  { id: 'specifications', code: 'DEP-DOC', name: 'Index CDC & Specs', tab: 'deployment', depTab: 'specifications', icon: BookOpen },
+  { id: 'contracts-v1', name: 'Socle & Contrat v1 🔒', tab: 'deployment', depTab: 'contracts-v1', icon: ShieldCheck, badge: 'LOCKED' },
+  { id: 'cockpit', name: 'Deployment Cockpit', tab: 'deployment', depTab: 'cockpit', icon: Rocket },
+  { id: 'releases', name: 'Release Manager', tab: 'deployment', depTab: 'releases', icon: Package },
+  { id: 'pipelines', name: 'Pipelines & Stratégies', tab: 'deployment', depTab: 'pipelines', icon: GitBranch },
+  { id: 'promotions', name: 'Portes & Promotions', tab: 'deployment', depTab: 'promotions', icon: CheckCircle2 },
+  { id: 'rollback', name: 'Rollback & Reprise', tab: 'deployment', depTab: 'rollback', icon: CornerUpLeft },
+  { id: 'diagnostics', name: 'Diagnostics & Audit', tab: 'deployment', depTab: 'diagnostics', icon: Activity },
+  { id: 'specifications', name: 'Index CDC & Specs', tab: 'deployment', depTab: 'specifications', icon: BookOpen },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
   const dispatch = useDispatch();
   const activeTab = useSelector((state) => state.platform.activeTab);
-  const activeIntegrationTab = useSelector((state) => state.integration?.activeTab || 'cockpit');
+  const activeIntegrationTab = useSelector((state) => state.integration?.activeIntegrationTab || 'cockpit');
   const activeDeploymentTab = useSelector((state) => state.deployment?.activeTab || 'cockpit');
   const activeModuleId = useSelector((state) => state.platform.activeModuleId || '01');
   const sidebarCollapsed = useSelector((state) => state.platform.sidebarCollapsed);
@@ -184,7 +184,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   Techzone Cloud
                 </h1>
                 <p className="text-[10px] text-sky-400 font-mono tracking-wider uppercase truncate">
-                  Platform Foundation • Team 4
+                  Platform Foundation 
                 </p>
               </div>
             )}
@@ -225,9 +225,9 @@ export default function Sidebar({ isOpen, onClose }) {
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
                   <span>Platform Foundation</span>
                 </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700/50">
+                {/*<span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700/50">
                   PF-CDC
-                </span>
+                </span>*/}
               </div>
             ) : (
               <div className="w-full flex justify-center py-1">
@@ -326,9 +326,9 @@ export default function Sidebar({ isOpen, onClose }) {
                   <Network className="w-3.5 h-3.5 text-indigo-400" />
                   <span>API_Integration_Layer</span>
                 </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/60">
+                {/*<span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/60">
                   API-CDC
-                </span>
+                </span>*/}
               </div>
             ) : (
               <div className="w-full flex justify-center py-1">
@@ -419,9 +419,9 @@ export default function Sidebar({ isOpen, onClose }) {
                   <Rocket className="w-3.5 h-3.5 text-amber-400" />
                   <span>DEP Publication</span>
                 </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-700/60">
+                {/*<span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-700/60">
                   DEP-CDC
-                </span>
+                </span>*/}
               </div>
             ) : (
               <div className="w-full flex justify-center py-1">

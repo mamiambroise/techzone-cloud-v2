@@ -1,4 +1,52 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  getCockpitDashboard,
+  getRecentReleases,
+  getRunningDeployments,
+  getDeploymentActivity,
+  getDeploymentHealth,
+  getReleases,
+  getRelease,
+  createRelease,
+  assembleRelease,
+  validateRelease,
+  approveRelease,
+  publishRelease,
+  archiveRelease,
+  getReleaseHistory,
+  compareReleases,
+} from '../api/deployment/deploymentApi.js';
+import {
+  getDeployments,
+  getDeployment,
+  createDeployment,
+  verifyDeployment,
+  cancelDeployment,
+  retryDeployment,
+} from '../api/deployment/deploymentsApi.js';
+import {
+  getRollbacks,
+  rollbackDeployment,
+  rollbackEnvironment,
+} from '../api/deployment/rollbackApi.js';
+import {
+  getGates,
+  evaluateGate,
+  approveGate,
+  bypassGate,
+} from '../api/deployment/gatesApi.js';
+import {
+  getEnvironmentDeployments,
+  promoteRelease as promoteReleaseApi,
+  lockEnvironment,
+  unlockEnvironment,
+  detectDrift,
+} from '../api/deployment/environmentDeploymentApi.js';
+import {
+  getDeploymentHistory,
+  getDeploymentTimeline,
+  getDeploymentDiagnostics,
+} from '../api/deployment/deploymentDiagnosticsApi.js';
 
 const initialReleases = [
   {
@@ -253,6 +301,292 @@ const initialState = {
   },
 };
 
+// Cockpit thunks
+export const fetchCockpitDashboardAsync = createAsyncThunk(
+  'deployment/fetchCockpitDashboard',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getCockpitDashboard();
+  }
+);
+
+export const fetchRecentReleasesAsync = createAsyncThunk(
+  'deployment/fetchRecentReleases',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getRecentReleases();
+  }
+);
+
+export const fetchRunningDeploymentsAsync = createAsyncThunk(
+  'deployment/fetchRunningDeployments',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getRunningDeployments();
+  }
+);
+
+export const fetchDeploymentActivityAsync = createAsyncThunk(
+  'deployment/fetchDeploymentActivity',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getDeploymentActivity();
+  }
+);
+
+export const fetchDeploymentHealthAsync = createAsyncThunk(
+  'deployment/fetchDeploymentHealth',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getDeploymentHealth();
+  }
+);
+
+// Releases thunks
+export const fetchReleasesAsync = createAsyncThunk(
+  'deployment/fetchReleases',
+  async (query, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getReleases(query);
+  }
+);
+
+export const createReleaseAsync = createAsyncThunk(
+  'deployment/createRelease',
+  async (body, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return createRelease(body);
+  }
+);
+
+export const assembleReleaseAsync = createAsyncThunk(
+  'deployment/assembleRelease',
+  async (id, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return assembleRelease(id);
+  }
+);
+
+export const validateReleaseAsync = createAsyncThunk(
+  'deployment/validateRelease',
+  async (id, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return validateRelease(id);
+  }
+);
+
+export const approveReleaseAsync = createAsyncThunk(
+  'deployment/approveRelease',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return approveRelease(id, body);
+  }
+);
+
+export const publishReleaseAsync = createAsyncThunk(
+  'deployment/publishRelease',
+  async (id, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return publishRelease(id);
+  }
+);
+
+export const archiveReleaseAsync = createAsyncThunk(
+  'deployment/archiveRelease',
+  async (id, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return archiveRelease(id);
+  }
+);
+
+// Deployments thunks
+export const fetchDeploymentsAsync = createAsyncThunk(
+  'deployment/fetchDeployments',
+  async (query, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getDeployments(query);
+  }
+);
+
+export const createDeploymentAsync = createAsyncThunk(
+  'deployment/createDeployment',
+  async (body, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return createDeployment(body);
+  }
+);
+
+export const verifyDeploymentAsync = createAsyncThunk(
+  'deployment/verifyDeployment',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return verifyDeployment(id, body);
+  }
+);
+
+export const cancelDeploymentAsync = createAsyncThunk(
+  'deployment/cancelDeployment',
+  async ({ id, actor }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return cancelDeployment(id, actor);
+  }
+);
+
+export const retryDeploymentAsync = createAsyncThunk(
+  'deployment/retryDeployment',
+  async ({ id, actor }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return retryDeployment(id, actor);
+  }
+);
+
+// Rollback thunks
+export const fetchRollbacksAsync = createAsyncThunk(
+  'deployment/fetchRollbacks',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getRollbacks();
+  }
+);
+
+export const rollbackDeploymentAsync = createAsyncThunk(
+  'deployment/rollbackDeployment',
+  async ({ deploymentId, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return rollbackDeployment(deploymentId, body);
+  }
+);
+
+export const rollbackEnvironmentAsync = createAsyncThunk(
+  'deployment/rollbackEnvironment',
+  async ({ environmentId, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return rollbackEnvironment(environmentId, body);
+  }
+);
+
+// Gates thunks
+export const fetchGatesAsync = createAsyncThunk(
+  'deployment/fetchGates',
+  async (deploymentId, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getGates(deploymentId);
+  }
+);
+
+export const evaluateGateAsync = createAsyncThunk(
+  'deployment/evaluateGate',
+  async ({ deploymentId, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return evaluateGate(deploymentId, body);
+  }
+);
+
+export const approveGateAsync = createAsyncThunk(
+  'deployment/approveGate',
+  async ({ deploymentId, gateId, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return approveGate(deploymentId, gateId, body);
+  }
+);
+
+export const bypassGateAsync = createAsyncThunk(
+  'deployment/bypassGate',
+  async ({ deploymentId, gateId, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return bypassGate(deploymentId, gateId, body);
+  }
+);
+
+// Environment Deployment thunks
+export const fetchEnvironmentDeploymentsAsync = createAsyncThunk(
+  'deployment/fetchEnvironmentDeployments',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getEnvironmentDeployments();
+  }
+);
+
+export const promoteReleaseAsync = createAsyncThunk(
+  'deployment/promoteRelease',
+  async (body, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return promoteReleaseApi(body);
+  }
+);
+
+export const lockEnvironmentAsync = createAsyncThunk(
+  'deployment/lockEnvironment',
+  async ({ environmentId, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return lockEnvironment(environmentId, body);
+  }
+);
+
+export const unlockEnvironmentAsync = createAsyncThunk(
+  'deployment/unlockEnvironment',
+  async ({ environmentId, actor }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return unlockEnvironment(environmentId, actor);
+  }
+);
+
+// Diagnostics thunks
+export const fetchDeploymentHistoryAsync = createAsyncThunk(
+  'deployment/fetchDeploymentHistory',
+  async (query, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getDeploymentHistory(query);
+  }
+);
+
+export const fetchDeploymentTimelineAsync = createAsyncThunk(
+  'deployment/fetchDeploymentTimeline',
+  async (deploymentId, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getDeploymentTimeline(deploymentId);
+  }
+);
+
+export const fetchDeploymentDiagnosticsAsync = createAsyncThunk(
+  'deployment/fetchDeploymentDiagnostics',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') return { skipped: true };
+    return getDeploymentDiagnostics();
+  }
+);
+
 export const deploymentSlice = createSlice({
   name: 'deployment',
   initialState,
@@ -361,6 +695,147 @@ export const deploymentSlice = createSlice({
         });
       }
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCockpitDashboardAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          // Map backend dashboard to frontend structure
+          state.releases = action.payload.releases || state.releases;
+          state.deployments = action.payload.deployments || state.deployments;
+          state.rollbackCheckpoints = action.payload.rollbacks || state.rollbackCheckpoints;
+        }
+      })
+      .addCase(fetchRecentReleasesAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.releases = action.payload;
+        }
+      })
+      .addCase(fetchRunningDeploymentsAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.deployments = action.payload;
+        }
+      })
+      .addCase(fetchDeploymentActivityAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.logs = action.payload;
+        }
+      })
+      .addCase(fetchReleasesAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.releases = action.payload;
+        }
+      })
+      .addCase(createReleaseAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.releases.unshift(action.payload);
+        }
+      })
+      .addCase(assembleReleaseAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.releases.findIndex((r) => r.id === action.payload.id);
+          if (idx !== -1) state.releases[idx] = action.payload;
+        }
+      })
+      .addCase(validateReleaseAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.releases.findIndex((r) => r.id === action.payload.id);
+          if (idx !== -1) state.releases[idx] = action.payload;
+        }
+      })
+      .addCase(approveReleaseAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.releases.findIndex((r) => r.id === action.payload.id);
+          if (idx !== -1) state.releases[idx] = action.payload;
+        }
+      })
+      .addCase(publishReleaseAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.releases.findIndex((r) => r.id === action.payload.id);
+          if (idx !== -1) state.releases[idx] = action.payload;
+        }
+      })
+      .addCase(archiveReleaseAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.releases.findIndex((r) => r.id === action.payload.id);
+          if (idx !== -1) state.releases[idx] = action.payload;
+        }
+      })
+      .addCase(fetchDeploymentsAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.deployments = action.payload;
+        }
+      })
+      .addCase(createDeploymentAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.deployments.unshift(action.payload);
+        }
+      })
+      .addCase(verifyDeploymentAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.deployments.findIndex((d) => d.id === action.payload.id);
+          if (idx !== -1) state.deployments[idx] = action.payload;
+        }
+      })
+      .addCase(cancelDeploymentAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.deployments.findIndex((d) => d.id === action.payload.id);
+          if (idx !== -1) state.deployments[idx] = action.payload;
+        }
+      })
+      .addCase(retryDeploymentAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.deployments.findIndex((d) => d.id === action.payload.id);
+          if (idx !== -1) state.deployments[idx] = action.payload;
+        }
+      })
+      .addCase(fetchRollbacksAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.rollbackCheckpoints = action.payload;
+        }
+      })
+      .addCase(rollbackDeploymentAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.deployments.unshift(action.payload);
+        }
+      })
+      .addCase(fetchGatesAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.promotionGates = action.payload;
+        }
+      })
+      .addCase(evaluateGateAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.promotionGates.findIndex((g) => g.id === action.payload.id);
+          if (idx !== -1) state.promotionGates[idx] = action.payload;
+        }
+      })
+      .addCase(approveGateAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.promotionGates.findIndex((g) => g.id === action.payload.id);
+          if (idx !== -1) state.promotionGates[idx] = action.payload;
+        }
+      })
+      .addCase(fetchEnvironmentDeploymentsAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          // Map environment deployments to frontend structure if needed
+        }
+      })
+      .addCase(fetchDeploymentHistoryAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.logs = action.payload;
+        }
+      })
+      .addCase(fetchDeploymentTimelineAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.logs = action.payload;
+        }
+      })
+      .addCase(fetchDeploymentDiagnosticsAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.logs = action.payload;
+        }
+      });
   },
 });
 

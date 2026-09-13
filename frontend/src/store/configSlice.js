@@ -1,4 +1,10 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  getConfigs,
+  createConfig,
+  updateConfig,
+  getEffective,
+} from '../api/platform/configApi.js';
 
 export const CONFIG_SCOPES = [
   'PLATFORM',
@@ -283,6 +289,39 @@ export function validateConfigEntry(config) {
   return { valid: true };
 }
 
+export const fetchConfigsAsync = createAsyncThunk(
+  'config/fetchConfigs',
+  async (_, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return getConfigs();
+  }
+);
+
+export const addConfigItemAsync = createAsyncThunk(
+  'config/addConfigItem',
+  async (body, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return createConfig(body);
+  }
+);
+
+export const updateConfigItemAsync = createAsyncThunk(
+  'config/updateConfigItem',
+  async ({ id, body }, { getState }) => {
+    const { providerMode } = getState().platform;
+    if (providerMode === 'MOCK') {
+      return { skipped: true };
+    }
+    return updateConfig(id, body);
+  }
+);
+
 const configSlice = createSlice({
   name: 'config',
   initialState: {
@@ -326,6 +365,38 @@ const configSlice = createSlice({
     deleteConfigItem: (state, action) => {
       state.items = state.items.filter((c) => c.id !== action.payload);
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchConfigsAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.items = action.payload;
+        }
+      })
+      .addCase(addConfigItemAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          state.items.unshift({
+            ...action.payload,
+            description: action.payload.description || '—',
+            updatedBy: action.payload.updatedBy || '—',
+            isSecret: false,
+          });
+        }
+      })
+      .addCase(updateConfigItemAsync.fulfilled, (state, action) => {
+        if (!action.payload.skipped && action.payload) {
+          const idx = state.items.findIndex((c) => c.id === action.payload.id);
+          if (idx !== -1) {
+            state.items[idx] = {
+              ...state.items[idx],
+              ...action.payload,
+              description: action.payload.description || state.items[idx].description,
+              updatedBy: action.payload.updatedBy || state.items[idx].updatedBy,
+              isSecret: state.items[idx].isSecret,
+            };
+          }
+        }
+      });
   },
 });
 

@@ -6,6 +6,15 @@ import {
   updatePipelineProgress,
   finishSyncPipeline,
   addSyncJob,
+  pauseSyncJob,
+  resumeSyncJob,
+  cancelSyncJob,
+  addSyncJobAsync,
+  updateSyncJobAsync,
+  runSyncAsync,
+  pauseSyncAsync,
+  resumeSyncAsync,
+  cancelSyncAsync,
 } from '../../store/integrationSlice.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
@@ -26,6 +35,7 @@ import {
   FileCode2,
   FastForward,
   Check,
+  Pause,
 } from 'lucide-react';
 
 const PIPELINE_STEPS = [
@@ -42,18 +52,20 @@ export default function SyncManagerView() {
   const dispatch = useDispatch();
 
   const syncJobs = useSelector((state) => state.integration.syncJobs);
-  const selectedSyncJobId = useSelector((state) => state.integration.selectedSyncJobId);
+  const selectedSyncJobId = useSelector((state) => state.integration.selectedSyncId);
   const activePipelineRun = useSelector((state) => state.integration.activePipelineRun);
   const connectors = useSelector((state) => state.integration.connectors);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
   const activeUser = useSelector((state) => state.platform.activeUser);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // New sync job form
   const [newCode, setNewCode] = useState('');
   const [newName, setNewName] = useState('');
-  const [newMode, setNewMode] = useState('INCREMENTAL');
+  const [newDirection, setNewDirection] = useState('PULL');
+  const [newSyncMode, setNewSyncMode] = useState('INCREMENTAL');
   const [newSource, setNewSource] = useState(connectors[0]?.id || '');
   const [newTarget, setNewTarget] = useState(connectors[1]?.id || connectors[0]?.id || '');
   const [newConflictPolicy, setNewConflictPolicy] = useState('SOURCE_WINS');
@@ -66,7 +78,8 @@ export default function SyncManagerView() {
     return (
       job.code.toLowerCase().includes(q) ||
       job.name.toLowerCase().includes(q) ||
-      job.mode.toLowerCase().includes(q) ||
+      (job.direction && job.direction.toLowerCase().includes(q)) ||
+      (job.mode && job.mode.toLowerCase().includes(q)) ||
       job.conflictPolicy.toLowerCase().includes(q)
     );
   });
@@ -78,64 +91,100 @@ export default function SyncManagerView() {
   const handleRunPipeline = (job) => {
     if (activePipelineRun) return;
 
-    dispatch(startSyncPipeline({ jobId: job.id }));
-    dispatch(
-      addToast({
-        type: 'info',
-        title: 'Pipeline Démarré (API-CDC-06)',
-        message: `Pipeline ${job.code} en cours d'exécution.`,
-      })
-    );
+    if (providerMode === 'REAL') {
+      dispatch(startSyncPipeline({ jobId: job.id }));
+      dispatch(
+        addToast({
+          type: 'info',
+          title: 'Pipeline Démarré (API-CDC-06)',
+          message: `Pipeline ${job.code} en cours d'exécution.`,
+        })
+      );
+      dispatch(runSyncAsync(job.id)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          const data = result.payload;
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Pipeline de Synchronisation Réussi (API-CDC-06)',
+              message: `${job.code} : ${data.written || 0} enregistrements répliqués avec politique ${job.conflictPolicy}.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'RUN_SYNC_PIPELINE',
+              resourceType: 'SYNC_JOB',
+              resourceId: job.id,
+              user: activeUser,
+              details: {
+                code: job.code,
+                recordsWritten: data.written || 0,
+                conflictPolicy: job.conflictPolicy,
+              },
+            })
+          );
+        }
+      });
+    } else {
+      dispatch(startSyncPipeline({ jobId: job.id }));
+      dispatch(
+        addToast({
+          type: 'info',
+          title: 'Pipeline Démarré (API-CDC-06)',
+          message: `Pipeline ${job.code} en cours d'exécution.`,
+        })
+      );
 
-    // Simulate step progression
-    let currentStepIndex = 0;
-    const interval = setInterval(() => {
-      currentStepIndex += 1;
-      if (currentStepIndex < PIPELINE_STEPS.length) {
-        const stepName = PIPELINE_STEPS[currentStepIndex];
-        const progress = Math.round(((currentStepIndex + 1) / PIPELINE_STEPS.length) * 100);
-        dispatch(
-          updatePipelineProgress({
-            step: stepName,
-            progress,
-            log: `Étape ${stepName} terminée avec succès.`,
-          })
-        );
-      } else {
-        clearInterval(interval);
-        const recordsRead = Math.floor(Math.random() * 200) + 120;
-        const recordsWritten = recordsRead - 2;
-        dispatch(
-          finishSyncPipeline({
-            recordsRead,
-            recordsWritten,
-            conflictsCount: 2,
-          })
-        );
-
-        dispatch(
-          addToast({
-            type: 'success',
-            title: 'Pipeline de Synchronisation Réussi (API-CDC-06)',
-            message: `${job.code} : ${recordsWritten} enregistrements répliqués avec politique ${job.conflictPolicy}.`,
-          })
-        );
-
-        dispatch(
-          logAuditAction({
-            action: 'RUN_SYNC_PIPELINE',
-            resourceType: 'SYNC_JOB',
-            resourceId: job.id,
-            user: activeUser,
-            details: {
-              code: job.code,
+      // Simulate step progression
+      let currentStepIndex = 0;
+      const interval = setInterval(() => {
+        currentStepIndex += 1;
+        if (currentStepIndex < PIPELINE_STEPS.length) {
+          const stepName = PIPELINE_STEPS[currentStepIndex];
+          const progress = Math.round(((currentStepIndex + 1) / PIPELINE_STEPS.length) * 100);
+          dispatch(
+            updatePipelineProgress({
+              step: stepName,
+              progress,
+              log: `Étape ${stepName} terminée avec succès.`,
+            })
+          );
+        } else {
+          clearInterval(interval);
+          const recordsRead = Math.floor(Math.random() * 200) + 120;
+          const recordsWritten = recordsRead - 2;
+          dispatch(
+            finishSyncPipeline({
+              recordsRead,
               recordsWritten,
-              conflictPolicy: job.conflictPolicy,
-            },
-          })
-        );
-      }
-    }, 600);
+              conflictsCount: 2,
+            })
+          );
+
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Pipeline de Synchronisation Réussi (API-CDC-06)',
+              message: `${job.code} : ${recordsWritten} enregistrements répliqués avec politique ${job.conflictPolicy}.`,
+            })
+          );
+
+          dispatch(
+            logAuditAction({
+              action: 'RUN_SYNC_PIPELINE',
+              resourceType: 'SYNC_JOB',
+              resourceId: job.id,
+              user: activeUser,
+              details: {
+                code: job.code,
+                recordsWritten,
+                conflictPolicy: job.conflictPolicy,
+              },
+            })
+          );
+        }
+      }, 600);
+    }
   };
 
   const handleCreateSyncJob = (e) => {
@@ -143,43 +192,214 @@ export default function SyncManagerView() {
     if (!newCode.trim() || !newName.trim()) return;
 
     const newId = 'sync-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newJob = {
-      id: newId,
+    const body = {
       code: newCode.toUpperCase().trim(),
       name: newName.trim(),
-      sourceConnector: newSource,
-      targetConnector: newTarget,
-      mode: newMode,
+      connectorId: newSource,
+      source: newSource,
+      target: newTarget,
+      direction: newDirection,
+      mode: newSyncMode,
       schedule: newSchedule,
+      mappingRef: `mapping-${newCode.toLowerCase()}`,
       conflictPolicy: newConflictPolicy,
       batchSize: 250,
-      checkpoint: {
-        lastTimestamp: new Date().toISOString(),
-        highWatermarkId: 'EVT-INITIAL-00',
-      },
-      status: 'ACTIVE',
-      lastExecution: {
-        startedAt: 'Jamais exécuté',
-        durationMs: 0,
-        recordsRead: 0,
-        recordsWritten: 0,
-        conflictsCount: 0,
-        status: 'PENDING',
-      },
     };
 
-    dispatch(addSyncJob(newJob));
-    setShowCreateModal(false);
-    setNewCode('');
-    setNewName('');
+    if (providerMode === 'MOCK') {
+      const newJob = {
+        id: newId,
+        ...body,
+        status: 'ACTIVE',
+        checkpoint: {
+          lastTimestamp: new Date().toISOString(),
+          highWatermarkId: 'EVT-INITIAL-00',
+        },
+        lastExecution: {
+          startedAt: 'Jamais exécuté',
+          durationMs: 0,
+          recordsRead: 0,
+          recordsWritten: 0,
+          conflictsCount: 0,
+          status: 'PENDING',
+        },
+      };
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Pipeline Enregistré (API-CDC-06)',
-        message: `Pipeline ${newJob.code} configuré avec politique ${newJob.conflictPolicy}.`,
-      })
-    );
+      dispatch(addSyncJob(newJob));
+      dispatch(
+        logAuditAction({
+          action: 'CREATE_SYNC_PIPELINE',
+          resourceType: 'SYNC_JOB',
+          resourceId: newId,
+          user: activeUser,
+          details: { code: newJob.code, mode: newJob.mode, conflictPolicy: newJob.conflictPolicy, schedule: newJob.schedule },
+        })
+      );
+      setShowCreateModal(false);
+      setNewCode('');
+      setNewName('');
+
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Pipeline Enregistré (API-CDC-06)',
+          message: `Pipeline ${newJob.code} configuré avec politique ${newJob.conflictPolicy}.`,
+        })
+      );
+    } else {
+      dispatch(addSyncJobAsync(body)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          setShowCreateModal(false);
+          setNewCode('');
+          setNewName('');
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Pipeline Enregistré (API-CDC-06)',
+              message: `Pipeline ${result.payload.code} configuré avec politique ${result.payload.conflictPolicy}.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'CREATE_SYNC_PIPELINE',
+              resourceType: 'SYNC_JOB',
+              resourceId: result.payload.id,
+              user: activeUser,
+              details: { code: result.payload.code, mode: result.payload.mode, conflictPolicy: result.payload.conflictPolicy, schedule: result.payload.schedule },
+            })
+          );
+        }
+      });
+    }
+  };
+
+  const handlePauseSync = (job) => {
+    if (providerMode === 'MOCK') {
+      dispatch(pauseSyncJob(job.id));
+      dispatch(
+        logAuditAction({
+          action: 'PAUSE_SYNC_PIPELINE',
+          resourceType: 'SYNC_JOB',
+          resourceId: job.id,
+          user: activeUser,
+          details: { code: job.code, previousStatus: 'RUNNING', newStatus: 'PAUSED' },
+        })
+      );
+      dispatch(
+        addToast({
+          type: 'warning',
+          title: 'Pipeline Suspendu (API-CDC-06)',
+          message: `Pipeline ${job.code} mis en pause.`,
+        })
+      );
+    } else {
+      dispatch(pauseSyncAsync(job.id)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'warning',
+              title: 'Pipeline Suspendu (API-CDC-06)',
+              message: `Pipeline ${job.code} mis en pause.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'PAUSE_SYNC_PIPELINE',
+              resourceType: 'SYNC_JOB',
+              resourceId: job.id,
+              user: activeUser,
+              details: { code: job.code, previousStatus: 'RUNNING', newStatus: 'PAUSED' },
+            })
+          );
+        }
+      });
+    }
+  };
+
+  const handleResumeSync = (job) => {
+    if (providerMode === 'MOCK') {
+      dispatch(resumeSyncJob(job.id));
+      dispatch(
+        logAuditAction({
+          action: 'RESUME_SYNC_PIPELINE',
+          resourceType: 'SYNC_JOB',
+          resourceId: job.id,
+          user: activeUser,
+          details: { code: job.code, previousStatus: 'PAUSED', newStatus: 'RUNNING' },
+        })
+      );
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Pipeline Repris (API-CDC-06)',
+          message: `Pipeline ${job.code} a repris son exécution.`,
+        })
+      );
+    } else {
+      dispatch(resumeSyncAsync(job.id)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Pipeline Repris (API-CDC-06)',
+              message: `Pipeline ${job.code} a repris son exécution.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'RESUME_SYNC_PIPELINE',
+              resourceType: 'SYNC_JOB',
+              resourceId: job.id,
+              user: activeUser,
+              details: { code: job.code, previousStatus: 'PAUSED', newStatus: 'RUNNING' },
+            })
+          );
+        }
+      });
+    }
+  };
+
+  const handleCancelSync = (job) => {
+    if (providerMode === 'MOCK') {
+      dispatch(cancelSyncJob(job.id));
+      dispatch(
+        logAuditAction({
+          action: 'CANCEL_SYNC_PIPELINE',
+          resourceType: 'SYNC_JOB',
+          resourceId: job.id,
+          user: activeUser,
+          details: { code: job.code, previousStatus: job.status, newStatus: 'CANCELLED' },
+        })
+      );
+      dispatch(
+        addToast({
+          type: 'info',
+          title: 'Pipeline Annulé (API-CDC-06)',
+          message: `Pipeline ${job.code} a été annulé.`,
+        })
+      );
+    } else {
+      dispatch(cancelSyncAsync(job.id)).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'info',
+              title: 'Pipeline Annulé (API-CDC-06)',
+              message: `Pipeline ${job.code} a été annulé.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              action: 'CANCEL_SYNC_PIPELINE',
+              resourceType: 'SYNC_JOB',
+              resourceId: job.id,
+              user: activeUser,
+              details: { code: job.code, previousStatus: job.status, newStatus: 'CANCELLED' },
+            })
+          );
+        }
+      });
+    }
   };
 
   return (
@@ -291,16 +511,16 @@ export default function SyncManagerView() {
                     : 'bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50'
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-xs text-slate-900 font-mono">{job.code}</span>
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
-                        {job.mode}
-                      </span>
-                    </div>
-                    <div className="text-xs font-medium text-slate-700 mt-1">{job.name}</div>
-                  </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs text-slate-900 font-mono">{job.code}</span>
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                            {job.direction}/{job.mode}
+                          </span>
+                        </div>
+                        <div className="text-xs font-medium text-slate-700 mt-1">{job.name}</div>
+                      </div>
 
                   <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
                     {job.status}
@@ -327,20 +547,49 @@ export default function SyncManagerView() {
                     <span className="text-xs font-mono font-bold text-emerald-700">{selectedSyncJob.code}</span>
                     <span className="text-xs text-slate-400 font-mono">•</span>
                     <span className="text-xs font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                      {selectedSyncJob.mode}
+                      {selectedSyncJob.direction}/{selectedSyncJob.mode}
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mt-1">{selectedSyncJob.name}</h3>
                 </div>
 
-                <button
-                  onClick={() => handleRunPipeline(selectedSyncJob)}
-                  disabled={activePipelineRun !== null}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Exécuter Pipeline</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedSyncJob.status === 'RUNNING' && (
+                    <button
+                      onClick={() => handlePauseSync(selectedSyncJob)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Pause className="w-3.5 h-3.5" />
+                      <span>Pause</span>
+                    </button>
+                  )}
+                  {selectedSyncJob.status === 'PAUSED' && (
+                    <button
+                      onClick={() => handleResumeSync(selectedSyncJob)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Reprendre</span>
+                    </button>
+                  )}
+                  {(selectedSyncJob.status === 'RUNNING' || selectedSyncJob.status === 'PENDING') && (
+                    <button
+                      onClick={() => handleCancelSync(selectedSyncJob)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Annuler</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleRunPipeline(selectedSyncJob)}
+                    disabled={activePipelineRun !== null}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Exécuter Pipeline</span>
+                  </button>
+                </div>
               </div>
 
               {/* Topology / Connectors Source -> Target */}
@@ -352,6 +601,10 @@ export default function SyncManagerView() {
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase font-semibold">Target (Destination)</span>
                   <span className="font-bold text-emerald-700 mt-0.5 block">{selectedSyncJob.targetConnector}</span>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-slate-400 block text-[10px] uppercase font-semibold">Mapping Référence</span>
+                  <span className="font-bold text-slate-800 mt-0.5 block">{selectedSyncJob.mappingRef}</span>
                 </div>
               </div>
 
@@ -446,17 +699,26 @@ export default function SyncManagerView() {
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Mode de Sync</label>
+                  <label className="font-semibold text-slate-700 block mb-1">Direction</label>
                   <select
-                    value={newMode}
-                    onChange={(e) => setNewMode(e.target.value)}
+                    value={newDirection}
+                    onChange={(e) => setNewDirection(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  >
+                    <option value="PULL">PULL</option>
+                    <option value="PUSH">PUSH</option>
+                    <option value="BIDIRECTIONAL">BIDIRECTIONAL</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Mode</label>
+                  <select
+                    value={newSyncMode}
+                    onChange={(e) => setNewSyncMode(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   >
                     <option value="INCREMENTAL">INCREMENTAL (High Watermark)</option>
                     <option value="FULL">FULL REFRESH</option>
-                    <option value="BIDIRECTIONAL">BIDIRECTIONAL</option>
-                    <option value="PULL">PULL ONLY</option>
-                    <option value="PUSH">PUSH ONLY</option>
                   </select>
                 </div>
               </div>

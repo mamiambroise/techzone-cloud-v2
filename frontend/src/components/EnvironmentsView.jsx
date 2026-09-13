@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setSelectedEnvId,
   setEnvironmentStatus,
   deployAppVersion,
+  fetchEnvironmentsAsync,
+  addEnvironmentAsync,
+  updateEnvironmentAsync,
+  setEnvironmentStatusAsync,
 } from '../store/environmentsSlice.js';
 import { logAuditAction } from '../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../store/platformSlice.js';
@@ -33,6 +37,13 @@ export default function EnvironmentsView() {
   const versions = useSelector((state) => state.applications.versions);
   const activeUser = useSelector((state) => state.platform.activeUser);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
+  const providerMode = useSelector((state) => state.platform.providerMode);
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchEnvironmentsAsync());
+    }
+  }, [dispatch, providerMode]);
 
   const [showDeployModal, setShowDeployModal] = useState(false);
   const [deployAppId, setDeployAppId] = useState(applications[0]?.id || '');
@@ -153,34 +164,57 @@ export default function EnvironmentsView() {
     }
 
     const nextStatus = currentEnv.status === 'MAINTENANCE' ? 'ACTIVE' : 'MAINTENANCE';
-    dispatch(
-      setEnvironmentStatus({
-        envId: currentEnv.id,
-        status: nextStatus,
-        reason: maintenanceReason || 'Intervention programmée Platform Foundation',
-        user: activeUser.email,
-      })
-    );
-
-    dispatch(
-      addToast({
-        type: nextStatus === 'MAINTENANCE' ? 'warning' : 'success',
-        title: `Statut ${currentEnv.code} modifié`,
-        message: `L'environnement est maintenant ${nextStatus}.`,
-      })
-    );
-
-    dispatch(
-      logAuditAction({
-        actor: activeUser.email,
-        role: activeUser.role,
-        action: 'TOGGLE_MAINTENANCE',
-        resourceType: 'ENVIRONMENT',
-        resourceId: currentEnv.code,
-        details: `Passage de ${currentEnv.code} en ${nextStatus}. Motif: ${maintenanceReason || 'N/A'}`,
-        status: 'SUCCESS',
-      })
-    );
+    if (providerMode === 'MOCK') {
+      dispatch(
+        setEnvironmentStatus({
+          envId: currentEnv.id,
+          status: nextStatus,
+          reason: maintenanceReason || 'Intervention programmée Platform Foundation',
+          user: activeUser.email,
+        })
+      );
+      dispatch(
+        addToast({
+          type: nextStatus === 'MAINTENANCE' ? 'warning' : 'success',
+          title: `Statut ${currentEnv.code} modifié`,
+          message: `L'environnement est maintenant ${nextStatus}.`,
+        })
+      );
+      dispatch(
+        logAuditAction({
+          actor: activeUser.email,
+          role: activeUser.role,
+          action: 'TOGGLE_MAINTENANCE',
+          resourceType: 'ENVIRONMENT',
+          resourceId: currentEnv.code,
+          details: `Passage de ${currentEnv.code} en ${nextStatus}. Motif: ${maintenanceReason || 'N/A'}`,
+          status: 'SUCCESS',
+        })
+      );
+    } else {
+      dispatch(setEnvironmentStatusAsync({ id: currentEnv.id, status: nextStatus })).then((result) => {
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: nextStatus === 'MAINTENANCE' ? 'warning' : 'success',
+              title: `Statut ${currentEnv.code} modifié`,
+              message: `L'environnement est maintenant ${nextStatus}.`,
+            })
+          );
+          dispatch(
+            logAuditAction({
+              actor: activeUser.email,
+              role: activeUser.role,
+              action: 'TOGGLE_MAINTENANCE',
+              resourceType: 'ENVIRONMENT',
+              resourceId: currentEnv.code,
+              details: `Passage de ${currentEnv.code} en ${nextStatus}. Motif: ${maintenanceReason || 'N/A'}`,
+              status: 'SUCCESS',
+            })
+          );
+        }
+      });
+    }
 
     setShowMaintenanceModal(false);
     setMaintenanceReason('');
@@ -212,7 +246,13 @@ export default function EnvironmentsView() {
               }
               setShowDeployModal(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm active:scale-95"
+            disabled={providerMode === 'REAL'}
+            title={providerMode === 'REAL' ? 'Non disponible en mode réel pour l\'instant' : 'Déployer vers ' + currentEnv.code}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-sm active:scale-95 ${
+              providerMode === 'REAL'
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+            }`}
           >
             <Send className="w-3.5 h-3.5" />
             <span>Déployer vers {currentEnv.code}</span>

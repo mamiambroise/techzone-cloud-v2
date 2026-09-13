@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { setSearchQuery } from '../../store/platformSlice.js';
+import { setSearchQuery, addToast } from '../../store/platformSlice.js';
+import { fetchDiagnosticLogs } from '../../store/integrationSlice.js';
 import {
   Activity,
   Search,
@@ -17,6 +18,8 @@ import {
   Layers,
   Copy,
   Check,
+  Webhook,
+  Database,
 } from 'lucide-react';
 
 const ERROR_CODES = [
@@ -32,15 +35,68 @@ const ERROR_CODES = [
   'INTERNAL_INTEGRATION_ERROR',
 ];
 
+const STATUS_FILTERS = ['ALL', 'SUCCESS', 'WARNING', 'FAILURE'];
+
+const PERIOD_FILTERS = [
+  { id: 'ALL', label: 'Tout' },
+  { id: '24h', label: '24h' },
+  { id: '7d', label: '7j' },
+  { id: '30d', label: '30j' },
+];
+
+const CONTEXT_FILTERS = ['ALL', 'CONNECTOR', 'API', 'WEBHOOK', 'SYNC'];
+
+const getDiagnosticContext = (diag) => {
+  const op = diag.operation.toLowerCase();
+  if (op.includes('webhook')) return 'WEBHOOK';
+  if (op.includes('sync') || op.includes('materialstockset') || op.includes('contact') || op.includes('orders')) return 'SYNC';
+  if (op.includes('/api/') || op.includes('basepath')) return 'API';
+  return 'CONNECTOR';
+};
+
 export default function IntegrationDiagnosticsView() {
   const dispatch = useDispatch();
 
   const diagnostics = useSelector((state) => state.integration.diagnostics);
+  const connectors = useSelector((state) => state.integration.connectors);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   const [selectedErrorCode, setSelectedErrorCode] = useState('ALL');
   const [selectedDiagnostic, setSelectedDiagnostic] = useState(diagnostics[0] || null);
   const [copiedTrace, setCopiedTrace] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('ALL');
+  const [selectedTenant, setSelectedTenant] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedContext, setSelectedContext] = useState('ALL');
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(
+        fetchDiagnosticLogs({
+          errorCode: selectedErrorCode === 'ALL' ? null : selectedErrorCode,
+          status: selectedStatus === 'ALL' ? null : selectedStatus,
+          tenantId: selectedTenant === 'ALL' ? null : selectedTenant,
+          direction: selectedContext === 'ALL' ? null : selectedContext,
+          startDate: selectedPeriod === 'ALL' ? null : selectedPeriod === '24h' ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() : selectedPeriod === '7d' ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() : selectedPeriod === '30d' ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+        })
+      );
+    }
+  }, [dispatch, providerMode, selectedErrorCode, selectedStatus, selectedTenant, selectedContext, selectedPeriod]);
+
+  const uniqueTenants = Array.from(new Set(diagnostics.map((d) => d.tenantId).filter(Boolean)));
+
+  const isInPeriod = (diag) => {
+    if (selectedPeriod === 'ALL') return true;
+    const now = new Date();
+    const started = new Date(diag.startedAt);
+    const diffMs = now - started;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    if (selectedPeriod === '24h') return diffHours <= 24;
+    if (selectedPeriod === '7d') return diffHours <= 168;
+    if (selectedPeriod === '30d') return diffHours <= 720;
+    return true;
+  };
 
   // Filter diagnostics
   const filteredDiagnostics = diagnostics.filter((diag) => {
@@ -49,10 +105,19 @@ export default function IntegrationDiagnosticsView() {
       diag.errorCode === selectedErrorCode ||
       (selectedErrorCode === 'SUCCESS' && diag.status === 'SUCCESS');
 
-    if (!searchQuery.trim()) return matchesCode;
+    const matchesStatus = selectedStatus === 'ALL' || diag.status === selectedStatus;
+    const matchesTenant = selectedTenant === 'ALL' || diag.tenantId === selectedTenant;
+    const matchesContext = selectedContext === 'ALL' || getDiagnosticContext(diag) === selectedContext;
+    const matchesPeriod = isInPeriod(diag);
+
+    if (!searchQuery.trim()) return matchesCode && matchesStatus && matchesTenant && matchesContext && matchesPeriod;
     const q = searchQuery.toLowerCase();
     return (
       matchesCode &&
+      matchesStatus &&
+      matchesTenant &&
+      matchesContext &&
+      matchesPeriod &&
       (diag.traceId.toLowerCase().includes(q) ||
         diag.connector.toLowerCase().includes(q) ||
         diag.operation.toLowerCase().includes(q) ||
@@ -61,10 +126,29 @@ export default function IntegrationDiagnosticsView() {
     );
   });
 
+  const totalDiags = filteredDiagnostics.length;
+  const successCount = filteredDiagnostics.filter((d) => d.status === 'SUCCESS').length;
+  const warningCount = filteredDiagnostics.filter((d) => d.status === 'WARNING').length;
+  const failureCount = filteredDiagnostics.filter((d) => d.status === 'FAILURE').length;
+  const successRate = totalDiags > 0 ? ((successCount / totalDiags) * 100).toFixed(1) : '0.0';
+  const avgLatency = totalDiags > 0 ? Math.round(filteredDiagnostics.reduce((sum, d) => sum + d.duration, 0) / totalDiags) : 0;
+  const timeoutCount = filteredDiagnostics.filter((d) => d.errorCode === 'INTEGRATION_TIMEOUT').length;
+  const retryCount = filteredDiagnostics.filter((d) => d.attempt > 1).length;
+  const rateLimitCount = filteredDiagnostics.filter((d) => d.errorCode === 'INTEGRATION_RATE_LIMITED').length;
+  const webhookFailures = filteredDiagnostics.filter((d) => getDiagnosticContext(d) === 'WEBHOOK' && d.status === 'FAILURE').length;
+  const syncFailures = filteredDiagnostics.filter((d) => getDiagnosticContext(d) === 'SYNC' && d.status === 'FAILURE').length;
+
   const handleCopyTrace = (traceId) => {
     navigator.clipboard?.writeText(traceId);
     setCopiedTrace(true);
     setTimeout(() => setCopiedTrace(false), 2000);
+    dispatch(
+      addToast({
+        type: 'info',
+        title: 'Trace ID copiée',
+        message: `Le traceId ${traceId} a été copié dans le presse-papier.`,
+      })
+    );
   };
 
   return (
@@ -88,6 +172,90 @@ export default function IntegrationDiagnosticsView() {
           <p className="text-xs text-slate-500">
             Recherche globale par traceId, 9 codes d'erreur normalisés, redaction stricte des données sensibles et chronologie des flux.
           </p>
+        </div>
+      </div>
+
+      {/* Metrics KPI Bar (API-CDC-07 Section 5) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <Activity className="w-4 h-4 text-indigo-600" />
+            <span className="text-[10px] font-mono text-slate-400">Total</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-slate-900 font-mono">{totalDiags}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Événements</div>
+          </div>
+        </div>
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span className="text-[10px] font-mono text-emerald-600 font-bold">{successRate}%</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-emerald-700 font-mono">{successRate}%</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Taux Succès</div>
+          </div>
+        </div>
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <Clock className="w-4 h-4 text-sky-600" />
+            <span className="text-[10px] font-mono text-slate-400">Avg</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-slate-900 font-mono">{avgLatency}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Latence Moy.</div>
+          </div>
+        </div>
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <span className="text-[10px] font-mono text-slate-400">24h</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-amber-600 font-mono">{timeoutCount}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Timeouts</div>
+          </div>
+        </div>
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <RefreshCw className="w-4 h-4 text-violet-600" />
+            <span className="text-[10px] font-mono text-slate-400">Retry</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-slate-900 font-mono">{retryCount}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Retries</div>
+          </div>
+        </div>
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <ShieldAlert className="w-4 h-4 text-rose-600" />
+            <span className="text-[10px] font-mono text-slate-400">429</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-rose-600 font-mono">{rateLimitCount}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Rate Limits</div>
+          </div>
+        </div>
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <Webhook className="w-4 h-4 text-violet-600" />
+            <span className="text-[10px] font-mono text-slate-400">Fail</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-slate-900 font-mono">{webhookFailures}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Webhook Fail</div>
+          </div>
+        </div>
+        <div className="p-3 bg-white rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <Database className="w-4 h-4 text-emerald-600" />
+            <span className="text-[10px] font-mono text-slate-400">Fail</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-slate-900 font-mono">{syncFailures}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-0.5">Sync Fail</div>
+          </div>
         </div>
       </div>
 
@@ -127,6 +295,80 @@ export default function IntegrationDiagnosticsView() {
         ))}
       </div>
 
+      {/* Additional Filters: Period, Tenant, Status, Context (API-CDC-07 Section 4) */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {PERIOD_FILTERS.map((period) => (
+            <button
+              key={period.id}
+              onClick={() => setSelectedPeriod(period.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium whitespace-nowrap transition-all border ${
+                selectedPeriod === period.id
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs font-semibold'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {period.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {uniqueTenants.map((tenant) => (
+            <button
+              key={tenant}
+              onClick={() => setSelectedTenant(tenant)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium whitespace-nowrap transition-all border ${
+                selectedTenant === tenant
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs font-semibold'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {tenant}
+            </button>
+          ))}
+          <button
+            onClick={() => setSelectedTenant('ALL')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium whitespace-nowrap transition-all border ${
+              selectedTenant === 'ALL'
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs font-semibold'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            Tous tenants
+          </button>
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {STATUS_FILTERS.map((status) => (
+            <button
+              key={status}
+              onClick={() => setSelectedStatus(status)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium whitespace-nowrap transition-all border ${
+                selectedStatus === status
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-2xs font-semibold'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {status === 'ALL' ? 'Tous statuts' : status}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {CONTEXT_FILTERS.map((ctx) => (
+            <button
+              key={ctx}
+              onClick={() => setSelectedContext(ctx)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium whitespace-nowrap transition-all border ${
+                selectedContext === ctx
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs font-semibold'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {ctx === 'ALL' ? 'Tous contextes' : ctx}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Grid: Left Timeline Events, Right Deep Root Cause Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Events Timeline (6 cols) */}
@@ -148,9 +390,9 @@ export default function IntegrationDiagnosticsView() {
           ) : (
             filteredDiagnostics.map((diag) => {
               const isSelected = diag.id === selectedDiagnostic?.id;
-              const isSuccess = diag.status === 'SUCCESS';
-              const isWarning = diag.status === 'WARNING';
-              const isFailure = diag.status === 'FAILURE';
+              const isSuccess = diag.status === 'SUCCESS' || diag.status === 'SUCCEEDED' || diag.status === 'STARTED';
+              const isWarning = diag.status === 'WARNING' || diag.status === 'RETRYING';
+              const isFailure = diag.status === 'FAILURE' || diag.status === 'FAILED' || diag.status === 'TIMEOUT';
 
               return (
                 <div
@@ -172,7 +414,9 @@ export default function IntegrationDiagnosticsView() {
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : isWarning
                               ? 'bg-amber-50 text-amber-800 border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
+                              : isFailure
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
                           }`}
                         >
                           {diag.status}
@@ -229,15 +473,18 @@ export default function IntegrationDiagnosticsView() {
                     </button>
                   </div>
                   <h3 className="text-base font-bold text-slate-900 mt-1">
-                    {selectedDiagnostic.connector} : {selectedDiagnostic.operation}
+                    {selectedDiagnostic.connectorId
+                      ? (connectors.find((c) => c.id === selectedDiagnostic.connectorId)?.code || selectedDiagnostic.connectorId)
+                      : selectedDiagnostic.connector}{' '}
+                    : {selectedDiagnostic.operation}
                   </h3>
                 </div>
 
                 <span
                   className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${
-                    selectedDiagnostic.status === 'SUCCESS'
+                    selectedDiagnostic.status === 'SUCCESS' || selectedDiagnostic.status === 'SUCCEEDED' || selectedDiagnostic.status === 'STARTED'
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : selectedDiagnostic.status === 'WARNING'
+                      : selectedDiagnostic.status === 'WARNING' || selectedDiagnostic.status === 'RETRYING'
                       ? 'bg-amber-50 text-amber-800 border-amber-200'
                       : 'bg-rose-50 text-rose-700 border-rose-200'
                   }`}
@@ -256,7 +503,7 @@ export default function IntegrationDiagnosticsView() {
                     </span>
                   </div>
                   <p className="text-xs text-rose-800 leading-relaxed font-sans">
-                    {selectedDiagnostic.rootCause}
+                    {providerMode === 'REAL' ? '—' : selectedDiagnostic.rootCause}
                   </p>
                 </div>
               )}

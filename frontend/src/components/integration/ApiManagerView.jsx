@@ -4,7 +4,12 @@ import {
   setSelectedApiId,
   updateApiStatus,
   addApi,
+  addApiAsync,
+  updateApiAsync,
+  transitionApiStatusAsync,
+  deleteApiAsync,
 } from '../../store/integrationSlice.js';
+import { executeApi } from '../../api/apisApi.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
 import {
@@ -37,6 +42,7 @@ export default function ApiManagerView() {
   const searchQuery = useSelector((state) => state.platform.searchQuery);
   const activeUser = useSelector((state) => state.platform.activeUser);
   const activeTenant = useSelector((state) => state.platform.activeTenant);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   const [activeTab, setActiveTab] = useState('SPEC'); // 'SPEC' or 'PLAYGROUND'
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -85,98 +91,384 @@ export default function ApiManagerView() {
 
   const handleExecutePlayground = () => {
     setIsExecuting(true);
-    setTimeout(() => {
-      setIsExecuting(false);
-      const traceId = 'tr-int-' + Math.random().toString(36).substr(2, 8);
-      const simulatedResponse = {
-        status: 201,
-        statusText: 'Created',
-        latencyMs: Math.floor(Math.random() * 50) + 40,
-        headers: {
-          'content-type': 'application/json; charset=utf-8',
-          'x-trace-id': traceId,
-          'x-ratelimit-limit': selectedApi?.rateLimit || '250',
-          'x-ratelimit-remaining': '248',
-          'x-idempotency-replayed': 'false',
-        },
-        data: {
-          success: true,
-          traceId,
-          contractValidated: true,
-          schemaMatched: selectedApi?.responseSchema,
-          timestamp: new Date().toISOString(),
-          record: {
-            id: 'REC-' + Math.floor(10000 + Math.random() * 90000),
-            status: 'ACCEPTED_BY_TECHZONE_LAYER',
-            idempotencyKey: testIdempotencyKey,
+    if (providerMode === 'REAL' && selectedApi) {
+      let payload;
+      try {
+        payload = testPayload ? JSON.parse(testPayload) : {};
+      } catch (err) {
+        setIsExecuting(false);
+        dispatch(
+          addToast({
+            type: 'error',
+            title: 'Format JSON invalide',
+            message: 'Le payload de test contient du JSON invalide. Corrigez-le avant d\'exécuter.',
+          })
+        );
+        return;
+      }
+      dispatch(
+        executeApi(selectedApi.id, {
+          method: testMethod,
+          path: testPath,
+          idempotencyKey: testIdempotencyKey,
+          payload,
+        })
+      )
+        .then((result) => {
+          setIsExecuting(false);
+          if (result.meta.requestStatus === 'fulfilled') {
+            const traceId = result.payload?.traceId || 'tr-int-' + Math.random().toString(36).substr(2, 8);
+            setTestResponse({
+              status: 200,
+              statusText: 'OK',
+              latencyMs: result.payload?.duration || Math.floor(Math.random() * 50) + 40,
+              headers: {
+                'content-type': 'application/json; charset=utf-8',
+                'x-trace-id': traceId,
+                'x-ratelimit-limit': selectedApi?.rateLimit || '250',
+                'x-ratelimit-remaining': '248',
+                'x-idempotency-replayed': 'false',
+              },
+              data: result.payload,
+            });
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Exécution API Validée (API-CDC-03)',
+                message: `Endpoint ${selectedApi?.basePath} a répondu avec succès.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'EXECUTE_API_PLAYGROUND',
+                resourceType: 'API_ENDPOINT',
+                resourceId: selectedApi?.id,
+                user: activeUser,
+                details: {
+                  basePath: selectedApi?.basePath,
+                  method: testMethod,
+                  traceId,
+                  idempotencyKey: testIdempotencyKey,
+                },
+              })
+            );
+          }
+        })
+        .catch((error) => {
+          setIsExecuting(false);
+          dispatch(
+            addToast({
+              type: 'error',
+              title: 'Échec de l\'exécution API',
+              message: error.message || 'Impossible d\'exécuter l\'API.',
+            })
+          );
+        });
+    } else {
+      setTimeout(() => {
+        setIsExecuting(false);
+        const traceId = 'tr-int-' + Math.random().toString(36).substr(2, 8);
+        const simulatedResponse = {
+          status: 201,
+          statusText: 'Created',
+          latencyMs: Math.floor(Math.random() * 50) + 40,
+          headers: {
+            'content-type': 'application/json; charset=utf-8',
+            'x-trace-id': traceId,
+            'x-ratelimit-limit': selectedApi?.rateLimit || '250',
+            'x-ratelimit-remaining': '248',
+            'x-idempotency-replayed': 'false',
           },
-        },
+          data: {
+            success: true,
+            traceId,
+            contractValidated: true,
+            schemaMatched: selectedApi?.responseSchema,
+            timestamp: new Date().toISOString(),
+            record: {
+              id: 'REC-' + Math.floor(10000 + Math.random() * 90000),
+              status: 'ACCEPTED_BY_TECHZONE_LAYER',
+              idempotencyKey: testIdempotencyKey,
+            },
+          },
+        };
+
+        setTestResponse(simulatedResponse);
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'Exécution API Validée (API-CDC-03)',
+            message: `Endpoint ${selectedApi?.basePath} a répondu en ${simulatedResponse.latencyMs}ms avec conformité contractuelle.`,
+          })
+        );
+        dispatch(
+          logAuditAction({
+            action: 'EXECUTE_API_PLAYGROUND',
+            resourceType: 'API_ENDPOINT',
+            resourceId: selectedApi?.id,
+            user: activeUser,
+            details: {
+              basePath: selectedApi?.basePath,
+              method: testMethod,
+              traceId,
+              idempotencyKey: testIdempotencyKey,
+            },
+          })
+        );
+      }, 500);
+    }
+  };
+
+   const handleCreateApi = (e) => {
+      e.preventDefault();
+      if (!newCode.trim() || !newName.trim()) return;
+
+      const newId = 'api-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const body = {
+        apiCode: newCode.toUpperCase().trim(),
+        name: newName.trim(),
+        version: newVersion.trim(),
+        basePath: newBasePath.trim(),
+        operations: [
+          { method: 'GET', path: '/', summary: 'Lister et paginer', rateLimit: newRateLimit },
+          { method: 'POST', path: '/', summary: 'Créer ressource', idempotencyRequired: true, rateLimit: newRateLimit },
+        ],
+        authentication: 'BEARER_JWT',
+        authorization: ['tenant.scope', 'read', 'write'],
+        rateLimit: newRateLimit,
+        requestSchema: `${newCode}_RequestSchema`,
+        responseSchema: `${newCode}_ResponseSchema`,
       };
 
-      setTestResponse(simulatedResponse);
-      dispatch(
-        addToast({
-          type: 'success',
-          title: 'Exécution API Validée (API-CDC-03)',
-          message: `Endpoint ${selectedApi?.basePath} a répondu en ${simulatedResponse.latencyMs}ms avec conformité contractuelle.`,
-        })
-      );
-      dispatch(
-        logAuditAction({
-          action: 'EXECUTE_API_PLAYGROUND',
-          resourceType: 'API_ENDPOINT',
-          resourceId: selectedApi?.id,
-          user: activeUser,
-          details: {
-            basePath: selectedApi?.basePath,
-            method: testMethod,
-            traceId,
-            idempotencyKey: testIdempotencyKey,
-          },
-        })
-      );
-    }, 500);
-  };
+      if (providerMode === 'MOCK') {
+        const newApiObj = {
+          id: newId,
+          ...body,
+          status: 'PUBLISHED',
+          totalRequests24h: 0,
+          errorRatePct: 0.0,
+          p95LatencyMs: 85,
+        };
 
-  const handleCreateApi = (e) => {
-    e.preventDefault();
-    if (!newCode.trim() || !newName.trim()) return;
+        dispatch(addApi(newApiObj));
+        dispatch(
+          logAuditAction({
+            action: 'CREATE_API_DEFINITION',
+            resourceType: 'API_DEFINITION',
+            resourceId: newId,
+            user: activeUser,
+            details: { apiCode: newApiObj.apiCode, version: newApiObj.version, basePath: newApiObj.basePath },
+          })
+        );
+        setShowCreateModal(false);
+        setNewCode('');
+        setNewName('');
 
-    const newId = 'api-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newApiObj = {
-      id: newId,
-      apiCode: newCode.toUpperCase().trim(),
-      name: newName.trim(),
-      version: newVersion.trim(),
-      basePath: newBasePath.trim(),
-      operations: [
-        { method: 'GET', path: '/', summary: 'Lister et paginer', rateLimit: newRateLimit },
-        { method: 'POST', path: '/', summary: 'Créer ressource', idempotencyRequired: true, rateLimit: newRateLimit },
-      ],
-      authentication: 'BEARER_JWT',
-      authorization: ['tenant.scope', 'read', 'write'],
-      rateLimit: newRateLimit,
-      status: 'PUBLISHED',
-      requestSchema: `${newCode}_RequestSchema`,
-      responseSchema: `${newCode}_ResponseSchema`,
-      totalRequests24h: 0,
-      errorRatePct: 0.0,
-      p95LatencyMs: 85,
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'API Exposée Enregistrée (API-CDC-03)',
+            message: `L'API ${newApiObj.apiCode} (${newApiObj.version}) a été créée avec son contrat.`,
+          })
+        );
+      } else {
+        dispatch(addApiAsync(body))
+          .then((result) => {
+            if (result.meta.requestStatus === 'fulfilled') {
+              setShowCreateModal(false);
+              setNewCode('');
+              setNewName('');
+              dispatch(
+                addToast({
+                  type: 'success',
+                  title: 'API Exposée Enregistrée (API-CDC-03)',
+                  message: `L'API ${result.payload.apiCode} (${result.payload.version}) a été créée avec son contrat.`,
+                })
+              );
+              dispatch(
+                logAuditAction({
+                  action: 'CREATE_API_DEFINITION',
+                  resourceType: 'API_DEFINITION',
+                  resourceId: result.payload.id,
+                  user: activeUser,
+                  details: { apiCode: result.payload.apiCode, version: result.payload.version, basePath: result.payload.basePath },
+                })
+              );
+            }
+          })
+          .catch((error) => {
+            dispatch(
+              addToast({
+                type: 'error',
+                title: 'Échec de création de l\'API',
+                message: error.message || 'Impossible de créer l\'API.',
+              })
+            );
+          });
+      }
     };
 
-    dispatch(addApi(newApiObj));
-    setShowCreateModal(false);
-    setNewCode('');
-    setNewName('');
+    const handlePublishApi = (api) => {
+      if (api.status !== 'DRAFT') return;
+      if (providerMode === 'MOCK') {
+        dispatch(updateApiStatus({ id: api.id, status: 'PUBLISHED' }));
+        dispatch(
+          logAuditAction({
+            action: 'PUBLISH_API_DEFINITION',
+            resourceType: 'API_DEFINITION',
+            resourceId: api.id,
+            user: activeUser,
+            details: { apiCode: api.apiCode, previousStatus: 'DRAFT', newStatus: 'PUBLISHED' },
+          })
+        );
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'API Publiée (API-CDC-03)',
+            message: `L'API ${api.apiCode} est maintenant PUBLISHED.`,
+          })
+        );
+      } else {
+        dispatch(transitionApiStatusAsync({ id: api.id, status: 'PUBLISHED' }))
+          .then((result) => {
+            if (result.meta.requestStatus === 'fulfilled') {
+              dispatch(
+                addToast({
+                  type: 'success',
+                  title: 'API Publiée (API-CDC-03)',
+                  message: `L'API ${api.apiCode} est maintenant PUBLISHED.`,
+                })
+              );
+              dispatch(
+                logAuditAction({
+                  action: 'PUBLISH_API_DEFINITION',
+                  resourceType: 'API_DEFINITION',
+                  resourceId: api.id,
+                  user: activeUser,
+                  details: { apiCode: api.apiCode, previousStatus: 'DRAFT', newStatus: 'PUBLISHED' },
+                })
+              );
+            }
+          })
+          .catch((error) => {
+            dispatch(
+              addToast({
+                type: 'error',
+                title: 'Échec de la publication',
+                message: error.message || 'Impossible de publier l\'API.',
+              })
+            );
+          });
+      }
+    };
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'API Exposée Enregistrée (API-CDC-03)',
-        message: `L'API ${newApiObj.apiCode} (${newApiObj.version}) a été créée avec son contrat.`,
-      })
-    );
-  };
+    const handleDeprecateApi = (api) => {
+      if (api.status !== 'PUBLISHED') return;
+      if (providerMode === 'MOCK') {
+        dispatch(updateApiStatus({ id: api.id, status: 'DEPRECATED' }));
+        dispatch(
+          logAuditAction({
+            action: 'DEPRECATE_API_DEFINITION',
+            resourceType: 'API_DEFINITION',
+            resourceId: api.id,
+            user: activeUser,
+            details: { apiCode: api.apiCode, previousStatus: 'PUBLISHED', newStatus: 'DEPRECATED' },
+          })
+        );
+        dispatch(
+          addToast({
+            type: 'warning',
+            title: 'API Dépréciée (API-CDC-03)',
+            message: `L'API ${api.apiCode} est marquée DEPRECATED.`,
+          })
+        );
+      } else {
+        dispatch(transitionApiStatusAsync({ id: api.id, status: 'DEPRECATED' }))
+          .then((result) => {
+            if (result.meta.requestStatus === 'fulfilled') {
+              dispatch(
+                addToast({
+                  type: 'warning',
+                  title: 'API Dépréciée (API-CDC-03)',
+                  message: `L'API ${api.apiCode} est marquée DEPRECATED.`,
+                })
+              );
+              dispatch(
+                logAuditAction({
+                  action: 'DEPRECATE_API_DEFINITION',
+                  resourceType: 'API_DEFINITION',
+                  resourceId: api.id,
+                  user: activeUser,
+                  details: { apiCode: api.apiCode, previousStatus: 'PUBLISHED', newStatus: 'DEPRECATED' },
+                })
+              );
+            }
+          })
+          .catch((error) => {
+            dispatch(
+              addToast({
+                type: 'error',
+                title: 'Échec de la dépréciation',
+                message: error.message || 'Impossible de déprécier l\'API.',
+              })
+            );
+          });
+      }
+    };
+
+    const handleRetireApi = (api) => {
+      if (api.status !== 'DEPRECATED') return;
+      if (providerMode === 'MOCK') {
+        dispatch(updateApiStatus({ id: api.id, status: 'RETIRED' }));
+        dispatch(
+          logAuditAction({
+            action: 'RETIRE_API_DEFINITION',
+            resourceType: 'API_DEFINITION',
+            resourceId: api.id,
+            user: activeUser,
+            details: { apiCode: api.apiCode, previousStatus: 'DEPRECATED', newStatus: 'RETIRED' },
+          })
+        );
+        dispatch(
+          addToast({
+            type: 'info',
+            title: 'API Retirée (API-CDC-03)',
+            message: `L'API ${api.apiCode} est maintenant RETIRED.`,
+          })
+        );
+      } else {
+        dispatch(transitionApiStatusAsync({ id: api.id, status: 'RETIRED' }))
+          .then((result) => {
+            if (result.meta.requestStatus === 'fulfilled') {
+              dispatch(
+                addToast({
+                  type: 'info',
+                  title: 'API Retirée (API-CDC-03)',
+                  message: `L'API ${api.apiCode} est maintenant RETIRED.`,
+                })
+              );
+              dispatch(
+                logAuditAction({
+                  action: 'RETIRE_API_DEFINITION',
+                  resourceType: 'API_DEFINITION',
+                  resourceId: api.id,
+                  user: activeUser,
+                  details: { apiCode: api.apiCode, previousStatus: 'DEPRECATED', newStatus: 'RETIRED' },
+                })
+              );
+            }
+          })
+          .catch((error) => {
+            dispatch(
+              addToast({
+                type: 'error',
+                title: 'Échec du retrait',
+                message: error.message || 'Impossible de retirer l\'API.',
+              })
+            );
+          });
+      }
+    };
 
   return (
     <div className="space-y-6">
@@ -391,6 +683,36 @@ export default function ApiManagerView() {
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mt-1">{selectedApi.name}</h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {selectedApi.status === 'DRAFT' && (
+                    <button
+                      onClick={() => handlePublishApi(selectedApi)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      <span>Publier</span>
+                    </button>
+                  )}
+                  {selectedApi.status === 'PUBLISHED' && (
+                    <button
+                      onClick={() => handleDeprecateApi(selectedApi)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Déprécier</span>
+                    </button>
+                  )}
+                  {selectedApi.status === 'DEPRECATED' && (
+                    <button
+                      onClick={() => handleRetireApi(selectedApi)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Retirer</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Tab Switcher: Spec vs Playground */}

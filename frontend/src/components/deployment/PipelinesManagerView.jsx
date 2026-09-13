@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   switchBlueGreenSlot,
   setCanaryTrafficWeight,
   triggerNewDeployment,
+  createDeploymentAsync,
+  fetchRunningDeploymentsAsync,
 } from '../../store/deploymentSlice.js';
 import { addToast } from '../../store/platformSlice.js';
 import {
@@ -26,6 +28,13 @@ export default function PipelinesManagerView() {
   const activeBlueGreenSlot = useSelector((state) => state.deployment?.activeBlueGreenSlot || 'BLUE');
   const canaryTrafficWeight = useSelector((state) => state.deployment?.canaryTrafficWeight || 20);
   const releases = useSelector((state) => state.deployment?.releases || []);
+  const providerMode = useSelector((state) => state.platform.providerMode);
+
+  useEffect(() => {
+    if (providerMode === 'REAL') {
+      dispatch(fetchRunningDeploymentsAsync());
+    }
+  }, [dispatch, providerMode]);
 
   const [selectedStrategy, setSelectedStrategy] = useState('BLUE_GREEN');
   const [pipelineRunning, setPipelineRunning] = useState(false);
@@ -44,6 +53,51 @@ export default function PipelinesManagerView() {
   const handleRunPipelineSimulation = () => {
     setPipelineRunning(true);
     setCurrentStepIndex(0);
+
+    if (providerMode === 'REAL') {
+      const release = releases[0];
+      if (!release) {
+        setPipelineRunning(false);
+        dispatch(
+          addToast({
+            type: 'error',
+            title: 'Aucune release disponible',
+            message: 'Créez d\'abord une release avant de lancer un déploiement.',
+          })
+        );
+        return;
+      }
+
+      dispatch(
+        createDeploymentAsync({
+          releaseId: release.id,
+          environmentId: 'env-prod',
+          strategy: selectedStrategy,
+          startedBy: 'console-operator',
+        })
+      ).then((result) => {
+        setPipelineRunning(false);
+        if (result.meta.requestStatus === 'fulfilled') {
+          dispatch(
+            addToast({
+              type: 'success',
+              title: 'Déploiement Créé',
+              message: `Déploiement de ${release.appName} (${release.version}) vers PRODUCTION lancé.`,
+            })
+          );
+        }
+      }).catch(() => {
+        setPipelineRunning(false);
+        dispatch(
+          addToast({
+            type: 'error',
+            title: 'Échec du déploiement',
+            message: 'Impossible de créer le déploiement.',
+          })
+        );
+      });
+      return;
+    }
 
     let step = 0;
     const interval = setInterval(() => {

@@ -57,15 +57,16 @@ export const TENANTS = [
 ];
 
 const initialState = {
-  activeTab: 'workspace', // 'overview', 'applications', 'workspace', 'versions', 'validation', 'publication', 'history', 'specifications', 'integrations', etc.
+  activeTab: 'workspace',
   activeUser: IAM_ROLES.ADMIN,
   activeTenant: 'tenant-enterprise',
   searchQuery: '',
   platformHealth: 'HEALTHY',
   apiStatus: 'CONNECTING',
   platformContractLocked: true,
-  activeModuleId: '01', // 01 Application / Pack Manager
+  activeModuleId: '01',
   sidebarCollapsed: false,
+  providerMode: 'REAL',
   toasts: [],
   alerts: [
     {
@@ -112,6 +113,9 @@ const platformSlice = createSlice({
     togglePlatformContractLock: (state) => {
       state.platformContractLocked = !state.platformContractLocked;
     },
+    setProviderMode: (state, action) => {
+      state.providerMode = action.payload;
+    },
     toggleSidebarCollapsed: (state) => {
       state.sidebarCollapsed = !state.sidebarCollapsed;
     },
@@ -153,6 +157,7 @@ export const {
   setPlatformHealth,
   setApiStatus,
   togglePlatformContractLock,
+  setProviderMode,
   toggleSidebarCollapsed,
   setSidebarCollapsed,
   setActiveModuleId,

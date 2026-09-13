@@ -4,6 +4,12 @@ import {
   setSelectedWebhookId,
   triggerTestWebhook,
   addWebhook,
+  addWebhookAsync,
+  updateWebhookAsync,
+  transitionWebhookStatusAsync,
+  deleteWebhookAsync,
+  triggerInboundTestAsync,
+  getDeliveriesAsync,
 } from '../../store/integrationSlice.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
@@ -36,6 +42,7 @@ export default function WebhookManagerView() {
   const credentials = useSelector((state) => state.integration.credentials);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
   const activeUser = useSelector((state) => state.platform.activeUser);
+  const providerMode = useSelector((state) => state.integration.providerMode);
 
   const [selectedDirection, setSelectedDirection] = useState('ALL'); // 'ALL', 'INBOUND', 'OUTBOUND'
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -48,6 +55,12 @@ export default function WebhookManagerView() {
   const [newEvent, setNewEvent] = useState('');
   const [newEndpoint, setNewEndpoint] = useState('https://webhook.site/example');
   const [newSecretRef, setNewSecretRef] = useState(credentials[0]?.id || '');
+  const [newSignaturePolicy, setNewSignaturePolicy] = useState('HMAC-SHA256');
+  const [newRetryMaxAttempts, setNewRetryMaxAttempts] = useState(5);
+  const [newRetryBackoff, setNewRetryBackoff] = useState('EXPONENTIAL');
+  const [newRetryInitialDelayMs, setNewRetryInitialDelayMs] = useState(1000);
+  const [newTimeout, setNewTimeout] = useState(5000);
+  const [newFilters, setNewFilters] = useState('');
 
   // Filter webhooks
   const filteredWebhooks = webhooks.filter((w) => {
@@ -68,67 +81,164 @@ export default function WebhookManagerView() {
   const handleTestDispatch = () => {
     if (!selectedWebhook) return;
     setIsDispatching(true);
-    setTimeout(() => {
-      setIsDispatching(false);
-      dispatch(
-        triggerTestWebhook({
-          webhookId: selectedWebhook.id,
-          event: selectedWebhook.event,
-          simulatedStatus: 'SUCCEEDED',
+    if (providerMode === 'REAL') {
+      dispatch(triggerInboundTestAsync(selectedWebhook.code))
+        .then((result) => {
+          setIsDispatching(false);
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Webhook Délivré avec Succès (API-CDC-04)',
+                message: `Signature HMAC-SHA256 calculée et vérifiée pour ${selectedWebhook.code}.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'DISPATCH_TEST_WEBHOOK',
+                resourceType: 'WEBHOOK',
+                resourceId: selectedWebhook.id,
+                user: activeUser,
+                details: { code: selectedWebhook.code, event: selectedWebhook.event },
+              })
+            );
+          }
         })
-      );
-      dispatch(
-        addToast({
-          type: 'success',
-          title: 'Webhook Délivré avec Succès (API-CDC-04)',
-          message: `Signature HMAC-SHA256 calculée et vérifiée pour ${selectedWebhook.code}.`,
-        })
-      );
-      dispatch(
-        logAuditAction({
-          action: 'DISPATCH_TEST_WEBHOOK',
-          resourceType: 'WEBHOOK',
-          resourceId: selectedWebhook.id,
-          user: activeUser,
-          details: { code: selectedWebhook.code, event: selectedWebhook.event },
-        })
-      );
-    }, 600);
+        .catch((error) => {
+          setIsDispatching(false);
+          dispatch(
+            addToast({
+              type: 'error',
+              title: 'Échec du test webhook',
+              message: error.message || 'Impossible de déclencher le webhook.',
+            })
+          );
+        });
+    } else {
+      setTimeout(() => {
+        setIsDispatching(false);
+        dispatch(
+          triggerTestWebhook({
+            webhookId: selectedWebhook.id,
+            event: selectedWebhook.event,
+            simulatedStatus: 'SUCCEEDED',
+          })
+        );
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'Webhook Délivré avec Succès (API-CDC-04)',
+            message: `Signature HMAC-SHA256 calculée et vérifiée pour ${selectedWebhook.code}.`,
+          })
+        );
+        dispatch(
+          logAuditAction({
+            action: 'DISPATCH_TEST_WEBHOOK',
+            resourceType: 'WEBHOOK',
+            resourceId: selectedWebhook.id,
+            user: activeUser,
+            details: { code: selectedWebhook.code, event: selectedWebhook.event },
+          })
+        );
+      }, 600);
+    }
   };
 
-  const handleCreateWebhook = (e) => {
+   const handleCreateWebhook = (e) => {
     e.preventDefault();
     if (!newCode.trim() || !newEvent.trim()) return;
 
     const newId = 'wh-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newWh = {
-      id: newId,
+    let filters;
+    try {
+      filters = newFilters ? JSON.parse(newFilters) : {};
+    } catch (err) {
+      dispatch(
+        addToast({
+          type: 'error',
+          title: 'Format JSON invalide',
+          message: 'Le champ filters contient du JSON invalide. Corrigez-le avant de créer le webhook.',
+        })
+      );
+      return;
+    }
+    const body = {
       code: newCode.toUpperCase().trim(),
       direction: newDirection,
       event: newEvent.trim(),
       endpoint: newEndpoint.trim(),
-      status: 'ACTIVE',
       secretRef: newSecretRef,
-      signaturePolicy: 'HMAC-SHA256',
-      retryPolicy: { maxAttempts: 5, backoff: 'EXPONENTIAL', initialDelayMs: 1000 },
-      timeout: 5000,
-      filters: {},
-      deliveriesCount24h: 1,
-      successRatePct: 100.0,
+      signaturePolicy: newSignaturePolicy,
+      retryPolicy: { maxAttempts: newRetryMaxAttempts, backoff: newRetryBackoff, initialDelayMs: newRetryInitialDelayMs },
+      timeout: newTimeout,
+      filters,
     };
 
-    dispatch(addWebhook(newWh));
-    setShowCreateModal(false);
-    setNewCode('');
-    setNewEvent('');
+    if (providerMode === 'MOCK') {
+      const newWh = {
+        id: newId,
+        ...body,
+        status: 'ACTIVE',
+        deliveriesCount24h: 1,
+        successRatePct: 100.0,
+      };
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Webhook Enregistré (API-CDC-04)',
-        message: `Le webhook ${newWh.code} (${newWh.direction}) a été configuré avec politique de signature.`,
-      })
-    );
+      dispatch(addWebhook(newWh));
+      dispatch(
+        logAuditAction({
+          action: 'CREATE_WEBHOOK_SUBSCRIPTION',
+          resourceType: 'WEBHOOK',
+          resourceId: newId,
+          user: activeUser,
+          details: { code: newWh.code, direction: newWh.direction, event: newWh.event, endpoint: newWh.endpoint },
+        })
+      );
+      setShowCreateModal(false);
+      setNewCode('');
+      setNewEvent('');
+
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Webhook Enregistré (API-CDC-04)',
+          message: `Le webhook ${newWh.code} (${newWh.direction}) a été configuré avec politique de signature.`,
+        })
+      );
+    } else {
+      dispatch(addWebhookAsync(body))
+        .then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            setShowCreateModal(false);
+            setNewCode('');
+            setNewEvent('');
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Webhook Enregistré (API-CDC-04)',
+                message: `Le webhook ${result.payload.code} (${result.payload.direction}) a été configuré avec politique de signature.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'CREATE_WEBHOOK_SUBSCRIPTION',
+                resourceType: 'WEBHOOK',
+                resourceId: result.payload.id,
+                user: activeUser,
+                details: { code: result.payload.code, direction: result.payload.direction, event: result.payload.event, endpoint: result.payload.endpoint },
+              })
+            );
+          }
+        })
+        .catch((error) => {
+          dispatch(
+            addToast({
+              type: 'error',
+              title: 'Échec de création du webhook',
+              message: error.message || 'Impossible de créer le webhook.',
+            })
+          );
+        });
+    }
   };
 
   return (
@@ -429,34 +539,38 @@ export default function WebhookManagerView() {
                   Historique Récent des Livraisons ({deliveries.length})
                 </h4>
                 <div className="divide-y divide-slate-100 border border-slate-100 rounded-2xl overflow-hidden text-xs font-mono">
-                  {deliveries.map((del) => (
-                    <div key={del.deliveryId} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/60">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              del.status === 'SUCCEEDED'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}
-                          >
-                            HTTP {del.httpStatus}
-                          </span>
-                          <span className="font-bold text-slate-900">{del.deliveryId}</span>
-                          <span className="text-slate-400">•</span>
-                          <span className="text-slate-600">{del.eventId}</span>
+                  {deliveries.map((del) => {
+                    const statusColor =
+                      del.status === 'SUCCEEDED'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : del.status === 'FAILED'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : del.status === 'PENDING' || del.status === 'CANCELLED'
+                            ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                            : 'bg-amber-50 text-amber-800 border border-amber-200';
+                    return (
+                      <div key={del.deliveryId} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/60">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusColor}`}>
+                              HTTP {del.httpStatus}
+                            </span>
+                            <span className="font-bold text-slate-900">{del.deliveryId}</span>
+                            <span className="text-slate-400">•</span>
+                            <span className="text-slate-600">{del.eventId}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 mt-1">
+                            Trace: {del.traceId} • Durée: {del.duration}ms
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-1">
-                          Trace: {del.traceId} • Durée: {del.duration}ms
-                        </div>
-                      </div>
 
-                      <div className="text-right shrink-0">
-                        <span className="text-slate-400 text-[11px] block">{del.timestamp}</span>
-                        <span className="text-[10px] text-slate-500">Tentative #{del.attempt}</span>
+                        <div className="text-right shrink-0">
+                          <span className="text-slate-400 text-[11px] block">{del.timestamp}</span>
+                          <span className="text-[10px] text-slate-500">Tentative #{del.attempt}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -536,20 +650,89 @@ export default function WebhookManagerView() {
                 />
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Référence Secrète Liée (KMS/Vault)</label>
-                <select
-                  value={newSecretRef}
-                  onChange={(e) => setNewSecretRef(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
-                >
-                  {credentials.map((cred) => (
-                    <option key={cred.id} value={cred.id}>
-                      {cred.code} ({cred.type})
-                    </option>
-                  ))}
-                </select>
-              </div>
+               <div>
+                 <label className="font-semibold text-slate-700 block mb-1">Référence Secrète Liée (KMS/Vault)</label>
+                 <select
+                   value={newSecretRef}
+                   onChange={(e) => setNewSecretRef(e.target.value)}
+                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                 >
+                   {credentials.map((cred) => (
+                     <option key={cred.id} value={cred.id}>
+                       {cred.code} ({cred.type})
+                     </option>
+                   ))}
+                 </select>
+               </div>
+
+               <div className="grid grid-cols-2 gap-3">
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Politique de Signature</label>
+                   <select
+                     value={newSignaturePolicy}
+                     onChange={(e) => setNewSignaturePolicy(e.target.value)}
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   >
+                     <option value="HMAC-SHA256">HMAC-SHA256</option>
+                     <option value="STRIPE-SIGNATURE-V1">STRIPE-SIGNATURE-V1</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Timeout (ms)</label>
+                   <input
+                     type="number"
+                     value={newTimeout}
+                     onChange={(e) => setNewTimeout(Number(e.target.value))}
+                     placeholder="5000"
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   />
+                 </div>
+               </div>
+
+               <div className="grid grid-cols-3 gap-3">
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Max Attempts</label>
+                   <input
+                     type="number"
+                     value={newRetryMaxAttempts}
+                     onChange={(e) => setNewRetryMaxAttempts(Number(e.target.value))}
+                     placeholder="5"
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   />
+                 </div>
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Backoff</label>
+                   <select
+                     value={newRetryBackoff}
+                     onChange={(e) => setNewRetryBackoff(e.target.value)}
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   >
+                     <option value="EXPONENTIAL">EXPONENTIAL</option>
+                     <option value="LINEAR">LINEAR</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="font-semibold text-slate-700 block mb-1">Initial Delay (ms)</label>
+                   <input
+                     type="number"
+                     value={newRetryInitialDelayMs}
+                     onChange={(e) => setNewRetryInitialDelayMs(Number(e.target.value))}
+                     placeholder="1000"
+                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                   />
+                 </div>
+               </div>
+
+               <div>
+                 <label className="font-semibold text-slate-700 block mb-1">Filtres (JSON optionnel)</label>
+                 <input
+                   type="text"
+                   value={newFilters}
+                   onChange={(e) => setNewFilters(e.target.value)}
+                   placeholder='ex: {"tenant":"tenant-retail-fr","priority":"HIGH"}'
+                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500"
+                 />
+               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button

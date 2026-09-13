@@ -5,6 +5,13 @@ import {
   updateConnectorStatus,
   pingConnector,
   addConnector,
+  createConnectorAsync,
+  updateConnectorAsync,
+  validateConnectorAsync,
+  checkConnectorHealthAsync,
+  activateConnectorAsync,
+  disableConnectorAsync,
+  archiveConnectorAsync,
 } from '../../store/integrationSlice.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
@@ -82,47 +89,116 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
 
   const handlePing = (connectorId) => {
     setIsPinging(true);
-    setTimeout(() => {
-      dispatch(pingConnector(connectorId));
-      setIsPinging(false);
-      dispatch(
-        addToast({
-          type: 'success',
-          title: 'Health Check Réussi (API-CDC-02)',
-          message: `Connectivité, auth et conformité de contrat validées pour ${selectedConnector?.code}.`,
+    if (providerMode === 'MOCK') {
+      setTimeout(() => {
+        dispatch(pingConnector(connectorId));
+        setIsPinging(false);
+        dispatch(
+          addToast({
+            type: 'success',
+            title: 'Health Check Réussi (API-CDC-02)',
+            message: `Connectivité, auth et conformité de contrat validées pour ${selectedConnector?.code}.`,
+          })
+        );
+        dispatch(
+          logAuditAction({
+            action: 'CONNECTOR_HEALTH_PING',
+            resourceType: 'CONNECTOR',
+            resourceId: connectorId,
+            user: activeUser,
+            details: { latencyMs: 54, status: 'HEALTHY' },
+          })
+        );
+      }, 600);
+    } else {
+      dispatch(checkConnectorHealthAsync(connectorId))
+        .then((result) => {
+          setIsPinging(false);
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Health Check Réussi (API-CDC-02)',
+                message: `Connectivité, auth et conformité de contrat validées pour ${selectedConnector?.code}.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'CONNECTOR_HEALTH_PING',
+                resourceType: 'CONNECTOR',
+                resourceId: connectorId,
+                user: activeUser,
+                details: { latencyMs: 54, status: 'HEALTHY' },
+              })
+            );
+          }
         })
-      );
-      dispatch(
-        logAuditAction({
-          action: 'CONNECTOR_HEALTH_PING',
-          resourceType: 'CONNECTOR',
-          resourceId: connectorId,
-          user: activeUser,
-          details: { latencyMs: 54, status: 'HEALTHY' },
-        })
-      );
-    }, 600);
+        .catch((error) => {
+          setIsPinging(false);
+          dispatch(
+            addToast({
+              type: 'error',
+              title: 'Échec du health check',
+              message: error.message || 'Impossible de vérifier la santé du connecteur.',
+            })
+          );
+        });
+    }
   };
 
   const handleToggleStatus = (connector) => {
     const newStatus = connector.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
-    dispatch(updateConnectorStatus({ id: connector.id, status: newStatus }));
-    dispatch(
-      addToast({
-        type: newStatus === 'ACTIVE' ? 'success' : 'warning',
-        title: `Connecteur ${newStatus === 'ACTIVE' ? 'Activé' : 'Désactivé'}`,
-        message: `${connector.code} est désormais ${newStatus}.`,
-      })
-    );
-    dispatch(
-      logAuditAction({
-        action: 'UPDATE_CONNECTOR_STATUS',
-        resourceType: 'CONNECTOR',
-        resourceId: connector.id,
-        user: activeUser,
-        details: { previousStatus: connector.status, newStatus },
-      })
-    );
+    if (providerMode === 'MOCK') {
+      dispatch(updateConnectorStatus({ id: connector.id, status: newStatus }));
+      dispatch(
+        addToast({
+          type: newStatus === 'ACTIVE' ? 'success' : 'warning',
+          title: `Connecteur ${newStatus === 'ACTIVE' ? 'Activé' : 'Désactivé'}`,
+          message: `${connector.code} est désormais ${newStatus}.`,
+        })
+      );
+      dispatch(
+        logAuditAction({
+          action: 'UPDATE_CONNECTOR_STATUS',
+          resourceType: 'CONNECTOR',
+          resourceId: connector.id,
+          user: activeUser,
+          details: { previousStatus: connector.status, newStatus },
+        })
+      );
+    } else {
+      const thunk = newStatus === 'ACTIVE' ? activateConnectorAsync(connector.id) : disableConnectorAsync(connector.id);
+      dispatch(thunk)
+        .then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(
+              addToast({
+                type: newStatus === 'ACTIVE' ? 'success' : 'warning',
+                title: `Connecteur ${newStatus === 'ACTIVE' ? 'Activé' : 'Désactivé'}`,
+                message: `${connector.code} est désormais ${newStatus}.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'UPDATE_CONNECTOR_STATUS',
+                resourceType: 'CONNECTOR',
+                resourceId: connector.id,
+                user: activeUser,
+                details: { previousStatus: connector.status, newStatus },
+              })
+            );
+          }
+        })
+        .catch((error) => {
+          dispatch(
+            addToast({
+              type: 'error',
+              title: `Échec de ${newStatus === 'ACTIVE' ? "l'activation" : "la désactivation"} du connecteur`,
+              message: error.message || `Impossible de passer ${connector.code} à ${newStatus}.`,
+            })
+          );
+        });
+    }
   };
 
   const handleCreateConnector = (e) => {
@@ -130,13 +206,11 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
     if (!newCode.trim() || !newName.trim()) return;
 
     const newId = 'conn-' + newCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newConn = {
-      id: newId,
+    const body = {
       code: newCode.toUpperCase().trim(),
       name: newName.trim(),
       providerType: newType,
       contractVersion: 'v1.0.0',
-      status: 'ACTIVE',
       configurationSchema: {
         endpoint: newEndpoint.trim(),
         timeoutMs: 5000,
@@ -144,37 +218,78 @@ export default function ConnectorManagerView({ onOpenNewConnector }) {
       },
       credentialRef: newCredentialRef,
       capabilities: newCapabilities,
-      health: {
-        status: 'HEALTHY',
-        lastChecked: 'À l\'instant',
-        latencyMs: 65,
-        availabilityPct: 100.0,
-      },
-      mode: providerMode,
     };
 
-    dispatch(addConnector(newConn));
-    setShowCreateModal(false);
-    setNewCode('');
-    setNewName('');
+    if (providerMode === 'MOCK') {
+      const newConn = {
+        id: newId,
+        ...body,
+        status: 'ACTIVE',
+        health: {
+          status: 'HEALTHY',
+          lastChecked: 'À l\'instant',
+          latencyMs: 65,
+          availabilityPct: 100.0,
+        },
+        mode: providerMode,
+      };
+      dispatch(addConnector(newConn));
+      setShowCreateModal(false);
+      setNewCode('');
+      setNewName('');
 
-    dispatch(
-      addToast({
-        type: 'success',
-        title: 'Connecteur Enregistré (API-CDC-02)',
-        message: `Le connecteur ${newConn.code} a été ajouté avec succès.`,
-      })
-    );
+      dispatch(
+        addToast({
+          type: 'success',
+          title: 'Connecteur Enregistré (API-CDC-02)',
+          message: `Le connecteur ${newConn.code} a été ajouté avec succès.`,
+        })
+      );
 
-    dispatch(
-      logAuditAction({
-        action: 'CREATE_CONNECTOR',
-        resourceType: 'CONNECTOR',
-        resourceId: newId,
-        user: activeUser,
-        details: { code: newConn.code, providerType: newConn.providerType },
-      })
-    );
+      dispatch(
+        logAuditAction({
+          action: 'CREATE_CONNECTOR',
+          resourceType: 'CONNECTOR',
+          resourceId: newId,
+          user: activeUser,
+          details: { code: newConn.code, providerType: newConn.providerType },
+        })
+      );
+    } else {
+      dispatch(createConnectorAsync(body))
+        .then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            setShowCreateModal(false);
+            setNewCode('');
+            setNewName('');
+            dispatch(
+              addToast({
+                type: 'success',
+                title: 'Connecteur Enregistré (API-CDC-02)',
+                message: `Le connecteur ${result.payload.code} a été ajouté avec succès.`,
+              })
+            );
+            dispatch(
+              logAuditAction({
+                action: 'CREATE_CONNECTOR',
+                resourceType: 'CONNECTOR',
+                resourceId: result.payload.id,
+                user: activeUser,
+                details: { code: result.payload.code, providerType: result.payload.providerType },
+              })
+            );
+          }
+        })
+        .catch((error) => {
+          dispatch(
+            addToast({
+              type: 'error',
+              title: 'Échec de création du connecteur',
+              message: error.message || 'Impossible de créer le connecteur.',
+            })
+          );
+        });
+    }
   };
 
   const toggleCapability = (cap) => {
