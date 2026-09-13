@@ -51,6 +51,13 @@ import {
 } from './runtime/providers/mock-runtime.providers';
 import { RuntimeCockpitController } from './runtime/cockpit/cockpit.controller';
 import { RuntimeCockpitService } from './runtime/cockpit/cockpit.service';
+import { EffectiveManifestController } from './runtime/effective-manifest.controller';
+import { EffectiveManifestService } from './runtime/effective-manifest.service';
+import { RuntimeResilienceController } from './runtime/resilience.controller';
+import { RuntimeCacheService } from './runtime/cache.runtime-cache.service';
+import { ProviderHealthService } from './runtime/provider-health.service';
+import { RuntimeDiagnosticService } from './runtime/diagnostic.service';
+import { RuntimeResilienceService } from './runtime/resilience.service';
 import { PackManagerModule } from './pack-manager/pack-manager.module';
 
 @Module({
@@ -80,6 +87,8 @@ import { PackManagerModule } from './pack-manager/pack-manager.module';
     ConfigurationController,
     RuntimeBridgeController,
     RuntimeController,
+    EffectiveManifestController,
+    RuntimeResilienceController,
     QualityController,
     RuntimeCockpitController,
   ],
@@ -100,6 +109,11 @@ import { PackManagerModule } from './pack-manager/pack-manager.module';
     RuntimeResolverService,
     CapabilityDependencyResolverService,
     RuntimeResolutionService,
+    EffectiveManifestService,
+    RuntimeCacheService,
+    ProviderHealthService,
+    RuntimeDiagnosticService,
+    RuntimeResilienceService,
     PackManifestProvider,
     { provide: RUNTIME_MANIFEST_PROVIDER, useExisting: PackManifestProvider },
     MockApplicationContextProvider,
@@ -141,6 +155,11 @@ import { PackManagerModule } from './pack-manager/pack-manager.module';
     RuntimeBridgeService,
     RuntimeResolverService,
     RuntimeResolutionService,
+    EffectiveManifestService,
+    RuntimeCacheService,
+    ProviderHealthService,
+    RuntimeDiagnosticService,
+    RuntimeResilienceService,
     QualityService,
   ],
 })

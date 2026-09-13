@@ -358,7 +358,7 @@ export default function PackOverviewView({ onOpenNewPackModal }) {
           <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <div className="flex items-center gap-2">
               <FileCode className="w-4 h-4 text-cyan-600" />
-              <h3 className="text-xs font-bold text-slate-900">Pack Manifests v1 🔒</h3>
+              <h3 className="text-xs font-bold text-slate-900">Pack Manifests v1</h3>
             </div>
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200">
               PM-CDC-00

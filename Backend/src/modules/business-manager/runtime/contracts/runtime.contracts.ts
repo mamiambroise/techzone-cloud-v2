@@ -119,14 +119,22 @@ export interface RuntimeContext {
   ruleDecisions?: RuntimeRuleDecision[];
 }
 
+export type RuntimeProjection = 'FULL' | 'UI' | 'API' | 'DIAGNOSTIC';
+
 export interface EffectiveRuntimeManifest {
   contract: 'techzone.effective-runtime-manifest';
   contractVersion: '1.0';
   sourceManifest: { packCode: string; packVersion: string; manifestHash: string };
   context: { tenantId: string; applicationId: string; environment: string };
-  modules: Array<RuntimeResolutionItem & { features: number; activeFeatures: number; blockedFeatures: number }>;
-  features: Array<RuntimeResolutionItem & { moduleCode?: string; dependencyState: string; capabilityState: string; ruleDecisions: RuntimeRuleDecision[] }>;
-  capabilities: { available: string[]; required: string[] };
+  modules: Array<RuntimeResolutionItem & { features?: number; activeFeatures?: number; blockedFeatures?: number; order?: number; configurationRef?: string; visibility?: string; moduleCode?: string; }>; 
+  features: Array<RuntimeResolutionItem & { moduleCode?: string; dependencyState: string; capabilityState: string; ruleDecisions: RuntimeRuleDecision[]; visibility?: string; configuration?: unknown; requiredPermissions?: string[]; requiredCapabilities?: string[]; }>; 
+  capabilities: { available: string[]; required: string[]; degraded?: string[]; unavailable?: string[] };
+  dependencies?: { resolved?: Array<{ source: string; target: string }>; optionalMissing?: string[]; blocking?: string[] };
+  permissions?: { granted?: string[] };
+  configuration?: Record<string, unknown>;
+  restrictions?: Array<{ type: string; target: string; reasonCode: string }>;
+  diagnostics?: { warnings?: number; errors?: number; blockedItems?: number };
+  integrity?: { effectiveManifestHash?: string; canonicalizationVersion?: string; snapshotHash?: string };
   capabilityDependencyResolution?: unknown;
   resolution: { status: RuntimeStatus; issues: RuntimeIssue[] };
   summary?: { modules: Record<string, number>; features: Record<string, number> };
