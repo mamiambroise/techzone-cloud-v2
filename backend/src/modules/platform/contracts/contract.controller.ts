@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 
 import { ContractsService } from '../contracts/contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -18,27 +25,27 @@ export class ContractsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.contractsService.findOne(id);
   }
 
   @Post(':id/validate')
-  validate(@Param('id') id: string) {
+  validate(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.contractsService.validate(id);
   }
 
   @Post(':id/lock')
-  lock(@Param('id') id: string) {
+  lock(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.contractsService.lock(id);
   }
 
   @Get(':id/history')
-  history(@Param('id') id: string) {
+  history(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.contractsService.getHistory(id);
   }
 
   @Get(':id/compatibility')
-  compatibility(@Param('id') id: string) {
+  compatibility(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.contractsService.getCompatibility(id);
   }
 }

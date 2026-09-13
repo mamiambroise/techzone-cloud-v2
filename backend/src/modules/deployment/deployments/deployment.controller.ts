@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -26,22 +27,31 @@ export class DeploymentController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.deploymentService.findOne(id);
   }
 
   @Post(':id/verify')
-  verify(@Param('id') id: string, @Body() dto: VerifyDeploymentDto) {
+  verify(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: VerifyDeploymentDto,
+  ) {
     return this.deploymentService.verify(id, dto);
   }
 
   @Post(':id/cancel')
-  cancel(@Param('id') id: string, @Body('actor') actor?: string) {
+  cancel(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body('actor') actor?: string,
+  ) {
     return this.deploymentService.cancel(id, actor);
   }
 
   @Post(':id/retry')
-  retry(@Param('id') id: string, @Body('actor') actor?: string) {
+  retry(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body('actor') actor?: string,
+  ) {
     return this.deploymentService.retry(id, actor);
   }
 }

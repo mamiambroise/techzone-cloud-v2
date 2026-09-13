@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Headers,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiManagerService } from './api-manager.service';
 import {
@@ -47,7 +48,7 @@ export class ApiManagerController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.apiManagerService.findOne(id);
   }
 
@@ -61,7 +62,7 @@ export class ApiManagerController {
 
   @Patch(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateApiDefinitionDto,
   ) {
     return this.apiManagerService.update(id, dto);
@@ -69,7 +70,7 @@ export class ApiManagerController {
 
   @Post(':id/transition')
   async transition(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body('status') status: ApiVersionLifecycleStatus,
     @Headers('Idempotency-Key') idempotencyKey?: string,
   ) {
@@ -77,7 +78,7 @@ export class ApiManagerController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.apiManagerService.remove(id);
   }
 }

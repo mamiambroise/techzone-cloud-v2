@@ -4,11 +4,15 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
 import { SynchronizationService } from './synchronization.service';
-import { CreateSynchronizationDto, UpdateSynchronizationDto } from './dto/create-synchronization.dto';
+import {
+  CreateSynchronizationDto,
+  UpdateSynchronizationDto,
+} from './dto/create-synchronization.dto';
 
 @Controller('api/integrations/synchronizations')
 export class SynchronizationController {
@@ -27,42 +31,45 @@ export class SynchronizationController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.synchronizationService.findOne(id);
   }
 
   @Get(':id/checkpoint')
-  async getCheckpoint(@Param('id') id: string) {
+  async getCheckpoint(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.synchronizationService.getCheckpoint(id);
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateSynchronizationDto) {
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateSynchronizationDto,
+  ) {
     return this.synchronizationService.update(id, dto);
   }
 
   @Post(':id/run')
-  async run(@Param('id') id: string) {
+  async run(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.synchronizationService.run(id);
   }
 
   @Post(':id/resume')
-  async resume(@Param('id') id: string) {
+  async resume(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.synchronizationService.resume(id);
   }
 
   @Post(':id/pause')
-  async pause(@Param('id') id: string) {
+  async pause(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.synchronizationService.pause(id);
   }
 
   @Post(':id/cancel')
-  async cancel(@Param('id') id: string) {
+  async cancel(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.synchronizationService.cancel(id);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.synchronizationService.remove(id);
   }
 }
