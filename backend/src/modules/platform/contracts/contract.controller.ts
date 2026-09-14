@@ -1,0 +1,51 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
+
+import { ContractsService } from '../contracts/contract.service';
+import { CreateContractDto } from './dto/create-contract.dto';
+
+@Controller('api/platform/contracts')
+export class ContractsController {
+  constructor(private readonly contractsService: ContractsService) {}
+
+  @Post()
+  create(@Body() dto: CreateContractDto) {
+    return this.contractsService.create(dto);
+  }
+
+  @Get()
+  findAll() {
+    return this.contractsService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.contractsService.findOne(id);
+  }
+
+  @Post(':id/validate')
+  validate(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.contractsService.validate(id);
+  }
+
+  @Post(':id/lock')
+  lock(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.contractsService.lock(id);
+  }
+
+  @Get(':id/history')
+  history(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.contractsService.getHistory(id);
+  }
+
+  @Get(':id/compatibility')
+  compatibility(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.contractsService.getCompatibility(id);
+  }
+}

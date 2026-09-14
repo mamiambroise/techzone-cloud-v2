@@ -1,0 +1,6 @@
+{
+  "name": "Techzone Cloud - Platform Foundation",
+  "description": "Console unifiée Team 4 (Platform, API & Deployment) : Platform Foundation (PF-00 à 06), API_Integration_Layer (API-00 à 07) et DEP Publication (DEP-00 à 06) pour Techzone Cloud.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
