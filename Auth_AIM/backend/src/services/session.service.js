@@ -169,6 +169,56 @@ async function listSessions({ userId, status } = {}) {
     orderBy: { lastActivityAt: 'desc' },
   });
 }
+async function elevateAuthenticationLevel({ sessionId, level }) {
+  return prisma.session.update({
+    where: { id: sessionId },
+    data: { authenticationLevel: level },
+  });
+}
+function computeRiskLevel({ device, recentCriticalEvent, hasMfa }) {
+  if (recentCriticalEvent) return 'CRITICAL';
+  if (!device || device.trustLevel !== 'TRUSTED' || device.revokedAt) {
+    return hasMfa ? 'MEDIUM' : 'HIGH';
+  }
+  return 'LOW';
+}
+
+async function recalculateSessionRisk(sessionId) {
+  const session = await getSessionById(sessionId);
+
+  const device = session.deviceId
+    ? await prisma.device.findUnique({ where: { id: session.deviceId } })
+    : null;
+
+  const recentCriticalEvent = await prisma.securityEvent.findFirst({
+  where: {
+    sessionId,
+    severity: 'CRITICAL',
+    occurredAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+  },
+});
+
+  const riskLevel = computeRiskLevel({
+    device,
+    recentCriticalEvent: Boolean(recentCriticalEvent),
+    hasMfa: session.authenticationLevel === 'MFA',
+  });
+
+  const updated = await prisma.session.update({ where: { id: sessionId }, data: { riskLevel } });
+  const requiresStepUp = riskLevel === 'HIGH' || riskLevel === 'CRITICAL';
+
+  return { session: updated, requiresStepUp };
+}
+
+async function validateSessionToken(sessionId) {
+  try {
+    const session = await getSessionById(sessionId);
+    await assertSessionUsable(session);
+    return { valid: true, session };
+  } catch (err) {
+    return { valid: false, reason: err.code || 'SESSION_INVALID' };
+  }
+}
 module.exports = {
   createSession,
   getSessionById,
@@ -182,4 +232,8 @@ module.exports = {
   listUserSessions,
   flagSessionRisk,
   listSessions,
+  elevateAuthenticationLevel,
+  computeRiskLevel,
+  recalculateSessionRisk,
+  validateSessionToken,
 };

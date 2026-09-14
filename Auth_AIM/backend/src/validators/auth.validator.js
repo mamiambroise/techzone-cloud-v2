@@ -40,7 +40,16 @@ const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().required(),
   newPassword: Joi.string().min(10).max(128).required(),
 });
+const stepUpSchema = Joi.object({
+  resource: Joi.string().optional(),
+  action: Joi.string().optional(),
+});
 
+const stepUpVerifySchema = Joi.object({
+  challengeToken: Joi.string().required(),
+  mfaMethodId: Joi.string().required(),
+  code: Joi.string().required(),
+});
 module.exports = {
   registerSchema,
   loginSchema,
@@ -48,4 +57,6 @@ module.exports = {
   refreshSchema,
   logoutAllSchema,
   changePasswordSchema,
+  stepUpSchema,
+  stepUpVerifySchema,
 };

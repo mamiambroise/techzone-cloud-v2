@@ -24,6 +24,7 @@ async function persistSnapshot(context) {
         conflicts: context.conflicts,
         warnings: context.warnings,
       },
+      sourceRevision: `${context.contextVersion}:${context.contextHash}`,
       resolvedAt: context.resolvedAt,
       expiresAt: context.expiresAt,
     },

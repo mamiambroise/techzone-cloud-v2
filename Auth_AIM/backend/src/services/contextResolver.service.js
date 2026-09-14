@@ -17,6 +17,18 @@ function computeContextHash(payload) {
   return crypto.createHash('sha256').update(stableStringify(payload)).digest('hex');
 }
 
+async function computeContextVersion({ userId, tenantId, newHash }) {
+  if (!tenantId) return 1;
+  const last = await prisma.contextSnapshot.findFirst({
+    where: { userId, tenantId },
+    orderBy: { resolvedAt: 'desc' },
+  });
+  if (!last || !last.sourceRevision) return 1;
+  const [lastVersionStr, lastHash] = last.sourceRevision.split(':');
+  const lastVersion = parseInt(lastVersionStr, 10) || 0;
+  return lastHash === newHash ? lastVersion : lastVersion + 1;
+}
+
 async function resolveActiveMemberships(userId) {
   return prisma.membership.findMany({
     where: { userId, status: 'ACTIVE' },
@@ -234,7 +246,6 @@ async function resolveContext({
   const expiresAt = new Date(resolvedAt.getTime() + CONTEXT_TTL_MS);
 
   const context = {
-    contextVersion: 1,
     status,
     source,
     subject: { subjectType, subjectId, userId: user.id },
@@ -277,7 +288,13 @@ async function resolveContext({
     security: context.session,
   });
 
+  context.contextVersion = await computeContextVersion({
+    userId: user.id,
+    tenantId: context.tenant ? context.tenant.tenantId : null,
+    newHash: context.contextHash,
+  });
+
   return context;
 }
 
-module.exports = { resolveContext, computeContextHash };
+module.exports = { resolveContext, computeContextHash, computeContextVersion };
