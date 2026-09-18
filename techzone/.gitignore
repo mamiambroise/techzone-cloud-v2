@@ -1,0 +1,18 @@
+# Local Dolibarr configuration and generated business documents.
+/htdocs/conf/conf.php
+/htdocs/conf/conf.php.old
+/documents/
+/documents-demo/
+/dolibarr_install.log
+
+# Project-scoped database, credentials, logs, sockets, and PID files.
+/.dev/
+
+# BrowserSync dependencies are reproducible from package-lock.json.
+/node_modules/
+/.playwright-mcp/
+
+# Local environment overrides must never be committed.
+/.env
+/.env.*
+!/.env.example

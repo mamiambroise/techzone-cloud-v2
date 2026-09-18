@@ -42,6 +42,20 @@ export class IamJwtGuard implements CanActivate {
       throw new IamError('Token invalide ou expiré', 401, 'UNAUTHENTICATED');
     }
 
+    // Token emis par Auth_AIM (iss: techzone-cloud-iam) : authentification
+    // deleguee, session validee cote Auth_AIM. Accepte directement.
+    if (decoded.iss === 'techzone-cloud-iam') {
+      request.iamAuth = {
+        userId: decoded.userId,
+        sessionId: decoded.sessionId,
+        tenantId: decoded.tenantId ?? null,
+        organizationId: decoded.organizationId ?? null,
+        authenticationLevel: decoded.authenticationLevel ?? null,
+        isExternal: true,
+      };
+      return true;
+    }
+
     const session = await this.prisma.iamSession.findUnique({
       where: { id: decoded.sessionId },
     });

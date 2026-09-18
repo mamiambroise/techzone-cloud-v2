@@ -1,0 +1,750 @@
+[Nest] 18312  - 16/09/2026 13:18:37     LOG [NestFactory] Starting Nest application...
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [DolibarrAdapter] DolibarrAdapter cree - URL: http://127.0.0.1:8080
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] AppModule dependencies initialized +13ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] PrismaModule dependencies initialized +361ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] MailModule dependencies initialized +5ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [ErpAdapterService] Adaptateurs enregistres: MOCK, DOLIBARR
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] ErpAdapterModule dependencies initialized +13ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [DataAccessManager] Provider enregistre: ERP_ADAPTER
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [DataAccessManager] Provider enregistre: DOLIBARR
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [DataAccessManager] Provider enregistre: MOCK
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [DataAccessManager] Ressource enregistree: Product
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [ValidationService] Schema enregistre pour product (5 champs)
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [DataAccessManager] Ressource enregistree: Client
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [ValidationService] Schema enregistre pour client (4 champs)
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [DataAccessManager] Ressource enregistree: Order
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [ValidationService] Schema enregistre pour order (6 champs)
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] ErpRegistryModule dependencies initialized +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] AutomationModule dependencies initialized +2ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] DataRuntimeModule dependencies initialized +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [InstanceLoader] IamModule dependencies initialized +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RoutesResolver] ErpRegistryController {/api/erp-registry}: +320ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp-registry, POST} route +9ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp-registry, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp-registry/:id, GET} route +2ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp-registry/code/:code, GET} route +2ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp-registry/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp-registry/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RoutesResolver] ErpAdapterController {/api/erp}: +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/adapters, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/clients, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/clients/:id, GET} route +3ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/clients, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/clients/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/clients/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/products, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/products/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/products, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/products/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/products/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/orders, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/orders/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/orders, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/orders/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/orders/:id, DELETE} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock/:productId, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock/:productId, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stocks, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/suppliers, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/suppliers/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/suppliers, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/suppliers/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/suppliers/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/quotes, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/quotes/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/quotes, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/quotes/:id, PUT} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/quotes/:id, DELETE} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/invoices, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/invoices/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/invoices, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/invoices/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/invoices/:id, DELETE} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/payments, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/payments/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/payments, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/warehouses, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/warehouses/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/warehouses, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/warehouses/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/warehouses/:id, DELETE} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/shipments, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/shipments/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/shipments, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/shipments/:id, PUT} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/documents, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/documents/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/documents, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/documents/:id, DELETE} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock-movements, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock-movements, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/purchases, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/purchases/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/purchases, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/purchases/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/projects, GET} route +2ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/projects/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/projects, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/projects/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/agenda, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/agenda, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/agenda/:id, PUT} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/agenda/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/product-variants, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/product-variants, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/product-variants/:id, PUT} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/product-variants/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/services, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/services/:id, GET} route +2ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/services, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/services/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/services/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock-transfers, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock-transfers, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock-transfers/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/inventories, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/inventories/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/inventories, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/inventories/:id, PUT} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock-alerts, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stock-alerts, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/returns, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/returns/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/returns, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/returns/:id, PUT} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/promotions, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/promotions/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/promotions, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/promotions/:id, PUT} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/promotions/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/cash-registers, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/cash-registers/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/cash-registers, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/cash-registers/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/expenses, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/expenses/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/expenses, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/expenses/:id, DELETE} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/reservations, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/reservations/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/reservations, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/reservations/:id, PUT} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/users, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/users/me, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/users/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/stats, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/erp/health, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RoutesResolver] DataRuntimeController {/api/data-runtime}: +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/contract, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/resources, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/query, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/resources/:resource/:id, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/resources/:resource, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/execute, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/validate, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/history, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/history/:traceId, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/metrics, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/bindings/:bindingId/resolve, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/data-runtime/bindings/:bindingId/state, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RoutesResolver] AutomationController {/api/automation}: +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/cockpit, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/contract, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/rules, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/rules/active, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/rules/:code, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/rules/evaluate, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/rules/simulate, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/workflows, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/workflows/start, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/workflows/executions, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/triggers, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/triggers/event, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/triggers/fire, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/conditions/evaluate, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/conditions/simulate, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/history, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/automation/history/metrics, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RoutesResolver] IamAuthController {/api/iam/auth}: +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/register, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/login, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/refresh, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/logout, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/logout-all, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/change-password, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/forgot-password, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/reset-password, POST} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/me, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/profile, PATCH} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/auth/sessions, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RoutesResolver] IamUsersController {/api/iam/users}: +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/users, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/users/stats, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/users, POST} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/users/:id, GET} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/users/:id/status, PATCH} route +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/users/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RoutesResolver] IamSessionsController {/api/iam/sessions}: +0ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/sessions, GET} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:38     LOG [RouterExplorer] Mapped {/api/iam/sessions/:id, DELETE} route +1ms
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [PrismaService] Connexion a PostgreSQL etablie
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [ActionEngine] Action enregistree: send.notification (NOTIFICATION)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [ActionEngine] Action enregistree: workflow.start (WORKFLOW_START)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [ActionEngine] Action enregistree: data.update (DATA_UPDATE)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [RulesEngine] Regle enregistree: rule.invoice.total.high (v1.0, priorite 100)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [RulesEngine] Regle enregistree: rule.stock.low (v1.0, priorite 80)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [RulesEngine] Regle enregistree: rule.invoice.total.high.draft (v1.0, priorite 90)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [WorkflowEngine] Workflow enregistre: workflow.invoice-validation (v1.0, 5 etapes)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [WorkflowEngine] Workflow enregistre: workflow.stock-replenish (v1.0, 3 etapes)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [TriggerEngine] Trigger enregistre: trigger.invoice.created (EVENT)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [TriggerEngine] Trigger enregistre: trigger.stock.changed (DATA_CHANGE)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [TriggerEngine] Trigger enregistre: trigger.manual.validate (MANUAL)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [MockAutomation] Mock Automation initie (conforme Automation Contract v1)
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [NestApplication] Nest application successfully started +6ms
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [Bootstrap] Application demarree sur le port 3002
+[Nest] 18312  - 16/09/2026 13:18:40     LOG [Bootstrap] Swagger UI: http://localhost:3002/api/docs
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [ErpRegistryController] GET /erp-registry
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [ErpRegistryService] Liste de tous les ERP
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [ErpAdapterController] GET /erp/health?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] Health check Dolibarr
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [ErpAdapterController] GET /erp/stats?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /thirdparties (fournisseurs)
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /warehouses
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /shipments
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /supplierorders (achats)
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [ErpAdapterController] GET /erp/orders?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [ErpAdapterController] GET /erp/products?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [ErpAdapterController] GET /erp/clients?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:21     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:50:24     LOG [DolibarrAdapter] 0 fournisseurs recus
+[Nest] 18312  - 16/09/2026 13:50:24     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:50:26     LOG [DolibarrAdapter] GET /documents (agregation des fichiers lies)
+[Nest] 18312  - 16/09/2026 13:50:26     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:50:28     LOG [DolibarrAdapter] 0 produits recus
+[Nest] 18312  - 16/09/2026 13:50:30     LOG [DolibarrAdapter] 0 clients recus
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:31    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:34    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:36    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:45    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:47    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:50:48     LOG [ErpRegistryController] GET /erp-registry
+[Nest] 18312  - 16/09/2026 13:50:48     LOG [ErpRegistryService] Liste de tous les ERP
+[Nest] 18312  - 16/09/2026 13:50:48   DEBUG [DataAccessManager] LIST Product [tenant=system]
+[Nest] 18312  - 16/09/2026 13:50:48     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:54    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [ErpRegistryController] GET /erp-registry
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [ErpRegistryService] Liste de tous les ERP
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [ErpAdapterController] GET /erp/stats?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /thirdparties (fournisseurs)
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /warehouses
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /shipments
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /supplierorders (achats)
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [ErpAdapterController] GET /erp/health?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] Health check Dolibarr
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [ErpAdapterController] GET /erp/orders?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [ErpAdapterController] GET /erp/products?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:50:55     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:50:57    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:50:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:50:59    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:00    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:06    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:08     LOG [DolibarrAdapter] GET /products (services)
+[Nest] 18312  - 16/09/2026 13:51:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:13     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:51:13    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:16    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:22     LOG [DolibarrAdapter] GET /documents (agregation des fichiers lies)
+[Nest] 18312  - 16/09/2026 13:51:22     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:51:23    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:31     LOG [ErpAdapterController] GET /erp/clients?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:51:31     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:51:32    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:41    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:42     LOG [DolibarrAdapter] GET /products (services)
+[Nest] 18312  - 16/09/2026 13:51:43    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:46    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:52    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:51:52    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:51:55    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:51:55     LOG [DolibarrAdapter] GET /stockmovements
+[Nest] 18312  - 16/09/2026 13:52:00     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:52:03    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:04    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:52:05    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:07   DEBUG [DataAccessManager] LIST Product [tenant=system]
+[Nest] 18312  - 16/09/2026 13:52:07     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:52:09     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:52:10    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:15    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:52:17    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:17    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:19    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:20     LOG [ErpAdapterController] GET /erp/clients?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:52:20     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:52:21    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:27   DEBUG [DataAccessManager] LIST Product [tenant=system]
+[Nest] 18312  - 16/09/2026 13:52:27     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:52:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:29    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:52:29     LOG [DolibarrAdapter] GET /stockmovements
+[Nest] 18312  - 16/09/2026 13:52:30    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:30    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:33    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:52:37    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:39    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:40     LOG [ErpAdapterController] GET /erp/clients?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:52:40     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:52:40    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:52:41    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:42    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:52:43     LOG [DolibarrAdapter] GET /agendaevents
+[Nest] 18312  - 16/09/2026 13:52:47     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:52:48    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:50    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:52:50    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:53    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:52:53    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:52:56     LOG [ErpAdapterController] GET /erp/products?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:52:56     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:52:56     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:52:57    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:01    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:01    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:02    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:04    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:05   DEBUG [DataAccessManager] LIST Product [tenant=system]
+[Nest] 18312  - 16/09/2026 13:53:05     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:53:06    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:06    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:08    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:13    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:15    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:16    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:16     LOG [DolibarrAdapter] GET /agendaevents
+[Nest] 18312  - 16/09/2026 13:53:17    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:17    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:20    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:25   DEBUG [DataAccessManager] LIST Product [tenant=system]
+[Nest] 18312  - 16/09/2026 13:53:25     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:53:26    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:26    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:29    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:29    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:30     LOG [DolibarrAdapter] GET /projects
+[Nest] 18312  - 16/09/2026 13:53:34     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:53:35    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:37    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:38    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:40    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:43     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:53:44    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:46    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [ErpAdapterController] GET /erp/health?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] Health check Dolibarr
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [ErpAdapterController] GET /erp/stats?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /thirdparties (fournisseurs)
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /warehouses
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /shipments
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [DolibarrAdapter] GET /supplierorders (achats)
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [ErpRegistryController] GET /erp-registry
+[Nest] 18312  - 16/09/2026 13:53:48     LOG [ErpRegistryService] Liste de tous les ERP
+[Nest] 18312  - 16/09/2026 13:53:49     LOG [ErpRegistryController] GET /erp-registry
+[Nest] 18312  - 16/09/2026 13:53:49     LOG [ErpRegistryService] Liste de tous les ERP
+[Nest] 18312  - 16/09/2026 13:53:49    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:51    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:53    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:53    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:55    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:53:58    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:53:59    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:03    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:03     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:54:03     LOG [DolibarrAdapter] GET /projects
+[Nest] 18312  - 16/09/2026 13:54:04    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:06    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:07    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [ErpAdapterController] GET /erp/stats?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /thirdparties (fournisseurs)
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /warehouses
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /shipments
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] GET /supplierorders (achats)
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [ErpAdapterController] GET /erp/health?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:54:08     LOG [DolibarrAdapter] Health check Dolibarr
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:09    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:13    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:13    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:13    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:15     LOG [ErpRegistryController] GET /erp-registry
+[Nest] 18312  - 16/09/2026 13:54:15     LOG [ErpRegistryService] Liste de tous les ERP
+[Nest] 18312  - 16/09/2026 13:54:15     LOG [ErpAdapterController] GET /erp/orders?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:54:15     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:54:15     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:54:16    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:18    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:19    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:21     LOG [DolibarrAdapter] 0 documents recus
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:25    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:25    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:26    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:29    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:30     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:54:35     LOG [DolibarrAdapter] GET /products (services)
+[Nest] 18312  - 16/09/2026 13:54:35     LOG [ErpAdapterController] GET /erp/products?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:54:35     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:54:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:36    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:36    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:40    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:41    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:46    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:46    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:54:48    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:48    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:54:50     LOG [ErpAdapterController] GET /erp/clients?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:54:50     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:54:51    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:56     LOG [DolibarrAdapter] GET /products (services)
+[Nest] 18312  - 16/09/2026 13:54:57    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:54:57    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:00    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:03     LOG [ErpRegistryController] GET /erp-registry
+[Nest] 18312  - 16/09/2026 13:55:03     LOG [ErpRegistryService] Liste de tous les ERP
+[Nest] 18312  - 16/09/2026 13:55:03     LOG [ErpAdapterController] GET /erp/health?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:55:03     LOG [DolibarrAdapter] Health check Dolibarr
+[Nest] 18312  - 16/09/2026 13:55:03     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:55:03    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:06    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:08    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:09    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:09    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:11    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:13    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:14    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:17    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:17     LOG [DolibarrAdapter] 0 documents recus
+[Nest] 18312  - 16/09/2026 13:55:21    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /stockmovements
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [ErpAdapterController] GET /erp/stats?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /thirdparties (fournisseurs)
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /warehouses
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /shipments
+[Nest] 18312  - 16/09/2026 13:55:23     LOG [DolibarrAdapter] GET /supplierorders (achats)
+[Nest] 18312  - 16/09/2026 13:55:23    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:23    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:23    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:23    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:23    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:23    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:24    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:25     LOG [ErpAdapterController] GET /erp/health?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:55:25     LOG [DolibarrAdapter] Health check Dolibarr
+[Nest] 18312  - 16/09/2026 13:55:25    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:26    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:26    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:26    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:26    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:26    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:26    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:26    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [ErpAdapterController] GET /erp/stats?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /thirdparties (fournisseurs)
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /proposals
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /paiements
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /warehouses
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /shipments
+[Nest] 18312  - 16/09/2026 13:55:27     LOG [DolibarrAdapter] GET /supplierorders (achats)
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:27    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:28    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:29    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30     LOG [ErpAdapterController] GET /erp/orders?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:55:30     LOG [DolibarrAdapter] GET /orders
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:30    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:31    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:32     LOG [DolibarrAdapter] GET /invoices
+[Nest] 18312  - 16/09/2026 13:55:32    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33     LOG [DolibarrAdapter] GET /stockmovements
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:33    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:34     LOG [DolibarrAdapter] GET /products (services)
+[Nest] 18312  - 16/09/2026 13:55:34    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:35    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:35    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:36    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:37     LOG [ErpAdapterController] GET /erp/products?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:55:37     LOG [DolibarrAdapter] GET /products
+[Nest] 18312  - 16/09/2026 13:55:37    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:37    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:38    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:39     LOG [ErpAdapterController] GET /erp/clients?erp=DOLIBARR
+[Nest] 18312  - 16/09/2026 13:55:39     LOG [DolibarrAdapter] GET /thirdparties
+[Nest] 18312  - 16/09/2026 13:55:39    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:40     LOG [DolibarrAdapter] GET /agendaevents
+[Nest] 18312  - 16/09/2026 13:55:40    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:40     LOG [DolibarrAdapter] GET /agendaevents
+[Nest] 18312  - 16/09/2026 13:55:40    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:40     LOG [DolibarrAdapter] GET /products (services)
+[Nest] 18312  - 16/09/2026 13:55:40    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:40    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:40    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:41    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:41    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:41    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:41     LOG [DolibarrAdapter] GET /stockmovements
+[Nest] 18312  - 16/09/2026 13:55:41    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:42    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:42    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:43    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:43    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:43    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:44    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:47     LOG [DolibarrAdapter] GET /projects
+[Nest] 18312  - 16/09/2026 13:55:47     LOG [DolibarrAdapter] GET /projects
+[Nest] 18312  - 16/09/2026 13:55:47    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:47    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:47     LOG [DolibarrAdapter] GET /stockmovements
+[Nest] 18312  - 16/09/2026 13:55:47    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:48    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:48    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:48    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:48     LOG [DolibarrAdapter] GET /agendaevents
+[Nest] 18312  - 16/09/2026 13:55:48    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:49    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:50    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:50    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:50    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:51    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:54     LOG [DolibarrAdapter] GET /agendaevents
+[Nest] 18312  - 16/09/2026 13:55:54    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:55    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:56     LOG [DolibarrAdapter] GET /projects
+[Nest] 18312  - 16/09/2026 13:55:56    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:55:57    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:55:57    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:55:59    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms
+[Nest] 18312  - 16/09/2026 13:56:01     LOG [DolibarrAdapter] GET /projects
+[Nest] 18312  - 16/09/2026 13:56:01    WARN [DolibarrAdapter] Retry 1/3 dans 1000ms
+[Nest] 18312  - 16/09/2026 13:56:02    WARN [DolibarrAdapter] Retry 2/3 dans 2000ms
+[Nest] 18312  - 16/09/2026 13:56:04    WARN [DolibarrAdapter] Retry 3/3 dans 4000ms

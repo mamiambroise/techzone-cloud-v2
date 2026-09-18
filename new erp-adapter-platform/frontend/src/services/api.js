@@ -1,8 +1,15 @@
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002/api';
+const AUTH_AIM_URL = process.env.REACT_APP_AUTH_AIM_URL || 'http://localhost:5001/api';
 
-// Client axios avec configuration de base
+// === Client axios vers Auth_AIM (identite unique, port 5001) ===
+const authAimApi = axios.create({
+  baseURL: AUTH_AIM_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// Client axios vers le backend ERP adapter
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -99,33 +106,43 @@ api.interceptors.response.use(
   }
 );
 
-// === IAM Auth ===
+// === IAM Auth (Auth_AIM — identite unique) ===
+
+// Attache le token sur les appels Auth_AIM
+authAimApi.interceptors.request.use(
+  (config) => {
+    const token = getAccessToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export const iamAuthService = {
-  login: (body) => api.post('/iam/auth/login', body),
-  register: (body) => api.post('/iam/auth/register', body),
-  refresh: (refreshToken) => api.post('/iam/auth/refresh', { refreshToken }),
-  logout: () => api.post('/iam/auth/logout'),
-  logoutAll: (keepCurrentSession) => api.post('/iam/auth/logout-all', { keepCurrentSession }),
-  changePassword: (body) => api.post('/iam/auth/change-password', body),
-  forgotPassword: (body) => api.post('/iam/auth/forgot-password', body),
-  resetPassword: (body) => api.post('/iam/auth/reset-password', body),
-  me: () => api.get('/iam/auth/me'),
-  updateProfile: (body) => api.patch('/iam/auth/profile', body),
-  sessions: () => api.get('/iam/auth/sessions'),
+  login: (body) => authAimApi.post('/iam/auth/login', body),
+  register: (body) => authAimApi.post('/iam/auth/register', body),
+  refresh: (refreshToken) => authAimApi.post('/iam/auth/refresh', { refreshToken }),
+  logout: () => authAimApi.post('/iam/auth/logout'),
+  logoutAll: (keepCurrentSession) => authAimApi.post('/iam/auth/logout-all', { keepCurrentSession }),
+  changePassword: (body) => authAimApi.post('/iam/auth/change-password', body),
+  forgotPassword: (body) => authAimApi.post('/iam/auth/forgot-password', body),
+  resetPassword: (body) => authAimApi.post('/iam/auth/reset-password', body),
+  me: () => authAimApi.get('/iam/auth/me'),
+  updateProfile: (body) => authAimApi.patch('/iam/auth/profile', body),
+  sessions: () => authAimApi.get('/iam/auth/sessions'),
 };
 
-// === IAM Admin (utilisateurs + sessions) ===
+// === IAM Admin (Auth_AIM — utilisateurs + sessions) ===
 
 export const iamAdminService = {
-  users: (params) => api.get('/iam/users', { params }),
-  user: (id) => api.get(`/iam/users/${id}`),
-  createUser: (body) => api.post('/iam/users', body),
-  updateUserStatus: (id, body) => api.patch(`/iam/users/${id}/status`, body),
-  deleteUser: (id) => api.delete(`/iam/users/${id}`),
-  stats: () => api.get('/iam/users/stats'),
-  sessions: (params) => api.get('/iam/sessions', { params }),
-  revokeSession: (id) => api.delete(`/iam/sessions/${id}`),
+  users: (params) => authAimApi.get('/iam/users', { params }),
+  user: (id) => authAimApi.get(`/iam/users/${id}`),
+  createUser: (body) => authAimApi.post('/iam/users', body),
+  updateUserStatus: (id, body) => authAimApi.patch(`/iam/users/${id}/status`, body),
+  deleteUser: (id) => authAimApi.delete(`/iam/users/${id}`),
+  stats: () => authAimApi.get('/iam/users/stats'),
+  sessions: (params) => authAimApi.get('/iam/sessions', { params }),
+  revokeSession: (id) => authAimApi.delete(`/iam/sessions/${id}`),
 };
 
 // === ERP Registry (PostgreSQL) ===

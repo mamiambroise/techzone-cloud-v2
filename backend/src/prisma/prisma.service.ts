@@ -19,9 +19,8 @@ export class PrismaService
       process.env.DATABASE_URL ||
       'postgresql://postgres:postgres@localhost:5432/techzone';
 
-    const adapter = new PrismaPg({
-      connectionString,
-    });
+    const schema = new URL(connectionString).searchParams.get('schema') || 'public';
+    const adapter = new PrismaPg({ connectionString }, { schema });
 
     super({ adapter });
   }

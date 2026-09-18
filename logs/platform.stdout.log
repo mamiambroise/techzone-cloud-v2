@@ -1,0 +1,178 @@
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [NestFactory] Starting Nest application...
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] PrismaModule dependencies initialized +139ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] AppModule dependencies initialized +5ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] ApplicationsModule dependencies initialized +7ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] ApplicationVersionsModule dependencies initialized +4ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] EnvironmentsModule dependencies initialized +5ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] ContractsModule dependencies initialized +4ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] ConfigurationModule dependencies initialized +1ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] SnapshotsModule dependencies initialized +1ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] ApiManagerModule dependencies initialized +1ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] CredentialsModule dependencies initialized +1ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] DiagnosticsModule dependencies initialized +1ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] WebhooksModule dependencies initialized +0ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] IntegrationModule dependencies initialized +0ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] SynchronizationModule dependencies initialized +1ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] DeploymentModule dependencies initialized +0ms
+[Nest] 4356  - 16/09/2026 13:18:35     LOG [InstanceLoader] PlatformModule dependencies initialized +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] AppController {/}: +940ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/, GET} route +15ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] PlatformController {/api/platform}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/dashboard, GET} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/activity, GET} route +3ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] ApplicationsController {/api/platform/applications}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/applications, GET} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/applications, POST} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/applications/:id, GET} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/applications/:id, PATCH} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/applications/:id/archive, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] ApplicationVersionsController {/}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/applications/:id/versions, GET} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/versions, GET} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/applications/:id/versions, POST} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/versions/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/versions/:id, PATCH} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/versions/:id/clone, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/versions/:id/status/:status, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] EnvironmentsController {/api/platform/environments}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/environments, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/environments, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/environments/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/environments/:id, PATCH} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/environments/:id/history, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] ContractsController {/api/platform/contracts}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/contracts, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/contracts, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/contracts/:id, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/contracts/:id/validate, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/contracts/:id/lock, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/contracts/:id/history, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/contracts/:id/compatibility, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] ConfigurationController {/api/platform/config}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config/effective/:applicationId/:applicationVersionId/:environmentId, GET} route +3ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config/:id/history, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config/:scope/:scopeId, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config/:id, PATCH} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config/:id/activate, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/config/:id/validate, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] SnapshotsController {/api/platform/snapshots}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots/compare, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots/:id/history, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots/:id/validate, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots/:id/activate, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/platform/snapshots/:id/archive, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] IntegrationController {/api/integrations}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/dashboard, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/activity, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/health, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/attention, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] ConnectorController {/api/integrations/connectors}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors/:id, PATCH} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors/:id/validate, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors/:id/health, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors/:id/activate, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors/:id/disable, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/connectors/:id/archive, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] ApiManagerController {/api/integrations/apis}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis/versions, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis/code/:apiCode/version/:version, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis/:id, PATCH} route +38ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis/:id/transition, POST} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/apis/:id, DELETE} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] WebhookController {/api/integrations/webhooks}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/webhooks, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/webhooks, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/webhooks/:id, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/webhooks/:id, PATCH} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/webhooks/:id/transition, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/webhooks/:id, DELETE} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] InboundWebhookController {/webhooks/inbound}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/webhooks/inbound/:code, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/webhooks/inbound/:code/outbound, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/webhooks/inbound/:code/deliveries, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] CredentialsController {/api/integrations/credentials}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id, GET} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id, PATCH} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id/rotate, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id/disable, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id/archive, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id/test, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id/associate/:connectorId, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/credentials/:id, DELETE} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] SynchronizationController {/api/integrations/synchronizations}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id/checkpoint, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id, PATCH} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id/run, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id/resume, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id/pause, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id/cancel, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/synchronizations/:id, DELETE} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] DiagnosticsController {/api/integrations/diagnostics}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/diagnostics/logs, GET} route +2ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/diagnostics/metrics, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/integrations/diagnostics/timeline/:traceId, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] CockpitController {/}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/deployment/dashboard, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/deployment/cockpit, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/recent, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/deployments/running, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/deployments/activity, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/deployment/health, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] ReleaseController {/api/releases}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/compare/:id1/:id2, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/:id/assemble, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/:id/validate, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/:id/approve, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/:id/publish, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/:id/archive, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/releases/:id/history, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RoutesResolver] DeploymentController {/api/deployments}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/deployments, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:36     LOG [RouterExplorer] Mapped {/api/deployments, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/verify, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/cancel, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/retry, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RoutesResolver] EnvironmentDeploymentController {/api/deployment/environments}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployment/environments, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployment/environments/promote, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployment/environments/:environmentId/status, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployment/environments/:environmentId/lock, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployment/environments/:environmentId/unlock, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployment/environments/:environmentId/drift, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RoutesResolver] GateController {/api/deployments/:id/gates}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/gates, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/gates/evaluate, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/gates/:gateId/approve, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/gates/:gateId/bypass, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RoutesResolver] RollbackController {/}: +0ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/rollbacks, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/rollbacks/:id, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/:id/rollback, POST} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployment/environments/:environmentId/rollback, POST} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RoutesResolver] DeploymentDiagnosticsController {/api/deployments}: +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/history, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/history/timeline/:deploymentId, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/diagnostics, GET} route +1ms
+[Nest] 4356  - 16/09/2026 13:18:37     LOG [RouterExplorer] Mapped {/api/deployments/diagnostics/:deploymentId, GET} route +0ms
+[Nest] 4356  - 16/09/2026 13:18:38     LOG [PrismaService] ✅ PostgreSQL connected successfully
+[Nest] 4356  - 16/09/2026 13:18:38     LOG [NestApplication] Nest application successfully started +7ms

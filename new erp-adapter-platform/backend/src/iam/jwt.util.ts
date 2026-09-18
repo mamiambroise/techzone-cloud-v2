@@ -37,6 +37,7 @@ export interface AccessTokenPayload {
   tenantId?: string | null;
   organizationId?: string | null;
   authenticationLevel?: string | null;
+  iss?: string;
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {

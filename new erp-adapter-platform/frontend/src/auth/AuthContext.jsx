@@ -35,6 +35,24 @@ function getDeviceFingerprint() {
   return fp;
 }
 
+// Lit le token transmis par le Business Manager via l'iframe (?iam_token=...)
+export function importEmbedAuth() {
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get('iam_token');
+  if (!urlToken) return false;
+  const urlRefresh = params.get('iam_refresh');
+  const urlUser = params.get('iam_user');
+  iamTokenStore.setTokens(urlToken, urlRefresh);
+  if (urlUser) {
+    try {
+      iamTokenStore.setUser(JSON.parse(urlUser));
+    } catch {
+      /* ignore */
+    }
+  }
+  return true;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readUser());
   const [loading, setLoading] = useState(true);
@@ -48,6 +66,17 @@ export function AuthProvider({ children }) {
     let active = true;
 
     const boot = async () => {
+      // 1. Token passe par l'embed Business Manager (?iam_token&iam_user&iam_refresh)
+      const imported = importEmbedAuth();
+      if (imported) {
+        const importedUser = iamTokenStore.getUser();
+        if (active) {
+          setUser(importedUser || { username: 'Utilisateur', primaryEmail: '' });
+          setLoading(false);
+        }
+        return;
+      }
+
       if (!iamTokenStore.access()) {
         if (active) setLoading(false);
         return;

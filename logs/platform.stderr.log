@@ -1,0 +1,115 @@
+[Nest] 4356  - 16/09/2026 13:19:10   ERROR [ExceptionsHandler] PrismaClientKnownRequestError: 
+Invalid `this.prisma.application.findMany()` invocation in
+D:\wifi zone\ERP\techcloud\techcloud\backend\dist\modules\platform\applications\applications.service.js:43:40
+
+  40     });
+  41 }
+  42 async findAll() {
+→ 43     return this.prisma.application.findMany(
+Operation has timed out
+    at vn.handleRequestError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:8643)
+    at vn.handleAndLogRequestError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7932)
+    at vn.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7639)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async a (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:99:6935)
+    at async Promise.all (index 0)
+    at async PlatformService.getDashboard (D:\wifi zone\ERP\techcloud\techcloud\backend\dist\modules\platform\platform.service.js:39:95)
+    at async file:///D:/wifi%20zone/ERP/techcloud/techcloud/backend/node_modules/@nestjs/core/router/router-execution-context.js:58:62
+    at async file:///D:/wifi%20zone/ERP/techcloud/techcloud/backend/node_modules/@nestjs/core/router/router-proxy.js:6:17 {
+  code: 'P1008',
+  meta: {
+    modelName: 'Application',
+    driverAdapterError: DriverAdapterError: SocketTimeout
+        at PrismaPgAdapter.onError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:702:11)
+        at PrismaPgAdapter.performIO (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:697:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async PrismaPgAdapter.queryRaw (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:631:30)
+        at async D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:11:70479
+        at async e.run (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:11:69220)
+        at async e.execute (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:57:815)
+        at async yr.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:58:2425)
+        at async Object.singleLoader (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:6920)
+        at async vn.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7526) {
+      cause: {
+        kind: 'SocketTimeout'
+      }
+    }
+  },
+  clientVersion: '7.10.0'
+}
+[Nest] 4356  - 16/09/2026 13:19:41   ERROR [ExceptionsHandler] PrismaClientKnownRequestError: 
+Invalid `this.prisma.application.findMany()` invocation in
+D:\wifi zone\ERP\techcloud\techcloud\backend\dist\modules\platform\applications\applications.service.js:43:40
+
+  40     });
+  41 }
+  42 async findAll() {
+→ 43     return this.prisma.application.findMany(
+Operation has timed out
+    at vn.handleRequestError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:8643)
+    at vn.handleAndLogRequestError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7932)
+    at vn.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7639)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async a (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:99:6935)
+    at async file:///D:/wifi%20zone/ERP/techcloud/techcloud/backend/node_modules/@nestjs/core/router/router-execution-context.js:58:62
+    at async file:///D:/wifi%20zone/ERP/techcloud/techcloud/backend/node_modules/@nestjs/core/router/router-proxy.js:6:17 {
+  code: 'P1008',
+  meta: {
+    modelName: 'Application',
+    driverAdapterError: DriverAdapterError: SocketTimeout
+        at PrismaPgAdapter.onError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:702:11)
+        at PrismaPgAdapter.performIO (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:697:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async PrismaPgAdapter.queryRaw (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:631:30)
+        at async D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:11:70479
+        at async e.run (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:11:69220)
+        at async e.execute (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:57:815)
+        at async yr.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:58:2425)
+        at async Object.singleLoader (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:6920)
+        at async vn.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7526) {
+      cause: {
+        kind: 'SocketTimeout'
+      }
+    }
+  },
+  clientVersion: '7.10.0'
+}
+[Nest] 4356  - 16/09/2026 13:19:41   ERROR [ExceptionsHandler] PrismaClientKnownRequestError: 
+Invalid `this.prisma.application.findMany()` invocation in
+D:\wifi zone\ERP\techcloud\techcloud\backend\dist\modules\platform\applications\applications.service.js:43:40
+
+  40     });
+  41 }
+  42 async findAll() {
+→ 43     return this.prisma.application.findMany(
+Operation has timed out
+    at vn.handleRequestError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:8643)
+    at vn.handleAndLogRequestError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7932)
+    at vn.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7639)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async a (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:99:6935)
+    at async Promise.all (index 0)
+    at async PlatformService.getDashboard (D:\wifi zone\ERP\techcloud\techcloud\backend\dist\modules\platform\platform.service.js:39:95)
+    at async file:///D:/wifi%20zone/ERP/techcloud/techcloud/backend/node_modules/@nestjs/core/router/router-execution-context.js:58:62
+    at async file:///D:/wifi%20zone/ERP/techcloud/techcloud/backend/node_modules/@nestjs/core/router/router-proxy.js:6:17 {
+  code: 'P1008',
+  meta: {
+    modelName: 'Application',
+    driverAdapterError: DriverAdapterError: SocketTimeout
+        at PrismaPgAdapter.onError (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:702:11)
+        at PrismaPgAdapter.performIO (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:697:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async PrismaPgAdapter.queryRaw (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\adapter-pg\dist\index.js:631:30)
+        at async D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:11:70479
+        at async e.run (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:11:69220)
+        at async e.execute (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:57:815)
+        at async yr.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:58:2425)
+        at async Object.singleLoader (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:6920)
+        at async vn.request (D:\wifi zone\ERP\techcloud\techcloud\backend\node_modules\@prisma\client\runtime\client.js:65:7526) {
+      cause: {
+        kind: 'SocketTimeout'
+      }
+    }
+  },
+  clientVersion: '7.10.0'
+}

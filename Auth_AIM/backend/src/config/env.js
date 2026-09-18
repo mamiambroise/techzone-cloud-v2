@@ -17,5 +17,8 @@ module.exports = {
     refreshTtl: process.env.REFRESH_TOKEN_TTL || '7d',
   },
   webhookSecret: process.env.WEBHOOK_SECRET,
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  corsOrigin: (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
 };

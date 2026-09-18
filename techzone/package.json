@@ -1,0 +1,9 @@
+{
+  "name": "techzone-erp-dev",
+  "private": true,
+  "version": "23.0.3",
+  "description": "Local development tooling for Techzone ERP based on Dolibarr 23.0.3",
+  "devDependencies": {
+    "browser-sync": "3.0.4"
+  }
+}

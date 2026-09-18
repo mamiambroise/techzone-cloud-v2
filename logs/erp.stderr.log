@@ -1,0 +1,617 @@
+[Nest] 18312  - 16/09/2026 13:51:08   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:51:08   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:51:08   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:51:11   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:51:22   ERROR [DolibarrAdapter] Health check echoue: Delai depasse
+[Nest] 18312  - 16/09/2026 13:51:35   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:51:42   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:51:42   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:51:42   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:52:18   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:52:55   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:53:07   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:53:15   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:53:27   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:53:43   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:53:52   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:54:12   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async ERPAdapterDataProvider.list (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\data-runtime\data-access\erp-adapter.provider.js:41:25)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:54:15   ERROR [DolibarrAdapter] Health check echoue: Delai depasse
+[Nest] 18312  - 16/09/2026 13:54:35   ERROR [DolibarrAdapter] Health check echoue: Delai depasse
+[Nest] 18312  - 16/09/2026 13:54:50   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getPayments (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:365:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getPayments (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:365:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:02   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at listOnTimeout (node:internal/timers:549:9)
+    at process.processTimers (node:internal/timers:523:7)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:02   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:23   ERROR [AllExceptionsFilter] Exception non geree: Delai depasse
+DolibarrError: Delai depasse
+    at DolibarrError.TIMEOUT (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:25:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1237:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:25   ERROR [DolibarrAdapter] Health check echoue: Impossible de se connecter a Dolibarr
+[Nest] 18312  - 16/09/2026 13:55:27   ERROR [AllExceptionsFilter] Exception non geree: Impossible de se connecter a Dolibarr
+DolibarrError: Impossible de se connecter a Dolibarr
+    at DolibarrError.CONNECTION_ERROR (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:28:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1240:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:30   ERROR [AllExceptionsFilter] Exception non geree: Impossible de se connecter a Dolibarr
+DolibarrError: Impossible de se connecter a Dolibarr
+    at DolibarrError.CONNECTION_ERROR (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:28:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1240:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getPayments (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:365:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getPayments (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:365:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:32   ERROR [DolibarrAdapter] Health check echoue: Impossible de se connecter a Dolibarr
+[Nest] 18312  - 16/09/2026 13:55:37   ERROR [AllExceptionsFilter] Exception non geree: Impossible de se connecter a Dolibarr
+DolibarrError: Impossible de se connecter a Dolibarr
+    at DolibarrError.CONNECTION_ERROR (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:28:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1240:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getOrders (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:138:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:39   ERROR [AllExceptionsFilter] Exception non geree: Impossible de se connecter a Dolibarr
+DolibarrError: Impossible de se connecter a Dolibarr
+    at DolibarrError.CONNECTION_ERROR (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:28:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1240:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getInvoices (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:327:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:44   ERROR [AllExceptionsFilter] Exception non geree: Impossible de se connecter a Dolibarr
+DolibarrError: Impossible de se connecter a Dolibarr
+    at DolibarrError.CONNECTION_ERROR (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:28:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1240:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getProducts (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:108:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[Nest] 18312  - 16/09/2026 13:55:46   ERROR [AllExceptionsFilter] Exception non geree: Impossible de se connecter a Dolibarr
+DolibarrError: Impossible de se connecter a Dolibarr
+    at DolibarrError.CONNECTION_ERROR (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.error.js:28:16)
+    at DolibarrAdapter.handleError (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:1240:51)
+    at D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:68:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6308:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async Axios.request (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\axios\dist\node\axios.cjs:6303:14)
+    at async DolibarrAdapter.getClients (D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\dist\src\erp-adapter\dolibarr\dolibarr.adapter.js:78:26)
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\wifi zone\ERP\techcloud\techcloud\new erp-adapter-platform\backend\node_modules\@nestjs\core\router\router-proxy.js:9:17
