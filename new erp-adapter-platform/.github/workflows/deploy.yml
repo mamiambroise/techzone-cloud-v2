@@ -1,0 +1,98 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # ========== TESTS ==========
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Generate Prisma Client
+        run: |
+          cd backend
+          npx prisma generate
+
+      - name: Run Backend Tests
+        run: |
+          cd backend
+          npm run test
+
+      - name: Run Frontend Tests
+        run: |
+          cd frontend
+          CI=true npm test -- --watchAll=false
+
+  # ========== BUILD ==========
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Backend
+        run: |
+          cd backend
+          npm ci
+          npx prisma generate
+          npm run build
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          CI=false npm run build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-build
+          path: |
+            backend/dist
+            frontend/build
+
+  # ========== DEPLOY ==========
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/erp-adapter-platform
+            git pull origin main
+            # Build du frontend statique (monte dans nginx-prod)
+            cd frontend && npm ci && CI=false npm run build && cd ..
+            docker-compose -f docker-compose.prod.yml up -d --build
+            docker system prune -f
+
+      - name: Health Check
+        run: |
+          sleep 15
+          curl -f http://${{ secrets.SSH_HOST }}:3000/api/erp/health

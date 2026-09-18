@@ -36,10 +36,15 @@ async function bootstrap() {
   // Configuration Swagger/OpenAPI
   const config = new DocumentBuilder()
     .setTitle('ERP Adapter Platform API')
-    .setDescription('API de gestion des adaptateurs ERP - Phase 1')
-    .setVersion('1.0')
+    .setDescription('API de gestion des adaptateurs ERP + Data Runtime + Automation (Phase 3)')
+    .setVersion('3.0')
     .addTag('erp-registry', 'Gestion du registre des ERP (PostgreSQL)')
-    .addTag('erp-adapter', 'Gestion des adaptateurs ERP (Mock)')
+    .addTag('erp-adapter', 'Gestion des adaptateurs ERP (Mock, Dolibarr)')
+    .addTag('data-runtime', 'Data Runtime Contract v1 - Query, Execution, Binding')
+    .addTag('automation', 'Automation Contract v1 - Rules, Workflow, Trigger, Action')
+    .addTag('iam-auth', 'IAM · Authentification (login, refresh, logout, mot de passe)')
+    .addTag('iam-users', 'IAM · Gestion des utilisateurs (admin)')
+    .addTag('iam-sessions', "IAM · Gestion des sessions (admin)")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -23,6 +23,10 @@ export class DolibarrError extends Error {
     return new DolibarrError('DUPLICATE', message, 409);
   }
 
+  static BAD_REQUEST(message = 'Requete invalide'): DolibarrError {
+    return new DolibarrError('BAD_REQUEST', message, 400);
+  }
+
   static TIMEOUT(message = 'Delai depasse'): DolibarrError {
     return new DolibarrError('TIMEOUT', message, 408);
   }
