@@ -38,7 +38,7 @@ export interface StockInfo {
 }
 
 export interface HealthCheckResult {
-  status: 'HEALTHY' | 'UNHEALTHY';
+  status: 'CONNECTED' | 'DEGRADED' | 'UNAVAILABLE' | 'NOT_CONFIGURED';
   mode: string;
   timestamp: string;
 }

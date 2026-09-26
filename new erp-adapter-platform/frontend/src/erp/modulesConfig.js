@@ -47,11 +47,8 @@ import {
   reservationService,
 } from '../services/api';
 
-const erp = 'DOLIBARR';
-
 export const MODULES = [
   {
-    key: 'clients',
     title: 'Clients',
     subtitle: 'Tiers clients Dolibarr (thirdparties)',
     icon: UsersIcon,
@@ -617,4 +614,3 @@ export const MODULES = [
 ];
 
 export const MODULES_BY_KEY = Object.fromEntries(MODULES.map((m) => [m.key, m]));
-export const DEFAULT_ERP = erp;

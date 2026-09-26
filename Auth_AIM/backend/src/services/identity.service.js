@@ -74,7 +74,7 @@ async function registerUser({ username, email, phone, firstName, lastName, passw
     await credentialService.createPasswordCredential({ userId: user.id, password, client: tx });
 
     return user;
-  });
+  }, { timeout: 15000 });
 }
 async function listUsers({ status, search } = {}) {
   return prisma.user.findMany({

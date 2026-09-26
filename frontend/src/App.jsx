@@ -1,206 +1,129 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { api } from './utils/api.js';
-import { setApiStatus } from './store/platformSlice.js';
-import Header from './components/Header.jsx';
-import Sidebar from './components/Sidebar.jsx';
-import SubNavBar from './components/SubNavBar.jsx';
-import ToastContainer from './components/ToastContainer.jsx';
+import { routeDefinitions } from './app/navigationConfig.js';
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './auth/AuthProvider.jsx';
+import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import TechzoneLayout from './layouts/TechzoneLayout.jsx';
+import RouteToTabSync from './app/RouteToTabSync.jsx';
+import { useModal } from './app/ModalContext.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import NotFound from './pages/NotFound.jsx';
+import { ModernSpinner } from './components/Loaders.jsx';
 
-// Pack Manager Views matching the design screenshots
-import GeneralOverviewView from './components/GeneralOverviewView.jsx';
-import ApplicationsCatalogView from './components/ApplicationsCatalogView.jsx';
-import WorkspaceConfigView from './components/WorkspaceConfigView.jsx';
-import VersionsDetailView from './components/VersionsDetailView.jsx';
-import PackValidationCockpitView from './components/PackValidationCockpitView.jsx';
-import PublicationView from './components/PublicationView.jsx';
-import HistoryRollbackView from './components/HistoryRollbackView.jsx';
-import SpecificationsView from './components/SpecificationsView.jsx';
+const GeneralOverviewView = lazy(() => import('./components/GeneralOverviewView.jsx'));
+const ApplicationsCatalogView = lazy(() => import('./components/ApplicationsCatalogView.jsx'));
+const WorkspaceConfigView = lazy(() => import('./components/WorkspaceConfigView.jsx'));
+const VersionsDetailView = lazy(() => import('./components/VersionsDetailView.jsx'));
+const PackValidationCockpitView = lazy(() => import('./components/PackValidationCockpitView.jsx'));
+const PublicationView = lazy(() => import('./components/PublicationView.jsx'));
+const HistoryRollbackView = lazy(() => import('./components/HistoryRollbackView.jsx'));
+const SpecificationsView = lazy(() => import('./components/SpecificationsView.jsx'));
+const CockpitView = lazy(() => import('./components/CockpitView.jsx'));
+const EnvironmentsView = lazy(() => import('./components/EnvironmentsView.jsx'));
+const ContractsView = lazy(() => import('./components/ContractsView.jsx'));
+const ConfigurationView = lazy(() => import('./components/ConfigurationView.jsx'));
+const SnapshotsView = lazy(() => import('./components/SnapshotsView.jsx'));
+const PlatformContractView = lazy(() => import('./components/PlatformContractView.jsx'));
+const IntegrationsView = lazy(() => import('./components/IntegrationsView.jsx'));
+const DeploymentPublicationView = lazy(() => import('./components/deployment/DeploymentPublicationView.jsx'));
 
-// Secondary foundation views for other platform modules
-import CockpitView from './components/CockpitView.jsx';
-import EnvironmentsView from './components/EnvironmentsView.jsx';
-import ContractsView from './components/ContractsView.jsx';
-import ConfigurationView from './components/ConfigurationView.jsx';
-import SnapshotsView from './components/SnapshotsView.jsx';
-import PlatformContractView from './components/PlatformContractView.jsx';
-import IntegrationsView from './components/IntegrationsView.jsx';
-import DeploymentPublicationView from './components/deployment/DeploymentPublicationView.jsx';
+const Adapters = lazy(() => import('./pages/Adapters.jsx'));
+const Mapping = lazy(() => import('./pages/Mapping.jsx'));
+const Settings = lazy(() => import('./pages/Settings.jsx'));
+const DemoPage = lazy(() => import('./pages/DemoPage.jsx'));
 
-// Modals
-import CreateAppModal from './components/CreateAppModal.jsx';
-import CreateSnapshotModal from './components/CreateSnapshotModal.jsx';
-import AuditLogModal from './components/AuditLogModal.jsx';
+const ERPList = lazy(() => import('./pages/ERPList.jsx'));
+const ERPCreate = lazy(() => import('./pages/ERPCreate.jsx'));
+const ERPEdit = lazy(() => import('./pages/ERPEdit.jsx'));
+const ErpModule = lazy(() => import('./pages/ErpModule.jsx'));
+const ERPDashboard = lazy(() => import('./pages/ERPDashboard.jsx'));
 
-export default function App() {
-  const dispatch = useDispatch();
-  const activeTab = useSelector((state) => state.platform.activeTab);
-  const activeModuleId = useSelector((state) => state.platform.activeModuleId || '01');
-  const sidebarCollapsed = useSelector((state) => state.platform.sidebarCollapsed);
-  const activeUser = useSelector((state) => state.platform.activeUser);
+const IamUsersPage = lazy(() => import('./pages/iam/UsersPage.jsx'));
+const SessionsPage = lazy(() => import('./pages/iam/SessionsPage.jsx'));
+const IdentitiesPage = lazy(() => import('./pages/iam/IdentitiesPage.jsx'));
+const RolesPage = lazy(() => import('./pages/iam/RolesPage.jsx'));
+const PoliciesPage = lazy(() => import('./pages/iam/PoliciesPage.jsx'));
+const TenantsPage = lazy(() => import('./pages/iam/TenantsPage.jsx'));
 
-  useEffect(() => {
-    api.health()
-      .then(() => dispatch(setApiStatus('CONNECTED')))
-      .catch(() => dispatch(setApiStatus('OFFLINE')));
-  }, [dispatch]);
+const ObservabilityOverview = lazy(() => import('./pages/iam/observability/ObservabilityOverview.jsx'));
+const LogsPage = lazy(() => import('./pages/iam/observability/LogsPage.jsx'));
+const AuditPage = lazy(() => import('./pages/iam/observability/AuditPage.jsx'));
+const SecurityEventsPage = lazy(() => import('./pages/iam/observability/SecurityEventsPage.jsx'));
+const MonitoringPage = lazy(() => import('./pages/iam/observability/MonitoringPage.jsx'));
+const AlertManagerPage = lazy(() => import('./pages/iam/observability/AlertManagerPage.jsx'));
 
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [showCreateAppModal, setShowCreateAppModal] = useState(false);
-  const [showCreateSnapshotModal, setShowCreateSnapshotModal] = useState(false);
-  const [showAuditModal, setShowAuditModal] = useState(false);
+const DataRuntime = lazy(() => import('./pages/DataRuntime.jsx'));
+const DataRuntimeHistory = lazy(() => import('./pages/DataRuntimeHistory.jsx'));
+const AutomationCockpit = lazy(() => import('./pages/AutomationCockpit.jsx'));
+const AutomationConditions = lazy(() => import('./pages/AutomationConditions.jsx'));
+const AutomationHistory = lazy(() => import('./pages/AutomationHistory.jsx'));
+const AutomationRules = lazy(() => import('./pages/AutomationRules.jsx'));
+const AutomationTriggers = lazy(() => import('./pages/AutomationTriggers.jsx'));
+const AutomationWorkflows = lazy(() => import('./pages/AutomationWorkflows.jsx'));
 
-  // All sub-sections are housed inside the Platform Foundation grand section
-  const isPlatformFoundationActive =
-    activeModuleId === '01' ||
-    [
-      'platform-contract',
-      'contract-v1',
-      'cockpit',
-      'overview',
-      'applications',
-      'workspace',
-      'versions',
-      'validation',
-      'publication',
-      'environments',
-      'contracts',
-      'config',
-      'snapshots',
-      'history',
-      'specifications',
-      'integrations',
-      'deployment',
-    ].includes(activeTab);
-
+function CockpitRoute() {
+  const { openModal } = useModal();
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex font-sans antialiased overflow-x-hidden selection:bg-blue-600 selection:text-white">
-      {/* Toast Notification Container */}
-      <ToastContainer />
-
-      {/* Responsive Left Sidebar (Fixed on desktop, drawer on mobile/tablet) */}
-      <Sidebar
-        isOpen={mobileSidebarOpen}
-        onClose={() => setMobileSidebarOpen(false)}
-      />
-
-      {/* Main Content Area: dynamically offsets according to desktop sidebar state */}
-      <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-250 ease-in-out ${
-          sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'
-        }`}
-      >
-        {/* Top Header */}
-        <Header
-          onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
-          onOpenNewApp={() => setShowCreateAppModal(true)}
-        />
-
-        {/* Sub-Navigation Tabs Bar (Visible across all Platform Foundation sub-sections) */}
-        {isPlatformFoundationActive && <SubNavBar />}
-
-        {/* Primary View Container with responsive paddings */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
-          <div className="animate-in fade-in duration-150">
-            {/* 1. Pack Manager Sub-views */}
-            {activeTab === 'overview' && (
-              <GeneralOverviewView
-                onOpenNewApp={() => setShowCreateAppModal(true)}
-                onOpenAuditLogs={() => setShowAuditModal(true)}
-              />
-            )}
-
-            {activeTab === 'applications' && (
-              <ApplicationsCatalogView onOpenNewApp={() => setShowCreateAppModal(true)} />
-            )}
-
-            {activeTab === 'workspace' && <WorkspaceConfigView />}
-
-            {activeTab === 'versions' && <VersionsDetailView />}
-
-            {activeTab === 'validation' && (
-              <PackValidationCockpitView onOpenNewApp={() => setShowCreateAppModal(true)} />
-            )}
-
-            {activeTab === 'publication' && <PublicationView />}
-
-            {activeTab === 'history' && <HistoryRollbackView />}
-
-            {activeTab === 'specifications' && <SpecificationsView />}
-
-            {/* 2. Secondary Foundation Modules */}
-            {activeTab === 'cockpit' && (
-              <CockpitView
-                onOpenNewApp={() => setShowCreateAppModal(true)}
-                onOpenNewSnapshot={() => setShowCreateSnapshotModal(true)}
-              />
-            )}
-
-            {activeTab === 'environments' && <EnvironmentsView />}
-
-            {activeTab === 'contracts' && <ContractsView />}
-
-            {activeTab === 'config' && <ConfigurationView />}
-
-            {activeTab === 'integrations' && <IntegrationsView />}
-
-            {activeTab === 'deployment' && <DeploymentPublicationView />}
-
-            {activeTab === 'snapshots' && (
-              <SnapshotsView onOpenCreateSnapshot={() => setShowCreateSnapshotModal(true)} />
-            )}
-
-            {(activeTab === 'platform-contract' || activeTab === 'contract-v1') && (
-              <PlatformContractView />
-            )}
-          </div>
-        </main>
-
-        {/* Responsive Footer */}
-        {/*<footer className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pb-6">
-          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2.5 font-mono">
-            <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="font-semibold text-slate-800">
-                Techzone Cloud — Platform Foundation (Team 4)
-              </span>
-              <span className="text-slate-300 hidden sm:inline">•</span>
-              <span className="text-blue-600 font-medium px-2 py-0.5 rounded bg-blue-50 border border-blue-100 shrink-0">
-                Série Officielle PF-CDC-00 à 06
-              </span>
-              <span className="text-slate-300 hidden sm:inline">•</span>
-              <span className="text-emerald-700 font-medium px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 shrink-0">
-                Platform Contract v1 Locked
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-[11px] flex-wrap justify-center">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Opérationnel
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="text-slate-800 font-semibold">{activeUser?.name}</span>
-            </div>
-          </div>
-        </footer>*/}
-      </div>
-
-      {/* Modals */}
-      <CreateAppModal
-        isOpen={showCreateAppModal}
-        onClose={() => setShowCreateAppModal(false)}
-      />
-
-      <CreateSnapshotModal
-        isOpen={showCreateSnapshotModal}
-        onClose={() => setShowCreateSnapshotModal(false)}
-      />
-
-      <AuditLogModal
-        isOpen={showAuditModal}
-        onClose={() => setShowAuditModal(false)}
-      />
-    </div>
+    <CockpitView
+      onOpenNewApp={() => openModal('createApp')}
+      onOpenNewSnapshot={() => openModal('createSnapshot')}
+    />
   );
 }
+
+function OverviewRoute() {
+  const { openModal } = useModal();
+  return (
+    <GeneralOverviewView
+      onOpenNewApp={() => openModal('createApp')}
+      onOpenAuditLogs={() => openModal('auditLog')}
+    />
+  );
+}
+
+function ApplicationsRoute() {
+  const { openModal } = useModal();
+  return <ApplicationsCatalogView onOpenNewApp={() => openModal('createApp')} />;
+}
+
+function ValidationRoute() {
+  const { openModal } = useModal();
+  return <PackValidationCockpitView onOpenNewApp={() => openModal('createApp')} />;
+}
+
+function SnapshotsRoute() {
+  const { openModal } = useModal();
+  return <SnapshotsView onOpenCreateSnapshot={() => openModal('createSnapshot')} />;
+}
+
+const routeComponents = { CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage };
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <RouteToTabSync />
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center min-h-[400px]"><ModernSpinner /></div>}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<TechzoneLayout />}>
+                <Route path="/" element={<Navigate to="/cockpit" replace />} />
+
+                {routeDefinitions.map(({ route, component, pageId }) => {
+                  const Component = routeComponents[component];
+                  return <Route key={route} path={route} element={<Component pageId={pageId} />} />;
+                })}
+                <Route path="/iam" element={<Navigate to="/iam/users" replace />} />
+
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;

@@ -1,0 +1,282 @@
+{
+  "mode": "live frontend; authenticated route rendering uses explicit API doubles",
+  "live": {
+    "protectedRoute": "PASS",
+    "loginForm": "PASS"
+  },
+  "routes": [
+    {
+      "route": "/cockpit",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/overview",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/applications",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/workspace",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/versions",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/validation",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/publication",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/history",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/specifications",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/environments",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/contracts",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/config",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/snapshots",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/platform-contract",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/cockpit",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/connectors",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/apis",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/webhooks",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/credentials",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/sync",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/diagnostics",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/integrations/specifications",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment/cockpit",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment/releases",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment/pipelines",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment/promotion",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment/rollback",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment/diagnostics",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/deployment/specifications",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/users",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/sessions",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/identities",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/roles",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/policies",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/tenants",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/observability",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/observability/logs",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/observability/audit",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/observability/security-events",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/observability/monitoring",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/iam/observability/alerts",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/erp",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/erps",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/erps/create",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/data-runtime",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/data-runtime/history",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/automation",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/automation/conditions",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/automation/history",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/automation/rules",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/automation/triggers",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "route": "/automation/workflows",
+      "status": "PASS",
+      "errors": []
+    }
+  ],
+  "errors": [],
+  "tokenStorage": [],
+  "iframes": 0
+}

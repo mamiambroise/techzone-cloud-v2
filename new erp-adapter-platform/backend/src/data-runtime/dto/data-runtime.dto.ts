@@ -127,6 +127,11 @@ export class RuntimeContextDto implements RuntimeContext {
   @IsString()
   environmentId?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  erpCode?: string;
+
   @ApiProperty()
   @IsString()
   @IsNotEmpty()

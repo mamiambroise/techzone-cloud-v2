@@ -1,0 +1,129 @@
+[
+  {
+    "service": "Auth_AIM/backend",
+    "env": "Auth_AIM/backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "167.86.71.186",
+    "port": "28417",
+    "database": "techzonecloud",
+    "schema": "auth_aim",
+    "prisma": "Auth_AIM/backend/prisma/schema.prisma",
+    "tcp": "LISTENING",
+    "sql": "CONNECTED",
+    "version": "PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+    "tableCount": 48,
+    "missingTables": [
+      "Feature",
+      "WebhookEvent"
+    ],
+    "localMigrations": [
+      "20260830041423_init",
+      "20260910112326_add_feature_catalog",
+      "20260911053236_add_webhook_event"
+    ],
+    "appliedMigrations": [
+      {
+        "migration_name": "20260830041423_init",
+        "finished_at": "2026-09-08T14:17:32.108Z",
+        "rolled_back_at": null
+      }
+    ]
+  },
+  {
+    "service": "backend",
+    "env": "backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "167.86.71.186",
+    "port": "28417",
+    "database": "techzonecloud",
+    "schema": "business_manager",
+    "prisma": "backend/prisma/schema.prisma",
+    "tcp": "LISTENING",
+    "sql": "CONNECTED",
+    "version": "PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+    "tableCount": 26,
+    "missingTables": [],
+    "localMigrations": [
+      "20260901135605_add_application_models",
+      "20260901185432_add_platform_integration_deployment_models",
+      "20260902073457_add_environment_history",
+      "20260902082859_add_contract_registry",
+      "20260902120645_add_configurations_history",
+      "20260902123912_update_configuration_model",
+      "20260902190359_update_snapshot_enum",
+      "20260903190431_add_snapshot_active_status"
+    ],
+    "appliedMigrations": [
+      {
+        "migration_name": "20260901135605_add_application_models",
+        "finished_at": "2026-09-09T13:06:09.157Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260901185432_add_platform_integration_deployment_models",
+        "finished_at": "2026-09-09T13:06:44.979Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260902073457_add_environment_history",
+        "finished_at": "2026-09-09T13:06:47.452Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260902082859_add_contract_registry",
+        "finished_at": "2026-09-09T13:06:54.622Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260902120645_add_configurations_history",
+        "finished_at": "2026-09-09T13:06:57.079Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260902123912_update_configuration_model",
+        "finished_at": "2026-09-09T13:06:58.514Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260902190359_update_snapshot_enum",
+        "finished_at": "2026-09-09T13:07:00.766Z",
+        "rolled_back_at": null
+      },
+      {
+        "migration_name": "20260903190431_add_snapshot_active_status",
+        "finished_at": "2026-09-09T13:07:02.403Z",
+        "rolled_back_at": null
+      }
+    ]
+  },
+  {
+    "service": "new erp-adapter-platform/backend",
+    "env": "new erp-adapter-platform/backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "167.86.71.186",
+    "port": "28417",
+    "database": "techzonecloud",
+    "schema": "erp_adapter",
+    "prisma": "new erp-adapter-platform/backend/prisma/schema.prisma",
+    "tcp": "TIMEOUT",
+    "sql": "FAILED",
+    "errorCode": "TIMEOUT"
+  },
+  {
+    "service": "team4-platform-api/backend",
+    "env": "team4-platform-api/backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "localhost",
+    "port": "5432",
+    "database": "techzonecloud",
+    "schema": "business_manager",
+    "prisma": "team4-platform-api/backend/prisma/schema.prisma",
+    "tcp": "LISTENING",
+    "sql": "FAILED",
+    "errorCode": "AUTHENTICATION_CONFIG_INVALID"
+  }
+]

@@ -70,13 +70,24 @@ export class HistoryService {
     return results.slice(start, start + pageSize);
   }
 
-  getHistoryByTraceId(traceId: string): HistoryRecord[] {
-    return this.records.filter((r) => r.traceId === traceId);
+  searchHistoryByTenant(tenantId: string, filter: HistoryFilter = {}): HistoryRecord[] {
+    const filtered: HistoryFilter = { ...filter, tenantId };
+    return this.searchHistory(filtered);
   }
 
-  buildTimeline(traceId: string): TimelineEntry[] {
+  getHistoryByTraceId(traceId: string, tenantId?: string): HistoryRecord[] {
+    let results = this.records.filter((r) => r.traceId === traceId);
+    if (tenantId) {
+      results = results.filter((r) => r.tenantId === tenantId);
+    }
+    return results;
+  }
+
+  buildTimeline(traceId: string, tenantId?: string): TimelineEntry[] {
     const entries: TimelineEntry[] = [];
-    const record = this.records.find((r) => r.traceId === traceId);
+    const record = tenantId
+      ? this.records.find((r) => r.traceId === traceId && r.tenantId === tenantId)
+      : this.records.find((r) => r.traceId === traceId);
     if (record) {
       entries.push({
         timestamp: record.startTime,
@@ -89,11 +100,15 @@ export class HistoryService {
     return entries;
   }
 
-  getDiagnostics(traceId?: string): DiagnosticEntry[] {
+  getDiagnostics(traceId?: string, tenantId?: string): DiagnosticEntry[] {
+    let results = [...this.diagnostics];
     if (traceId) {
-      return this.diagnostics.filter((d) => d.traceId === traceId);
+      results = results.filter((d) => d.traceId === traceId);
     }
-    return [...this.diagnostics].reverse();
+    if (tenantId) {
+      results = results.filter((d) => d.metadata?.tenantId === tenantId);
+    }
+    return results.reverse();
   }
 
   getMetrics(): DataMetrics {

@@ -5,11 +5,11 @@ const sessionService = require('../services/session.service');
 async function authenticate(req, res, next) {
   try {
     const header = req.headers.authorization;
-    if (!header || !header.startsWith('Bearer ')) {
+    const token = header?.startsWith('Bearer ') ? header.slice(7) : req.cookies?.iam_access_token;
+    if (!token) {
       throw new AppError('Token manquant', 401, 'UNAUTHENTICATED');
     }
 
-    const token = header.slice('Bearer '.length);
     let decoded;
     try {
       decoded = verifyAccessToken(token);

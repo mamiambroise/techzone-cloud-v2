@@ -3,8 +3,8 @@
  * Techzone Cloud — launcher unique.
  *
  * Mamerina amin'ny baiko tokana ny 5 services rehetra:
- *   AUTH_AIM (5001), ERP-API (3002), ERP-CONSOLE (3100),
- *   BUSINESS (3007), JASMINA (3003).
+ *   AUTH_AIM (5001), ERP-API (3002), FRONTEND (3000),
+ *   PLATFORM API (3003), DOLIBARR (8080).
  *
  *   npm run dev          → lance tout
  *   npm run dev:rebuild  → build ERP API + Jasmina aloha, dia lance
@@ -81,23 +81,10 @@ const SERVICES = [
     url: 'http://localhost:3002/api/erp/health?erp=DOLIBARR',
   },
   {
-    name: 'ERP-CONSOLE',
-    tag: 'CONSOLE',
-    port: 3100,
-    cwd: path.join(root, 'new erp-adapter-platform/frontend'),
-    cmd: () => ({ cmd: NODE, args: ['node_modules/react-scripts/scripts/start.js'] }),
-    url: 'http://localhost:3100',
-  },
-  {
-    name: 'BUSINESS',
-    tag: 'BUSINESS',
-    port: 3007,
-    cwd: path.join(root, 'team4-platform-api/frontend'),
-    cmd: () => ({
-      cmd: NODE,
-      args: [path.join('node_modules/vite/bin/vite.js'), '--mode', 'dev', '--host', '0.0.0.0', '--port', '3007'],
-    }),
-    url: 'http://localhost:3007',
+    name: 'FRONTEND', tag: 'BUSINESS', port: 3000,
+    cwd: path.join(root, 'frontend'),
+    cmd: (npm) => ({ cmd: NODE, args: [npm, 'run', 'dev'] }),
+    url: 'http://localhost:3000',
   },
   {
     name: 'JASMINA',
@@ -152,7 +139,7 @@ function httpOk(port, pathname = '/') {
   return new Promise((resolve) => {
     const req = http.get({ host: '127.0.0.1', port, path: pathname, timeout: 1500 }, (res) => {
       res.resume();
-      resolve(res.statusCode >= 200 && res.statusCode < 500);
+      resolve(res.statusCode === 200);
     });
     req.on('timeout', () => { req.destroy(); resolve(false); });
     req.on('error', () => resolve(false));
@@ -203,7 +190,7 @@ async function run(rebuilt) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 
   const children = [];
-  const pids = {};
+  const pids = loadPids();
 
   const savePidsNow = () => {
     fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -320,9 +307,8 @@ async function run(rebuilt) {
   console.log(c(started.size === waiting.length ? 'DONE' : 'WARN',
     `Techzone Cloud : ${started.size}/${waiting.length} services lancés répondent. Vérifiez les erreurs de base de données dans les logs.`));
   console.log(c('DONE', "Mpoditra ao amin'ny navigateur:"));
-  // http://localhost:3007
-  console.log(c('BUSINESS', '  ▶ Business Manager (login Auth_AIM) → http://localhost:3007'));
-  console.log(c('CONSOLE', '  ▶ ERP Console → http://localhost:3100'));
+  // http://localhost:3000
+  console.log(c('BUSINESS', '  ▶ Console canonique → http://localhost:3000'));
   console.log(c('ERP', '  ▶ ERP API → http://localhost:3002/api'));
   console.log(c('AUTH', '  ▶ Auth_AIM → http://localhost:5001/api'));
   console.log(c('DOLIB', '  ▶ Dolibarr (techzone) → http://127.0.0.1:8080'));

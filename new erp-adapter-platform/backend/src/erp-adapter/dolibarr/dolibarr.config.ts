@@ -8,7 +8,7 @@ export interface DolibarrConfig {
 }
 
 export const DEFAULT_DOLIBARR_CONFIG: DolibarrConfig = {
-  baseUrl: process.env.DOLIBARR_URL || 'http://localhost/dolibarr',
+  baseUrl: process.env.DOLIBARR_URL || '',
   apiKey: process.env.DOLIBARR_API_KEY || '',
   entity: Number(process.env.DOLIBARR_ENTITY) || 1,
   timeout: Number(process.env.DOLIBARR_TIMEOUT) || 10000,

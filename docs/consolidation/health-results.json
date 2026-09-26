@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-09-26T16:40:14.048Z",
+  "results": [
+    {
+      "port": 3000,
+      "route": "/login",
+      "status": 200,
+      "trace": null
+    },
+    {
+      "port": 5001,
+      "route": "/health",
+      "error": "ECONNREFUSED"
+    },
+    {
+      "port": 5001,
+      "route": "/api/iam/me",
+      "error": "ECONNREFUSED"
+    },
+    {
+      "port": 3003,
+      "route": "/health",
+      "error": "ECONNREFUSED"
+    },
+    {
+      "port": 3003,
+      "route": "/api/platform/applications",
+      "error": "ECONNREFUSED"
+    },
+    {
+      "port": 3002,
+      "route": "/api/config/public",
+      "error": "ECONNREFUSED"
+    },
+    {
+      "port": 3002,
+      "route": "/api/erp-registry",
+      "error": "ECONNREFUSED"
+    },
+    {
+      "port": 3002,
+      "route": "/api/data-runtime/contract",
+      "error": "ECONNREFUSED"
+    },
+    {
+      "port": 3002,
+      "route": "/api/automation/contract",
+      "error": "ECONNREFUSED"
+    }
+  ]
+}

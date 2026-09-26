@@ -38,6 +38,7 @@ export interface RuntimeContext {
   requestId: string;
   traceId: string;
   permissions: string[];
+  erpCode?: string;
   locale?: string;
 }
 
@@ -120,7 +121,17 @@ export type DataErrorCode =
   | 'DATA_TENANT_VIOLATION'
   | 'DATA_PROVIDER_UNAVAILABLE'
   | 'DATA_TIMEOUT'
-  | 'DATA_CONTRACT_VERSION_UNSUPPORTED';
+  | 'DATA_CONTRACT_VERSION_UNSUPPORTED'
+  | 'RESOURCE_NOT_SUPPORTED'
+  | 'INVALID_QUERY'
+  | 'INVALID_FILTER'
+  | 'INVALID_SORT'
+  | 'ERP_INSTANCE_NOT_CONFIGURED'
+  | 'ERP_UNAVAILABLE'
+  | 'PROVIDER_ERROR'
+  | 'UNAUTHENTICATED'
+  | 'FORBIDDEN'
+  | 'TENANT_REQUIRED';
 
 export interface DataError {
   code: DataErrorCode;

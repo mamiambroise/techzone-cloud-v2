@@ -3,60 +3,65 @@ import axios from 'axios';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002/api';
 const AUTH_AIM_URL = process.env.REACT_APP_AUTH_AIM_URL || 'http://localhost:5001/api';
 
-// === Client axios vers Auth_AIM (identite unique, port 5001) ===
 const authAimApi = axios.create({
   baseURL: AUTH_AIM_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-// Client axios vers le backend ERP adapter
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-// === Gestion des tokens IAM ===
-const STORAGE = { access: 'iam_access_token', refresh: 'iam_refresh_token', user: 'iam_user' };
-const getAccessToken = () => localStorage.getItem(STORAGE.access);
-const getRefreshToken = () => localStorage.getItem(STORAGE.refresh);
+
+function normalizeError(error) {
+  const { response = {}, config = {} } = error;
+  const status = response.status;
+  const data = response.data || {};
+  const traceId = response.headers?.['x-trace-id'] || (config.headers?.['X-Trace-Id'] || null);
+  const message = data?.message || error.message || 'Erreur reseau';
+  const code = data?.code || undefined;
+
+  if (status === 401) {
+    return { type: 'UNAUTHORIZED', status: 401, message, code, traceId };
+  }
+  if (status === 403) {
+    return { type: 'FORBIDDEN', status: 403, message, code, traceId };
+  }
+  if (code === 'ERP_INSTANCE_NOT_CONFIGURED') {
+    return { type: 'ERP_NOT_CONFIGURED', status, message, code, traceId };
+  }
+  if (code === 'ERP_UNAVAILABLE') {
+    return { type: 'ERP_UNAVAILABLE', status, message, code, traceId };
+  }
+  if (code === 'ERP_PROVIDER_REQUIRED') {
+    return { type: 'ERP_PROVIDER_REQUIRED', status, message, code, traceId };
+  }
+  if (code === 'ERP_PROVIDER_UNSUPPORTED') {
+    return { type: 'ERP_PROVIDER_UNSUPPORTED', status, message, code, traceId };
+  }
+  return { type: 'ERROR', status: status || 500, message, code, traceId };
+}
+
+export { normalizeError };
 
 export const iamTokenStore = {
-  access: getAccessToken,
-  refresh: getRefreshToken,
-  setTokens: (access, refresh) => {
-    if (access) localStorage.setItem(STORAGE.access, access);
-    if (refresh) localStorage.setItem(STORAGE.refresh, refresh);
-  },
+  access: () => null,
+  refresh: () => null,
+  setTokens: () => {},
   setUser: (user) => {
-    if (user) localStorage.setItem(STORAGE.user, JSON.stringify(user));
-    else localStorage.removeItem(STORAGE.user);
+    if (user) localStorage.setItem('iam_user', JSON.stringify(user));
+    else localStorage.removeItem('iam_user');
   },
   getUser: () => {
-    try { return JSON.parse(localStorage.getItem(STORAGE.user)); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem('iam_user')); } catch { return null; }
   },
   clear: () => {
-    localStorage.removeItem(STORAGE.access);
-    localStorage.removeItem(STORAGE.refresh);
-    localStorage.removeItem(STORAGE.user);
+    localStorage.removeItem('iam_user');
   },
 };
-
-// Attache automatiquement le token d'acces
-api.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
-    if (token && !config.headers.Authorization) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Rafraichit le token d'acces via le refresh token si 401
-let isRefreshing = false;
-let waiters = [];
-const onRefreshed = (token) => waiters.forEach((cb) => cb(token));
 
 api.interceptors.response.use(
   (response) => response,
@@ -67,61 +72,26 @@ api.interceptors.response.use(
     if (response.status !== 401) {
       const message = response.data?.message || error.message || 'Erreur reseau';
       console.error(`[API Error] ${message}`);
+      error.normalized = normalizeError(error);
       return Promise.reject(error);
     }
 
     const isAuthEndpoint = url.includes('/iam/auth/');
-    if (isAuthEndpoint || !getRefreshToken()) {
-      if (!isAuthEndpoint) window.dispatchEvent(new CustomEvent('iam:unauthorized'));
+    if (isAuthEndpoint) {
+      error.normalized = normalizeError(error);
       return Promise.reject(error);
     }
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        waiters.push((token) => {
-          if (!token) return reject(error);
-          config.headers.Authorization = `Bearer ${token}`;
-          resolve(api(config));
-        });
-      });
-    }
-
-    isRefreshing = true;
-    try {
-      const { data } = await api.post('/iam/auth/refresh', { refreshToken: getRefreshToken() });
-      const { accessToken, refreshToken } = data?.data || {};
-      if (accessToken) {
-        iamTokenStore.setTokens(accessToken, refreshToken);
-        onRefreshed(accessToken);
-        config.headers.Authorization = `Bearer ${accessToken}`;
-        return api(config);
-      }
-    } catch (e) {
-      window.dispatchEvent(new CustomEvent('iam:unauthorized'));
-    } finally {
-      isRefreshing = false;
-      waiters = [];
-    }
+    window.dispatchEvent(new CustomEvent('iam:unauthorized'));
+    error.normalized = normalizeError(error);
     return Promise.reject(error);
-  }
-);
-
-// === IAM Auth (Auth_AIM — identite unique) ===
-
-// Attache le token sur les appels Auth_AIM
-authAimApi.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
   },
-  (error) => Promise.reject(error)
 );
 
 export const iamAuthService = {
   login: (body) => authAimApi.post('/iam/auth/login', body),
   register: (body) => authAimApi.post('/iam/auth/register', body),
-  refresh: (refreshToken) => authAimApi.post('/iam/auth/refresh', { refreshToken }),
+  refresh: () => authAimApi.post('/iam/auth/refresh'),
   logout: () => authAimApi.post('/iam/auth/logout'),
   logoutAll: (keepCurrentSession) => authAimApi.post('/iam/auth/logout-all', { keepCurrentSession }),
   changePassword: (body) => authAimApi.post('/iam/auth/change-password', body),
@@ -130,9 +100,8 @@ export const iamAuthService = {
   me: () => authAimApi.get('/iam/auth/me'),
   updateProfile: (body) => authAimApi.patch('/iam/auth/profile', body),
   sessions: () => authAimApi.get('/iam/auth/sessions'),
+  getPublicConfig: () => api.get('/config/public'),
 };
-
-// === IAM Admin (Auth_AIM — utilisateurs + sessions) ===
 
 export const iamAdminService = {
   users: (params) => authAimApi.get('/iam/users', { params }),
@@ -145,8 +114,6 @@ export const iamAdminService = {
   revokeSession: (id) => authAimApi.delete(`/iam/sessions/${id}`),
 };
 
-// === ERP Registry (PostgreSQL) ===
-
 export const erpRegistryService = {
   getAll: () => api.get('/erp-registry'),
   getOne: (id) => api.get(`/erp-registry/${id}`),
@@ -156,255 +123,197 @@ export const erpRegistryService = {
   delete: (id) => api.delete(`/erp-registry/${id}`),
 };
 
-// === ERP Adapter - Clients ===
-
 export const clientService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/clients', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/clients/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/clients', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/clients/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/clients/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/clients'),
+  getOne: (id) => api.get(`/erp/clients/${id}`),
+  create: (data) => api.post('/erp/clients', data),
+  update: (id, data) => api.put(`/erp/clients/${id}`, data),
+  delete: (id) => api.delete(`/erp/clients/${id}`),
 };
-
-// === ERP Adapter - Produits ===
 
 export const productService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/products', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/products/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/products', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/products/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/products/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/products'),
+  getOne: (id) => api.get(`/erp/products/${id}`),
+  create: (data) => api.post('/erp/products', data),
+  update: (id, data) => api.put(`/erp/products/${id}`, data),
+  delete: (id) => api.delete(`/erp/products/${id}`),
 };
-
-// === ERP Adapter - Commandes ===
 
 export const orderService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/orders', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/orders/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/orders', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/orders/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/orders/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/orders'),
+  getOne: (id) => api.get(`/erp/orders/${id}`),
+  create: (data) => api.post('/erp/orders', data),
+  update: (id, data) => api.put(`/erp/orders/${id}`, data),
+  delete: (id) => api.delete(`/erp/orders/${id}`),
 };
-
-// === ERP Adapter - Stock ===
 
 export const stockService = {
-  get: (productId, erp = 'DOLIBARR') => api.get(`/erp/stock/${productId}`, { params: { erp } }),
-  update: (productId, quantity, erp = 'DOLIBARR') =>
-    api.put(`/erp/stock/${productId}`, { quantity }, { params: { erp } }),
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/stocks', { params: { erp } }),
+  get: (productId) => api.get(`/erp/stock/${productId}`),
+  update: (productId, quantity) =>
+    api.put(`/erp/stock/${productId}`, { quantity }),
+  getAll: () => api.get('/erp/stocks'),
 };
-
-// === ERP Adapter - Fournisseurs ===
 
 export const supplierService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/suppliers', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/suppliers/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/suppliers', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/suppliers/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/suppliers/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/suppliers'),
+  getOne: (id) => api.get(`/erp/suppliers/${id}`),
+  create: (data) => api.post('/erp/suppliers', data),
+  update: (id, data) => api.put(`/erp/suppliers/${id}`, data),
+  delete: (id) => api.delete(`/erp/suppliers/${id}`),
 };
-
-// === ERP Adapter - Devis ===
 
 export const quoteService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/quotes', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/quotes/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/quotes', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/quotes/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/quotes/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/quotes'),
+  getOne: (id) => api.get(`/erp/quotes/${id}`),
+  create: (data) => api.post('/erp/quotes', data),
+  update: (id, data) => api.put(`/erp/quotes/${id}`, data),
+  delete: (id) => api.delete(`/erp/quotes/${id}`),
 };
-
-// === ERP Adapter - Factures ===
 
 export const invoiceService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/invoices', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/invoices/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/invoices', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/invoices/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/invoices/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/invoices'),
+  getOne: (id) => api.get(`/erp/invoices/${id}`),
+  create: (data) => api.post('/erp/invoices', data),
+  update: (id, data) => api.put(`/erp/invoices/${id}`, data),
+  delete: (id) => api.delete(`/erp/invoices/${id}`),
 };
-
-// === ERP Adapter - Paiements ===
 
 export const paymentService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/payments', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/payments/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/payments', data, { params: { erp } }),
+  getAll: () => api.get('/erp/payments'),
+  getOne: (id) => api.get(`/erp/payments/${id}`),
+  create: (data) => api.post('/erp/payments', data),
 };
-
-// === ERP Adapter - Entrepots ===
 
 export const warehouseService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/warehouses', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/warehouses/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/warehouses', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/warehouses/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/warehouses/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/warehouses'),
+  getOne: (id) => api.get(`/erp/warehouses/${id}`),
+  create: (data) => api.post('/erp/warehouses', data),
+  update: (id, data) => api.put(`/erp/warehouses/${id}`, data),
+  delete: (id) => api.delete(`/erp/warehouses/${id}`),
 };
-
-// === ERP Adapter - Expeditions ===
 
 export const shipmentService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/shipments', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/shipments/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/shipments', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/shipments/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/shipments'),
+  getOne: (id) => api.get(`/erp/shipments/${id}`),
+  create: (data) => api.post('/erp/shipments', data),
+  update: (id, data) => api.put(`/erp/shipments/${id}`, data),
 };
-
-// === ERP Adapter - Documents ===
 
 export const documentService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/documents', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/documents/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/documents', data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/documents/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/documents'),
+  getOne: (id) => api.get(`/erp/documents/${id}`),
+  create: (data) => api.post('/erp/documents', data),
+  delete: (id) => api.delete(`/erp/documents/${id}`),
 };
-
-// === ERP Adapter - Mouvements de stock ===
 
 export const stockMovementService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/stock-movements', { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/stock-movements', data, { params: { erp } }),
+  getAll: () => api.get('/erp/stock-movements'),
+  create: (data) => api.post('/erp/stock-movements', data),
 };
-
-// === ERP Adapter - Achats (bons de commande fournisseurs) ===
 
 export const purchaseService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/purchases', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/purchases/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/purchases', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/purchases/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/purchases'),
+  getOne: (id) => api.get(`/erp/purchases/${id}`),
+  create: (data) => api.post('/erp/purchases', data),
+  update: (id, data) => api.put(`/erp/purchases/${id}`, data),
 };
-
-// === ERP Adapter - Variantes de produits ===
 
 export const productVariantService = {
-  getAll: (erp = 'DOLIBARR', productId) => api.get('/erp/product-variants', { params: { erp, productId } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/product-variants', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/product-variants/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/product-variants/${id}`, { params: { erp } }),
+  getAll: (productId) => api.get('/erp/product-variants', { params: { productId: productId ?? undefined } }),
+  create: (data) => api.post('/erp/product-variants', data),
+  update: (id, data) => api.put(`/erp/product-variants/${id}`, data),
+  delete: (id) => api.delete(`/erp/product-variants/${id}`),
 };
-
-// === ERP Adapter - Services ===
 
 export const serviceService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/services', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/services/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/services', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/services/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/services/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/services'),
+  getOne: (id) => api.get(`/erp/services/${id}`),
+  create: (data) => api.post('/erp/services', data),
+  update: (id, data) => api.put(`/erp/services/${id}`, data),
+  delete: (id) => api.delete(`/erp/services/${id}`),
 };
-
-// === ERP Adapter - Transferts de stock ===
 
 export const stockTransferService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/stock-transfers', { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/stock-transfers', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/stock-transfers/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/stock-transfers'),
+  create: (data) => api.post('/erp/stock-transfers', data),
+  update: (id, data) => api.put(`/erp/stock-transfers/${id}`, data),
 };
-
-// === ERP Adapter - Inventaires ===
 
 export const inventoryService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/inventories', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/inventories/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/inventories', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/inventories/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/inventories'),
+  getOne: (id) => api.get(`/erp/inventories/${id}`),
+  create: (data) => api.post('/erp/inventories', data),
+  update: (id, data) => api.put(`/erp/inventories/${id}`, data),
 };
-
-// === ERP Adapter - Alertes de stock ===
 
 export const stockAlertService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/stock-alerts', { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/stock-alerts', data, { params: { erp } }),
+  getAll: () => api.get('/erp/stock-alerts'),
+  create: (data) => api.post('/erp/stock-alerts', data),
 };
-
-// === ERP Adapter - Retours ===
 
 export const returnService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/returns', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/returns/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/returns', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/returns/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/returns'),
+  getOne: (id) => api.get(`/erp/returns/${id}`),
+  create: (data) => api.post('/erp/returns', data),
+  update: (id, data) => api.put(`/erp/returns/${id}`, data),
 };
-
-// === ERP Adapter - Promotions ===
 
 export const promotionService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/promotions', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/promotions/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/promotions', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/promotions/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/promotions/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/promotions'),
+  getOne: (id) => api.get(`/erp/promotions/${id}`),
+  create: (data) => api.post('/erp/promotions', data),
+  update: (id, data) => api.put(`/erp/promotions/${id}`, data),
+  delete: (id) => api.delete(`/erp/promotions/${id}`),
 };
-
-// === ERP Adapter - Caisses (POS) ===
 
 export const cashRegisterService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/cash-registers', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/cash-registers/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/cash-registers', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/cash-registers/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/cash-registers'),
+  getOne: (id) => api.get(`/erp/cash-registers/${id}`),
+  create: (data) => api.post('/erp/cash-registers', data),
+  update: (id, data) => api.put(`/erp/cash-registers/${id}`, data),
 };
-
-// === ERP Adapter - Depenses ===
 
 export const expenseService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/expenses', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/expenses/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/expenses', data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/expenses/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/expenses'),
+  getOne: (id) => api.get(`/erp/expenses/${id}`),
+  create: (data) => api.post('/erp/expenses', data),
+  delete: (id) => api.delete(`/erp/expenses/${id}`),
 };
-
-// === ERP Adapter - Reservations ===
 
 export const reservationService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/reservations', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/reservations/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/reservations', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/reservations/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/reservations'),
+  getOne: (id) => api.get(`/erp/reservations/${id}`),
+  create: (data) => api.post('/erp/reservations', data),
+  update: (id, data) => api.put(`/erp/reservations/${id}`, data),
 };
-
-// === ERP Adapter - Projets ===
 
 export const projectService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/projects', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/projects/${id}`, { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/projects', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/projects/${id}`, data, { params: { erp } }),
+  getAll: () => api.get('/erp/projects'),
+  getOne: (id) => api.get(`/erp/projects/${id}`),
+  create: (data) => api.post('/erp/projects', data),
+  update: (id, data) => api.put(`/erp/projects/${id}`, data),
 };
-
-// === ERP Adapter - Agenda ===
 
 export const agendaService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/agenda', { params: { erp } }),
-  create: (data, erp = 'DOLIBARR') => api.post('/erp/agenda', data, { params: { erp } }),
-  update: (id, data, erp = 'DOLIBARR') => api.put(`/erp/agenda/${id}`, data, { params: { erp } }),
-  delete: (id, erp = 'DOLIBARR') => api.delete(`/erp/agenda/${id}`, { params: { erp } }),
+  getAll: () => api.get('/erp/agenda'),
+  create: (data) => api.post('/erp/agenda', data),
+  update: (id, data) => api.put(`/erp/agenda/${id}`, data),
+  delete: (id) => api.delete(`/erp/agenda/${id}`),
 };
-
-// === ERP Adapter - Statistiques ===
 
 export const statsService = {
-  get: (erp = 'DOLIBARR') => api.get('/erp/stats', { params: { erp } }),
+  get: () => api.get('/erp/stats'),
 };
-
-// === ERP Adapter - Health ===
 
 export const healthService = {
-  check: (erp = 'DOLIBARR') => api.get('/erp/health', { params: { erp } }),
+  check: () => api.get('/erp/health'),
 };
-
-// === ERP Adapter - Utilisateurs ===
 
 export const userService = {
-  getAll: (erp = 'DOLIBARR') => api.get('/erp/users', { params: { erp } }),
-  getOne: (id, erp = 'DOLIBARR') => api.get(`/erp/users/${id}`, { params: { erp } }),
-  getMe: (erp = 'DOLIBARR') => api.get('/erp/users/me', { params: { erp } }),
+  getAll: () => api.get('/erp/users'),
+  getOne: (id) => api.get(`/erp/users/${id}`),
+  getMe: () => api.get('/erp/users/me'),
 };
-
-// === Data Runtime ===
 
 export const dataRuntimeService = {
   contract: () => api.get('/data-runtime/contract'),
@@ -420,8 +329,6 @@ export const dataRuntimeService = {
   resolveBinding: (bindingId, ctx) => api.post(`/data-runtime/bindings/${bindingId}/resolve`, { ctx }),
   bindingState: (bindingId) => api.get(`/data-runtime/bindings/${bindingId}/state`),
 };
-
-// === Automation ===
 
 export const automationService = {
   cockpit: () => api.get('/automation/cockpit'),

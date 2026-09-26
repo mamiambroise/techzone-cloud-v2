@@ -5,25 +5,7 @@ const AuthContext = createContext(null);
 
 function readUser() {
   const stored = iamTokenStore.getUser();
-  if (stored) return stored;
-  // Compat: utilisateur Dolibarr cache precedemment
-  try {
-    const cached = localStorage.getItem('erp_current_user_v2');
-    if (cached) {
-      const c = JSON.parse(cached);
-      if (c) {
-        return {
-          id: c.id,
-          username: c.login || c.username,
-          primaryEmail: c.email,
-          firstName: c.firstname,
-          lastName: c.name,
-          status: c.active ? 'ACTIVE' : 'PENDING',
-        };
-      }
-    }
-  } catch {}
-  return null;
+  return stored;
 }
 
 function getDeviceFingerprint() {
@@ -33,24 +15,6 @@ function getDeviceFingerprint() {
     localStorage.setItem('iam_device_fingerprint', fp);
   }
   return fp;
-}
-
-// Lit le token transmis par le Business Manager via l'iframe (?iam_token=...)
-export function importEmbedAuth() {
-  const params = new URLSearchParams(window.location.search);
-  const urlToken = params.get('iam_token');
-  if (!urlToken) return false;
-  const urlRefresh = params.get('iam_refresh');
-  const urlUser = params.get('iam_user');
-  iamTokenStore.setTokens(urlToken, urlRefresh);
-  if (urlUser) {
-    try {
-      iamTokenStore.setUser(JSON.parse(urlUser));
-    } catch {
-      /* ignore */
-    }
-  }
-  return true;
 }
 
 export function AuthProvider({ children }) {
@@ -64,23 +28,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true;
-
     const boot = async () => {
-      // 1. Token passe par l'embed Business Manager (?iam_token&iam_user&iam_refresh)
-      const imported = importEmbedAuth();
-      if (imported) {
-        const importedUser = iamTokenStore.getUser();
-        if (active) {
-          setUser(importedUser || { username: 'Utilisateur', primaryEmail: '' });
-          setLoading(false);
-        }
-        return;
-      }
-
-      if (!iamTokenStore.access()) {
-        if (active) setLoading(false);
-        return;
-      }
       try {
         const res = await iamAuthService.me();
         const me = res?.data?.data?.user;
@@ -115,7 +63,6 @@ export function AuthProvider({ children }) {
     if (!data?.accessToken) {
       throw new Error(data?.message || 'Réponse de connexion invalide');
     }
-    iamTokenStore.setTokens(data.accessToken, data.refreshToken);
     if (data.user) {
       setUser(data.user);
       iamTokenStore.setUser(data.user);
@@ -125,9 +72,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      if (iamTokenStore.access()) {
-        await iamAuthService.logout();
-      }
+      await iamAuthService.logout();
     } catch (err) {
       console.error(err);
     } finally {
@@ -138,7 +83,7 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({ user, loading, login, logout, setUser, isAuthenticated: Boolean(user) }),
-    [user, loading, login, logout, setUser]
+    [user, loading, login, logout, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

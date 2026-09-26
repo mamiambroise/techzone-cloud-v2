@@ -1,0 +1,192 @@
+[
+  {
+    "id": "admin-accessgovernancepage",
+    "file": "../features/iam-demo/pages/Admin/AccessGovernancePage.jsx",
+    "label": "Admin / AccessGovernancePage"
+  },
+  {
+    "id": "admin-adminactionspage",
+    "file": "../features/iam-demo/pages/Admin/AdminActionsPage.jsx",
+    "label": "Admin / AdminActionsPage"
+  },
+  {
+    "id": "admin-delegationpage",
+    "file": "../features/iam-demo/pages/Admin/DelegationPage.jsx",
+    "label": "Admin / DelegationPage"
+  },
+  {
+    "id": "admin-monitoringpage",
+    "file": "../features/iam-demo/pages/Admin/MonitoringPage.jsx",
+    "label": "Admin / MonitoringPage"
+  },
+  {
+    "id": "admin-organisationstenantsadminpage",
+    "file": "../features/iam-demo/pages/Admin/OrganisationsTenantsAdminPage.jsx",
+    "label": "Admin / OrganisationsTenantsAdminPage"
+  },
+  {
+    "id": "admin-overviewpage",
+    "file": "../features/iam-demo/pages/Admin/OverviewPage.jsx",
+    "label": "Admin / OverviewPage"
+  },
+  {
+    "id": "admin-securityauditpage",
+    "file": "../features/iam-demo/pages/Admin/SecurityAuditPage.jsx",
+    "label": "Admin / SecurityAuditPage"
+  },
+  {
+    "id": "admin-usersadminpage",
+    "file": "../features/iam-demo/pages/Admin/UsersAdminPage.jsx",
+    "label": "Admin / UsersAdminPage"
+  },
+  {
+    "id": "billing-accessrulespage",
+    "file": "../features/iam-demo/pages/billing/AccessRulesPage.jsx",
+    "label": "billing / AccessRulesPage"
+  },
+  {
+    "id": "billing-entitlementspage",
+    "file": "../features/iam-demo/pages/billing/EntitlementsPage.jsx",
+    "label": "billing / EntitlementsPage"
+  },
+  {
+    "id": "billing-featurespage",
+    "file": "../features/iam-demo/pages/billing/FeaturesPage.jsx",
+    "label": "billing / FeaturesPage"
+  },
+  {
+    "id": "billing-invoicespage",
+    "file": "../features/iam-demo/pages/billing/InvoicesPage.jsx",
+    "label": "billing / InvoicesPage"
+  },
+  {
+    "id": "billing-overviewpage",
+    "file": "../features/iam-demo/pages/billing/OverviewPage.jsx",
+    "label": "billing / OverviewPage"
+  },
+  {
+    "id": "billing-paymentspage",
+    "file": "../features/iam-demo/pages/billing/PaymentsPage.jsx",
+    "label": "billing / PaymentsPage"
+  },
+  {
+    "id": "billing-planspage",
+    "file": "../features/iam-demo/pages/billing/PlansPage.jsx",
+    "label": "billing / PlansPage"
+  },
+  {
+    "id": "billing-subscriptionspage",
+    "file": "../features/iam-demo/pages/billing/SubscriptionsPage.jsx",
+    "label": "billing / SubscriptionsPage"
+  },
+  {
+    "id": "billing-webhookspage",
+    "file": "../features/iam-demo/pages/billing/WebhooksPage.jsx",
+    "label": "billing / WebhooksPage"
+  },
+  {
+    "id": "contexts-contextspage",
+    "file": "../features/iam-demo/pages/Contexts/ContextsPage.jsx",
+    "label": "Contexts / ContextsPage"
+  },
+  {
+    "id": "dashboard-dashboardpage",
+    "file": "../features/iam-demo/pages/Dashboard/DashboardPage.jsx",
+    "label": "Dashboard / DashboardPage"
+  },
+  {
+    "id": "dashboard",
+    "file": "../features/iam-demo/pages/Dashboard.jsx",
+    "label": "Dashboard"
+  },
+  {
+    "id": "iamoverview-iamoverviewpage",
+    "file": "../features/iam-demo/pages/IamOverview/IamOverviewPage.jsx",
+    "label": "IamOverview / IamOverviewPage"
+  },
+  {
+    "id": "identities-identitiespage",
+    "file": "../features/iam-demo/pages/Identities/IdentitiesPage.jsx",
+    "label": "Identities / IdentitiesPage"
+  },
+  {
+    "id": "identitygroups-identitygroupspage",
+    "file": "../features/iam-demo/pages/IdentityGroups/IdentityGroupsPage.jsx",
+    "label": "IdentityGroups / IdentityGroupsPage"
+  },
+  {
+    "id": "identitylinks-identitylinkspage",
+    "file": "../features/iam-demo/pages/IdentityLinks/IdentityLinksPage.jsx",
+    "label": "IdentityLinks / IdentityLinksPage"
+  },
+  {
+    "id": "invitation-invitationpage",
+    "file": "../features/iam-demo/pages/Invitation/InvitationPage.jsx",
+    "label": "Invitation / InvitationPage"
+  },
+  {
+    "id": "observability-alertmanagerpage",
+    "file": "../features/iam-demo/pages/Observability/AlertManagerPage.jsx",
+    "label": "Observability / AlertManagerPage"
+  },
+  {
+    "id": "observability-auditpage",
+    "file": "../features/iam-demo/pages/Observability/AuditPage.jsx",
+    "label": "Observability / AuditPage"
+  },
+  {
+    "id": "observability-logspage",
+    "file": "../features/iam-demo/pages/Observability/LogsPage.jsx",
+    "label": "Observability / LogsPage"
+  },
+  {
+    "id": "observability-monitoringpage",
+    "file": "../features/iam-demo/pages/Observability/MonitoringPage.jsx",
+    "label": "Observability / MonitoringPage"
+  },
+  {
+    "id": "observability-observabilityoverview",
+    "file": "../features/iam-demo/pages/Observability/ObservabilityOverview.jsx",
+    "label": "Observability / ObservabilityOverview"
+  },
+  {
+    "id": "observability-securityeventspage",
+    "file": "../features/iam-demo/pages/Observability/SecurityEventsPage.jsx",
+    "label": "Observability / SecurityEventsPage"
+  },
+  {
+    "id": "organisations-organisationspage",
+    "file": "../features/iam-demo/pages/Organisations/OrganisationsPage.jsx",
+    "label": "Organisations / OrganisationsPage"
+  },
+  {
+    "id": "placeholder",
+    "file": "../features/iam-demo/pages/Placeholder.jsx",
+    "label": "Placeholder"
+  },
+  {
+    "id": "policies-policiespage",
+    "file": "../features/iam-demo/pages/Policies/PoliciesPage.jsx",
+    "label": "Policies / PoliciesPage"
+  },
+  {
+    "id": "roles-rolespage",
+    "file": "../features/iam-demo/pages/Roles/RolesPage.jsx",
+    "label": "Roles / RolesPage"
+  },
+  {
+    "id": "sessions-sessionspage",
+    "file": "../features/iam-demo/pages/Sessions/SessionsPage.jsx",
+    "label": "Sessions / SessionsPage"
+  },
+  {
+    "id": "tenants-tenantspage",
+    "file": "../features/iam-demo/pages/Tenants/TenantsPage.jsx",
+    "label": "Tenants / TenantsPage"
+  },
+  {
+    "id": "users-userspage",
+    "file": "../features/iam-demo/pages/Users/UsersPage.jsx",
+    "label": "Users / UsersPage"
+  }
+]

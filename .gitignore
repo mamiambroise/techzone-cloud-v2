@@ -2,3 +2,6 @@ node_modules/
 .env
 dist/
 build/
+logs/consolidation-backup/
+logs/browser-tools/
+logs/consolidation-*.log

@@ -9,6 +9,8 @@ import {
   ABSOLUTE_TIMEOUT_MS,
   IDLE_TIMEOUT_MS,
   REFRESH_TTL_MS,
+  ROLE_PERMISSIONS,
+  ROLES,
 } from './iam.constants';
 import {
   hashToken,
@@ -573,13 +575,20 @@ export class IamAuthService {
     });
   }
 
-  private buildAccessToken(session: {
+async buildAccessToken(session: {
     id: string;
     userId: string;
     tenantId?: string | null;
     organizationId?: string | null;
     authenticationLevel?: string | null;
   }) {
+    const user = await this.prisma.iamUser.findUnique({
+      where: { id: session.userId },
+      select: { isAdmin: true },
+    });
+    const roles = this.deriveRoles(user);
+    const permissions = this.resolvePermissionsFromRoles(roles);
+
     return signAccessToken({
       type: 'access',
       userId: session.userId,
@@ -587,7 +596,33 @@ export class IamAuthService {
       tenantId: session.tenantId,
       organizationId: session.organizationId,
       authenticationLevel: session.authenticationLevel,
+      roles,
+      permissions,
     });
+  }
+
+  private deriveRoles(user: { isAdmin?: boolean } | null): string[] {
+    const roles: string[] = [];
+    if (user?.isAdmin) {
+      roles.push(ROLES.ADMIN);
+    } else {
+      roles.push(ROLES.USER);
+    }
+    return roles;
+  }
+
+  private resolvePermissionsFromRoles(roles: string[]): string[] {
+    if (!roles || roles.length === 0) {
+      return [];
+    }
+    const perms = new Set<string>();
+    for (const role of roles) {
+      const rolePerms = ROLE_PERMISSIONS[role];
+      if (rolePerms) {
+        rolePerms.forEach((p) => perms.add(p));
+      }
+    }
+    return Array.from(perms);
   }
 
   private async issueTokenPair(sessionId: string) {
@@ -596,7 +631,7 @@ export class IamAuthService {
       throw new IamError('Session introuvable', 404, 'SESSION_NOT_FOUND');
     }
 
-    const accessToken = this.buildAccessToken(session);
+    const accessToken = await this.buildAccessToken(session);
     const { raw, hash, familyId } = issueRefreshTokenPayload();
 
     const refreshTokenRow = await this.prisma.iamRefreshToken.create({
@@ -672,7 +707,7 @@ export class IamAuthService {
     });
 
     return {
-      accessToken: this.buildAccessToken(session),
+      accessToken: await this.buildAccessToken(session),
       refreshToken: raw,
       refreshTokenId: next.id,
     };

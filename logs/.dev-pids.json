@@ -1,8 +1,7 @@
 {
-    "AUTH_AIM":  10096,
-    "ERP-API":  18312,
-    "ERP-CONSOLE":  5060,
-    "BUSINESS":  21760,
-    "JASMINA":  4356,
-    "DOLIBARR":  19144
+  "AUTH_AIM": 19128,
+  "ERP-API": 2640,
+  "FRONTEND": 22368,
+  "JASMINA": 16204,
+  "DOLIBARR": 20604
 }

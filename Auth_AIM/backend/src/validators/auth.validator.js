@@ -29,7 +29,7 @@ const mfaVerifySchema = Joi.object({
 });
 
 const refreshSchema = Joi.object({
-  refreshToken: Joi.string().required(),
+  refreshToken: Joi.string().optional(),
 });
 
 const logoutAllSchema = Joi.object({

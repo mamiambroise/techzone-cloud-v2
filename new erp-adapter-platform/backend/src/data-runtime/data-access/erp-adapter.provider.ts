@@ -1,19 +1,36 @@
 // Provider Data Runtime → ERP Adapter
 // Pont entre le Data Runtime et l'ERP Adapter existant
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DataProvider, ListOptions } from './data-access-manager';
 import { RuntimeContext, ResourceDescriptor } from '../interfaces';
 import { ErpAdapterService } from '../../erp-adapter/erp-adapter.service';
+import { IErpAdapter } from '../../erp-adapter/interfaces/erp-adapter.interface';
+import { ErpError } from '../../erp-adapter/erp-error';
 
 @Injectable()
 export class ERPAdapterDataProvider implements DataProvider {
   private readonly logger = new Logger(ERPAdapterDataProvider.name);
 
-  constructor(private readonly erpAdapterService: ErpAdapterService) {}
+  constructor(
+    private readonly erpAdapterService: ErpAdapterService,
+  ) {}
+
+  /**
+   * Resolve the ERP adapter for the given runtime context.
+   * Uses tenant-aware resolution via ErpAdapterService, so each
+   * tenant gets its own adapter + HTTP client configured from
+   * the ERP registry (no global singleton leakage).
+   */
+  private async resolveAdapter(ctx: RuntimeContext): Promise<IErpAdapter> {
+    if (!ctx.tenantId) {
+      throw ErpError.tenantRequired();
+    }
+    return this.erpAdapterService.resolveAdapterForTenant(ctx.tenantId);
+  }
 
   async get(resource: string, id: string, ctx: RuntimeContext): Promise<any> {
-    const adapter = this.erpAdapterService.getAdapter('DOLIBARR');
+    const adapter = await this.resolveAdapter(ctx);
     switch (resource) {
       case 'Product':
         return adapter.getProductById(id);
@@ -24,12 +41,12 @@ export class ERPAdapterDataProvider implements DataProvider {
       case 'Stock':
         return adapter.getStock(id);
       default:
-        throw new Error(`Ressource "${resource}" non supportee`);
+        throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: "${resource}"`);
     }
   }
 
   async list(resource: string, ctx: RuntimeContext, options?: ListOptions): Promise<any> {
-    const adapter = this.erpAdapterService.getAdapter('DOLIBARR');
+    const adapter = await this.resolveAdapter(ctx);
     let items: any[];
     switch (resource) {
       case 'Product':
@@ -42,18 +59,23 @@ export class ERPAdapterDataProvider implements DataProvider {
         items = await adapter.getOrders();
         break;
       default:
-        throw new Error(`Ressource "${resource}" non supportee`);
+        throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: "${resource}"`);
     }
 
     const page = options?.page || 1;
     const pageSize = options?.pageSize || 20;
-    const total = items.length;
-    const totalPages = Math.ceil(total / pageSize);
+    const itemsArray = Array.isArray(items) ? items : [items];
+    const realTotal =
+      items && typeof items === 'object' && (items as any).total !== undefined
+        ? (items as any).total
+        : null;
+    const total = realTotal !== null ? realTotal : null;
+    const totalPages = total !== null && pageSize > 0 ? Math.ceil(total / pageSize) : null;
     const start = (page - 1) * pageSize;
-    const paged = items.slice(start, start + pageSize);
+    const pagedItems = itemsArray.slice(start, start + pageSize);
 
     return {
-      items: paged,
+      items: pagedItems,
       page,
       pageSize,
       total,
@@ -63,7 +85,7 @@ export class ERPAdapterDataProvider implements DataProvider {
 
   async count(resource: string, ctx: RuntimeContext, filter?: any): Promise<number> {
     const result = await this.list(resource, ctx, { pageSize: 1 });
-    return result.total;
+    return result.total ?? 0;
   }
 
   async exists(resource: string, id: string, ctx: RuntimeContext): Promise<boolean> {
@@ -80,7 +102,7 @@ export class ERPAdapterDataProvider implements DataProvider {
       Product: {
         resourceCode: 'Product',
         displayName: 'Produit',
-        provider: 'DOLIBARR',
+        provider: 'ERP_ADAPTER',
         instance: 'main',
         operations: ['READ', 'LIST', 'CREATE', 'UPDATE', 'DELETE'],
         fields: [
@@ -95,7 +117,7 @@ export class ERPAdapterDataProvider implements DataProvider {
       Client: {
         resourceCode: 'Client',
         displayName: 'Client',
-        provider: 'DOLIBARR',
+        provider: 'ERP_ADAPTER',
         instance: 'main',
         operations: ['READ', 'LIST', 'CREATE', 'UPDATE', 'DELETE'],
         fields: [
@@ -109,7 +131,7 @@ export class ERPAdapterDataProvider implements DataProvider {
       Order: {
         resourceCode: 'Order',
         displayName: 'Commande',
-        provider: 'DOLIBARR',
+        provider: 'ERP_ADAPTER',
         instance: 'main',
         operations: ['READ', 'LIST', 'CREATE', 'UPDATE', 'DELETE'],
         fields: [
@@ -117,7 +139,7 @@ export class ERPAdapterDataProvider implements DataProvider {
           { code: 'ref', displayName: 'Reference', type: 'STRING', required: true, nullable: false },
           { code: 'clientId', displayName: 'Client', type: 'REFERENCE', required: true, nullable: false },
           { code: 'total', displayName: 'Total', type: 'DECIMAL', required: false, nullable: true },
-          { code: 'status', displayName: 'Statut', type: 'ENUM', required: true, nullable: false },
+          { code: 'status', displayName: 'Statut', type: 'ENUM', required: true, nullable: false, enumValues: ['DRAFT','VALIDATED','PROCESSING','SHIPPED','DELIVERED','CANCELLED','PAID'] },
           { code: 'createdAt', displayName: 'Date creation', type: 'DATETIME', required: false, nullable: true },
         ],
         relations: [
@@ -127,13 +149,13 @@ export class ERPAdapterDataProvider implements DataProvider {
     };
     const descriptor = metadataMap[resource];
     if (!descriptor) {
-      throw new Error(`Metadata pour "${resource}" non disponible`);
+      throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: Metadata pour "${resource}" non disponible`);
     }
     return descriptor;
   }
 
   async create(resource: string, data: any, ctx: RuntimeContext): Promise<any> {
-    const adapter = this.erpAdapterService.getAdapter('DOLIBARR');
+    const adapter = await this.resolveAdapter(ctx);
     switch (resource) {
       case 'Product':
         return adapter.createProduct(data);
@@ -142,12 +164,12 @@ export class ERPAdapterDataProvider implements DataProvider {
       case 'Order':
         return adapter.createOrder(data);
       default:
-        throw new Error(`Creation de "${resource}" non supportee`);
+        throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: Creation de "${resource}" non supportee`);
     }
   }
 
   async update(resource: string, id: string, data: any, ctx: RuntimeContext): Promise<any> {
-    const adapter = this.erpAdapterService.getAdapter('DOLIBARR');
+    const adapter = await this.resolveAdapter(ctx);
     switch (resource) {
       case 'Product':
         return adapter.updateProduct(id, data);
@@ -156,12 +178,12 @@ export class ERPAdapterDataProvider implements DataProvider {
       case 'Order':
         return adapter.updateOrder(id, data);
       default:
-        throw new Error(`Mise a jour de "${resource}" non supportee`);
+        throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: Mise a jour de "${resource}" non supportee`);
     }
   }
 
   async remove(resource: string, id: string, ctx: RuntimeContext): Promise<void> {
-    const adapter = this.erpAdapterService.getAdapter('DOLIBARR');
+    const adapter = await this.resolveAdapter(ctx);
     switch (resource) {
       case 'Product':
         return adapter.deleteProduct(id);
@@ -170,7 +192,7 @@ export class ERPAdapterDataProvider implements DataProvider {
       case 'Order':
         return adapter.deleteOrder(id);
       default:
-        throw new Error(`Suppression de "${resource}" non supportee`);
+        throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: Suppression de "${resource}" non supportee`);
     }
   }
 }

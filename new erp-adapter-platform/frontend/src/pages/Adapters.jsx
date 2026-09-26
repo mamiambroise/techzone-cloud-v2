@@ -24,8 +24,8 @@ function Adapters() {
   useEffect(() => {
     const fetchData = async () => {
       const [healthRes, statsRes, regRes] = await Promise.allSettled([
-        healthService.check('DOLIBARR'),
-        statsService.get('DOLIBARR'),
+        healthService.check(),
+        statsService.get(),
         erpRegistryService.getAll(),
       ]);
       if (healthRes.status === 'fulfilled') setHealth(healthRes.value.data);
@@ -40,7 +40,13 @@ function Adapters() {
     fetchData();
   }, []);
 
-  const healthy = health?.status === 'UP' || health?.status === 'ok' || health?.status === 'HEALTHY';
+  const healthState = health?.status;
+  const healthy = healthState === 'CONNECTED';
+  const degraded = healthState === 'DEGRADED';
+  const unavailable = healthState === 'UNAVAILABLE';
+  const notConfigured = healthState === 'NOT_CONFIGURED';
+
+  const healthLabel = healthy ? 'Adapter connecte' : degraded ? 'Adapter degrade' : unavailable ? 'Adapter indisponible' : notConfigured ? 'Non configure' : 'Inconnu';
 
   const registryEntry = registry.find((r) => r.code === 'DOLIBARR');
   const stat = (key) => {
@@ -61,14 +67,14 @@ function Adapters() {
             Connecteurs entre la plateforme et le systeme ERP reel (Dolibarr). Aucun mock : donnees live via l API REST Dolibarr.
           </p>
         </div>
-        <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full font-medium ${
-            healthy ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${healthy ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`} />
-          {healthy ? 'Adapter connecte' : 'Adapter hors ligne'}
-        </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full font-medium ${
+              healthy ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : degraded ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${healthy ? 'bg-emerald-500' : degraded ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`} />
+            {healthLabel}
+          </span>
       </div>
 
       {error && (
@@ -85,7 +91,7 @@ function Adapters() {
             <ShieldCheckIcon className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sante globale</p>
           </div>
-          <p className={`text-2xl font-bold ${healthy ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+          <p className={`text-2xl font-bold ${healthy ? 'text-emerald-600 dark:text-emerald-400' : degraded ? 'text-amber-600 dark:text-amber-400' : unavailable ? 'text-red-600 dark:text-red-400' : notConfigured ? 'text-slate-600 dark:text-slate-400' : 'text-red-600 dark:text-red-400'}`}>
             {health?.status ?? 'INCONNU'}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Dernier check : {new Date(health?.timestamp ?? Date.now()).toLocaleString('fr-FR')}</p>

@@ -1,6 +1,8 @@
 import { DolibarrMapper } from './dolibarr.mapper';
 import { DolibarrError } from './dolibarr.error';
 import { DOLIBARR_ORDER_STATUS, TECHZONE_ORDER_STATUS } from './dolibarr.dto';
+import { DolibarrAdapter } from './dolibarr.adapter';
+import axios from 'axios';
 
 describe('DolibarrMapper', () => {
   describe('Client mapping', () => {
@@ -162,5 +164,126 @@ describe('DolibarrError', () => {
     const error = DolibarrError.fromHttpError(418);
     expect(error.code).toBe('ERP_ERROR');
     expect(error.httpStatus).toBe(500);
+  });
+});
+
+describe('DolibarrAdapter', () => {
+  let mockInstance: any;
+  let createSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    mockInstance = {
+      interceptors: {
+        response: {
+          use: jest.fn(),
+        },
+      },
+      get: jest.fn(),
+      post: jest.fn(),
+      put: jest.fn(),
+      patch: jest.fn(),
+      delete: jest.fn(),
+      request: jest.fn(),
+      defaults: {},
+    };
+
+    createSpy = jest.spyOn(axios, 'create').mockReturnValue(mockInstance);
+  });
+
+  afterEach(() => {
+    createSpy.mockRestore();
+  });
+
+  it('devrait etre defini', () => {
+    const adapter = new DolibarrAdapter();
+    expect(adapter).toBeDefined();
+  });
+
+  it('devrait appeler axios.create au moins une fois dans le constructeur', () => {
+    const adapter = new DolibarrAdapter();
+    expect(createSpy).toHaveBeenCalledTimes(1);
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: expect.stringContaining('/api/index.php'),
+      }),
+    );
+  });
+
+  describe('configure() - B3/F singleton isolation regression', () => {
+    it('devrait recreer l instance axios apres configure()', () => {
+      const adapter = new DolibarrAdapter();
+      expect(createSpy).toHaveBeenCalledTimes(1);
+
+      adapter.configure({ baseUrl: 'https://dolibarr-tenant.example.com' });
+      expect(createSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('devrait utiliser le nouveau baseUrl apres configure()', () => {
+      const adapter = new DolibarrAdapter();
+
+      adapter.configure({ baseUrl: 'https://tenant-b.dolibarr.com' });
+
+      expect(createSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          baseURL: 'https://tenant-b.dolibarr.com/api/index.php',
+        }),
+      );
+    });
+
+    it('devrait mettre a jour la cle API apres configure()', () => {
+      const adapter = new DolibarrAdapter();
+
+      adapter.configure({ baseUrl: 'https://dolibarr.com', apiKey: 'new-secret-key' });
+
+      expect(createSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            DOLAPIKEY: 'new-secret-key',
+          }),
+        }),
+      );
+    });
+
+    it('devrait mettre a jour l entity apres configure()', () => {
+      const adapter = new DolibarrAdapter();
+
+      adapter.configure({ baseUrl: 'https://dolibarr.com', entity: 5 });
+
+      expect(createSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            DOLAPIKEY: expect.any(String),
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('healthCheck', () => {
+    it('devrait retourner NOT_CONFIGURED si apiKey est vide', async () => {
+      const adapter = new DolibarrAdapter();
+      const result = await adapter.healthCheck();
+      expect(result.status).toBe('NOT_CONFIGURED');
+    });
+
+    it('devrait retourner CONNECTED si la requete reussit', async () => {
+      const adapter = new DolibarrAdapter();
+      adapter.configure({ apiKey: 'test-key' });
+      mockInstance.get.mockResolvedValue({ status: 200 });
+
+      const result = await adapter.healthCheck();
+      expect(result.status).toBe('CONNECTED');
+    });
+
+    it('devrait retourner UNAVAILABLE si connexion refusee', async () => {
+      const adapter = new DolibarrAdapter();
+      adapter.configure({ apiKey: 'test-key' });
+      const error: any = new Error('connect ECONNREFUSED');
+      error.code = 'ECONNREFUSED';
+      mockInstance.get.mockRejectedValue(error);
+
+      const result = await adapter.healthCheck();
+      expect(result.status).toBe('UNAVAILABLE');
+    });
   });
 });

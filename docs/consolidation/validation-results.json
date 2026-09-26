@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-26",
+  "frontend": {
+    "build": "PASS",
+    "lintCommand": "tsc --noEmit",
+    "lint": "PASS",
+    "browserErrorRendering": { "routes": 54, "pageErrors": 0, "apiMode": "EXPLICIT_TEST_DOUBLES" },
+    "protectedRouteAndLoginForm": "PASS"
+  },
+  "iam": {
+    "nodeContractTests": { "passed": 4, "failed": 0, "databaseMode": "SERVICE_DOUBLES" },
+    "realLogin": "FAIL_INVALID_CREDENTIALS_FOR_DOCUMENTED_SEED_ACCOUNT",
+    "additiveMigrations": "APPLIED_2026-09-25"
+  },
+  "platform": {
+    "build": "PASS",
+    "lint": "PASS",
+    "securityTests": { "passed": 4, "failed": 0 },
+    "initialFullSuite": { "passed": 68, "failed": 20, "note": "Database/fixture dependent failures; not a fully passing suite" }
+  },
+  "erp": {
+    "build": "PASS",
+    "lint": "FAIL_ESLINT_NOT_INSTALLED",
+    "finalUnitSuite": { "passed": 177, "failed": 0, "suitesPassed": 14 },
+    "realAuthenticatedOperations": "NOT_TESTED"
+  },
+  "finalRuntime": {
+    "frontend3000": "HTTP_200",
+    "iam5001": "DOWN_POSTGRES_TIMEOUT",
+    "erp3002": "DOWN_POSTGRES_TIMEOUT",
+    "platform3003": "DOWN_POSTGRES_TIMEOUT",
+    "dolibarr": "MYSQL_UNAVAILABLE"
+  },
+  "endToEnd": "PARTIAL_BLOCKED",
+  "legacyDirectoriesRemoved": 0
+}

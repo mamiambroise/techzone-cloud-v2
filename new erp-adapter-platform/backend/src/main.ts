@@ -1,20 +1,38 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import { TraceIdMiddleware } from './erp-adapter/trace-id.middleware';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: true,
+  });
+
+  // Security headers via helmet
+  app.use(
+    helmet({
+      crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginResourcePolicy: false,
+    }),
+  );
+
+  // Cookie parser for refresh token cookies
+  app.use(cookieParser());
 
   // Prefixe global pour toutes les routes API
   app.setGlobalPrefix('api');
 
-  // Activation du CORS (configurable via CORS_ORIGIN en production)
+  // CORS (strict: no wildcard with credentials)
   const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3001')
     .split(',')
-    .map((origin) => origin.trim());
+    .map((origin: string) => origin.trim());
   app.enableCors({
     origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -29,6 +47,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // TraceId propagation (before global filters so every response carries it)
+  const traceIdMiddleware = new TraceIdMiddleware();
+  app.use((req: Request, res: Response, next: NextFunction) => traceIdMiddleware.use(req, res, next));
 
   // Filtre global d'exceptions
   app.useGlobalFilters(new AllExceptionsFilter());

@@ -4,7 +4,7 @@ import {
   createConfig,
   updateConfig,
   getEffective,
-} from '../api/platform/configApi.js';
+} from '../services/api/platformConfigService.js';
 
 export const CONFIG_SCOPES = [
   'PLATFORM',

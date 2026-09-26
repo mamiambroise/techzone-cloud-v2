@@ -11,8 +11,8 @@ async function connectDatabase() {
     await prisma.$connect();
     console.log('✅ Connexion à la base de données réussie');
   } catch (err) {
-    console.error('❌ Échec de connexion à la base de données:', err.message);
-    process.exit(1);
+    console.error({ event: 'DATABASE_CONNECT_FAILED', code: err.code || err.errorCode || 'DATABASE_UNAVAILABLE' });
+    throw err;
   }
 }
 

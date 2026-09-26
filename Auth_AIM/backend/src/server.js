@@ -3,7 +3,13 @@ const config = require('./config/env');
 const { connectDatabase, prisma } = require('./config/database');
 
 async function start() {
-  await connectDatabase();
+  try {
+    await connectDatabase();
+  } catch {
+    // Keep HTTP available to report 503 and allow Prisma to reconnect on the
+    // next request. /ready remains the SQL availability check, not /health.
+    console.warn('IAM starting with database unavailable; check /ready.');
+  }
 
   const server = app.listen(config.port, () => {
     console.log(`✅ Auth+IAM+Context API démarrée sur le port ${config.port} (${config.nodeEnv})`);

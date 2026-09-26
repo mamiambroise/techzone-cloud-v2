@@ -4,7 +4,7 @@ import {
   createApplication as createApplicationApi,
   updateApplication as updateApplicationApi,
   archiveApplication as archiveApplicationApi,
-} from '../api/platform/applicationsApi.js';
+} from '../services/api/platformApplicationsService.js';
 
 export const VERSION_LIFECYCLE = [
   'DRAFT',

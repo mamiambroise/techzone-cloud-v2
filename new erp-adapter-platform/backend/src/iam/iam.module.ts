@@ -4,6 +4,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { IamAuthService } from './iam-auth.service';
 import { IamAdminService } from './iam-admin.service';
 import { IamJwtGuard } from './iam-jwt.guard';
+import { IamPermissionsGuard } from './iam-permissions.guard';
 import { IamAuthController } from './iam-auth.controller';
 import { IamUsersController } from './iam-users.controller';
 import { IamSessionsController } from './iam-sessions.controller';
@@ -17,6 +18,10 @@ import { IamSessionsController } from './iam-sessions.controller';
     {
       provide: APP_GUARD,
       useClass: IamJwtGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: IamPermissionsGuard,
     },
   ],
   exports: [IamAuthService, IamAdminService],

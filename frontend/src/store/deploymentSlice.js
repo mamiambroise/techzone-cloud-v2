@@ -15,38 +15,28 @@ import {
   archiveRelease,
   getReleaseHistory,
   compareReleases,
-} from '../api/deployment/deploymentApi.js';
-import {
   getDeployments,
   getDeployment,
   createDeployment,
   verifyDeployment,
   cancelDeployment,
   retryDeployment,
-} from '../api/deployment/deploymentsApi.js';
-import {
   getRollbacks,
   rollbackDeployment,
   rollbackEnvironment,
-} from '../api/deployment/rollbackApi.js';
-import {
   getGates,
   evaluateGate,
   approveGate,
   bypassGate,
-} from '../api/deployment/gatesApi.js';
-import {
   getEnvironmentDeployments,
   promoteRelease as promoteReleaseApi,
   lockEnvironment,
   unlockEnvironment,
   detectDrift,
-} from '../api/deployment/environmentDeploymentApi.js';
-import {
   getDeploymentHistory,
   getDeploymentTimeline,
   getDeploymentDiagnostics,
-} from '../api/deployment/deploymentDiagnosticsApi.js';
+} from '../services/api/deploymentService.js';
 
 const initialReleases = [
   {

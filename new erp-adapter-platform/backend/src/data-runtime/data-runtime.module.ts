@@ -8,10 +8,11 @@ import { DataBindingService } from './binding/data-binding.service';
 import { HistoryService } from './history/history.service';
 import { ValidationService } from './validation/validation.service';
 import { ErpAdapterModule } from '../erp-adapter/erp-adapter.module';
+import { ErpRegistryModule } from '../erp-registry/erp-registry.module';
 import { ResourceDescriptor } from './interfaces';
 
 @Module({
-  imports: [ErpAdapterModule],
+  imports: [ErpAdapterModule, ErpRegistryModule],
   controllers: [DataRuntimeController],
   providers: [
     DataAccessManager,
@@ -39,8 +40,6 @@ export class DataRuntimeModule {
   ) {
     // Register the ERP Adapter provider
     this.dataAccess.registerProvider('ERP_ADAPTER', this.erpDataProvider);
-    this.dataAccess.registerProvider('DOLIBARR', this.erpDataProvider);
-    this.dataAccess.registerProvider('MOCK', this.erpDataProvider);
 
     // Register canonical resources
     const productResource: ResourceDescriptor = {

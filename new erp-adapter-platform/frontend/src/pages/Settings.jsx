@@ -20,8 +20,8 @@ function Settings() {
   useEffect(() => {
     const fetchData = async () => {
       const [userRes, healthRes, regRes] = await Promise.allSettled([
-        userService.getAll('DOLIBARR'),
-        healthService.check('DOLIBARR'),
+         userService.getAll(),
+         healthService.check(),
         erpRegistryService.getAll(),
       ]);
       if (userRes.status === 'fulfilled') setUsers(Array.isArray(userRes.value.data) ? userRes.value.data : []);
@@ -43,7 +43,13 @@ function Settings() {
     return <TableSkeleton rows={9} />;
   }
 
-  const healthy = health?.status === 'UP' || health?.status === 'ok' || health?.status === 'HEALTHY';
+  const healthState = health?.status;
+  const healthy = healthState === 'CONNECTED';
+  const degraded = healthState === 'DEGRADED';
+  const unavailable = healthState === 'UNAVAILABLE';
+  const notConfigured = healthState === 'NOT_CONFIGURED';
+
+  const healthLabel = healthy ? 'Connecte' : degraded ? 'Degrade' : unavailable ? 'Indisponible' : notConfigured ? 'Non configure' : 'Inconnu';
 
   return (
     <div className="space-y-6">
@@ -56,11 +62,11 @@ function Settings() {
         </div>
         <span
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full font-medium ${
-            healthy ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+            healthy ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : degraded ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
           }`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${healthy ? 'bg-emerald-500' : 'bg-red-50 dark:bg-red-900/300'} animate-pulse`} />
-          {healthy ? 'Connecte' : 'Hors ligne'}
+          <span className={`w-1.5 h-1.5 rounded-full ${healthy ? 'bg-emerald-500' : degraded ? 'bg-amber-500' : 'bg-red-50 dark:bg-red-900/300'} animate-pulse`} />
+          {healthLabel}
         </span>
       </div>
 
@@ -93,7 +99,7 @@ function Settings() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500 dark:text-slate-400">Statut API</span>
-              <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${healthy ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'}`}>
+              <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${healthy ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : degraded ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' : unavailable ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' : notConfigured ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'}`}>
                 {health?.status ?? 'INCONNU'}
               </span>
             </div>

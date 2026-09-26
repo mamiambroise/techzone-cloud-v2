@@ -56,7 +56,7 @@ async function rotateRefreshToken(rawRefreshToken) {
     throw new AppError('Refresh token inconnu', 401, 'REFRESH_TOKEN_UNKNOWN');
   }
 
-  if (stored.status === 'REUSED' || stored.status === 'REVOKED') {
+  if (stored.status === 'REUSED' || stored.status === 'REVOKED' || stored.status === 'ROTATED') {
     await revokeTokenFamily({
       familyId: stored.familyId,
       revokedBy: 'SYSTEM',

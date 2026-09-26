@@ -11,6 +11,7 @@ datasource db {
 // Table principale des ERP enregistrés
 model ERPRegistry {
   id             String    @id @default(uuid())
+  tenantId       String    @db.VarChar(100)
   code           String    @unique
   nom            String
   type           String
@@ -25,6 +26,9 @@ model ERPRegistry {
   // Relations
   entityMappings EntityMapping[]
 
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@unique([tenantId, code])
   @@map("erp_registry")
 }
 
@@ -46,6 +50,7 @@ model AdapterRegistry {
 // Table des correspondances d'entités
 model EntityMapping {
   id            String   @id @default(uuid())
+  tenantId      String   @db.VarChar(100)
   erpId         String   @map("erp_id")
   entity        String
   erpEntity     String   @map("erp_entity")
@@ -58,7 +63,9 @@ model EntityMapping {
   // Relations
   erp ERPRegistry @relation(fields: [erpId], references: [id], onDelete: Cascade)
 
-  @@unique([erpId, entity])
+  @@unique([tenantId, erpId, entity])
+  @@index([tenantId])
+  @@index([erpId])
   @@map("entity_mapping")
 }
 

@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { IamAuthService } from './iam-auth.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser, IamAuthContext } from './decorators/current-user.decorator';
@@ -12,6 +12,11 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import {
+  COOKIE_ACCESS_TOKEN,
+  COOKIE_OPTIONS,
+  COOKIE_REFRESH_TOKEN,
+} from './iam.constants';
 
 @ApiTags('iam-auth')
 @Controller('iam/auth')
@@ -28,37 +33,54 @@ export class IamAuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res() res: Response) {
     const data = await this.authService.login(
       dto,
       req.ip,
       req.headers['user-agent'],
     );
-    return {
+    this.setTokenCookies(res, data.accessToken, data.refreshToken);
+    res.json({
       success: true,
       message: data.mfaRequired ? 'MFA requis' : 'Connexion réussie',
-      data,
-    };
+    });
   }
 
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() dto: RefreshDto) {
+  async refresh(@Body() dto: RefreshDto, @Res() res: Response) {
     const data = await this.authService.refresh(dto);
-    return { success: true, message: 'Token rafraîchi', data };
+    this.setTokenCookies(res, data.accessToken, data.refreshToken);
+    res.json({ success: true, message: 'Token rafraîchi' });
+  }
+
+  private setTokenCookies(res: Response, accessToken: string, refreshToken: string) {
+    res.cookie(COOKIE_ACCESS_TOKEN, accessToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: 15 * 60 * 1000,
+    });
+    res.cookie(COOKIE_REFRESH_TOKEN, refreshToken, COOKIE_OPTIONS);
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@CurrentUser() ctx: IamAuthContext) {
-    return this.authService.logout(ctx);
+  async logout(@CurrentUser() ctx: IamAuthContext, @Res() res: Response) {
+    await this.authService.logout(ctx);
+    res.cookie(COOKIE_ACCESS_TOKEN, '', { ...COOKIE_OPTIONS, maxAge: 0 });
+    res.cookie(COOKIE_REFRESH_TOKEN, '', { ...COOKIE_OPTIONS, maxAge: 0 });
+    res.json({ success: true, message: 'Déconnexion réussie' });
   }
 
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
-  async logoutAll(@CurrentUser() ctx: IamAuthContext, @Body() dto: LogoutAllDto) {
-    return this.authService.logoutAll(ctx, dto.keepCurrentSession);
+  async logoutAll(@CurrentUser() ctx: IamAuthContext, @Body() dto: LogoutAllDto, @Res() res: Response) {
+    await this.authService.logoutAll(ctx, dto.keepCurrentSession);
+    if (!dto.keepCurrentSession) {
+      res.cookie(COOKIE_ACCESS_TOKEN, '', { ...COOKIE_OPTIONS, maxAge: 0 });
+      res.cookie(COOKIE_REFRESH_TOKEN, '', { ...COOKIE_OPTIONS, maxAge: 0 });
+    }
+    res.json({ success: true, message: 'Toutes les sessions ont été déconnectées' });
   }
 
   @Post('change-password')

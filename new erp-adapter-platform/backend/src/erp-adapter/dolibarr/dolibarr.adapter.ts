@@ -43,13 +43,17 @@ import { DolibarrClient, DolibarrProduct, DolibarrOrder, DolibarrUser, DolibarrV
 @Injectable()
 export class DolibarrAdapter implements IErpAdapter {
   private readonly logger = new Logger(DolibarrAdapter.name);
-  private readonly http: AxiosInstance;
+  private http: AxiosInstance;
   private config: DolibarrConfig;
 
   constructor() {
     this.config = { ...DEFAULT_DOLIBARR_CONFIG };
+    this.http = this.createHttpClient();
+    this.logger.log(`DolibarrAdapter cree - URL: ${this.config.baseUrl}`);
+  }
 
-    this.http = axios.create({
+  private createHttpClient(): AxiosInstance {
+    const http = axios.create({
       baseURL: `${this.config.baseUrl}/api/index.php`,
       timeout: this.config.timeout,
       headers: {
@@ -60,7 +64,7 @@ export class DolibarrAdapter implements IErpAdapter {
     });
 
     // Intercepteur de retry avec backoff exponentiel
-    this.http.interceptors.response.use(
+    http.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
         const config = error.config as any;
@@ -74,14 +78,14 @@ export class DolibarrAdapter implements IErpAdapter {
           const delay = this.config.retryDelay * Math.pow(2, config.__retryCount - 1);
           this.logger.warn(`Retry ${config.__retryCount}/${this.config.retryAttempts} dans ${delay}ms`);
           await new Promise((r) => setTimeout(r, delay));
-          return this.http.request(config);
+          return http.request(config);
         }
 
         throw this.handleError(error);
       },
     );
 
-    this.logger.log(`DolibarrAdapter cree - URL: ${this.config.baseUrl}`);
+    return http;
   }
 
   // === CONFIGURATION ===
@@ -91,6 +95,7 @@ export class DolibarrAdapter implements IErpAdapter {
    */
   configure(config: Partial<DolibarrConfig>): void {
     this.config = { ...this.config, ...config };
+    this.http = this.createHttpClient();
     this.logger.log(`DolibarrAdapter reconfigure - URL: ${this.config.baseUrl}`);
   }
 
@@ -133,12 +138,21 @@ export class DolibarrAdapter implements IErpAdapter {
 
   // === PRODUITS (Products) ===
 
+  // === PRODUITS (Products) ===
+
   async getProducts(): Promise<ErpProduct[]> {
     this.logger.log('GET /products');
-    const { data } = await this.http.get('/products', {
+    const { data, headers } = await this.http.get('/products', {
       params: { entity: this.config.entity, limit: 100 },
     });
-    const products: DolibarrProduct[] = Array.isArray(data) ? data : data.products || [];
+    const contentType = (headers['content-type'] as string) || '';
+    if (!contentType.includes('application/json')) {
+      throw DolibarrError.ERP_ERROR(`Reponse invalide: content-type ${contentType}`);
+    }
+    if (typeof data === 'string') {
+      throw DolibarrError.ERP_ERROR('Reponse invalide: JSON attendu, HTML recu');
+    }
+    const products: DolibarrProduct[] = Array.isArray(data) ? data : data?.products || [];
     this.logger.log(`${products.length} produits recus`);
     return products.map(DolibarrMapper.mapFromDolibarrProduct);
   }
@@ -241,21 +255,25 @@ export class DolibarrAdapter implements IErpAdapter {
   // === HEALTH CHECK ===
 
   async healthCheck(): Promise<HealthCheckResult> {
+    const timestamp = new Date().toISOString();
+    if (!this.config.apiKey) {
+      return { status: 'NOT_CONFIGURED', mode: 'DOLIBARR', timestamp };
+    }
     try {
       this.logger.log('Health check Dolibarr');
       await this.http.get('/status', { timeout: 5000 });
-      return {
-        status: 'HEALTHY',
-        mode: 'DOLIBARR',
-        timestamp: new Date().toISOString(),
-      };
+      return { status: 'CONNECTED', mode: 'DOLIBARR', timestamp };
     } catch (error) {
-      this.logger.error(`Health check echoue: ${error.message}`);
-      return {
-        status: 'UNHEALTHY',
-        mode: 'DOLIBARR',
-        timestamp: new Date().toISOString(),
-      };
+      const err = error as AxiosError;
+      if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT' || err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+        return { status: 'UNAVAILABLE', mode: 'DOLIBARR', timestamp };
+      }
+      if (err.response) {
+        if (err.response.status === 401 || err.response.status === 403) {
+          return { status: 'DEGRADED', mode: 'DOLIBARR', timestamp };
+        }
+      }
+      return { status: 'DEGRADED', mode: 'DOLIBARR', timestamp };
     }
   }
 
@@ -266,7 +284,7 @@ export class DolibarrAdapter implements IErpAdapter {
     const products = await this.getProducts();
     return products.map((p) => ({
       productId: p.id,
-      currentStock: p.stock,
+      currentStock: Number.isNaN(Number(p.stock || 0)) ? 0 : Number(p.stock || 0),
       lastUpdated: new Date().toISOString(),
     }));
   }

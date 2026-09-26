@@ -14,6 +14,7 @@ import {
   HealthState,
   DATA_RUNTIME_CONTRACT_VERSION,
 } from '../interfaces';
+import { MAX_PAGE_SIZE } from '../interfaces/query.contract';
 
 export interface DataProvider {
   get(resource: string, id: string, ctx: RuntimeContext): Promise<any>;
@@ -116,7 +117,69 @@ export class DataAccessManager {
   }
 
   async getCapabilities(ctx: RuntimeContext): Promise<Capability[]> {
-    return [];
+    const capabilities: Capability[] = [];
+    for (const resource of this.resources.values()) {
+      const provider = this.providers.get(resource.provider);
+      if (provider) {
+        const availability: CapabilityAvailability = 'AVAILABLE';
+        capabilities.push({
+          code: `${resource.resourceCode}.read`,
+          provider: resource.provider,
+          resource: resource.resourceCode,
+          operation: 'READ',
+          availability,
+          contractVersion: DATA_RUNTIME_CONTRACT_VERSION,
+          constraints: {
+            pagination: true,
+            sorting: true,
+            filtering: true,
+            maxPageSize: MAX_PAGE_SIZE,
+            batch: false,
+            transactions: false,
+            readOnly: false,
+          },
+        });
+        if (resource.operations.includes('LIST')) {
+          capabilities.push({
+            code: `${resource.resourceCode}.list`,
+            provider: resource.provider,
+            resource: resource.resourceCode,
+            operation: 'LIST',
+            availability,
+            contractVersion: DATA_RUNTIME_CONTRACT_VERSION,
+            constraints: {
+              pagination: true,
+              sorting: true,
+              filtering: true,
+              maxPageSize: MAX_PAGE_SIZE,
+              batch: false,
+              transactions: false,
+              readOnly: true,
+            },
+          });
+        }
+        if (resource.operations.includes('CREATE')) {
+          capabilities.push({
+            code: `${resource.resourceCode}.create`,
+            provider: resource.provider,
+            resource: resource.resourceCode,
+            operation: 'CREATE',
+            availability,
+            contractVersion: DATA_RUNTIME_CONTRACT_VERSION,
+            constraints: {
+              pagination: false,
+              sorting: false,
+              filtering: false,
+              maxPageSize: 1,
+              batch: true,
+              transactions: true,
+              readOnly: false,
+            },
+          });
+        }
+      }
+    }
+    return capabilities;
   }
 
   async getContract(): Promise<DataRuntimeContract> {
@@ -155,10 +218,6 @@ export class DataAccessManager {
     if (descriptor) {
       return this.getProvider(descriptor.provider);
     }
-    const defaultProvider = this.providers.get('ERP_ADAPTER');
-    if (defaultProvider) {
-      return defaultProvider;
-    }
-    throw new NotFoundException(`Aucun provider disponible pour la ressource "${resource}"`);
+    throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: Aucun provider disponible pour la ressource "${resource}"`);
   }
 }

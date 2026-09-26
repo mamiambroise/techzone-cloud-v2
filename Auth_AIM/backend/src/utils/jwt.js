@@ -9,9 +9,12 @@ function signAccessToken(payload) {
 }
 
 function verifyAccessToken(token) {
-  return jwt.verify(token, config.jwt.accessSecret, {
+  const decoded = jwt.verify(token, config.jwt.accessSecret, {
     issuer: 'techzone-cloud-iam',
+    algorithms: ['HS256'],
   });
+  if (decoded.purpose || !decoded.userId || !decoded.sessionId) throw new Error('Invalid access token');
+  return decoded;
 }
 
 function signRefreshToken(payload) {

@@ -45,6 +45,8 @@ function Dashboard() {
   const [documentsCount, setDocumentsCount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [widgetErrors, setWidgetErrors] = useState({});
+  const healthState = erpHealth?.status;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,14 +56,25 @@ function Dashboard() {
           await Promise.allSettled([
             erpRegistryService.getAll(),
             automationService.cockpit(),
-            healthService.check('DOLIBARR'),
-            statsService.get('DOLIBARR'),
-            orderService.getAll('DOLIBARR'),
-            invoiceService.getAll('DOLIBARR'),
-            productService.getAll('DOLIBARR'),
-            clientService.getAll('DOLIBARR'),
-            documentService.getAll('DOLIBARR'),
+            healthService.check(),
+            statsService.get(),
+            orderService.getAll(),
+            invoiceService.getAll(),
+            productService.getAll(),
+            clientService.getAll(),
+            documentService.getAll(),
           ]);
+        const errors = {};
+        if (erpRes.status === 'rejected') errors.erps = erpRes.reason;
+        if (autoRes.status === 'rejected') errors.automation = autoRes.reason;
+        if (healthRes.status === 'rejected') errors.health = healthRes.reason;
+        if (statsRes.status === 'rejected') errors.metrics = statsRes.reason;
+        if (orderRes.status === 'rejected') errors.orders = orderRes.reason;
+        if (invRes.status === 'rejected') errors.invoices = invRes.reason;
+        if (prodRes.status === 'rejected') errors.products = prodRes.reason;
+        if (clientRes.status === 'rejected') errors.clients = clientRes.reason;
+        if (docRes.status === 'rejected') errors.documents = docRes.reason;
+        setWidgetErrors(errors);
         if (erpRes.status === 'fulfilled') {
           const erps = erpRes.value.data;
           setRecentErps(erps.slice(0, 5));
@@ -96,6 +109,35 @@ function Dashboard() {
       <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-6 flex items-center gap-3">
         <ExclamationTriangleIcon className="w-6 h-6 text-red-500 dark:text-red-400" />
         <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
+      </div>
+    );
+  }
+
+  const failedWidgets = Object.entries(widgetErrors);
+
+  if (failedWidgets.length > 0) {
+    return (
+      <div className="space-y-4">
+        {failedWidgets.map(([key, err]) => {
+          const msg = err?.response?.data?.message || err?.message || 'Donnees indisponibles';
+          const traceId = err?.response?.data?.traceId || err?.traceId || null;
+          return (
+            <div key={key} className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0" />
+              <div>
+                <p className="text-red-700 dark:text-red-300 font-medium text-sm">
+                  {key}: {msg}
+                </p>
+                {traceId && (
+                  <p className="text-xs text-red-400 dark:text-red-500 mt-0.5">TraceId: {traceId}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <p className="text-xs text-slate-400 dark:text-slate-500 px-2">
+          Les widgets fonctionnels affichent leurs donnees. Les widgets en echec affichent une erreur explicite.
+        </p>
       </div>
     );
   }
@@ -303,9 +345,9 @@ function Dashboard() {
             Vue d'ensemble des activités ERP : clients, produits, commandes, factures, stocks.
           </p>
         </div>
-        <span className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Adapter {erpHealth?.mode ?? 'DOLIBARR'} actif · donnees reelles
+        <span className={`self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full font-medium ${healthState === 'CONNECTED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : healthState === 'DEGRADED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' : healthState === 'UNAVAILABLE' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${healthState === 'CONNECTED' ? 'bg-emerald-500' : healthState === 'DEGRADED' ? 'bg-amber-500' : healthState === 'UNAVAILABLE' ? 'bg-red-500' : 'bg-slate-400'} animate-pulse`} />
+          Adapter {erpHealth?.mode ?? 'DOLIBARR'} {healthState === 'CONNECTED' ? 'connecte' : healthState === 'DEGRADED' ? 'degrade' : healthState === 'UNAVAILABLE' ? 'indisponible' : healthState === 'NOT_CONFIGURED' ? 'non configure' : 'inconnu'} · donnees reelles
         </span>
       </div>
 
@@ -675,12 +717,18 @@ function Dashboard() {
                   <span className="text-sm text-slate-500 dark:text-slate-400">Statut global</span>
                   <span
                     className={`px-2.5 py-1 text-xs rounded-full font-medium ${
-                      erpHealth.status === 'UP' || erpHealth.status === 'ok' || erpHealth.status === 'HEALTHY'
+                      healthState === 'CONNECTED'
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                        : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                        : healthState === 'DEGRADED'
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                          : healthState === 'UNAVAILABLE'
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                            : healthState === 'NOT_CONFIGURED'
+                              ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                              : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
                     }`}
                   >
-                    {erpHealth.status ?? 'UP'}
+                    {erpHealth.status ?? 'INCONNU'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

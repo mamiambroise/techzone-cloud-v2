@@ -50,9 +50,9 @@ describe('MockAdapter', () => {
   // === TESTS PRODUITS ===
 
   describe('Produits', () => {
-    it('devrait retourner 5 produits par defaut', async () => {
+    it('devrait retourner 8 produits par defaut', async () => {
       const products = await adapter.getProducts();
-      expect(products).toHaveLength(5);
+      expect(products).toHaveLength(8);
     });
 
     it('devrait recuperer un produit par ID', async () => {
@@ -87,9 +87,9 @@ describe('MockAdapter', () => {
   // === TESTS COMMANDES ===
 
   describe('Commandes', () => {
-    it('devrait retourner 3 commandes par defaut', async () => {
+    it('devrait retourner 5 commandes par defaut', async () => {
       const orders = await adapter.getOrders();
-      expect(orders).toHaveLength(3);
+      expect(orders).toHaveLength(5);
     });
 
     it('devrait recuperer une commande par ID', async () => {
@@ -137,9 +137,9 @@ describe('MockAdapter', () => {
   // === TESTS SANTE ===
 
   describe('Health', () => {
-    it('devrait retourner HEALTHY', async () => {
+    it('devrait retourner CONNECTED', async () => {
       const health = await adapter.healthCheck();
-      expect(health.status).toBe('HEALTHY');
+      expect(health.status).toBe('CONNECTED');
       expect(health.mode).toBe('MOCK');
     });
   });

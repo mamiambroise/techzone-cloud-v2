@@ -8,14 +8,14 @@ import {
   activateConnector,
   disableConnector,
   archiveConnector,
-} from '../api/connectorsApi.js';
+} from '../services/api/connectorsService.js';
 import {
   getApis,
   createApi,
   updateApi,
   transitionApiStatus,
   deleteApi,
-} from '../api/apisApi.js';
+} from '../services/api/apisService.js';
 import {
   getWebhooks,
   createWebhook,
@@ -24,7 +24,7 @@ import {
   deleteWebhook,
   triggerInboundTest,
   getDeliveries,
-} from '../api/webhooksApi.js';
+} from '../services/api/webhooksService.js';
 import {
   getCredentials,
   createCredential,
@@ -34,7 +34,7 @@ import {
   archiveCredential as archiveCredentialApi,
   testCredential,
   associateCredential,
-} from '../api/credentialsApi.js';
+} from '../services/api/credentialsService.js';
 import {
   getSynchronizations,
   createSync,
@@ -45,11 +45,11 @@ import {
   cancelSync,
   getCheckpoint,
   deleteSync,
-} from '../api/synchronizationsApi.js';
+} from '../services/api/synchronizationsService.js';
 import {
   getDiagnosticsMetrics,
   getLogs,
-} from '../api/diagnosticsApi.js';
+} from '../services/api/diagnosticsService.js';
 
 // Standard Error Codes defined in API-CDC-00 Section 8 & API-CDC-07 Section 3
 export const INTEGRATION_ERROR_CODES = {

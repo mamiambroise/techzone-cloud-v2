@@ -1,0 +1,21 @@
+{
+  "mode": "REAL_HTTP_AND_CONFIGURED_DATABASE",
+  "steps": [
+    {
+      "route": "/api/iam/me",
+      "method": "GET",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "traceId": "e0d4be68-d4a7-416b-8e45-5bba94ef0b92",
+      "ms": 67
+    },
+    {
+      "route": "/api/iam/auth/login",
+      "method": "POST",
+      "status": 401,
+      "code": "INVALID_CREDENTIALS",
+      "traceId": "47e0f0a3-4ddd-4cd9-b838-f390dac922f6",
+      "ms": 820
+    }
+  ]
+}

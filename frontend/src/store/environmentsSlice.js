@@ -4,7 +4,7 @@ import {
   createEnvironment,
   updateEnvironment,
   getEnvironmentHistory,
-} from '../api/platform/environmentsApi.js';
+} from '../services/api/platformEnvironmentsService.js';
 
 const initialEnvironments = [
   {

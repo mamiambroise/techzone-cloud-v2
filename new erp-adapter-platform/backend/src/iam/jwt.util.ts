@@ -37,6 +37,8 @@ export interface AccessTokenPayload {
   tenantId?: string | null;
   organizationId?: string | null;
   authenticationLevel?: string | null;
+  roles?: string[];
+  permissions?: string[];
   iss?: string;
 }
 
@@ -47,7 +49,11 @@ export function signAccessToken(payload: AccessTokenPayload): string {
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  return jwt.verify(token, getAccessSecret()) as AccessTokenPayload;
+  const decoded = jwt.verify(token, getAccessSecret(), { algorithms: ['HS256'] }) as jwt.JwtPayload;
+  if (!decoded.userId || !decoded.sessionId || decoded.purpose ||
+      (decoded.iss && decoded.iss !== 'techzone-cloud-iam') ||
+      (!decoded.iss && decoded.type !== 'access')) throw new Error('Invalid access token');
+  return decoded as AccessTokenPayload;
 }
 
 export function issueRefreshTokenPayload(): { raw: string; hash: string; familyId: string } {

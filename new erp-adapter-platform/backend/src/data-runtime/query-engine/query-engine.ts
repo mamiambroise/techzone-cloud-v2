@@ -47,37 +47,51 @@ export class QueryEngine {
       items: result.items || [],
       page: result.page || page,
       pageSize: result.pageSize || pageSize,
-      total: result.total || 0,
-      totalPages: result.totalPages || 0,
+      total: result.total ?? null,
+      totalPages: result.totalPages ?? null,
     };
   }
 
   private validateQuery(query: QueryContract): void {
     if (!query.resource || typeof query.resource !== 'string') {
-      throw new BadRequestException('resource est requis et doit etre une chaine');
+      throw new BadRequestException('INVALID_QUERY: resource est requis et doit etre une chaine');
     }
 
     if (query.filter) {
       this.validateFilterGroup(query.filter, 0);
+      this.rejectTenantOverride(query.filter);
     }
 
     if (query.sort) {
       for (const sort of query.sort) {
         if (!sort.field || typeof sort.field !== 'string') {
-          throw new BadRequestException('sort.field est requis');
+          throw new BadRequestException('INVALID_SORT: sort.field est requis');
         }
         if (!['ASC', 'DESC'].includes(sort.direction)) {
-          throw new BadRequestException('sort.direction doit etre ASC ou DESC');
+          throw new BadRequestException('INVALID_SORT: sort.direction doit etre ASC ou DESC');
         }
       }
     }
 
     if (query.page !== undefined && query.page < 1) {
-      throw new BadRequestException('page doit etre >= 1');
+      throw new BadRequestException('INVALID_QUERY: page doit etre >= 1');
     }
 
     if (query.pageSize !== undefined && (query.pageSize < 1 || query.pageSize > MAX_PAGE_SIZE)) {
-      throw new BadRequestException(`pageSize doit etre entre 1 et ${MAX_PAGE_SIZE}`);
+      throw new BadRequestException(`INVALID_QUERY: pageSize doit etre entre 1 et ${MAX_PAGE_SIZE}`);
+    }
+  }
+
+  private rejectTenantOverride(group: FilterGroup): void {
+    for (const condition of group.conditions) {
+      if ('logic' in condition) {
+        this.rejectTenantOverride(condition as FilterGroup);
+      } else {
+        const filter = condition as FilterCondition;
+        if (filter.field === 'tenantId' || filter.field === 'tenant_id' || filter.field === 'tenant') {
+          throw new BadRequestException('INVALID_FILTER: Filtrage par tenant interdit dans le corps de la requete');
+        }
+      }
     }
   }
 

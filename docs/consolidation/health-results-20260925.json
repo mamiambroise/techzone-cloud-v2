@@ -1,0 +1,62 @@
+[
+  {
+    "port": 3000,
+    "route": "/login",
+    "status": 200,
+    "trace": null
+  },
+  {
+    "port": 5001,
+    "route": "/health",
+    "status": 200,
+    "trace": "bfeca8b8-e7fc-49bb-9056-4407858f2081"
+  },
+  {
+    "port": 5001,
+    "route": "/api/iam/me",
+    "status": 401,
+    "trace": "101d7c83-91cc-44ce-9b81-373b398995a7"
+  },
+  {
+    "port": 5001,
+    "route": "/api/iam/users",
+    "status": 401,
+    "trace": "0e5cc954-23e6-4a91-93c2-5d5969a48662"
+  },
+  {
+    "port": 3003,
+    "route": "/health",
+    "status": 200,
+    "trace": null
+  },
+  {
+    "port": 3003,
+    "route": "/api/platform/applications",
+    "status": 401,
+    "trace": null
+  },
+  {
+    "port": 3002,
+    "route": "/api/config/public",
+    "status": 200,
+    "trace": "tr-mugbbs0s-sishr4l3"
+  },
+  {
+    "port": 3002,
+    "route": "/api/erp-registry",
+    "status": 401,
+    "trace": "tr-mugbbs1g-royqp9md"
+  },
+  {
+    "port": 3002,
+    "route": "/api/data-runtime/contract",
+    "status": 401,
+    "trace": "tr-mugbbs1m-dc256h5u"
+  },
+  {
+    "port": 3002,
+    "route": "/api/automation/contract",
+    "status": 401,
+    "trace": "tr-mugbbs1v-opef3qmq"
+  }
+]

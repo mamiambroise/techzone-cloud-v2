@@ -1,0 +1,58 @@
+[
+  {
+    "service": "Auth_AIM/backend",
+    "env": "Auth_AIM/backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "167.86.71.186",
+    "port": "28417",
+    "database": "techzonecloud",
+    "schema": "auth_aim",
+    "prisma": "Auth_AIM/backend/prisma/schema.prisma",
+    "tcp": "LISTENING",
+    "sql": "FAILED",
+    "errorCode": "TIMEOUT"
+  },
+  {
+    "service": "backend",
+    "env": "backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "167.86.71.186",
+    "port": "28417",
+    "database": "techzonecloud",
+    "schema": "business_manager",
+    "prisma": "backend/prisma/schema.prisma",
+    "tcp": "TIMEOUT",
+    "sql": "FAILED",
+    "errorCode": "TIMEOUT"
+  },
+  {
+    "service": "new erp-adapter-platform/backend",
+    "env": "new erp-adapter-platform/backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "167.86.71.186",
+    "port": "28417",
+    "database": "techzonecloud",
+    "schema": "erp_adapter",
+    "prisma": "new erp-adapter-platform/backend/prisma/schema.prisma",
+    "tcp": "TIMEOUT",
+    "sql": "FAILED",
+    "errorCode": "TIMEOUT"
+  },
+  {
+    "service": "team4-platform-api/backend",
+    "env": "team4-platform-api/backend/.env",
+    "source": ".env",
+    "DATABASE_URL": "PRESENT",
+    "host": "localhost",
+    "port": "5432",
+    "database": "techzonecloud",
+    "schema": "business_manager",
+    "prisma": "team4-platform-api/backend/prisma/schema.prisma",
+    "tcp": "LISTENING",
+    "sql": "FAILED",
+    "errorCode": "AUTHENTICATION_CONFIG_INVALID"
+  }
+]

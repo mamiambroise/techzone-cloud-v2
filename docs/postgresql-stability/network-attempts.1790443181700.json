@@ -1,0 +1,192 @@
+[
+  {
+    "attempt": 1,
+    "timestamp": "2026-09-26T17:01:18.604Z",
+    "TCP_CONNECT": {
+      "result": "PASS",
+      "ms": 387
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "PASS",
+      "ms": 3501,
+      "protocol": "PostgreSQL_SSLRequest",
+      "sslOffered": true
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8001
+    }
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2026-09-26T17:01:40.502Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6001,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6003,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8003
+    }
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2026-09-26T17:02:10.516Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6014,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6005,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8014
+    }
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2026-09-26T17:02:40.556Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6004,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6014,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8009
+    }
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2026-09-26T17:03:10.585Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6004,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6013,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8008
+    }
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2026-09-26T17:03:40.614Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6016,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6010,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8003
+    }
+  },
+  {
+    "attempt": 7,
+    "timestamp": "2026-09-26T17:04:10.644Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6014,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6005,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8006
+    }
+  },
+  {
+    "attempt": 8,
+    "timestamp": "2026-09-26T17:04:40.686Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6002,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6010,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8011
+    }
+  },
+  {
+    "attempt": 9,
+    "timestamp": "2026-09-26T17:05:10.723Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6012,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6005,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8014
+    }
+  },
+  {
+    "attempt": 10,
+    "timestamp": "2026-09-26T17:05:40.767Z",
+    "TCP_CONNECT": {
+      "result": "FAIL",
+      "ms": 6011,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "POSTGRES_HANDSHAKE": {
+      "result": "FAIL",
+      "ms": 6003,
+      "category": "NETWORK_TIMEOUT"
+    },
+    "SQL_CONNECT": {
+      "result": "FAIL",
+      "category": "NETWORK_TIMEOUT",
+      "ms": 8004
+    }
+  }
+]

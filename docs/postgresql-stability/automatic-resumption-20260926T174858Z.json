@@ -1,0 +1,223 @@
+{
+  "cycles": [
+    {
+      "attempt": 1,
+      "timestamp": "2026-09-26T17:48:58.308Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6020,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6026,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8008
+      }
+    },
+    {
+      "attempt": 2,
+      "timestamp": "2026-09-26T17:49:28.392Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6017,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6019,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8003
+      }
+    },
+    {
+      "attempt": 3,
+      "timestamp": "2026-09-26T17:49:58.448Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6013,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6009,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8001
+      }
+    },
+    {
+      "attempt": 4,
+      "timestamp": "2026-09-26T17:50:28.474Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6005,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6000,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8005
+      }
+    },
+    {
+      "attempt": 5,
+      "timestamp": "2026-09-26T17:50:58.502Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6001,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6008,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8013
+      }
+    },
+    {
+      "attempt": 6,
+      "timestamp": "2026-09-26T17:51:28.530Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6002,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6002,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8005
+      }
+    },
+    {
+      "attempt": 7,
+      "timestamp": "2026-09-26T17:51:58.543Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6002,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6003,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8003
+      }
+    },
+    {
+      "attempt": 8,
+      "timestamp": "2026-09-26T17:52:28.554Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6000,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6002,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8005
+      }
+    },
+    {
+      "attempt": 9,
+      "timestamp": "2026-09-26T17:52:58.566Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6002,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6002,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8001
+      }
+    },
+    {
+      "attempt": 10,
+      "timestamp": "2026-09-26T17:53:28.591Z",
+      "TCP_CONNECT": {
+        "result": "FAIL",
+        "ms": 6000,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "POSTGRES_HANDSHAKE": {
+        "result": "FAIL",
+        "ms": 6010,
+        "category": "NETWORK_TIMEOUT"
+      },
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8001
+      }
+    }
+  ],
+  "schemas": [
+    {
+      "timestamp": "2026-09-26T17:49:50.037Z",
+      "service": "IAM",
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8005
+      }
+    },
+    {
+      "timestamp": "2026-09-26T17:49:58.054Z",
+      "service": "PLATFORM",
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8011
+      }
+    },
+    {
+      "timestamp": "2026-09-26T17:50:06.069Z",
+      "service": "ERP",
+      "SQL_CONNECT": {
+        "result": "FAIL",
+        "category": "NETWORK_TIMEOUT",
+        "ms": 8003
+      }
+    }
+  ]
+}

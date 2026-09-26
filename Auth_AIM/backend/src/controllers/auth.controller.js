@@ -1,5 +1,6 @@
 const authService = require('../services/auth.service');
 const { success } = require('../utils/response');
+const { setAuthCookies, clearAuthCookies } = require('../utils/auth-cookies');
 
 async function register(req, res, next) {
   try {
@@ -17,7 +18,7 @@ async function login(req, res, next) {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
-    return success(res, { data: result, message: result.mfaRequired ? 'MFA requis' : 'Connexion réussie' });
+    return success(res, { data: setAuthCookies(res, result), message: result.mfaRequired ? 'MFA requis' : 'Connexion réussie' });
   } catch (err) {
     return next(err);
   }
@@ -30,7 +31,7 @@ async function verifyMfa(req, res, next) {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
-    return success(res, { data: result, message: 'Connexion réussie' });
+    return success(res, { data: setAuthCookies(res, result), message: 'Connexion réussie' });
   } catch (err) {
     return next(err);
   }
@@ -38,8 +39,8 @@ async function verifyMfa(req, res, next) {
 
 async function refresh(req, res, next) {
   try {
-    const tokens = await authService.refresh({ refreshToken: req.body.refreshToken });
-    return success(res, { data: tokens, message: 'Token rafraîchi' });
+    const tokens = await authService.refresh({ refreshToken: req.cookies?.iam_refresh_token || req.body?.refreshToken });
+    return success(res, { data: setAuthCookies(res, tokens), message: 'Token rafraîchi' });
   } catch (err) {
     return next(err);
   }
@@ -48,6 +49,7 @@ async function refresh(req, res, next) {
 async function logout(req, res, next) {
   try {
     await authService.logout({ sessionId: req.auth.sessionId, actorId: req.auth.userId });
+    clearAuthCookies(res);
     return success(res, { message: 'Déconnexion réussie' });
   } catch (err) {
     return next(err);
@@ -89,7 +91,7 @@ async function stepUp(req, res, next) {
       resource: req.body.resource,
       action: req.body.action,
     });
-    return success(res, { data: result, message: 'Step-up requis' });
+    return success(res, { data: setAuthCookies(res, result), message: 'Step-up requis' });
   } catch (err) {
     return next(err);
   }
@@ -98,7 +100,7 @@ async function stepUp(req, res, next) {
 async function stepUpVerify(req, res, next) {
   try {
     const result = await authService.verifyStepUp({ ...req.body, requestingSessionId: req.auth.sessionId });
-    return success(res, { data: result, message: 'Session élevée' });
+    return success(res, { data: setAuthCookies(res, result), message: 'Session élevée' });
   } catch (err) {
     return next(err);
   }

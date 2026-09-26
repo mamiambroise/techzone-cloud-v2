@@ -11,7 +11,7 @@ import {
   InboxIcon,
   ArrowPathRoundedSquareIcon,
 } from '@heroicons/react/24/outline';
-import { MODULES_BY_KEY, DEFAULT_ERP } from '../erp/modulesConfig';
+import { MODULES_BY_KEY } from '../erp/modulesConfig';
 import { productService } from '../services/api';
 import { TableSkeleton } from '../components/Loaders';
 
@@ -102,6 +102,7 @@ function ErpModule() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [empty, setEmpty] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -111,10 +112,18 @@ function ErpModule() {
   const load = () => {
     setLoading(true);
     setError(null);
+    setEmpty(false);
     mod.service
-      .getAll(DEFAULT_ERP)
-      .then((res) => setRows(Array.isArray(res.data) ? res.data : []))
-      .catch((err) => setError(err.response?.data?.message || err.message || 'Erreur de chargement'))
+      .getAll()
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        setRows(data);
+        setEmpty(data.length === 0);
+      })
+      .catch((err) => {
+        setError(err.response?.data?.message || err.message || 'Erreur de chargement');
+        setEmpty(false);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -158,7 +167,7 @@ function ErpModule() {
     if (!window.confirm(`Supprimer cet element (${row.id}) ?`)) return;
     setDeleteError(null);
     try {
-      await mod.service.delete(row.id, DEFAULT_ERP);
+       await mod.service.delete(row.id);
       setRows((r) => r.filter((x) => x.id !== row.id));
       setSuccess('Element supprime');
       setTimeout(() => setSuccess(null), 3000);
@@ -192,10 +201,10 @@ function ErpModule() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800 dark:text-slate-100">{mod.title}</h1>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{mod.subtitle}</p>
-              <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Dolibarr · donnees reelles · {filtered.length} sur {rows.length} affiche(s)
-              </span>
+                <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <span className={`w-1.5 h-1.5 rounded-full ${error ? 'bg-red-500' : empty ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                  {error ? 'Erreur de connexion' : empty ? 'Module vide' : 'Dolibarr · donnees reelles'} · {error ? '—' : `${filtered.length} sur ${rows.length}`} affiche(s)
+                </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -211,20 +220,20 @@ function ErpModule() {
         </div>
 
         {/* Stats rapides */}
-        <div className="relative mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Total</p>
-            <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{rows.length}</p>
+          <div className="relative mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Total</p>
+              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{error ? '—' : rows.length}</p>
+            </div>
+            <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3 hidden sm:block">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Cree recemment</p>
+              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">-</p>
+            </div>
+            <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">En base</p>
+              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{error ? '—' : rows.length}</p>
+            </div>
           </div>
-          <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3 hidden sm:block">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Cree recemment</p>
-            <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">-</p>
-          </div>
-          <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">En base</p>
-            <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{rows.length}</p>
-          </div>
-        </div>
       </div>
 
       {success && (
@@ -249,6 +258,12 @@ function ErpModule() {
         <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-2xl p-6 flex items-center gap-3">
           <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
           <p className="text-red-600 font-medium">{error}</p>
+        </div>
+      ) : empty ? (
+        <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 rounded-2xl p-8 flex flex-col items-center gap-3">
+          <InboxIcon className="w-12 h-12 text-amber-400" />
+          <p className="text-amber-700 dark:text-amber-300 font-medium text-lg">Aucune donnee pour ce module</p>
+          <p className="text-sm text-amber-600 dark:text-amber-400">La liste est vide dans le systeme ERP.</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -406,7 +421,7 @@ function CreateModal({ mod, onClose, onCreated, editing = null }) {
       .filter((f) => f.source)
       .forEach((f) => {
         loads[f.name] = f.source
-          .getAll(DEFAULT_ERP)
+          .getAll()
           .then((res) => {
             const list = Array.isArray(res.data) ? res.data : [];
             setOptionsCache((prev) => ({ ...prev, [f.name]: list }));
@@ -415,7 +430,7 @@ function CreateModal({ mod, onClose, onCreated, editing = null }) {
       });
     if (mod.lines) {
       loads._products = productService
-        .getAll(DEFAULT_ERP)
+        .getAll()
         .then((res) => {
           const list = Array.isArray(res.data) ? res.data : [];
           setOptionsCache((prev) => ({ ...prev, _products: list }));
@@ -453,8 +468,8 @@ function CreateModal({ mod, onClose, onCreated, editing = null }) {
     try {
       const payload = buildPayload();
       const res = isEditing
-        ? await mod.service.update(editing.id, payload, DEFAULT_ERP)
-        : await mod.service.create(payload, DEFAULT_ERP);
+        ? await mod.service.update(editing.id, payload)
+        : await mod.service.create(payload);
       onCreated(res.data);
     } catch (err) {
       setError(err.response?.data?.message || err.message || (isEditing ? 'Modification impossible' : 'Creation impossible'));

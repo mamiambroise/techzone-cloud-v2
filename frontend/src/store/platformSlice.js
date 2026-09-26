@@ -1,3 +1,11 @@
+/**
+ * LEGACY_NAVIGATION_BRIDGE:
+ * activeTab is synchronized FROM the URL by app/RouteToTabSync.jsx.
+ * React Router (BrowserRouter) is the navigation authority (Phase 2.2).
+ * Sidebar and SubNavBar use navigate() to change routes.
+ * RouteToTabSync dispatches setActiveTab here so existing components
+ * that read Redux state continue to work during the migration phase.
+ */
 import { createSlice } from '@reduxjs/toolkit';
 
 export const IAM_ROLES = {

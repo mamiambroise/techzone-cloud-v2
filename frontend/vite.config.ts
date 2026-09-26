@@ -12,9 +12,32 @@ export default defineConfig(() => {
       },
     },
     server: {
-      port: 5181,
+      port: 3000,
       proxy: {
-        '/api': 'http://localhost:3003',
+        '/api/iam': {
+          target: 'http://localhost:5001',
+          changeOrigin: true,
+        },
+        '/api/erp-registry': {
+          target: 'http://localhost:3002',
+          changeOrigin: true,
+        },
+        '/api/erp': {
+          target: 'http://localhost:3002',
+          changeOrigin: true,
+        },
+        '/api/data-runtime': {
+          target: 'http://localhost:3002',
+          changeOrigin: true,
+        },
+        '/api/automation': {
+          target: 'http://localhost:3002',
+          changeOrigin: true,
+        },
+        '/api': {
+          target: 'http://localhost:3003',
+          changeOrigin: true,
+        },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.

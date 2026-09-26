@@ -9,7 +9,14 @@ import {
   transitionApiStatusAsync,
   deleteApiAsync,
 } from '../../store/integrationSlice.js';
-import { executeApi } from '../../api/apisApi.js';
+import {
+  getApis,
+  createApi,
+  updateApi,
+  transitionApiStatus,
+  deleteApi,
+  executeApi,
+} from '../../services/api/apisService.js';
 import { logAuditAction } from '../../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../../store/platformSlice.js';
 import {

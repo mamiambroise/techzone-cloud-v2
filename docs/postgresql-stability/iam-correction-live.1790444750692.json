@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-09-26T17:44:49.432Z",
+  "accountCreated": true,
+  "accountStatus": "ACTIVE",
+  "adminRoleGranted": false,
+  "previousRealLogin": {
+    "status": 200,
+    "httpOnly": true,
+    "me": 200
+  },
+  "health": {
+    "status": 200
+  },
+  "ready": {
+    "status": 503,
+    "code": "DATABASE_UNAVAILABLE"
+  },
+  "login": {
+    "status": 503,
+    "code": "DATABASE_UNAVAILABLE",
+    "technicalDetailsExposed": false
+  },
+  "loginError": "TypeError"
+}

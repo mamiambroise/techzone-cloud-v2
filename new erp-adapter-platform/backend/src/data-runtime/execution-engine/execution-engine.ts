@@ -23,6 +23,20 @@ export class ExecutionEngine {
     const traceId = ctx.traceId;
 
     try {
+      if (!ctx.tenantId) {
+        return {
+          success: false,
+          operation: request.operation,
+          resource: request.resource,
+          targetId: request.targetId,
+          errorCode: 'TENANT_REQUIRED',
+          errorMessage: 'tenantId requis dans le contexte',
+          traceId,
+          duration: Date.now() - start,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       this.logger.debug(`EXECUTE ${request.operation} ${request.resource} [tenant=${ctx.tenantId}]`);
 
       this.validateRequest(request);
@@ -171,9 +185,12 @@ export class ExecutionEngine {
   }
 
   private checkPermission(request: ExecutionRequest, ctx: RuntimeContext): void {
-    const requiredPermission = `${request.resource.toLowerCase()}.${request.operation.toLowerCase()}`;
+    if (!ctx.tenantId) {
+      throw new ForbiddenException('TENANT_REQUIRED: tenantId manquant');
+    }
+    const requiredPermission = 'data-runtime:execute';
     if (ctx.permissions && !ctx.permissions.includes('*') && !ctx.permissions.includes(requiredPermission)) {
-      throw new ForbiddenException(`Permission "${requiredPermission}" manquante`);
+      throw new ForbiddenException(`FORBIDDEN: Permission "${requiredPermission}" manquante`);
     }
   }
 }

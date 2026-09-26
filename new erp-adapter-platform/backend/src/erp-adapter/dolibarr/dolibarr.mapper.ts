@@ -84,12 +84,13 @@ export class DolibarrMapper {
    * Convertit un produit Dolibarr en format Techzone
    */
   static mapFromDolibarrProduct(data: DolibarrProduct): ErpProduct {
+    const stockNum = Number(data.stock);
     return {
       id: String(data.id),
       ref: data.ref,
       label: data.label,
       price: Number(data.price),
-      stock: Number(data.stock) ?? 0,
+      stock: Number.isNaN(stockNum) ? 0 : stockNum,
     };
   }
 
@@ -318,9 +319,10 @@ export class DolibarrMapper {
    * Convertit les donnees de stock Dolibarr en format Techzone
    */
   static mapFromDolibarrStock(productId: string, quantity: number): StockInfo {
+    const stockVal = Number(quantity);
     return {
       productId,
-      currentStock: quantity,
+      currentStock: Number.isNaN(stockVal) ? 0 : stockVal,
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -342,6 +344,7 @@ export class DolibarrMapper {
   }
 
   static mapFromDolibarrVariant(data: DolibarrVariant): ErpProductVariant {
+    const stockVal = Number(data.stock);
     return {
       id: String(data.id),
       productId: String(data.fk_product),
@@ -349,7 +352,7 @@ export class DolibarrMapper {
       attribute: data.attribute,
       value: data.value,
       price: data.price,
-      stock: data.stock,
+      stock: Number.isNaN(stockVal) ? 0 : stockVal,
       barcode: data.barcode,
     };
   }

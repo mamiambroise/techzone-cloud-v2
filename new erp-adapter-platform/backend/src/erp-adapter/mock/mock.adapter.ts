@@ -1242,7 +1242,7 @@ export class MockAdapter implements IErpAdapter {
 
   async healthCheck(): Promise<HealthCheckResult> {
     return {
-      status: 'HEALTHY',
+      status: 'CONNECTED',
       mode: 'MOCK',
       timestamp: new Date().toISOString(),
     };
