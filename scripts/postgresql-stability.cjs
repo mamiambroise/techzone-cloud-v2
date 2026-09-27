@@ -2,15 +2,13 @@
 const fs = require('node:fs');
 const net = require('node:net');
 const path = require('node:path');
-const dotenv = require('../Auth_AIM/backend/node_modules/dotenv');
+const dotenv = require('../backend/node_modules/dotenv');
 const { Client } = require('../backend/node_modules/pg');
 const output = path.resolve(__dirname, '../docs/postgresql-stability');
 fs.mkdirSync(output, { recursive: true });
 const root = path.resolve(__dirname, '..');
 const services = [
-  ['IAM', 'Auth_AIM/backend', 'auth_aim'],
   ['PLATFORM', 'backend', 'business_manager'],
-  ['ERP', 'new erp-adapter-platform/backend', 'erp_adapter'],
 ];
 function configuration(dir) {
   const env = dotenv.parse(fs.readFileSync(path.join(root, dir, '.env')));

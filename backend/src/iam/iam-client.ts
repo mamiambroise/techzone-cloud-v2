@@ -2,7 +2,7 @@ import { ForbiddenException, ServiceUnavailableException, UnauthorizedException 
 
 /** Consume the identity authority's existing session and context contracts. */
 export async function resolveIamPrincipal(token: string) {
-  const base = process.env.IAM_API_URL || 'http://127.0.0.1:5001/api/iam';
+  const base = process.env.IAM_API_URL || '/api/iam';
   async function post(route: string, body: object) {
     let response: Response;
     try {

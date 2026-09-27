@@ -11,7 +11,7 @@ function walk(dir) {
 }
 const all = walk(root).map(f => path.relative(root, f).replaceAll('\\', '/'));
 fs.writeFileSync(path.join(out, 'repository-files.json'), JSON.stringify(all, null, 2));
-const pairs = [['frontend', 'team4-platform-api/frontend'], ['backend', 'team4-platform-api/backend'], ['frontend', 'Auth_AIM/frontend'], ['frontend', 'new erp-adapter-platform/frontend']];
+const pairs = [];
 const comparisons = pairs.map(([canonical, other]) => {
   const files = all.filter(f => f.startsWith(other + '/') && !f.includes('/generated/'));
   const result = { canonical, other, identical: [], different: [], unique: [] };
@@ -27,7 +27,7 @@ const comparisons = pairs.map(([canonical, other]) => {
   return result;
 });
 fs.writeFileSync(path.join(out, 'duplicate-comparison.json'), JSON.stringify(comparisons, null, 2));
-const packages = ['frontend', 'backend', 'Auth_AIM/backend', 'Auth_AIM/frontend', 'new erp-adapter-platform/backend', 'new erp-adapter-platform/frontend', 'team4-platform-api/backend', 'team4-platform-api/frontend'];
+const packages = ['frontend', 'backend'];
 const npm = process.env.npm_execpath || path.join(path.dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
 if (!process.argv.includes('--reports-only')) await Promise.all(packages.map(p => new Promise(resolve => {
   const child = spawn(process.execPath, [npm, 'audit', '--json'], { cwd: p, windowsHide: true });

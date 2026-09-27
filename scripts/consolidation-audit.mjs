@@ -19,6 +19,6 @@ for(const f of inventory.filter(f=>/\.(jsx?|tsx?|css)$/.test(f.file)&&!f.file.st
   groups.set(key,[...(groups.get(key)||[]),f.file]);
 }
 fs.writeFileSync(`${out}/identical-code.json`,JSON.stringify([...groups.values()].filter(g=>g.length>1),null,2));
-const apps=['frontend','backend','Auth_AIM/backend','Auth_AIM/frontend','new erp-adapter-platform/backend','new erp-adapter-platform/frontend','team4-platform-api/backend','team4-platform-api/frontend','techzone'];
+const apps=['frontend','backend','techzone'];
 fs.writeFileSync(`${out}/applications.json`,JSON.stringify(apps.map(p=>({path:p,package:JSON.parse(fs.readFileSync(`${p}/package.json`,'utf8')),files:files.filter(f=>f.startsWith(p+'/')).length})),null,2));
 console.log(`Inventoried ${inventory.length} files; ${[...groups.values()].filter(g=>g.length>1).length} identical code groups.`);

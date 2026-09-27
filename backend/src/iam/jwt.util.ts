@@ -1,10 +1,37 @@
-import { HttpException } from '@nestjs/common';
+import { createHash, randomBytes } from 'crypto';
 import * as jwt from 'jsonwebtoken';
+import { JWT_ACCESS_TTL, IAM_ISSUER } from './iam.constants';
 
-import { IAM_ISSUER } from './iam.constants';
+export function hashToken(rawToken: string): string {
+  return createHash('sha256').update(rawToken).digest('hex');
+}
+
+export function hashValue(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+export function generateRefreshToken(): string {
+  return randomBytes(48).toString('base64url');
+}
+
+export function getAccessSecret(): string {
+  const secret = process.env.JWT_ACCESS_SECRET;
+  if (!secret) {
+    throw new Error('JWT_ACCESS_SECRET manquant dans .env');
+  }
+  return secret;
+}
+
+export function getRefreshSecret(): string {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new Error('JWT_REFRESH_SECRET manquant dans .env');
+  }
+  return secret;
+}
 
 export interface AccessTokenPayload {
-  type?: string;
+  type: 'access';
   userId: string;
   sessionId: string;
   tenantId?: string | null;
@@ -15,64 +42,23 @@ export interface AccessTokenPayload {
   iss?: string;
 }
 
-function getAccessSecret(): string {
-  const secret = process.env.JWT_ACCESS_SECRET;
-  if (!secret) {
-    throw new Error(
-      'JWT_ACCESS_SECRET manquant dans backend/.env (nécessaire pour valider les tokens IAM)',
-    );
-  }
-  return secret;
+export function signAccessToken(payload: AccessTokenPayload): string {
+  return jwt.sign({ ...payload, type: 'access' }, getAccessSecret(), {
+    expiresIn: JWT_ACCESS_TTL as any,
+  });
 }
 
-/**
- * Valide un access token émis par Auth_AIM (iss: techzone-cloud-iam).
- *
- * Validation stricte (fail-closed) :
- * - signature HS256
- * - expiration (exp)
- * - issuer (iss === techzone-cloud-iam)
- * - subject (sub / userId) présent
- *
- * Ne se contente pas de décoder : il vérifie la signature.
- */
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  let decoded: jwt.JwtPayload;
-  try {
-    decoded = jwt.verify(token, getAccessSecret(), {
-      issuer: IAM_ISSUER,
-      algorithms: ['HS256'],
-    }) as jwt.JwtPayload;
-  } catch (err: any) {
-    if (err instanceof jwt.TokenExpiredError) {
-      throw new HttpException('Token expiré', 401);
-    }
-    if (err instanceof jwt.JsonWebTokenError) {
-      throw new HttpException('Token invalide', 401);
-    }
-    throw new HttpException('Token invalide', 401);
-  }
+  const decoded = jwt.verify(token, getAccessSecret(), { algorithms: ['HS256'] }) as jwt.JwtPayload;
+  if (!decoded.userId || !decoded.sessionId || decoded.purpose ||
+      (decoded.iss && decoded.iss !== IAM_ISSUER) ||
+      (!decoded.iss && decoded.type !== 'access')) throw new Error('Invalid access token');
+  return decoded as AccessTokenPayload;
+}
 
-  const userId = (decoded.userId as string) || (decoded.sub as string);
-  const sessionId = (decoded.sessionId as string) || (decoded.sid as string);
-
-  if (!userId || !sessionId) {
-    throw new HttpException('Token mal formé', 401);
-  }
-
-  return {
-    type: decoded.type as string,
-    userId,
-    sessionId,
-    tenantId: (decoded.tenantId as string | null) ?? null,
-    organizationId: (decoded.organizationId as string | null) ?? null,
-    authenticationLevel: (decoded.authenticationLevel as string | null) ?? null,
-    roles: Array.isArray(decoded.roles) ? (decoded.roles as string[]) : [],
-    permissions: Array.isArray(decoded.permissions)
-      ? (decoded.permissions as string[])
-      : [],
-    iss: decoded.iss as string,
-  };
+export function issueRefreshTokenPayload(): { raw: string; hash: string; familyId: string } {
+  const raw = generateRefreshToken();
+  return { raw, hash: hashToken(raw), familyId: randomBytes(16).toString('hex') };
 }
 
 export function decodeAccessTokenUnsafe(token: string): AccessTokenPayload | null {

@@ -2,16 +2,19 @@ import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 
 import helmet from 'helmet';
-import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.use((req: any, res: any, next: () => void) => {
     const traceId = randomUUID();
     req.traceId = traceId;
+    res.setHeader('X-Trace-Id', traceId);
     res.setHeader('X-Request-Id', traceId);
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['sec-fetch-site'] === 'cross-site') {
       return res.status(403).json({ message: 'Cross-site request refused', traceId });
@@ -19,7 +22,8 @@ async function bootstrap() {
     next();
   });
 
-  // CORS — origins explicites (pas de wildcard avec credentials)
+  app.use(cookieParser());
+
   const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3001')
     .split(',')
     .map((origin) => origin.trim());
@@ -27,13 +31,12 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
-    exposedHeaders: ['X-Request-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Trace-Id'],
+    exposedHeaders: ['X-Request-Id', 'X-Trace-Id'],
     credentials: true,
     maxAge: 600,
   });
 
-  // Security headers (Helmet)
   app.use(
     helmet({
       contentSecurityPolicy: false,
@@ -49,6 +52,8 @@ async function bootstrap() {
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     }),
   );
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

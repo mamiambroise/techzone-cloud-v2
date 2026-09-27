@@ -1,7 +1,43 @@
+# Dependencies
 node_modules/
-.env
+
+# Build artifacts
 dist/
 build/
-logs/consolidation-backup/
-logs/browser-tools/
-logs/consolidation-*.log
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log*
+
+# Coverage
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.sublime-workspace
+
+# Tool / agent state directories
+.kilo/
+.claude-dev-helper/
+.kilocode/
+.cursor/
+.devin/
+.windsurf/
+
+# Cache
+.cache/
+
+# Temporary files
+*.tmp
+*.temp

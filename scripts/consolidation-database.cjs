@@ -1,8 +1,8 @@
 const fs = require('fs');
 const net = require('net');
-const dotenv = require('../Auth_AIM/backend/node_modules/dotenv');
+const dotenv = require('../backend/node_modules/dotenv');
 const { Client } = require('../backend/node_modules/pg');
-const services = ['Auth_AIM/backend', 'backend', 'new erp-adapter-platform/backend', 'team4-platform-api/backend'];
+const services = ['backend', ];
 (async () => {
   const results = [];
   for (const service of services) {

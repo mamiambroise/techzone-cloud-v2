@@ -1,9 +1,16 @@
 const fs = require('fs');
+const path = require('path');
 // Use only the development account already specified in the repository seed.
 // Never log its password, tokens, cookies or returned personal data.
-const seed = fs.readFileSync('Auth_AIM/backend/prisma/seed.js', 'utf8');
-const identifier = /where:\s*\{ username: '([^']+)'/.exec(seed)?.[1];
-const password = /bcrypt.hash\('([^']+)'/.exec(seed)?.[1];
+let identifier, password;
+const seedPath = path.join(__dirname, '..', 'backend', 'src', 'prisma', 'seed.ts');
+try {
+  const seed = fs.readFileSync(seedPath, 'utf8');
+  identifier = /where:\s*\{ username: '([^']+)'/.exec(seed)?.[1];
+  password = /bcrypt\.hash\('([^']+)'/.exec(seed)?.[1];
+} catch {}
+identifier = identifier || process.env.TEST_LOGIN_IDENTIFIER;
+password = password || process.env.TEST_LOGIN_PASSWORD;
 const results = { mode: 'REAL_HTTP_AND_CONFIGURED_DATABASE', steps: [] };
 let cookies = new Map();
 async function call(base, route, method = 'GET', body) {

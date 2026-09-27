@@ -3,8 +3,8 @@
  * Techzone Cloud — launcher unique.
  *
  * Mamerina amin'ny baiko tokana ny 5 services rehetra:
- *   AUTH_AIM (5001), ERP-API (3002), FRONTEND (3000),
- *   PLATFORM API (3003), DOLIBARR (8080).
+ *   FRONTEND (3000), PLATFORM API (3003),
+ *   ERP-API (3002), DOLIBARR (8080).
  *
  *   npm run dev          → lance tout
  *   npm run dev:rebuild  → build ERP API + Jasmina aloha, dia lance
@@ -62,24 +62,6 @@ const COLORS = {
 const c = (color, m) => `${COLORS[color]}${m}${COLORS.RESET}`;
 
 const SERVICES = [
-  {
-    name: 'AUTH_AIM',
-    tag: 'AUTH',
-    port: 5001,
-    cwd: path.join(root, 'Auth_AIM/backend'),
-    cmd: () => ({ cmd: NODE, args: ['src/server.js'] }),
-    url: 'http://localhost:5001',
-  },
-  {
-    name: 'ERP-API',
-    tag: 'ERP',
-    port: 3002,
-    cwd: path.join(root, 'new erp-adapter-platform/backend'),
-    cmd: () => ({ cmd: NODE, args: ['--env-file=.env', 'dist/src/main.js'] }),
-    build: (npm) => ({ cmd: NODE, args: [npm, 'run', 'build'] }),
-    dist: ['dist/src/main.js'],
-    url: 'http://localhost:3002/api/erp/health?erp=DOLIBARR',
-  },
   {
     name: 'FRONTEND', tag: 'BUSINESS', port: 3000,
     cwd: path.join(root, 'frontend'),
@@ -309,8 +291,7 @@ async function run(rebuilt) {
   console.log(c('DONE', "Mpoditra ao amin'ny navigateur:"));
   // http://localhost:3000
   console.log(c('BUSINESS', '  ▶ Console canonique → http://localhost:3000'));
-  console.log(c('ERP', '  ▶ ERP API → http://localhost:3002/api'));
-  console.log(c('AUTH', '  ▶ Auth_AIM → http://localhost:5001/api'));
+  console.log(c('ERP', '  ▶ ERP / Platform API → http://localhost:3003/api'));
   console.log(c('DOLIB', '  ▶ Dolibarr (techzone) → http://127.0.0.1:8080'));
   console.log(c('INFO', '────────────────────────────────────────────────'));
   console.log(c('INFO', '(Ctrl+C hampijanona daholo · npm run stop mamono koa)'));

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const targets = [
-  [3000, '/login'], [5001, '/health'], [5001, '/api/iam/me'],
+  [3000, '/login'],
+  [3003, '/api/iam/me'],
   [3003, '/health'], [3003, '/api/platform/applications'],
   [3002, '/api/config/public'], [3002, '/api/erp-registry'],
   [3002, '/api/data-runtime/contract'], [3002, '/api/automation/contract'],

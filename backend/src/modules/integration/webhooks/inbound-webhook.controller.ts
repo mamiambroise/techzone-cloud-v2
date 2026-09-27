@@ -15,7 +15,7 @@ import { IntegrationErrorCode } from '../../../common/errors/integration-error-c
 import { SendWebhookDto } from './dto/create-webhook.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 
-@Controller('webhooks/inbound')
+@Controller('api/webhooks/inbound')
 export class InboundWebhookController {
   constructor(
     private readonly prisma: PrismaService,

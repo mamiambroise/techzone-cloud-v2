@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const base = 'http://localhost:5001';
+const base = 'http://localhost:3003';
 
 async function main() {
   const result = { timestamp: new Date().toISOString() };

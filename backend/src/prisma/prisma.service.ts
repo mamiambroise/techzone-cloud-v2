@@ -20,7 +20,17 @@ export class PrismaService
       'postgresql://postgres:postgres@localhost:5432/techzone';
 
     const schema = new URL(connectionString).searchParams.get('schema') || 'public';
-    const adapter = new PrismaPg({ connectionString }, { schema });
+
+    const searchSchemas = ['public'];
+    if (schema && !searchSchemas.includes(schema)) {
+      searchSchemas.unshift(schema);
+    }
+    if (!searchSchemas.includes('auth_aim')) {
+      searchSchemas.push('auth_aim');
+    }
+    const searchPath = searchSchemas.join(',');
+
+    const adapter = new PrismaPg({ connectionString }, { schema: searchPath });
 
     super({ adapter });
   }

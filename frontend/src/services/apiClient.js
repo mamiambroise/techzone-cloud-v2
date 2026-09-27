@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const AUTH_AIM_URL = import.meta.env.VITE_AUTH_AIM_URL || '/api/iam';
+const IAM_URL = import.meta.env.VITE_IAM_URL || '/api/iam';
 
 function createApiClient(baseURL) {
   const instance = axios.create({
@@ -67,7 +67,7 @@ function createApiClient(baseURL) {
 }
 
 const api = createApiClient(API_BASE_URL);
-const authApi = createApiClient(AUTH_AIM_URL);
+const authApi = createApiClient(IAM_URL);
 
 export { api, authApi };
 export default api;
