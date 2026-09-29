@@ -1,44 +1,18 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search, AppWindow } from 'lucide-react';
 import { PageHeader } from '../ui/PageHeader.jsx';
 import { ApplicationCard } from './ApplicationCard.jsx';
 import { getApplications } from '../../services/api/platformApplicationsService.js';
-
 export function BMApplicationsRoute() {
-  const navigate = useNavigate();
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    setLoading(true); setError(false);
-    getApplications()
-      .then(setApplications)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [revision]);
-
-  return (
-    <>
-      <PageHeader
-        title="Applications"
-        subtitle="Applications du Business Manager"
-        action={{ label: 'Nouvelle application', onClick: () => navigate('/business-manager/applications/new') }}
-      />
-      {loading ? (
-        <div className="text-center py-12 text-gray-500">Chargement...</div>
-      ) : error ? <p role="alert" className="p-6">Impossible de charger les applications. <button onClick={()=>setRevision(r=>r+1)}>Réessayer</button></p> : applications.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          Aucune application. Créez votre première application pour commencer.
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 p-6">
-          {applications.map(app => (
-            <ApplicationCard key={app.id} app={app} onClick={() => navigate(`/business-manager/applications/${app.id}`)} />
-          ))}
-        </div>
-      )}
-    </>
-  );
+ const navigate=useNavigate();
+ const [applications,setApplications]=useState([]), [loading,setLoading]=useState(true), [error,setError]=useState(false), [revision,setRevision]=useState(0);
+ const [search,setSearch]=useState(''), [status,setStatus]=useState(''), [sort,setSort]=useState('updatedAt');
+ useEffect(()=>{let live=true;setLoading(true);setError(false);getApplications().then(data=>{if(live)setApplications(data);}).catch(()=>{if(live)setError(true);}).finally(()=>{if(live)setLoading(false);});return()=>{live=false;};},[revision]);
+ const filtered=applications.filter(app=>(!status||app.status===status)&&[app.name,app.code,app.description].filter(Boolean).join(' ').toLocaleLowerCase().includes(search.toLocaleLowerCase())).sort((a,b)=>sort==='name'?(a.name||a.code||'').localeCompare(b.name||b.code||''):(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0));
+ const create=()=>navigate('/business-manager/applications/new');
+ return <div className="space-y-5"><PageHeader title="Applications" subtitle="Gérez, configurez et suivez vos applications métier." breadcrumb={[{label:'Business Manager',onClick:()=>navigate('/business-manager')},{label:'Applications'}]} action={{label:'+ Nouvelle application',onClick:create}}/>
+ <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-3"><div className="relative min-w-48 flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input aria-label="Rechercher une application" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher une application…" className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-400"/></div><select aria-label="Statut des applications" value={status} onChange={e=>setStatus(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600"><option value="">Tous les statuts</option>{[...new Set(applications.map(a=>a.status).filter(Boolean))].map(s=><option key={s}>{s}</option>)}</select><select aria-label="Trier les applications" value={sort} onChange={e=>setSort(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600"><option value="updatedAt">Dernière modification</option><option value="name">Nom : A à Z</option></select></div>
+ {loading?<div role="status" aria-label="Chargement des applications" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[0,1,2].map(i=><div key={i} className="h-40 animate-pulse rounded-xl border border-slate-200 bg-white p-5"><div className="h-5 w-2/3 rounded bg-slate-100"/><div className="mt-5 h-3 w-full rounded bg-slate-50"/></div>)}</div>:error?<div role="alert" className="rounded-xl border border-rose-100 bg-white p-6 text-sm text-slate-600">Impossible de charger les applications. <button className="ml-2 text-blue-600" onClick={()=>setRevision(r=>r+1)}>Réessayer</button></div>:!filtered.length?<div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center"><AppWindow className="mx-auto mb-3 h-8 w-8 text-slate-300"/><h2 className="text-base font-semibold">{applications.length?'Aucun résultat':'Aucune application'}</h2><p className="mt-2 text-sm text-slate-500">{applications.length?'Ajustez la recherche ou le filtre de statut.':'Créez votre première application pour commencer.'}</p>{!applications.length&&<button onClick={create} className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white">Nouvelle application</button>}</div>:<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.map(app=><ApplicationCard key={app.id} app={app} onClick={()=>navigate('/business-manager/applications/'+app.id)}/>)}</div>}
+ </div>;
 }

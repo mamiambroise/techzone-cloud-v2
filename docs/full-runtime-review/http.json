@@ -1,0 +1,183 @@
+{
+  "timestamp": "2026-09-27T11:13:31.426Z",
+  "checks": [
+    {
+      "base": "http://localhost:3003",
+      "route": "/health",
+      "method": "GET",
+      "status": 200,
+      "ms": 285,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/ready",
+      "method": "GET",
+      "status": 404,
+      "ms": 15,
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/health",
+      "method": "GET",
+      "status": 200,
+      "ms": 3425,
+      "success": true,
+      "dependencyStatus": "healthy",
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/health/ready",
+      "method": "GET",
+      "status": 200,
+      "ms": 4,
+      "success": true,
+      "dependencyStatus": "ready",
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/me",
+      "method": "GET",
+      "status": 401,
+      "ms": 6,
+      "code": "UNAUTHENTICATED",
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/platform/applications",
+      "method": "GET",
+      "status": 401,
+      "ms": 3,
+      "code": "UNAUTHENTICATED",
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/erp-registry",
+      "method": "GET",
+      "status": 401,
+      "ms": 2,
+      "code": "UNAUTHENTICATED",
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/config/public",
+      "method": "GET",
+      "status": 200,
+      "ms": 3,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/auth/refresh",
+      "method": "POST",
+      "status": 401,
+      "ms": 13,
+      "code": "UNAUTHENTICATED",
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/auth/login",
+      "method": "POST",
+      "status": 400,
+      "ms": 4,
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/auth/login",
+      "method": "POST",
+      "status": 403,
+      "ms": 2,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/me",
+      "method": "GET",
+      "status": 401,
+      "ms": 7,
+      "code": "UNAUTHENTICATED",
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/auth/login",
+      "method": "OPTIONS",
+      "status": 204,
+      "ms": 1,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3000",
+      "route": "/api/iam/me",
+      "method": "GET",
+      "status": 401,
+      "ms": 7,
+      "code": "UNAUTHENTICATED",
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://127.0.0.1:8080",
+      "route": "/index.php",
+      "method": "GET",
+      "status": 202,
+      "ms": 2244,
+      "traceIdPresent": false,
+      "technicalDetailsExposed": false
+    },
+    {
+      "base": "http://localhost:3003",
+      "route": "/api/iam/auth/login",
+      "method": "POST",
+      "status": 500,
+      "ms": 679,
+      "success": false,
+      "traceIdPresent": true,
+      "technicalDetailsExposed": false
+    }
+  ],
+  "cors": {
+    "status": 204,
+    "allowedOrigin": "http://localhost:3000",
+    "credentials": "true"
+  },
+  "login": {
+    "base": "http://localhost:3003",
+    "route": "/api/iam/auth/login",
+    "method": "POST",
+    "status": 500,
+    "ms": 679,
+    "success": false,
+    "traceIdPresent": true,
+    "technicalDetailsExposed": false
+  }
+}

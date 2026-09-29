@@ -1,0 +1,6280 @@
+{
+  "enums": {
+    "AdminActionStatus": [
+      "REQUESTED",
+      "PENDING_APPROVAL",
+      "APPROVED",
+      "RUNNING",
+      "COMPLETED",
+      "FAILED",
+      "CANCELLED"
+    ],
+    "AuthorizationResult": [
+      "ALLOW",
+      "DENY",
+      "STEP_UP_REQUIRED",
+      "APPROVAL_REQUIRED"
+    ],
+    "BillingInterval": [
+      "MONTHLY",
+      "QUARTERLY",
+      "SEMESTER",
+      "YEARLY",
+      "CUSTOM"
+    ],
+    "CredentialStatus": [
+      "ACTIVE",
+      "DISABLED",
+      "REVOKED",
+      "EXPIRED"
+    ],
+    "CredentialType": [
+      "PASSWORD",
+      "PASSKEY",
+      "API_KEY",
+      "EXTERNAL",
+      "RECOVERY"
+    ],
+    "DelegationStatus": [
+      "ACTIVE",
+      "SUSPENDED",
+      "REVOKED",
+      "EXPIRED"
+    ],
+    "DeviceTrustLevel": [
+      "UNKNOWN",
+      "UNTRUSTED",
+      "TRUSTED",
+      "PRIVILEGED"
+    ],
+    "DiagnosticStatus": [
+      "HEALTHY",
+      "DEGRADED",
+      "WARNING",
+      "CRITICAL",
+      "UNAVAILABLE",
+      "UNKNOWN"
+    ],
+    "EntitlementValueType": [
+      "BOOLEAN",
+      "INTEGER",
+      "DECIMAL",
+      "STRING",
+      "JSON"
+    ],
+    "Environment": [
+      "DEVELOPMENT",
+      "TEST",
+      "STAGING",
+      "PRODUCTION"
+    ],
+    "GroupType": [
+      "SYSTEM",
+      "STATIC",
+      "DYNAMIC"
+    ],
+    "IdentityStatus": [
+      "PENDING",
+      "VERIFIED",
+      "ACTIVE",
+      "SUSPENDED",
+      "ARCHIVED"
+    ],
+    "IdentityType": [
+      "HUMAN",
+      "SERVICE_ACCOUNT",
+      "APPLICATION",
+      "DEVICE",
+      "SYSTEM",
+      "EXTERNAL_IDENTITY",
+      "API_CLIENT",
+      "AUTOMATION",
+      "AGENT"
+    ],
+    "InvoiceStatus": [
+      "DRAFT",
+      "OPEN",
+      "PAID",
+      "PARTIALLY_PAID",
+      "OVERDUE",
+      "VOID",
+      "CANCELLED"
+    ],
+    "MembershipStatus": [
+      "INVITED",
+      "PENDING",
+      "ACTIVE",
+      "SUSPENDED",
+      "REVOKED",
+      "EXPIRED"
+    ],
+    "MfaType": [
+      "TOTP",
+      "EMAIL_OTP",
+      "SMS_OTP",
+      "PASSKEY"
+    ],
+    "OrganizationStatus": [
+      "ACTIVE",
+      "SUSPENDED",
+      "ARCHIVED"
+    ],
+    "PaymentStatus": [
+      "PENDING",
+      "PROCESSING",
+      "SUCCEEDED",
+      "FAILED",
+      "CANCELLED",
+      "REFUNDED",
+      "PARTIALLY_REFUNDED"
+    ],
+    "PlanStatus": [
+      "DRAFT",
+      "ACTIVE",
+      "DISABLED",
+      "ARCHIVED"
+    ],
+    "PlatformServiceStatus": [
+      "STARTING",
+      "HEALTHY",
+      "DEGRADED",
+      "UNAVAILABLE",
+      "MAINTENANCE"
+    ],
+    "PolicyEffect": [
+      "ALLOW",
+      "DENY",
+      "STEP_UP",
+      "APPROVAL_REQUIRED"
+    ],
+    "PolicyStatus": [
+      "DRAFT",
+      "ACTIVE",
+      "DISABLED",
+      "SUPERSEDED",
+      "ARCHIVED"
+    ],
+    "RiskLevel": [
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "CRITICAL"
+    ],
+    "RoleStatus": [
+      "ACTIVE",
+      "DISABLED",
+      "ARCHIVED"
+    ],
+    "SecuritySeverity": [
+      "INFO",
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "CRITICAL"
+    ],
+    "ServiceAccountStatus": [
+      "ACTIVE",
+      "SUSPENDED",
+      "DISABLED",
+      "ARCHIVED"
+    ],
+    "SessionStatus": [
+      "ACTIVE",
+      "REVOKED",
+      "EXPIRED"
+    ],
+    "SiteStatus": [
+      "ACTIVE",
+      "SUSPENDED",
+      "ARCHIVED"
+    ],
+    "SubscriptionStatus": [
+      "TRIAL",
+      "ACTIVE",
+      "PAST_DUE",
+      "SUSPENDED",
+      "CANCELLED",
+      "EXPIRED"
+    ],
+    "TenantStatus": [
+      "PENDING",
+      "ACTIVE",
+      "SUSPENDED",
+      "DISABLED",
+      "ARCHIVED"
+    ],
+    "TokenStatus": [
+      "ACTIVE",
+      "ROTATED",
+      "REVOKED",
+      "EXPIRED",
+      "REUSED"
+    ],
+    "UserStatus": [
+      "PENDING",
+      "ACTIVE",
+      "SUSPENDED",
+      "LOCKED",
+      "DISABLED",
+      "ARCHIVED"
+    ]
+  },
+  "AccessPolicy": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'DRAFT'::auth_aim.\"PolicyStatus\""
+      },
+      {
+        "name": "effect",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "priority",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "100"
+      },
+      {
+        "name": "resource",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "action",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "subjectType",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "subjectRef",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      },
+      {
+        "name": "effectiveFrom",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "effectiveUntil",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "publishedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "supersededById",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "AccessPolicy_effectiveFrom_effectiveUntil_idx",
+        "def": "CREATE INDEX \"AccessPolicy_effectiveFrom_effectiveUntil_idx\" ON auth_aim.\"AccessPolicy\" USING btree (\"effectiveFrom\", \"effectiveUntil\")"
+      },
+      {
+        "name": "AccessPolicy_pkey",
+        "def": "CREATE UNIQUE INDEX \"AccessPolicy_pkey\" ON auth_aim.\"AccessPolicy\" USING btree (id)"
+      },
+      {
+        "name": "AccessPolicy_resource_action_idx",
+        "def": "CREATE INDEX \"AccessPolicy_resource_action_idx\" ON auth_aim.\"AccessPolicy\" USING btree (resource, action)"
+      },
+      {
+        "name": "AccessPolicy_status_idx",
+        "def": "CREATE INDEX \"AccessPolicy_status_idx\" ON auth_aim.\"AccessPolicy\" USING btree (status)"
+      },
+      {
+        "name": "AccessPolicy_tenantId_code_version_key",
+        "def": "CREATE UNIQUE INDEX \"AccessPolicy_tenantId_code_version_key\" ON auth_aim.\"AccessPolicy\" USING btree (\"tenantId\", code, version)"
+      },
+      {
+        "name": "AccessPolicy_tenantId_idx",
+        "def": "CREATE INDEX \"AccessPolicy_tenantId_idx\" ON auth_aim.\"AccessPolicy\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "AdminDelegation": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "grantorUserId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "granteeUserId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "scopeType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "scopeId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "permissions",
+        "type": "jsonb",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"DelegationStatus\""
+      },
+      {
+        "name": "validFrom",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "validUntil",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "AdminDelegation_granteeUserId_idx",
+        "def": "CREATE INDEX \"AdminDelegation_granteeUserId_idx\" ON auth_aim.\"AdminDelegation\" USING btree (\"granteeUserId\")"
+      },
+      {
+        "name": "AdminDelegation_grantorUserId_idx",
+        "def": "CREATE INDEX \"AdminDelegation_grantorUserId_idx\" ON auth_aim.\"AdminDelegation\" USING btree (\"grantorUserId\")"
+      },
+      {
+        "name": "AdminDelegation_pkey",
+        "def": "CREATE UNIQUE INDEX \"AdminDelegation_pkey\" ON auth_aim.\"AdminDelegation\" USING btree (id)"
+      },
+      {
+        "name": "AdminDelegation_status_idx",
+        "def": "CREATE INDEX \"AdminDelegation_status_idx\" ON auth_aim.\"AdminDelegation\" USING btree (status)"
+      },
+      {
+        "name": "AdminDelegation_tenantId_idx",
+        "def": "CREATE INDEX \"AdminDelegation_tenantId_idx\" ON auth_aim.\"AdminDelegation\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "AdministrativeAction": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "actorId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "actionType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "targetType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "targetId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'REQUESTED'::auth_aim.\"AdminActionStatus\""
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "requestedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "approvedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "approvedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "executedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "completedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "failureReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "AdministrativeAction_actorId_idx",
+        "def": "CREATE INDEX \"AdministrativeAction_actorId_idx\" ON auth_aim.\"AdministrativeAction\" USING btree (\"actorId\")"
+      },
+      {
+        "name": "AdministrativeAction_pkey",
+        "def": "CREATE UNIQUE INDEX \"AdministrativeAction_pkey\" ON auth_aim.\"AdministrativeAction\" USING btree (id)"
+      },
+      {
+        "name": "AdministrativeAction_requestedAt_idx",
+        "def": "CREATE INDEX \"AdministrativeAction_requestedAt_idx\" ON auth_aim.\"AdministrativeAction\" USING btree (\"requestedAt\")"
+      },
+      {
+        "name": "AdministrativeAction_status_idx",
+        "def": "CREATE INDEX \"AdministrativeAction_status_idx\" ON auth_aim.\"AdministrativeAction\" USING btree (status)"
+      },
+      {
+        "name": "AdministrativeAction_targetType_targetId_idx",
+        "def": "CREATE INDEX \"AdministrativeAction_targetType_targetId_idx\" ON auth_aim.\"AdministrativeAction\" USING btree (\"targetType\", \"targetId\")"
+      },
+      {
+        "name": "AdministrativeAction_tenantId_idx",
+        "def": "CREATE INDEX \"AdministrativeAction_tenantId_idx\" ON auth_aim.\"AdministrativeAction\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "AdministrativeAction_traceId_idx",
+        "def": "CREATE INDEX \"AdministrativeAction_traceId_idx\" ON auth_aim.\"AdministrativeAction\" USING btree (\"traceId\")"
+      }
+    ]
+  },
+  "AuditEvent": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "actorId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "effectiveIdentityId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "effectiveUserId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "siteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "sessionId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "action",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "targetType",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "targetId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "result",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "before",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "after",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "previousHash",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "eventHash",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "AuditEvent_actorId_idx",
+        "def": "CREATE INDEX \"AuditEvent_actorId_idx\" ON auth_aim.\"AuditEvent\" USING btree (\"actorId\")"
+      },
+      {
+        "name": "AuditEvent_createdAt_idx",
+        "def": "CREATE INDEX \"AuditEvent_createdAt_idx\" ON auth_aim.\"AuditEvent\" USING btree (\"createdAt\")"
+      },
+      {
+        "name": "AuditEvent_effectiveUserId_idx",
+        "def": "CREATE INDEX \"AuditEvent_effectiveUserId_idx\" ON auth_aim.\"AuditEvent\" USING btree (\"effectiveUserId\")"
+      },
+      {
+        "name": "AuditEvent_pkey",
+        "def": "CREATE UNIQUE INDEX \"AuditEvent_pkey\" ON auth_aim.\"AuditEvent\" USING btree (id)"
+      },
+      {
+        "name": "AuditEvent_targetType_targetId_idx",
+        "def": "CREATE INDEX \"AuditEvent_targetType_targetId_idx\" ON auth_aim.\"AuditEvent\" USING btree (\"targetType\", \"targetId\")"
+      },
+      {
+        "name": "AuditEvent_tenantId_idx",
+        "def": "CREATE INDEX \"AuditEvent_tenantId_idx\" ON auth_aim.\"AuditEvent\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "AuditEvent_traceId_idx",
+        "def": "CREATE INDEX \"AuditEvent_traceId_idx\" ON auth_aim.\"AuditEvent\" USING btree (\"traceId\")"
+      }
+    ]
+  },
+  "AuthorizationDecision": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "identityId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "siteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "applicationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "environment",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "resource",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "action",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "result",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "matchedRoleIds",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "matchedPermissionIds",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "matchedPolicyIds",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "reason",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "riskLevel",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "AuthorizationDecision_createdAt_idx",
+        "def": "CREATE INDEX \"AuthorizationDecision_createdAt_idx\" ON auth_aim.\"AuthorizationDecision\" USING btree (\"createdAt\")"
+      },
+      {
+        "name": "AuthorizationDecision_pkey",
+        "def": "CREATE UNIQUE INDEX \"AuthorizationDecision_pkey\" ON auth_aim.\"AuthorizationDecision\" USING btree (id)"
+      },
+      {
+        "name": "AuthorizationDecision_resource_action_idx",
+        "def": "CREATE INDEX \"AuthorizationDecision_resource_action_idx\" ON auth_aim.\"AuthorizationDecision\" USING btree (resource, action)"
+      },
+      {
+        "name": "AuthorizationDecision_tenantId_idx",
+        "def": "CREATE INDEX \"AuthorizationDecision_tenantId_idx\" ON auth_aim.\"AuthorizationDecision\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "AuthorizationDecision_traceId_idx",
+        "def": "CREATE INDEX \"AuthorizationDecision_traceId_idx\" ON auth_aim.\"AuthorizationDecision\" USING btree (\"traceId\")"
+      },
+      {
+        "name": "AuthorizationDecision_userId_idx",
+        "def": "CREATE INDEX \"AuthorizationDecision_userId_idx\" ON auth_aim.\"AuthorizationDecision\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "BillingEvent": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subscriptionId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "invoiceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "paymentId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "eventType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "payload",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "occurredAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "BillingEvent_eventType_idx",
+        "def": "CREATE INDEX \"BillingEvent_eventType_idx\" ON auth_aim.\"BillingEvent\" USING btree (\"eventType\")"
+      },
+      {
+        "name": "BillingEvent_invoiceId_idx",
+        "def": "CREATE INDEX \"BillingEvent_invoiceId_idx\" ON auth_aim.\"BillingEvent\" USING btree (\"invoiceId\")"
+      },
+      {
+        "name": "BillingEvent_occurredAt_idx",
+        "def": "CREATE INDEX \"BillingEvent_occurredAt_idx\" ON auth_aim.\"BillingEvent\" USING btree (\"occurredAt\")"
+      },
+      {
+        "name": "BillingEvent_paymentId_idx",
+        "def": "CREATE INDEX \"BillingEvent_paymentId_idx\" ON auth_aim.\"BillingEvent\" USING btree (\"paymentId\")"
+      },
+      {
+        "name": "BillingEvent_pkey",
+        "def": "CREATE UNIQUE INDEX \"BillingEvent_pkey\" ON auth_aim.\"BillingEvent\" USING btree (id)"
+      },
+      {
+        "name": "BillingEvent_subscriptionId_idx",
+        "def": "CREATE INDEX \"BillingEvent_subscriptionId_idx\" ON auth_aim.\"BillingEvent\" USING btree (\"subscriptionId\")"
+      },
+      {
+        "name": "BillingEvent_tenantId_idx",
+        "def": "CREATE INDEX \"BillingEvent_tenantId_idx\" ON auth_aim.\"BillingEvent\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "ContextInvalidation": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subjectType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subjectId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "revision",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      },
+      {
+        "name": "sourceEventType",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "sourceEventId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "processedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "ContextInvalidation_createdAt_idx",
+        "def": "CREATE INDEX \"ContextInvalidation_createdAt_idx\" ON auth_aim.\"ContextInvalidation\" USING btree (\"createdAt\")"
+      },
+      {
+        "name": "ContextInvalidation_pkey",
+        "def": "CREATE UNIQUE INDEX \"ContextInvalidation_pkey\" ON auth_aim.\"ContextInvalidation\" USING btree (id)"
+      },
+      {
+        "name": "ContextInvalidation_processedAt_idx",
+        "def": "CREATE INDEX \"ContextInvalidation_processedAt_idx\" ON auth_aim.\"ContextInvalidation\" USING btree (\"processedAt\")"
+      },
+      {
+        "name": "ContextInvalidation_subjectType_subjectId_idx",
+        "def": "CREATE INDEX \"ContextInvalidation_subjectType_subjectId_idx\" ON auth_aim.\"ContextInvalidation\" USING btree (\"subjectType\", \"subjectId\")"
+      },
+      {
+        "name": "ContextInvalidation_tenantId_idx",
+        "def": "CREATE INDEX \"ContextInvalidation_tenantId_idx\" ON auth_aim.\"ContextInvalidation\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "ContextSnapshot": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "identityId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "siteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "applicationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "environment",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "sessionId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "roles",
+        "type": "jsonb",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "permissions",
+        "type": "jsonb",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "policies",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "authentication",
+        "type": "jsonb",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "security",
+        "type": "jsonb",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subscriptionContext",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "entitlementContext",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "sourceRevision",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "resolvedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "expiresAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "ContextSnapshot_organizationId_idx",
+        "def": "CREATE INDEX \"ContextSnapshot_organizationId_idx\" ON auth_aim.\"ContextSnapshot\" USING btree (\"organizationId\")"
+      },
+      {
+        "name": "ContextSnapshot_pkey",
+        "def": "CREATE UNIQUE INDEX \"ContextSnapshot_pkey\" ON auth_aim.\"ContextSnapshot\" USING btree (id)"
+      },
+      {
+        "name": "ContextSnapshot_resolvedAt_idx",
+        "def": "CREATE INDEX \"ContextSnapshot_resolvedAt_idx\" ON auth_aim.\"ContextSnapshot\" USING btree (\"resolvedAt\")"
+      },
+      {
+        "name": "ContextSnapshot_sessionId_idx",
+        "def": "CREATE INDEX \"ContextSnapshot_sessionId_idx\" ON auth_aim.\"ContextSnapshot\" USING btree (\"sessionId\")"
+      },
+      {
+        "name": "ContextSnapshot_tenantId_idx",
+        "def": "CREATE INDEX \"ContextSnapshot_tenantId_idx\" ON auth_aim.\"ContextSnapshot\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "ContextSnapshot_traceId_idx",
+        "def": "CREATE INDEX \"ContextSnapshot_traceId_idx\" ON auth_aim.\"ContextSnapshot\" USING btree (\"traceId\")"
+      },
+      {
+        "name": "ContextSnapshot_userId_idx",
+        "def": "CREATE INDEX \"ContextSnapshot_userId_idx\" ON auth_aim.\"ContextSnapshot\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "ContextSwitchEvent": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "sessionId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "fromTenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "fromOrganizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "fromSiteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "toTenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "toOrganizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "toSiteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "previousContextId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "resolvedContextId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "result",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "ContextSwitchEvent_createdAt_idx",
+        "def": "CREATE INDEX \"ContextSwitchEvent_createdAt_idx\" ON auth_aim.\"ContextSwitchEvent\" USING btree (\"createdAt\")"
+      },
+      {
+        "name": "ContextSwitchEvent_pkey",
+        "def": "CREATE UNIQUE INDEX \"ContextSwitchEvent_pkey\" ON auth_aim.\"ContextSwitchEvent\" USING btree (id)"
+      },
+      {
+        "name": "ContextSwitchEvent_sessionId_idx",
+        "def": "CREATE INDEX \"ContextSwitchEvent_sessionId_idx\" ON auth_aim.\"ContextSwitchEvent\" USING btree (\"sessionId\")"
+      },
+      {
+        "name": "ContextSwitchEvent_traceId_idx",
+        "def": "CREATE INDEX \"ContextSwitchEvent_traceId_idx\" ON auth_aim.\"ContextSwitchEvent\" USING btree (\"traceId\")"
+      },
+      {
+        "name": "ContextSwitchEvent_userId_idx",
+        "def": "CREATE INDEX \"ContextSwitchEvent_userId_idx\" ON auth_aim.\"ContextSwitchEvent\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "Credential": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "type",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"CredentialStatus\""
+      },
+      {
+        "name": "secretHash",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "secretRef",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "identifier",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "expiresAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokeReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "lastUsedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Credential_pkey",
+        "def": "CREATE UNIQUE INDEX \"Credential_pkey\" ON auth_aim.\"Credential\" USING btree (id)"
+      },
+      {
+        "name": "Credential_status_idx",
+        "def": "CREATE INDEX \"Credential_status_idx\" ON auth_aim.\"Credential\" USING btree (status)"
+      },
+      {
+        "name": "Credential_type_idx",
+        "def": "CREATE INDEX \"Credential_type_idx\" ON auth_aim.\"Credential\" USING btree (type)"
+      },
+      {
+        "name": "Credential_userId_idx",
+        "def": "CREATE INDEX \"Credential_userId_idx\" ON auth_aim.\"Credential\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "Device": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "fingerprintHash",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "deviceType",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "trustLevel",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'UNKNOWN'::auth_aim.\"DeviceTrustLevel\""
+      },
+      {
+        "name": "firstSeenAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "lastSeenAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "trustedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "trustedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokeReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Device_pkey",
+        "def": "CREATE UNIQUE INDEX \"Device_pkey\" ON auth_aim.\"Device\" USING btree (id)"
+      },
+      {
+        "name": "Device_trustLevel_idx",
+        "def": "CREATE INDEX \"Device_trustLevel_idx\" ON auth_aim.\"Device\" USING btree (\"trustLevel\")"
+      },
+      {
+        "name": "Device_userId_idx",
+        "def": "CREATE INDEX \"Device_userId_idx\" ON auth_aim.\"Device\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "ExternalIdentityLink": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "identityId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "providerType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "providerInstanceId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "externalSubjectId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "externalEntityType",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "confidence",
+        "type": "double precision",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "verified",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "verifiedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "lastSyncAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "disabledAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "ExternalIdentityLink_identityId_idx",
+        "def": "CREATE INDEX \"ExternalIdentityLink_identityId_idx\" ON auth_aim.\"ExternalIdentityLink\" USING btree (\"identityId\")"
+      },
+      {
+        "name": "ExternalIdentityLink_pkey",
+        "def": "CREATE UNIQUE INDEX \"ExternalIdentityLink_pkey\" ON auth_aim.\"ExternalIdentityLink\" USING btree (id)"
+      },
+      {
+        "name": "ExternalIdentityLink_providerType_providerInstanceId_extern_key",
+        "def": "CREATE UNIQUE INDEX \"ExternalIdentityLink_providerType_providerInstanceId_extern_key\" ON auth_aim.\"ExternalIdentityLink\" USING btree (\"providerType\", \"providerInstanceId\", \"externalSubjectId\")"
+      }
+    ]
+  },
+  "Feature": {
+    "columns": [
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "nullable": "NO",
+        "default": "'ACTIVE'::text"
+      },
+      {
+        "name": "metered",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "quotaCode",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Feature_pkey",
+        "def": "CREATE UNIQUE INDEX \"Feature_pkey\" ON auth_aim.\"Feature\" USING btree (code)"
+      },
+      {
+        "name": "Feature_status_idx",
+        "def": "CREATE INDEX \"Feature_status_idx\" ON auth_aim.\"Feature\" USING btree (status)"
+      }
+    ]
+  },
+  "Group": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "type",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'STATIC'::auth_aim.\"GroupType\""
+      },
+      {
+        "name": "dynamicRule",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "active",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "true"
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Group_organizationId_idx",
+        "def": "CREATE INDEX \"Group_organizationId_idx\" ON auth_aim.\"Group\" USING btree (\"organizationId\")"
+      },
+      {
+        "name": "Group_pkey",
+        "def": "CREATE UNIQUE INDEX \"Group_pkey\" ON auth_aim.\"Group\" USING btree (id)"
+      },
+      {
+        "name": "Group_tenantId_code_key",
+        "def": "CREATE UNIQUE INDEX \"Group_tenantId_code_key\" ON auth_aim.\"Group\" USING btree (\"tenantId\", code)"
+      },
+      {
+        "name": "Group_tenantId_idx",
+        "def": "CREATE INDEX \"Group_tenantId_idx\" ON auth_aim.\"Group\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "GroupMember": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "groupId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "validFrom",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "validUntil",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "removedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "removedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "GroupMember_groupId_idx",
+        "def": "CREATE INDEX \"GroupMember_groupId_idx\" ON auth_aim.\"GroupMember\" USING btree (\"groupId\")"
+      },
+      {
+        "name": "GroupMember_groupId_userId_key",
+        "def": "CREATE UNIQUE INDEX \"GroupMember_groupId_userId_key\" ON auth_aim.\"GroupMember\" USING btree (\"groupId\", \"userId\")"
+      },
+      {
+        "name": "GroupMember_pkey",
+        "def": "CREATE UNIQUE INDEX \"GroupMember_pkey\" ON auth_aim.\"GroupMember\" USING btree (id)"
+      },
+      {
+        "name": "GroupMember_userId_idx",
+        "def": "CREATE INDEX \"GroupMember_userId_idx\" ON auth_aim.\"GroupMember\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "Identity": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "type",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'PENDING'::auth_aim.\"IdentityStatus\""
+      },
+      {
+        "name": "provider",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "subject",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "email",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "phone",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "confidence",
+        "type": "double precision",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "verifiedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Identity_email_idx",
+        "def": "CREATE INDEX \"Identity_email_idx\" ON auth_aim.\"Identity\" USING btree (email)"
+      },
+      {
+        "name": "Identity_phone_idx",
+        "def": "CREATE INDEX \"Identity_phone_idx\" ON auth_aim.\"Identity\" USING btree (phone)"
+      },
+      {
+        "name": "Identity_pkey",
+        "def": "CREATE UNIQUE INDEX \"Identity_pkey\" ON auth_aim.\"Identity\" USING btree (id)"
+      },
+      {
+        "name": "Identity_provider_subject_key",
+        "def": "CREATE UNIQUE INDEX \"Identity_provider_subject_key\" ON auth_aim.\"Identity\" USING btree (provider, subject)"
+      },
+      {
+        "name": "Identity_status_idx",
+        "def": "CREATE INDEX \"Identity_status_idx\" ON auth_aim.\"Identity\" USING btree (status)"
+      },
+      {
+        "name": "Identity_type_idx",
+        "def": "CREATE INDEX \"Identity_type_idx\" ON auth_aim.\"Identity\" USING btree (type)"
+      }
+    ]
+  },
+  "Invoice": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subscriptionId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "invoiceNumber",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'DRAFT'::auth_aim.\"InvoiceStatus\""
+      },
+      {
+        "name": "currency",
+        "type": "character varying",
+        "nullable": "NO",
+        "default": "'MGA'::character varying"
+      },
+      {
+        "name": "subtotal",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "taxTotal",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "discountTotal",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "total",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "amountPaid",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "amountDue",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "issuedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "dueAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "paidAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Invoice_dueAt_idx",
+        "def": "CREATE INDEX \"Invoice_dueAt_idx\" ON auth_aim.\"Invoice\" USING btree (\"dueAt\")"
+      },
+      {
+        "name": "Invoice_invoiceNumber_key",
+        "def": "CREATE UNIQUE INDEX \"Invoice_invoiceNumber_key\" ON auth_aim.\"Invoice\" USING btree (\"invoiceNumber\")"
+      },
+      {
+        "name": "Invoice_pkey",
+        "def": "CREATE UNIQUE INDEX \"Invoice_pkey\" ON auth_aim.\"Invoice\" USING btree (id)"
+      },
+      {
+        "name": "Invoice_status_idx",
+        "def": "CREATE INDEX \"Invoice_status_idx\" ON auth_aim.\"Invoice\" USING btree (status)"
+      },
+      {
+        "name": "Invoice_subscriptionId_idx",
+        "def": "CREATE INDEX \"Invoice_subscriptionId_idx\" ON auth_aim.\"Invoice\" USING btree (\"subscriptionId\")"
+      },
+      {
+        "name": "Invoice_tenantId_idx",
+        "def": "CREATE INDEX \"Invoice_tenantId_idx\" ON auth_aim.\"Invoice\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "InvoiceItem": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "invoiceId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "quantity",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "1"
+      },
+      {
+        "name": "unitPrice",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subtotal",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "taxAmount",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "total",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "InvoiceItem_invoiceId_idx",
+        "def": "CREATE INDEX \"InvoiceItem_invoiceId_idx\" ON auth_aim.\"InvoiceItem\" USING btree (\"invoiceId\")"
+      },
+      {
+        "name": "InvoiceItem_pkey",
+        "def": "CREATE UNIQUE INDEX \"InvoiceItem_pkey\" ON auth_aim.\"InvoiceItem\" USING btree (id)"
+      }
+    ]
+  },
+  "Membership": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "siteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'INVITED'::auth_aim.\"MembershipStatus\""
+      },
+      {
+        "name": "validFrom",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "validUntil",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "joinedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokeReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Membership_organizationId_idx",
+        "def": "CREATE INDEX \"Membership_organizationId_idx\" ON auth_aim.\"Membership\" USING btree (\"organizationId\")"
+      },
+      {
+        "name": "Membership_pkey",
+        "def": "CREATE UNIQUE INDEX \"Membership_pkey\" ON auth_aim.\"Membership\" USING btree (id)"
+      },
+      {
+        "name": "Membership_siteId_idx",
+        "def": "CREATE INDEX \"Membership_siteId_idx\" ON auth_aim.\"Membership\" USING btree (\"siteId\")"
+      },
+      {
+        "name": "Membership_status_idx",
+        "def": "CREATE INDEX \"Membership_status_idx\" ON auth_aim.\"Membership\" USING btree (status)"
+      },
+      {
+        "name": "Membership_tenantId_idx",
+        "def": "CREATE INDEX \"Membership_tenantId_idx\" ON auth_aim.\"Membership\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "Membership_tenantId_status_idx",
+        "def": "CREATE INDEX \"Membership_tenantId_status_idx\" ON auth_aim.\"Membership\" USING btree (\"tenantId\", status)"
+      },
+      {
+        "name": "Membership_userId_idx",
+        "def": "CREATE INDEX \"Membership_userId_idx\" ON auth_aim.\"Membership\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "MfaMethod": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "type",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "label",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "secretRef",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "enabled",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "verified",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "verifiedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "lastUsedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "disabledAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "MfaMethod_enabled_idx",
+        "def": "CREATE INDEX \"MfaMethod_enabled_idx\" ON auth_aim.\"MfaMethod\" USING btree (enabled)"
+      },
+      {
+        "name": "MfaMethod_pkey",
+        "def": "CREATE UNIQUE INDEX \"MfaMethod_pkey\" ON auth_aim.\"MfaMethod\" USING btree (id)"
+      },
+      {
+        "name": "MfaMethod_type_idx",
+        "def": "CREATE INDEX \"MfaMethod_type_idx\" ON auth_aim.\"MfaMethod\" USING btree (type)"
+      },
+      {
+        "name": "MfaMethod_userId_idx",
+        "def": "CREATE INDEX \"MfaMethod_userId_idx\" ON auth_aim.\"MfaMethod\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "Organization": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"OrganizationStatus\""
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Organization_pkey",
+        "def": "CREATE UNIQUE INDEX \"Organization_pkey\" ON auth_aim.\"Organization\" USING btree (id)"
+      },
+      {
+        "name": "Organization_status_idx",
+        "def": "CREATE INDEX \"Organization_status_idx\" ON auth_aim.\"Organization\" USING btree (status)"
+      },
+      {
+        "name": "Organization_tenantId_code_key",
+        "def": "CREATE UNIQUE INDEX \"Organization_tenantId_code_key\" ON auth_aim.\"Organization\" USING btree (\"tenantId\", code)"
+      },
+      {
+        "name": "Organization_tenantId_idx",
+        "def": "CREATE INDEX \"Organization_tenantId_idx\" ON auth_aim.\"Organization\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "OutboxEvent": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "aggregateType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "aggregateId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "eventType",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "payload",
+        "type": "jsonb",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "publishedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "retryCount",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "lastError",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "OutboxEvent_aggregateType_aggregateId_idx",
+        "def": "CREATE INDEX \"OutboxEvent_aggregateType_aggregateId_idx\" ON auth_aim.\"OutboxEvent\" USING btree (\"aggregateType\", \"aggregateId\")"
+      },
+      {
+        "name": "OutboxEvent_createdAt_idx",
+        "def": "CREATE INDEX \"OutboxEvent_createdAt_idx\" ON auth_aim.\"OutboxEvent\" USING btree (\"createdAt\")"
+      },
+      {
+        "name": "OutboxEvent_eventType_idx",
+        "def": "CREATE INDEX \"OutboxEvent_eventType_idx\" ON auth_aim.\"OutboxEvent\" USING btree (\"eventType\")"
+      },
+      {
+        "name": "OutboxEvent_pkey",
+        "def": "CREATE UNIQUE INDEX \"OutboxEvent_pkey\" ON auth_aim.\"OutboxEvent\" USING btree (id)"
+      },
+      {
+        "name": "OutboxEvent_publishedAt_idx",
+        "def": "CREATE INDEX \"OutboxEvent_publishedAt_idx\" ON auth_aim.\"OutboxEvent\" USING btree (\"publishedAt\")"
+      }
+    ]
+  },
+  "PasswordHistory": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "passwordHash",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "PasswordHistory_createdAt_idx",
+        "def": "CREATE INDEX \"PasswordHistory_createdAt_idx\" ON auth_aim.\"PasswordHistory\" USING btree (\"createdAt\")"
+      },
+      {
+        "name": "PasswordHistory_pkey",
+        "def": "CREATE UNIQUE INDEX \"PasswordHistory_pkey\" ON auth_aim.\"PasswordHistory\" USING btree (id)"
+      },
+      {
+        "name": "PasswordHistory_userId_idx",
+        "def": "CREATE INDEX \"PasswordHistory_userId_idx\" ON auth_aim.\"PasswordHistory\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "Payment": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "invoiceId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'PENDING'::auth_aim.\"PaymentStatus\""
+      },
+      {
+        "name": "provider",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "paymentMethod",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "externalReference",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "amount",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "currency",
+        "type": "character varying",
+        "nullable": "NO",
+        "default": "'MGA'::character varying"
+      },
+      {
+        "name": "initiatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "completedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "failedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "refundedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "failureCode",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "failureMessage",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Payment_externalReference_idx",
+        "def": "CREATE INDEX \"Payment_externalReference_idx\" ON auth_aim.\"Payment\" USING btree (\"externalReference\")"
+      },
+      {
+        "name": "Payment_invoiceId_idx",
+        "def": "CREATE INDEX \"Payment_invoiceId_idx\" ON auth_aim.\"Payment\" USING btree (\"invoiceId\")"
+      },
+      {
+        "name": "Payment_pkey",
+        "def": "CREATE UNIQUE INDEX \"Payment_pkey\" ON auth_aim.\"Payment\" USING btree (id)"
+      },
+      {
+        "name": "Payment_status_idx",
+        "def": "CREATE INDEX \"Payment_status_idx\" ON auth_aim.\"Payment\" USING btree (status)"
+      }
+    ]
+  },
+  "Permission": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "resource",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "action",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "critical",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "active",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "true"
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Permission_active_idx",
+        "def": "CREATE INDEX \"Permission_active_idx\" ON auth_aim.\"Permission\" USING btree (active)"
+      },
+      {
+        "name": "Permission_code_key",
+        "def": "CREATE UNIQUE INDEX \"Permission_code_key\" ON auth_aim.\"Permission\" USING btree (code)"
+      },
+      {
+        "name": "Permission_pkey",
+        "def": "CREATE UNIQUE INDEX \"Permission_pkey\" ON auth_aim.\"Permission\" USING btree (id)"
+      },
+      {
+        "name": "Permission_resource_action_idx",
+        "def": "CREATE INDEX \"Permission_resource_action_idx\" ON auth_aim.\"Permission\" USING btree (resource, action)"
+      }
+    ]
+  },
+  "Plan": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'DRAFT'::auth_aim.\"PlanStatus\""
+      },
+      {
+        "name": "billingInterval",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'MONTHLY'::auth_aim.\"BillingInterval\""
+      },
+      {
+        "name": "price",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "currency",
+        "type": "character varying",
+        "nullable": "NO",
+        "default": "'MGA'::character varying"
+      },
+      {
+        "name": "trialDays",
+        "type": "integer",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Plan_code_key",
+        "def": "CREATE UNIQUE INDEX \"Plan_code_key\" ON auth_aim.\"Plan\" USING btree (code)"
+      },
+      {
+        "name": "Plan_pkey",
+        "def": "CREATE UNIQUE INDEX \"Plan_pkey\" ON auth_aim.\"Plan\" USING btree (id)"
+      },
+      {
+        "name": "Plan_status_idx",
+        "def": "CREATE INDEX \"Plan_status_idx\" ON auth_aim.\"Plan\" USING btree (status)"
+      }
+    ]
+  },
+  "PlanEntitlement": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "planId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "featureCode",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "valueType",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'BOOLEAN'::auth_aim.\"EntitlementValueType\""
+      },
+      {
+        "name": "enabled",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "true"
+      },
+      {
+        "name": "integerValue",
+        "type": "integer",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "decimalValue",
+        "type": "numeric",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "stringValue",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "jsonValue",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "PlanEntitlement_featureCode_idx",
+        "def": "CREATE INDEX \"PlanEntitlement_featureCode_idx\" ON auth_aim.\"PlanEntitlement\" USING btree (\"featureCode\")"
+      },
+      {
+        "name": "PlanEntitlement_pkey",
+        "def": "CREATE UNIQUE INDEX \"PlanEntitlement_pkey\" ON auth_aim.\"PlanEntitlement\" USING btree (id)"
+      },
+      {
+        "name": "PlanEntitlement_planId_featureCode_key",
+        "def": "CREATE UNIQUE INDEX \"PlanEntitlement_planId_featureCode_key\" ON auth_aim.\"PlanEntitlement\" USING btree (\"planId\", \"featureCode\")"
+      }
+    ]
+  },
+  "PlatformConfiguration": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "key",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "value",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "secretRef",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "category",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "editable",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "true"
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "PlatformConfiguration_category_idx",
+        "def": "CREATE INDEX \"PlatformConfiguration_category_idx\" ON auth_aim.\"PlatformConfiguration\" USING btree (category)"
+      },
+      {
+        "name": "PlatformConfiguration_key_key",
+        "def": "CREATE UNIQUE INDEX \"PlatformConfiguration_key_key\" ON auth_aim.\"PlatformConfiguration\" USING btree (key)"
+      },
+      {
+        "name": "PlatformConfiguration_pkey",
+        "def": "CREATE UNIQUE INDEX \"PlatformConfiguration_pkey\" ON auth_aim.\"PlatformConfiguration\" USING btree (id)"
+      }
+    ]
+  },
+  "PlatformDiagnostic": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "serviceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "component",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'UNKNOWN'::auth_aim.\"DiagnosticStatus\""
+      },
+      {
+        "name": "severity",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "message",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "details",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "checkedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "resolvedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "PlatformDiagnostic_checkedAt_idx",
+        "def": "CREATE INDEX \"PlatformDiagnostic_checkedAt_idx\" ON auth_aim.\"PlatformDiagnostic\" USING btree (\"checkedAt\")"
+      },
+      {
+        "name": "PlatformDiagnostic_component_idx",
+        "def": "CREATE INDEX \"PlatformDiagnostic_component_idx\" ON auth_aim.\"PlatformDiagnostic\" USING btree (component)"
+      },
+      {
+        "name": "PlatformDiagnostic_pkey",
+        "def": "CREATE UNIQUE INDEX \"PlatformDiagnostic_pkey\" ON auth_aim.\"PlatformDiagnostic\" USING btree (id)"
+      },
+      {
+        "name": "PlatformDiagnostic_serviceId_idx",
+        "def": "CREATE INDEX \"PlatformDiagnostic_serviceId_idx\" ON auth_aim.\"PlatformDiagnostic\" USING btree (\"serviceId\")"
+      },
+      {
+        "name": "PlatformDiagnostic_status_idx",
+        "def": "CREATE INDEX \"PlatformDiagnostic_status_idx\" ON auth_aim.\"PlatformDiagnostic\" USING btree (status)"
+      }
+    ]
+  },
+  "PlatformMaintenance": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "title",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "component",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "environment",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "startsAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "endsAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "active",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "PlatformMaintenance_active_idx",
+        "def": "CREATE INDEX \"PlatformMaintenance_active_idx\" ON auth_aim.\"PlatformMaintenance\" USING btree (active)"
+      },
+      {
+        "name": "PlatformMaintenance_environment_idx",
+        "def": "CREATE INDEX \"PlatformMaintenance_environment_idx\" ON auth_aim.\"PlatformMaintenance\" USING btree (environment)"
+      },
+      {
+        "name": "PlatformMaintenance_pkey",
+        "def": "CREATE UNIQUE INDEX \"PlatformMaintenance_pkey\" ON auth_aim.\"PlatformMaintenance\" USING btree (id)"
+      },
+      {
+        "name": "PlatformMaintenance_startsAt_idx",
+        "def": "CREATE INDEX \"PlatformMaintenance_startsAt_idx\" ON auth_aim.\"PlatformMaintenance\" USING btree (\"startsAt\")"
+      }
+    ]
+  },
+  "PlatformService": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'STARTING'::auth_aim.\"PlatformServiceStatus\""
+      },
+      {
+        "name": "version",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "baseUrl",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "environment",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "lastHealthCheckAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "PlatformService_code_key",
+        "def": "CREATE UNIQUE INDEX \"PlatformService_code_key\" ON auth_aim.\"PlatformService\" USING btree (code)"
+      },
+      {
+        "name": "PlatformService_environment_idx",
+        "def": "CREATE INDEX \"PlatformService_environment_idx\" ON auth_aim.\"PlatformService\" USING btree (environment)"
+      },
+      {
+        "name": "PlatformService_pkey",
+        "def": "CREATE UNIQUE INDEX \"PlatformService_pkey\" ON auth_aim.\"PlatformService\" USING btree (id)"
+      },
+      {
+        "name": "PlatformService_status_idx",
+        "def": "CREATE INDEX \"PlatformService_status_idx\" ON auth_aim.\"PlatformService\" USING btree (status)"
+      }
+    ]
+  },
+  "PolicyCondition": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "policyId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "attribute",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "operator",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "value",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "sortOrder",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "PolicyCondition_attribute_idx",
+        "def": "CREATE INDEX \"PolicyCondition_attribute_idx\" ON auth_aim.\"PolicyCondition\" USING btree (attribute)"
+      },
+      {
+        "name": "PolicyCondition_pkey",
+        "def": "CREATE UNIQUE INDEX \"PolicyCondition_pkey\" ON auth_aim.\"PolicyCondition\" USING btree (id)"
+      },
+      {
+        "name": "PolicyCondition_policyId_idx",
+        "def": "CREATE INDEX \"PolicyCondition_policyId_idx\" ON auth_aim.\"PolicyCondition\" USING btree (\"policyId\")"
+      }
+    ]
+  },
+  "QuotaUsage": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subscriptionId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "featureCode",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "periodStart",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "periodEnd",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "usedValue",
+        "type": "numeric",
+        "nullable": "NO",
+        "default": "0"
+      },
+      {
+        "name": "limitValue",
+        "type": "numeric",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "QuotaUsage_featureCode_idx",
+        "def": "CREATE INDEX \"QuotaUsage_featureCode_idx\" ON auth_aim.\"QuotaUsage\" USING btree (\"featureCode\")"
+      },
+      {
+        "name": "QuotaUsage_pkey",
+        "def": "CREATE UNIQUE INDEX \"QuotaUsage_pkey\" ON auth_aim.\"QuotaUsage\" USING btree (id)"
+      },
+      {
+        "name": "QuotaUsage_subscriptionId_featureCode_periodStart_periodEnd_key",
+        "def": "CREATE UNIQUE INDEX \"QuotaUsage_subscriptionId_featureCode_periodStart_periodEnd_key\" ON auth_aim.\"QuotaUsage\" USING btree (\"subscriptionId\", \"featureCode\", \"periodStart\", \"periodEnd\")"
+      },
+      {
+        "name": "QuotaUsage_subscriptionId_idx",
+        "def": "CREATE INDEX \"QuotaUsage_subscriptionId_idx\" ON auth_aim.\"QuotaUsage\" USING btree (\"subscriptionId\")"
+      }
+    ]
+  },
+  "RecoveryCode": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "codeHash",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "expiresAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "usedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "RecoveryCode_codeHash_key",
+        "def": "CREATE UNIQUE INDEX \"RecoveryCode_codeHash_key\" ON auth_aim.\"RecoveryCode\" USING btree (\"codeHash\")"
+      },
+      {
+        "name": "RecoveryCode_pkey",
+        "def": "CREATE UNIQUE INDEX \"RecoveryCode_pkey\" ON auth_aim.\"RecoveryCode\" USING btree (id)"
+      },
+      {
+        "name": "RecoveryCode_userId_idx",
+        "def": "CREATE INDEX \"RecoveryCode_userId_idx\" ON auth_aim.\"RecoveryCode\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "RefreshToken": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "sessionId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tokenHash",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "familyId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"TokenStatus\""
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "expiresAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "rotatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokeReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "replacedByTokenId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "RefreshToken_expiresAt_idx",
+        "def": "CREATE INDEX \"RefreshToken_expiresAt_idx\" ON auth_aim.\"RefreshToken\" USING btree (\"expiresAt\")"
+      },
+      {
+        "name": "RefreshToken_familyId_idx",
+        "def": "CREATE INDEX \"RefreshToken_familyId_idx\" ON auth_aim.\"RefreshToken\" USING btree (\"familyId\")"
+      },
+      {
+        "name": "RefreshToken_pkey",
+        "def": "CREATE UNIQUE INDEX \"RefreshToken_pkey\" ON auth_aim.\"RefreshToken\" USING btree (id)"
+      },
+      {
+        "name": "RefreshToken_sessionId_idx",
+        "def": "CREATE INDEX \"RefreshToken_sessionId_idx\" ON auth_aim.\"RefreshToken\" USING btree (\"sessionId\")"
+      },
+      {
+        "name": "RefreshToken_status_idx",
+        "def": "CREATE INDEX \"RefreshToken_status_idx\" ON auth_aim.\"RefreshToken\" USING btree (status)"
+      },
+      {
+        "name": "RefreshToken_tokenHash_key",
+        "def": "CREATE UNIQUE INDEX \"RefreshToken_tokenHash_key\" ON auth_aim.\"RefreshToken\" USING btree (\"tokenHash\")"
+      }
+    ]
+  },
+  "Role": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"RoleStatus\""
+      },
+      {
+        "name": "system",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "privileged",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Role_pkey",
+        "def": "CREATE UNIQUE INDEX \"Role_pkey\" ON auth_aim.\"Role\" USING btree (id)"
+      },
+      {
+        "name": "Role_status_idx",
+        "def": "CREATE INDEX \"Role_status_idx\" ON auth_aim.\"Role\" USING btree (status)"
+      },
+      {
+        "name": "Role_tenantId_code_key",
+        "def": "CREATE UNIQUE INDEX \"Role_tenantId_code_key\" ON auth_aim.\"Role\" USING btree (\"tenantId\", code)"
+      },
+      {
+        "name": "Role_tenantId_idx",
+        "def": "CREATE INDEX \"Role_tenantId_idx\" ON auth_aim.\"Role\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "RoleAssignment": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "roleId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "groupId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "serviceAccountId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "siteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "validFrom",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "validUntil",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "temporary",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "delegated",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "assignedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokeReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "RoleAssignment_groupId_idx",
+        "def": "CREATE INDEX \"RoleAssignment_groupId_idx\" ON auth_aim.\"RoleAssignment\" USING btree (\"groupId\")"
+      },
+      {
+        "name": "RoleAssignment_organizationId_idx",
+        "def": "CREATE INDEX \"RoleAssignment_organizationId_idx\" ON auth_aim.\"RoleAssignment\" USING btree (\"organizationId\")"
+      },
+      {
+        "name": "RoleAssignment_pkey",
+        "def": "CREATE UNIQUE INDEX \"RoleAssignment_pkey\" ON auth_aim.\"RoleAssignment\" USING btree (id)"
+      },
+      {
+        "name": "RoleAssignment_roleId_idx",
+        "def": "CREATE INDEX \"RoleAssignment_roleId_idx\" ON auth_aim.\"RoleAssignment\" USING btree (\"roleId\")"
+      },
+      {
+        "name": "RoleAssignment_serviceAccountId_idx",
+        "def": "CREATE INDEX \"RoleAssignment_serviceAccountId_idx\" ON auth_aim.\"RoleAssignment\" USING btree (\"serviceAccountId\")"
+      },
+      {
+        "name": "RoleAssignment_siteId_idx",
+        "def": "CREATE INDEX \"RoleAssignment_siteId_idx\" ON auth_aim.\"RoleAssignment\" USING btree (\"siteId\")"
+      },
+      {
+        "name": "RoleAssignment_tenantId_idx",
+        "def": "CREATE INDEX \"RoleAssignment_tenantId_idx\" ON auth_aim.\"RoleAssignment\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "RoleAssignment_userId_idx",
+        "def": "CREATE INDEX \"RoleAssignment_userId_idx\" ON auth_aim.\"RoleAssignment\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "RolePermission": {
+    "columns": [
+      {
+        "name": "roleId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "permissionId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "grantedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "grantedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "RolePermission_permissionId_idx",
+        "def": "CREATE INDEX \"RolePermission_permissionId_idx\" ON auth_aim.\"RolePermission\" USING btree (\"permissionId\")"
+      },
+      {
+        "name": "RolePermission_pkey",
+        "def": "CREATE UNIQUE INDEX \"RolePermission_pkey\" ON auth_aim.\"RolePermission\" USING btree (\"roleId\", \"permissionId\")"
+      }
+    ]
+  },
+  "SecurityEvent": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "traceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "type",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "severity",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "identityId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "siteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "sessionId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "deviceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "riskLevel",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "source",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "occurredAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "SecurityEvent_occurredAt_idx",
+        "def": "CREATE INDEX \"SecurityEvent_occurredAt_idx\" ON auth_aim.\"SecurityEvent\" USING btree (\"occurredAt\")"
+      },
+      {
+        "name": "SecurityEvent_pkey",
+        "def": "CREATE UNIQUE INDEX \"SecurityEvent_pkey\" ON auth_aim.\"SecurityEvent\" USING btree (id)"
+      },
+      {
+        "name": "SecurityEvent_severity_idx",
+        "def": "CREATE INDEX \"SecurityEvent_severity_idx\" ON auth_aim.\"SecurityEvent\" USING btree (severity)"
+      },
+      {
+        "name": "SecurityEvent_tenantId_idx",
+        "def": "CREATE INDEX \"SecurityEvent_tenantId_idx\" ON auth_aim.\"SecurityEvent\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "SecurityEvent_traceId_idx",
+        "def": "CREATE INDEX \"SecurityEvent_traceId_idx\" ON auth_aim.\"SecurityEvent\" USING btree (\"traceId\")"
+      },
+      {
+        "name": "SecurityEvent_type_idx",
+        "def": "CREATE INDEX \"SecurityEvent_type_idx\" ON auth_aim.\"SecurityEvent\" USING btree (type)"
+      },
+      {
+        "name": "SecurityEvent_userId_idx",
+        "def": "CREATE INDEX \"SecurityEvent_userId_idx\" ON auth_aim.\"SecurityEvent\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "ServiceAccount": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "identityId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"ServiceAccountStatus\""
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "ServiceAccount_identityId_key",
+        "def": "CREATE UNIQUE INDEX \"ServiceAccount_identityId_key\" ON auth_aim.\"ServiceAccount\" USING btree (\"identityId\")"
+      },
+      {
+        "name": "ServiceAccount_pkey",
+        "def": "CREATE UNIQUE INDEX \"ServiceAccount_pkey\" ON auth_aim.\"ServiceAccount\" USING btree (id)"
+      },
+      {
+        "name": "ServiceAccount_status_idx",
+        "def": "CREATE INDEX \"ServiceAccount_status_idx\" ON auth_aim.\"ServiceAccount\" USING btree (status)"
+      },
+      {
+        "name": "ServiceAccount_tenantId_code_key",
+        "def": "CREATE UNIQUE INDEX \"ServiceAccount_tenantId_code_key\" ON auth_aim.\"ServiceAccount\" USING btree (\"tenantId\", code)"
+      },
+      {
+        "name": "ServiceAccount_tenantId_idx",
+        "def": "CREATE INDEX \"ServiceAccount_tenantId_idx\" ON auth_aim.\"ServiceAccount\" USING btree (\"tenantId\")"
+      }
+    ]
+  },
+  "ServiceAccountCredential": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "serviceAccountId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "keyId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "secretHash",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "secretRef",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"CredentialStatus\""
+      },
+      {
+        "name": "scopes",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "expiresAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "lastUsedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokeReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "ServiceAccountCredential_keyId_key",
+        "def": "CREATE UNIQUE INDEX \"ServiceAccountCredential_keyId_key\" ON auth_aim.\"ServiceAccountCredential\" USING btree (\"keyId\")"
+      },
+      {
+        "name": "ServiceAccountCredential_pkey",
+        "def": "CREATE UNIQUE INDEX \"ServiceAccountCredential_pkey\" ON auth_aim.\"ServiceAccountCredential\" USING btree (id)"
+      },
+      {
+        "name": "ServiceAccountCredential_serviceAccountId_idx",
+        "def": "CREATE INDEX \"ServiceAccountCredential_serviceAccountId_idx\" ON auth_aim.\"ServiceAccountCredential\" USING btree (\"serviceAccountId\")"
+      },
+      {
+        "name": "ServiceAccountCredential_status_idx",
+        "def": "CREATE INDEX \"ServiceAccountCredential_status_idx\" ON auth_aim.\"ServiceAccountCredential\" USING btree (status)"
+      }
+    ]
+  },
+  "Session": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "siteId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "applicationId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "environment",
+        "type": "USER-DEFINED",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "deviceId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"SessionStatus\""
+      },
+      {
+        "name": "authenticationLevel",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "riskLevel",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'LOW'::auth_aim.\"RiskLevel\""
+      },
+      {
+        "name": "ipHash",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "userAgentHash",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "lastActivityAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "idleExpiresAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "expiresAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "revokeReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Session_deviceId_idx",
+        "def": "CREATE INDEX \"Session_deviceId_idx\" ON auth_aim.\"Session\" USING btree (\"deviceId\")"
+      },
+      {
+        "name": "Session_expiresAt_idx",
+        "def": "CREATE INDEX \"Session_expiresAt_idx\" ON auth_aim.\"Session\" USING btree (\"expiresAt\")"
+      },
+      {
+        "name": "Session_pkey",
+        "def": "CREATE UNIQUE INDEX \"Session_pkey\" ON auth_aim.\"Session\" USING btree (id)"
+      },
+      {
+        "name": "Session_status_idx",
+        "def": "CREATE INDEX \"Session_status_idx\" ON auth_aim.\"Session\" USING btree (status)"
+      },
+      {
+        "name": "Session_tenantId_idx",
+        "def": "CREATE INDEX \"Session_tenantId_idx\" ON auth_aim.\"Session\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "Session_userId_idx",
+        "def": "CREATE INDEX \"Session_userId_idx\" ON auth_aim.\"Session\" USING btree (\"userId\")"
+      },
+      {
+        "name": "Session_userId_status_idx",
+        "def": "CREATE INDEX \"Session_userId_status_idx\" ON auth_aim.\"Session\" USING btree (\"userId\", status)"
+      }
+    ]
+  },
+  "Site": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "organizationId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'ACTIVE'::auth_aim.\"SiteStatus\""
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Site_organizationId_code_key",
+        "def": "CREATE UNIQUE INDEX \"Site_organizationId_code_key\" ON auth_aim.\"Site\" USING btree (\"organizationId\", code)"
+      },
+      {
+        "name": "Site_organizationId_idx",
+        "def": "CREATE INDEX \"Site_organizationId_idx\" ON auth_aim.\"Site\" USING btree (\"organizationId\")"
+      },
+      {
+        "name": "Site_pkey",
+        "def": "CREATE UNIQUE INDEX \"Site_pkey\" ON auth_aim.\"Site\" USING btree (id)"
+      },
+      {
+        "name": "Site_status_idx",
+        "def": "CREATE INDEX \"Site_status_idx\" ON auth_aim.\"Site\" USING btree (status)"
+      }
+    ]
+  },
+  "Subscription": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "tenantId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "planId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "applicationCode",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'TRIAL'::auth_aim.\"SubscriptionStatus\""
+      },
+      {
+        "name": "startsAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "trialEndsAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "currentPeriodStart",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "currentPeriodEnd",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "endsAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "suspendedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "cancelledAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "cancelledBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "cancellationReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "autoRenew",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "true"
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Subscription_currentPeriodEnd_idx",
+        "def": "CREATE INDEX \"Subscription_currentPeriodEnd_idx\" ON auth_aim.\"Subscription\" USING btree (\"currentPeriodEnd\")"
+      },
+      {
+        "name": "Subscription_pkey",
+        "def": "CREATE UNIQUE INDEX \"Subscription_pkey\" ON auth_aim.\"Subscription\" USING btree (id)"
+      },
+      {
+        "name": "Subscription_planId_idx",
+        "def": "CREATE INDEX \"Subscription_planId_idx\" ON auth_aim.\"Subscription\" USING btree (\"planId\")"
+      },
+      {
+        "name": "Subscription_status_idx",
+        "def": "CREATE INDEX \"Subscription_status_idx\" ON auth_aim.\"Subscription\" USING btree (status)"
+      },
+      {
+        "name": "Subscription_tenantId_idx",
+        "def": "CREATE INDEX \"Subscription_tenantId_idx\" ON auth_aim.\"Subscription\" USING btree (\"tenantId\")"
+      },
+      {
+        "name": "Subscription_tenantId_status_idx",
+        "def": "CREATE INDEX \"Subscription_tenantId_status_idx\" ON auth_aim.\"Subscription\" USING btree (\"tenantId\", status)"
+      }
+    ]
+  },
+  "SubscriptionEntitlementOverride": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "subscriptionId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "featureCode",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "valueType",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'BOOLEAN'::auth_aim.\"EntitlementValueType\""
+      },
+      {
+        "name": "enabled",
+        "type": "boolean",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "integerValue",
+        "type": "integer",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "decimalValue",
+        "type": "numeric",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "stringValue",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "jsonValue",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "validFrom",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "validUntil",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "SubscriptionEntitlementOverride_featureCode_idx",
+        "def": "CREATE INDEX \"SubscriptionEntitlementOverride_featureCode_idx\" ON auth_aim.\"SubscriptionEntitlementOverride\" USING btree (\"featureCode\")"
+      },
+      {
+        "name": "SubscriptionEntitlementOverride_pkey",
+        "def": "CREATE UNIQUE INDEX \"SubscriptionEntitlementOverride_pkey\" ON auth_aim.\"SubscriptionEntitlementOverride\" USING btree (id)"
+      },
+      {
+        "name": "SubscriptionEntitlementOverride_subscriptionId_featureCode_key",
+        "def": "CREATE UNIQUE INDEX \"SubscriptionEntitlementOverride_subscriptionId_featureCode_key\" ON auth_aim.\"SubscriptionEntitlementOverride\" USING btree (\"subscriptionId\", \"featureCode\")"
+      }
+    ]
+  },
+  "Tenant": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "code",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'PENDING'::auth_aim.\"TenantStatus\""
+      },
+      {
+        "name": "locale",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "timezone",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "Tenant_code_key",
+        "def": "CREATE UNIQUE INDEX \"Tenant_code_key\" ON auth_aim.\"Tenant\" USING btree (code)"
+      },
+      {
+        "name": "Tenant_pkey",
+        "def": "CREATE UNIQUE INDEX \"Tenant_pkey\" ON auth_aim.\"Tenant\" USING btree (id)"
+      },
+      {
+        "name": "Tenant_status_idx",
+        "def": "CREATE INDEX \"Tenant_status_idx\" ON auth_aim.\"Tenant\" USING btree (status)"
+      }
+    ]
+  },
+  "User": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "username",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "primaryEmail",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "phone",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "firstName",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "lastName",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "displayName",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "avatarRef",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "locale",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "timezone",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "USER-DEFINED",
+        "nullable": "NO",
+        "default": "'PENDING'::auth_aim.\"UserStatus\""
+      },
+      {
+        "name": "defaultTenantId",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "statusChangedReason",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "createdAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "createdBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "updatedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "updatedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "archivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "version",
+        "type": "integer",
+        "nullable": "NO",
+        "default": "1"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "User_defaultTenantId_idx",
+        "def": "CREATE INDEX \"User_defaultTenantId_idx\" ON auth_aim.\"User\" USING btree (\"defaultTenantId\")"
+      },
+      {
+        "name": "User_phone_idx",
+        "def": "CREATE INDEX \"User_phone_idx\" ON auth_aim.\"User\" USING btree (phone)"
+      },
+      {
+        "name": "User_pkey",
+        "def": "CREATE UNIQUE INDEX \"User_pkey\" ON auth_aim.\"User\" USING btree (id)"
+      },
+      {
+        "name": "User_primaryEmail_idx",
+        "def": "CREATE INDEX \"User_primaryEmail_idx\" ON auth_aim.\"User\" USING btree (\"primaryEmail\")"
+      },
+      {
+        "name": "User_primaryEmail_key",
+        "def": "CREATE UNIQUE INDEX \"User_primaryEmail_key\" ON auth_aim.\"User\" USING btree (\"primaryEmail\")"
+      },
+      {
+        "name": "User_status_idx",
+        "def": "CREATE INDEX \"User_status_idx\" ON auth_aim.\"User\" USING btree (status)"
+      },
+      {
+        "name": "User_username_key",
+        "def": "CREATE UNIQUE INDEX \"User_username_key\" ON auth_aim.\"User\" USING btree (username)"
+      }
+    ]
+  },
+  "UserIdentity": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "userId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "identityId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "isPrimary",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "linkedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "linkedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "unlinkedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "unlinkedBy",
+        "type": "text",
+        "nullable": "YES",
+        "default": null
+      }
+    ],
+    "indexes": [
+      {
+        "name": "UserIdentity_identityId_idx",
+        "def": "CREATE INDEX \"UserIdentity_identityId_idx\" ON auth_aim.\"UserIdentity\" USING btree (\"identityId\")"
+      },
+      {
+        "name": "UserIdentity_pkey",
+        "def": "CREATE UNIQUE INDEX \"UserIdentity_pkey\" ON auth_aim.\"UserIdentity\" USING btree (id)"
+      },
+      {
+        "name": "UserIdentity_userId_identityId_key",
+        "def": "CREATE UNIQUE INDEX \"UserIdentity_userId_identityId_key\" ON auth_aim.\"UserIdentity\" USING btree (\"userId\", \"identityId\")"
+      },
+      {
+        "name": "UserIdentity_userId_idx",
+        "def": "CREATE INDEX \"UserIdentity_userId_idx\" ON auth_aim.\"UserIdentity\" USING btree (\"userId\")"
+      }
+    ]
+  },
+  "WebhookEvent": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "provider",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "providerEventId",
+        "type": "text",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "signatureValid",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "processed",
+        "type": "boolean",
+        "nullable": "NO",
+        "default": "false"
+      },
+      {
+        "name": "processedAt",
+        "type": "timestamp without time zone",
+        "nullable": "YES",
+        "default": null
+      },
+      {
+        "name": "payload",
+        "type": "jsonb",
+        "nullable": "NO",
+        "default": null
+      },
+      {
+        "name": "receivedAt",
+        "type": "timestamp without time zone",
+        "nullable": "NO",
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "WebhookEvent_pkey",
+        "def": "CREATE UNIQUE INDEX \"WebhookEvent_pkey\" ON auth_aim.\"WebhookEvent\" USING btree (id)"
+      },
+      {
+        "name": "WebhookEvent_providerEventId_key",
+        "def": "CREATE UNIQUE INDEX \"WebhookEvent_providerEventId_key\" ON auth_aim.\"WebhookEvent\" USING btree (\"providerEventId\")"
+      },
+      {
+        "name": "WebhookEvent_provider_idx",
+        "def": "CREATE INDEX \"WebhookEvent_provider_idx\" ON auth_aim.\"WebhookEvent\" USING btree (provider)"
+      }
+    ]
+  },
+  "\"AccessPolicy\"": {
+    "constraints": [
+      {
+        "name": "AccessPolicy_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "AccessPolicy_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"AdminDelegation\"": {
+    "constraints": [
+      {
+        "name": "AdminDelegation_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "AdminDelegation_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"AdministrativeAction\"": {
+    "constraints": [
+      {
+        "name": "AdministrativeAction_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"AuditEvent\"": {
+    "constraints": [
+      {
+        "name": "AuditEvent_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"AuthorizationDecision\"": {
+    "constraints": [
+      {
+        "name": "AuthorizationDecision_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"BillingEvent\"": {
+    "constraints": [
+      {
+        "name": "BillingEvent_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"ContextInvalidation\"": {
+    "constraints": [
+      {
+        "name": "ContextInvalidation_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"ContextSnapshot\"": {
+    "constraints": [
+      {
+        "name": "ContextSnapshot_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"ContextSwitchEvent\"": {
+    "constraints": [
+      {
+        "name": "ContextSwitchEvent_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Credential\"": {
+    "constraints": [
+      {
+        "name": "Credential_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Credential_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Device\"": {
+    "constraints": [
+      {
+        "name": "Device_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Device_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"ExternalIdentityLink\"": {
+    "constraints": [
+      {
+        "name": "ExternalIdentityLink_identityId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"identityId\") REFERENCES auth_aim.\"Identity\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "ExternalIdentityLink_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Feature\"": {
+    "constraints": [
+      {
+        "name": "Feature_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (code)"
+      }
+    ]
+  },
+  "\"Group\"": {
+    "constraints": [
+      {
+        "name": "Group_organizationId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"organizationId\") REFERENCES auth_aim.\"Organization\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "Group_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Group_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"GroupMember\"": {
+    "constraints": [
+      {
+        "name": "GroupMember_groupId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"groupId\") REFERENCES auth_aim.\"Group\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "GroupMember_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "GroupMember_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Identity\"": {
+    "constraints": [
+      {
+        "name": "Identity_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Invoice\"": {
+    "constraints": [
+      {
+        "name": "Invoice_subscriptionId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"subscriptionId\") REFERENCES auth_aim.\"Subscription\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "Invoice_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Invoice_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"InvoiceItem\"": {
+    "constraints": [
+      {
+        "name": "InvoiceItem_invoiceId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"invoiceId\") REFERENCES auth_aim.\"Invoice\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "InvoiceItem_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Membership\"": {
+    "constraints": [
+      {
+        "name": "Membership_organizationId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"organizationId\") REFERENCES auth_aim.\"Organization\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "Membership_siteId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"siteId\") REFERENCES auth_aim.\"Site\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "Membership_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Membership_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Membership_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"MfaMethod\"": {
+    "constraints": [
+      {
+        "name": "MfaMethod_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "MfaMethod_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Organization\"": {
+    "constraints": [
+      {
+        "name": "Organization_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Organization_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"OutboxEvent\"": {
+    "constraints": [
+      {
+        "name": "OutboxEvent_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"PasswordHistory\"": {
+    "constraints": [
+      {
+        "name": "PasswordHistory_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "PasswordHistory_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Payment\"": {
+    "constraints": [
+      {
+        "name": "Payment_invoiceId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"invoiceId\") REFERENCES auth_aim.\"Invoice\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Payment_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Permission\"": {
+    "constraints": [
+      {
+        "name": "Permission_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Plan\"": {
+    "constraints": [
+      {
+        "name": "Plan_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"PlanEntitlement\"": {
+    "constraints": [
+      {
+        "name": "PlanEntitlement_planId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"planId\") REFERENCES auth_aim.\"Plan\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "PlanEntitlement_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"PlatformConfiguration\"": {
+    "constraints": [
+      {
+        "name": "PlatformConfiguration_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"PlatformDiagnostic\"": {
+    "constraints": [
+      {
+        "name": "PlatformDiagnostic_serviceId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"serviceId\") REFERENCES auth_aim.\"PlatformService\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "PlatformDiagnostic_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"PlatformMaintenance\"": {
+    "constraints": [
+      {
+        "name": "PlatformMaintenance_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"PlatformService\"": {
+    "constraints": [
+      {
+        "name": "PlatformService_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"PolicyCondition\"": {
+    "constraints": [
+      {
+        "name": "PolicyCondition_policyId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"policyId\") REFERENCES auth_aim.\"AccessPolicy\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "PolicyCondition_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"QuotaUsage\"": {
+    "constraints": [
+      {
+        "name": "QuotaUsage_subscriptionId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"subscriptionId\") REFERENCES auth_aim.\"Subscription\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "QuotaUsage_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"RecoveryCode\"": {
+    "constraints": [
+      {
+        "name": "RecoveryCode_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "RecoveryCode_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"RefreshToken\"": {
+    "constraints": [
+      {
+        "name": "RefreshToken_sessionId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"sessionId\") REFERENCES auth_aim.\"Session\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "RefreshToken_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Role\"": {
+    "constraints": [
+      {
+        "name": "Role_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "Role_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"RoleAssignment\"": {
+    "constraints": [
+      {
+        "name": "RoleAssignment_groupId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"groupId\") REFERENCES auth_aim.\"Group\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "RoleAssignment_roleId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"roleId\") REFERENCES auth_aim.\"Role\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "RoleAssignment_serviceAccountId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"serviceAccountId\") REFERENCES auth_aim.\"ServiceAccount\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "RoleAssignment_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "RoleAssignment_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"RolePermission\"": {
+    "constraints": [
+      {
+        "name": "RolePermission_permissionId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"permissionId\") REFERENCES auth_aim.\"Permission\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "RolePermission_roleId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"roleId\") REFERENCES auth_aim.\"Role\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "RolePermission_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (\"roleId\", \"permissionId\")"
+      }
+    ]
+  },
+  "\"SecurityEvent\"": {
+    "constraints": [
+      {
+        "name": "SecurityEvent_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"ServiceAccount\"": {
+    "constraints": [
+      {
+        "name": "ServiceAccount_identityId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"identityId\") REFERENCES auth_aim.\"Identity\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "ServiceAccount_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "ServiceAccount_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"ServiceAccountCredential\"": {
+    "constraints": [
+      {
+        "name": "ServiceAccountCredential_serviceAccountId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"serviceAccountId\") REFERENCES auth_aim.\"ServiceAccount\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "ServiceAccountCredential_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Session\"": {
+    "constraints": [
+      {
+        "name": "Session_deviceId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"deviceId\") REFERENCES auth_aim.\"Device\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "Session_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Session_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Site\"": {
+    "constraints": [
+      {
+        "name": "Site_organizationId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"organizationId\") REFERENCES auth_aim.\"Organization\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Site_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Subscription\"": {
+    "constraints": [
+      {
+        "name": "Subscription_planId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"planId\") REFERENCES auth_aim.\"Plan\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Subscription_tenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"tenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "Subscription_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"SubscriptionEntitlementOverride\"": {
+    "constraints": [
+      {
+        "name": "SubscriptionEntitlementOverride_subscriptionId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"subscriptionId\") REFERENCES auth_aim.\"Subscription\"(id) ON UPDATE CASCADE ON DELETE CASCADE"
+      },
+      {
+        "name": "SubscriptionEntitlementOverride_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"Tenant\"": {
+    "constraints": [
+      {
+        "name": "Tenant_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"User\"": {
+    "constraints": [
+      {
+        "name": "User_defaultTenantId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"defaultTenantId\") REFERENCES auth_aim.\"Tenant\"(id) ON UPDATE CASCADE ON DELETE SET NULL"
+      },
+      {
+        "name": "User_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"UserIdentity\"": {
+    "constraints": [
+      {
+        "name": "UserIdentity_identityId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"identityId\") REFERENCES auth_aim.\"Identity\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "UserIdentity_userId_fkey",
+        "type": "f",
+        "def": "FOREIGN KEY (\"userId\") REFERENCES auth_aim.\"User\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "name": "UserIdentity_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "\"WebhookEvent\"": {
+    "constraints": [
+      {
+        "name": "WebhookEvent_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "_prisma_migrations": {
+    "constraints": [
+      {
+        "name": "_prisma_migrations_pkey",
+        "type": "p",
+        "def": "PRIMARY KEY (id)"
+      }
+    ]
+  },
+  "techzonetest": [
+    {
+      "id": "d5c1f185-7a5f-4f81-9007-6504a823505b",
+      "username": "techzonetest",
+      "primaryEmail": "recette.techzone@example.com",
+      "status": "ACTIVE",
+      "defaultTenantId": null
+    }
+  ],
+  "credentials": [
+    {
+      "id": "f58b1c85-6498-4d34-87b9-892aeb994267",
+      "userId": "d5c1f185-7a5f-4f81-9007-6504a823505b",
+      "type": "PASSWORD",
+      "status": "ACTIVE"
+    }
+  ],
+  "memberships": [],
+  "roleAssignments": [],
+  "groupMembers": [],
+  "tenants": [
+    {
+      "id": "7124a942-fe9d-43f7-bf55-4b6b57d78c98",
+      "code": "techzone-demo",
+      "name": "Techzone Demo Tenant",
+      "status": "ACTIVE"
+    }
+  ],
+  "roles": [
+    {
+      "id": "6b4cf03e-e152-4f5f-a4dd-45dbe9b0c3e5",
+      "tenantId": "7124a942-fe9d-43f7-bf55-4b6b57d78c98",
+      "code": "iam-admin",
+      "name": "IAM Administrator",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "a0adcd14-48c9-4fca-9216-12cde1c3c255",
+      "tenantId": "7124a942-fe9d-43f7-bf55-4b6b57d78c98",
+      "code": "iam-manager",
+      "name": "IAM Manager",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "b829b331-cca6-49a6-abff-43b242574d84",
+      "tenantId": "7124a942-fe9d-43f7-bf55-4b6b57d78c98",
+      "code": "iam-viewer",
+      "name": "IAM Viewer",
+      "status": "ACTIVE"
+    }
+  ],
+  "migrations_auth_aim": [
+    {
+      "migration_name": "20260830041423_init",
+      "checksum": "06730c02ec387113bd3730ce4479b22daa2468323ddd0652a6d2e87e2f69b350",
+      "finished_at": "2026-09-08T14:17:32.108Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260910112326_add_feature_catalog",
+      "checksum": "198e80deee066570ab6e12d1cb3b589c70757045e75cb7dc63cf47cd180ca9d3",
+      "finished_at": "2026-09-25T01:59:24.660Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260911053236_add_webhook_event",
+      "checksum": "df0261bc10bd3f02901f0e6e1a2db07d895b801f98d59777724f0c3dd376b86d",
+      "finished_at": "2026-09-25T01:59:26.658Z",
+      "applied_steps_count": 1
+    }
+  ],
+  "migrations_business_manager": [
+    {
+      "migration_name": "20260901135605_add_application_models",
+      "checksum": "04fcedf0de794484282b3874dac11f2833839558f336877f0c9ddbda7f3a2d09",
+      "finished_at": "2026-09-09T13:06:09.157Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260901185432_add_platform_integration_deployment_models",
+      "checksum": "ec54c3740095b1e11b761f5f2f5b904ab8de65882cb070b9384a20f9a86e6059",
+      "finished_at": "2026-09-09T13:06:44.979Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260902073457_add_environment_history",
+      "checksum": "29ba86dbc06c5331bd1788c4090fd0ce05c3e3219435a03141906455a09eaa6e",
+      "finished_at": "2026-09-09T13:06:47.452Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260902082859_add_contract_registry",
+      "checksum": "2218f04ec1e8002f5cb9331ec7bbf86ebddbad5517e7850feca20054710a9df5",
+      "finished_at": "2026-09-09T13:06:54.622Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260902120645_add_configurations_history",
+      "checksum": "3ede3383157ff74ffceb454371af0203815d19a536fe030a079765e16132ba15",
+      "finished_at": "2026-09-09T13:06:57.079Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260902123912_update_configuration_model",
+      "checksum": "cbaa44a3c679371c05f2abc339208c883053bb18ff6dd0860b2a250f4e6f15a1",
+      "finished_at": "2026-09-09T13:06:58.514Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260902190359_update_snapshot_enum",
+      "checksum": "9178e0e2373d27bb6f6a296a98be54afb517bca67cc7ba3d997eec579fcdee12",
+      "finished_at": "2026-09-09T13:07:00.766Z",
+      "applied_steps_count": 1
+    },
+    {
+      "migration_name": "20260903190431_add_snapshot_active_status",
+      "checksum": "fe73877a07930cd97a1e76ec294632d813aa49e15d7bf875214497c796ec9c1c",
+      "finished_at": "2026-09-09T13:07:02.403Z",
+      "applied_steps_count": 1
+    }
+  ]
+}

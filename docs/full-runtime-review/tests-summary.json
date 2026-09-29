@@ -1,0 +1,27 @@
+{
+  "initial": {
+    "total": 246,
+    "pass": 225,
+    "failed": 21,
+    "suites": 31
+  },
+  "finalIndependent": {
+    "total": 246,
+    "pass": 246,
+    "failed": 0,
+    "suites": 26
+  },
+  "retainedDatabaseResults": {
+    "pass": 6,
+    "blockedDatabase": 20,
+    "suites": 6
+  },
+  "combinedEvidenceNotSingleRun": {
+    "total": 272,
+    "pass": 252,
+    "blockedDatabase": 20,
+    "realFailures": 0,
+    "infraFailures": 0
+  },
+  "note": "Deployment suite DB operations not repeated against existing business objects; frontend isolated unit is not E2E."
+}

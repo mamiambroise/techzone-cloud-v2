@@ -1,0 +1,70 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   backend/package-lock.json
+	modified:   backend/package.json
+	modified:   backend/src/iam/dto/refresh.dto.ts
+	modified:   backend/src/iam/iam-auth.controller.ts
+	modified:   backend/src/iam/iam-auth.service.ts
+	modified:   backend/src/iam/iam-jwt.guard.spec.ts
+	modified:   backend/src/main.ts
+	modified:   backend/src/prisma/prisma.service.ts
+	modified:   frontend/src/auth/AuthProvider.jsx
+	modified:   frontend/src/auth/ProtectedRoute.jsx
+	modified:   frontend/src/erp/modulesConfig.js
+	modified:   frontend/src/services/api/apisService.js
+	modified:   frontend/src/services/api/connectorsService.js
+	modified:   frontend/src/services/api/credentialsService.js
+	modified:   frontend/src/services/api/deploymentService.js
+	modified:   frontend/src/services/api/deploymentsService.js
+	modified:   frontend/src/services/api/diagnosticsService.js
+	modified:   frontend/src/services/api/platformApplicationsService.js
+	modified:   frontend/src/services/api/platformConfigService.js
+	modified:   frontend/src/services/api/platformEnvironmentsService.js
+	modified:   frontend/src/services/api/synchronizationsService.js
+	modified:   frontend/src/services/api/webhooksService.js
+	modified:   scripts/dev-all.mjs
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	backend/src/iam/iam-auth.controller.spec.ts
+	docs/FIRST_FULL_RUNTIME_REVIEW.md
+	docs/PROJECT_IMPLEMENTATION_MATRIX.md
+	docs/full-runtime-review/
+	scripts/full-runtime-browser.cjs
+	scripts/full-runtime-catalog.cjs
+	scripts/full-runtime-http.cjs
+	scripts/full-runtime-inventory.cjs
+	scripts/full-runtime-probe.cjs
+	scripts/full-runtime-report.cjs
+	scripts/full-runtime-route-check.cjs
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+ backend/package-lock.json                          | 644 +++++++++++++++++++--
+ backend/package.json                               |   8 +-
+ backend/src/iam/dto/refresh.dto.ts                 |   7 +-
+ backend/src/iam/iam-auth.controller.ts             |   9 +-
+ backend/src/iam/iam-auth.service.ts                |   3 +
+ backend/src/iam/iam-jwt.guard.spec.ts              |  26 +-
+ backend/src/main.ts                                |   2 +-
+ backend/src/prisma/prisma.service.ts               |  13 +-
+ frontend/src/auth/AuthProvider.jsx                 |   9 +-
+ frontend/src/auth/ProtectedRoute.jsx               |   4 +-
+ frontend/src/erp/modulesConfig.js                  |   1 +
+ frontend/src/services/api/apisService.js           |  14 +-
+ frontend/src/services/api/connectorsService.js     |  16 +-
+ frontend/src/services/api/credentialsService.js    |  16 +-
+ frontend/src/services/api/deploymentService.js     |  78 +--
+ frontend/src/services/api/deploymentsService.js    |  12 +-
+ frontend/src/services/api/diagnosticsService.js    |   6 +-
+ .../services/api/platformApplicationsService.js    |   8 +-
+ frontend/src/services/api/platformConfigService.js |   8 +-
+ .../services/api/platformEnvironmentsService.js    |   8 +-
+ .../src/services/api/synchronizationsService.js    |  20 +-
+ frontend/src/services/api/webhooksService.js       |  10 +-
+ scripts/dev-all.mjs                                |   2 +-
+ 23 files changed, 748 insertions(+), 176 deletions(-)

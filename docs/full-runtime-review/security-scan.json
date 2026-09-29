@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-27T11:12:46.703Z",
+  "scope": "source signature scan only; excludes generated/dependencies/dist/test specs",
+  "files": 513,
+  "findings": [],
+  "counts": {
+    "ACTIVE_PORT_5001_REFERENCE": 0,
+    "AUTH_AIM_RUNTIME_DEPENDENCY": 0,
+    "JWT_STORAGE_WRITE": 0,
+    "FRONTEND_SECRET_REFERENCE": 0
+  },
+  "hardcodedProductionSecret": "NOT_PROVEN_ABSENT; local PostgreSQL development fallback exists; no value recorded"
+}

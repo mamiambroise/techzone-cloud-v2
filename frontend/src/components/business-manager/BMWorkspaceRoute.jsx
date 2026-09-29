@@ -10,7 +10,7 @@ const root = '/business-manager';
 const common = [{key:'code',label:'Code technique',required:true},{key:'name',label:'Nom',required:true},{key:'description',label:'Description'}];
 const columns = [{key:'name',label:'Nom'},{key:'code',label:'Code technique'},{key:'description',label:'Description'},{key:'status',label:'Statut'}];
 const fieldTypes = 'TEXT LONG_TEXT INTEGER BIG_INTEGER DECIMAL CURRENCY PERCENTAGE BOOLEAN DATE DATETIME TIME EMAIL PHONE URL ENUM MULTI_ENUM UUID SEQUENCE FILE IMAGE JSON RELATION FORMULA'.split(' ');
-const sections = [['data-model','Modèles de données'],['features','Fonctionnalités & Capabilities'],['navigation','Menus & Navigation'],['validation','Validation / Qualité']];
+const sections = [['data-model','Modèles de données'],['features','Fonctionnalités'],['navigation','Navigation'],['validation','Validation & publication']];
 const get = path => api.get(root + path).then(r => r.data);
 
 export default function BMWorkspaceRoute() {
@@ -40,12 +40,12 @@ function Workspace({tenant}) {
   const application = applications.find(a => a.id === applicationId), version = versions.find(v => v.id === versionId);
   useEffect(() => { if(application && version) { sessionStorage.setItem(storageKey, JSON.stringify({applicationId,versionId})); setSaved(previous => previous.applicationId === applicationId && previous.versionId === versionId ? previous : {applicationId,versionId}); } }, [application,version,storageKey,applicationId,versionId]);
   const path = (a,v,s = section) => `${root}/applications/${a}/versions${v ? `/${v}/${s}` : ''}`;
-  return <div className="p-6 space-y-5">
-    <PageHeader title={sections.find(([id]) => id === section)?.[1]} subtitle="Définition de la version d’application sélectionnée" breadcrumb={[{label:'Business Manager',onClick:()=>navigate(root)},{label:'Applications',onClick:()=>navigate(`${root}/applications`)}]} />
+  return <div className="space-y-5">
+    <PageHeader title={sections.find(([id]) => id === section)?.[1]} subtitle={section==='data-model'?'Définissez et gérez les entités et structures de données.':section==='features'?'Gérez les fonctionnalités et capacités de votre application.':section==='navigation'?'Configurez la structure de navigation de votre application.':'Consultez les contrôles et résultats réels de la version.'} breadcrumb={[{label:'Business Manager',onClick:()=>navigate(root)},{label:sections.find(([id])=>id===section)?.[1]}]} />
     <ContextBar tenant={tenant?.name} application={application?.name} version={version?.version} status={version?.status} environment={version?.environment?.name} />
     <div className="flex flex-wrap gap-3"><Link className={buttonClass} to={`${root}/applications`}>Applications</Link><label>Application<select aria-label="Application" className={inputClass} value={application?.id || ''} onChange={e=>navigate(path(e.target.value,''))}><option value="">Sélectionner une application</option>{applications.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label><label>Version<select aria-label="Version" className={inputClass} value={version?.id || ''} onChange={e=>navigate(path(applicationId,e.target.value))}><option value="">Sélectionner une version</option>{versions.map(v=><option key={v.id} value={v.id}>{v.version} — {v.status}</option>)}</select></label></div>
     {loading ? <p role="status">Chargement…</p> : error ? <p role="alert">{error} <button className={buttonClass} onClick={()=>setRevision(r=>r+1)}>Réessayer</button></p> : !version ? <p>Sélectionnez une application et une version pour commencer.</p> : <>
-      <nav className="flex flex-wrap gap-2 border-b pb-3">{sections.map(([id,label])=><Link key={id} aria-current={id === section ? 'page' : undefined} className={`${buttonClass} ${id===section ? 'bg-blue-100 text-blue-900' : ''}`} to={path(applicationId,versionId,id)}>{label}</Link>)}<Link className={buttonClass} to={`${root}/configuration?applicationId=${applicationId}&applicationVersionId=${versionId}`}>Configuration</Link></nav>
+      <nav className="flex flex-wrap gap-1.5 border-b border-slate-200/70 pb-3">{sections.map(([id,label])=><Link key={id} aria-current={id === section ? 'page' : undefined} className={`rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 ease-out motion-reduce:transition-none ${id===section ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-transparent bg-transparent text-slate-500 hover:bg-white hover:text-slate-700'}`} to={path(applicationId,versionId,id)}>{label}</Link>)}<Link className={buttonClass} to={`${root}/configuration?applicationId=${applicationId}&applicationVersionId=${versionId}`}>Configuration</Link></nav>
       <Domain key={`${versionId}:${section}`} versionId={versionId} section={section} />
     </>}
   </div>;
@@ -87,11 +87,19 @@ function Domain({versionId,section}) {
       fields=[common[0],{key:'label',label:'Libellé'},{key:'itemType',label:'Type',options:['LINK','GROUP','SEPARATOR','EXTERNAL_LINK'],default:'LINK',required:true},{key:'routePath',label:'Route'},{key:'orderIndex',label:'Ordre',type:'number',default:0},{key:'visibility',label:'Visibilité',options:['VISIBLE','HIDDEN','DISABLED'],default:'VISIBLE'}];cols=[{key:'label',label:'Libellé'},columns[1],{key:'itemType',label:'Type'},{key:'routePath',label:'Route'},{key:'visibility',label:'Visibilité'}];
     }
   } else {cols=[{key:'completedAt',label:'Date',render:r=>r.completedAt?new Date(r.completedAt).toLocaleString():'En cours'},{key:'gateResult',label:'Résultat réel'},{key:'score',label:'Score'},{key:'issues',label:'Problèmes',render:r=>r.issues?.length ?? 0}];}
+  if(section==='navigation' && tab!=='Menus') {
+    fields=[...fields,{key:'parentItemId',label:'Élément parent',options:(selected?.items||[]).map(item=>({value:item.id,label:item.label||item.code}))}];
+    const ordered=[], visited=new Set();
+    const append=(item,depth)=>{if(visited.has(item.id))return;visited.add(item.id);ordered.push({...item,depth});data.filter(child=>child.parentItemId===item.id).forEach(child=>append(child,depth+1));};
+    data.filter(item=>!data.some(parentItem=>parentItem.id===item.parentItemId)).forEach(item=>append(item,0));
+    data.forEach(item=>append(item,0));data=ordered;
+    cols=cols.map(col=>col.key==='label'?{...col,render:item=><span style={{paddingLeft:item.depth*16}} className="inline-block">{item.depth>0?'↳ ':''}{item.label||item.code}</span>}:col);
+  }
   async function mutate(action) {setBusy(true);setError('');try{await action();setRevision(r=>r+1);}catch{setError(bmError);}finally{setBusy(false);}}
   let editableFields = fields;
-  if(editor?.id) editableFields=fields.filter(f=> !(f.key==='code' && section!=='navigation') && !(section==='navigation' && tab!=='Menus' && ['code','itemType'].includes(f.key)));
-  return <section className="space-y-4">
-    <nav aria-label="Onglets" className="flex flex-wrap gap-2">{tabs.map(t=><button key={t} className={`${buttonClass} ${t===tab?'bg-blue-100':''}`} aria-pressed={t===tab} onClick={()=>{setTab(t);setEditor(null);setValidationField(null);}}>{t}</button>)}</nav>
+  if(editor?.id) editableFields=fields.filter(f=> !(f.key==='code' && section!=='navigation') && !(section==='navigation' && tab!=='Menus' && ['code','itemType','parentItemId'].includes(f.key)));
+  return <section className="space-y-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+    <nav aria-label="Onglets" className="flex flex-wrap gap-2">{tabs.map(t=><button key={t} className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors duration-150 ease-out motion-reduce:transition-none ${t===tab?'border-blue-100 bg-blue-50 text-blue-700':'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`} aria-pressed={t===tab} onClick={()=>{setTab(t);setEditor(null);setValidationField(null);}}>{t}</button>)}</nav>
     {needsParent && <label>{section==='data-model'?'Entité':section==='features'?'Feature':'Menu'}<select aria-label={section==='data-model'?'Entité':section==='features'?'Feature':'Menu'} className={inputClass} value={parent} onChange={e=>{setParent(e.target.value);setEditor(null);setValidationField(null);}}><option value="">Sélectionner</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>}
     {error && <p role="alert" className="text-red-700">{error} <button className={buttonClass} onClick={()=>setRevision(r=>r+1)}>Réessayer</button></p>}
     {loading ? <p role="status">Chargement…</p> : !error && <>

@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-09-27T11:14:16.713Z",
+  "backendBuild": "PASS_EXIT_0",
+  "frontendBuild": "PASS_EXIT_0",
+  "frontendTypecheck": "PASS_EXIT_0",
+  "prismaGenerate": "PASS_EXIT_0",
+  "gitDiffCheck": "PASS_EXIT_0",
+  "lint": {
+    "full-runtime-lint-final.log": {
+      "warnings": 49,
+      "errors": 0
+    },
+    "frontend-oxlint.log": {
+      "warnings": 435,
+      "errors": 0
+    }
+  },
+  "starts": [
+    {
+      "log": "backend-review.log",
+      "boot": false,
+      "select1Connected": false,
+      "socketTimeout": true,
+      "wrongCombinedSchema": false,
+      "missingCanonicalIamTable": false,
+      "errorClassification": "NETWORK_TIMEOUT"
+    },
+    {
+      "log": "backend-review-retry.log",
+      "boot": false,
+      "select1Connected": false,
+      "socketTimeout": true,
+      "wrongCombinedSchema": false,
+      "missingCanonicalIamTable": false,
+      "errorClassification": "NETWORK_TIMEOUT"
+    },
+    {
+      "log": "backend-review-third.log",
+      "boot": true,
+      "select1Connected": true,
+      "socketTimeout": false,
+      "wrongCombinedSchema": true,
+      "missingCanonicalIamTable": false,
+      "errorClassification": "SCHEMA_ERROR"
+    },
+    {
+      "log": "backend-review-final.log",
+      "boot": true,
+      "select1Connected": true,
+      "socketTimeout": false,
+      "wrongCombinedSchema": false,
+      "missingCanonicalIamTable": true,
+      "errorClassification": "SCHEMA_ERROR"
+    }
+  ]
+}

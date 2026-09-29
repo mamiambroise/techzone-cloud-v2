@@ -1,0 +1,52 @@
+{
+  "total": 246,
+  "pass": 225,
+  "failed": 21,
+  "pending": 0,
+  "suites": 31,
+  "failedSuites": 8,
+  "failures": [
+    {
+      "name": "\\src\\modules\\deployment\\release\\release.service.spec.ts",
+      "category": "BLOCKED_DATABASE",
+      "summary": []
+    },
+    {
+      "name": "\\src\\modules\\deployment\\deployments\\deployment.service.spec.ts",
+      "category": "BLOCKED_DATABASE",
+      "summary": []
+    },
+    {
+      "name": "\\src\\modules\\deployment\\gates\\gate.service.spec.ts",
+      "category": "BLOCKED_DATABASE",
+      "summary": []
+    },
+    {
+      "name": "\\src\\modules\\deployment\\environments\\environment-deployment.service.spec.ts",
+      "category": "BLOCKED_DATABASE",
+      "summary": []
+    },
+    {
+      "name": "\\src\\modules\\deployment\\cockpit\\cockpit.service.spec.ts",
+      "category": "BLOCKED_DATABASE",
+      "summary": []
+    },
+    {
+      "name": "\\src\\modules\\deployment\\rollback\\rollback.service.spec.ts",
+      "category": "BLOCKED_DATABASE",
+      "summary": []
+    },
+    {
+      "name": "\\src\\iam\\iam-jwt.guard.spec.ts",
+      "category": "REAL_FAILURE",
+      "summary": [
+        "    Rejected to value: [TypeError: Cannot read properties of undefined (reading 'findUnique')]"
+      ]
+    },
+    {
+      "name": "\\src\\automation\\automation.controller.spec.ts",
+      "category": "TEST_INFRA_FAILURE",
+      "summary": []
+    }
+  ]
+}

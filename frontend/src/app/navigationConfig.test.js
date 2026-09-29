@@ -20,11 +20,12 @@ describe('ROUTES', () => {
 });
 
 describe('navigationSections', () => {
-  it('has principal, construction, integrations, platform sections', () => {
+  it('has accueil, construction, execution, integrations, platform sections', () => {
     const sectionIds = navigationSections.map(s => s.id);
-    expect(sectionIds).toContain('principal');
-    expect(sectionIds).toHaveLength(4);
+    expect(sectionIds).toContain('accueil');
+    expect(sectionIds).toHaveLength(5);
     expect(sectionIds).toContain('construction');
+    expect(sectionIds).toContain('execution');
     expect(sectionIds).toContain('integrations');
     expect(sectionIds).toContain('platform');
   });
@@ -36,6 +37,28 @@ describe('navigationGroups', () => {
     expect(bmGroup).toBeDefined();
     expect(bmGroup.section).toBe('construction');
     expect(bmGroup.icon).toBe('BriefcaseBusiness');
+  });
+
+  it('has runtime group mapped to execution section', () => {
+    const runtimeGroup = navigationGroups.find(g => g.id === 'runtime');
+    expect(runtimeGroup).toBeDefined();
+    expect(runtimeGroup.section).toBe('execution');
+  });
+
+  it('has data, erp, api groups mapped to integrations section', () => {
+    ['data', 'erp', 'api'].forEach(id => {
+      const group = navigationGroups.find(g => g.id === id);
+      expect(group).toBeDefined();
+      expect(group.section).toBe('integrations');
+    });
+  });
+
+  it('has environments, deployments, iam, observability, billing, admin groups mapped to platform section', () => {
+    ['environments', 'deployments', 'iam', 'observability', 'billing', 'admin'].forEach(id => {
+      const group = navigationGroups.find(g => g.id === id);
+      expect(group).toBeDefined();
+      expect(group.section).toBe('platform');
+    });
   });
 });
 

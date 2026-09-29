@@ -39,6 +39,7 @@ export const ROUTES = {
   "packDependencies": "/packs/dependencies",
   "packPublication": "/packs/publication",
   "packRuntime": "/packs/runtime",
+  "runtime": "/runtime",
   "erp": "/erp",
   "erpRegistry": "/erps",
   "erp-clients": "/erp/clients",

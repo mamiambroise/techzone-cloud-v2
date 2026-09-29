@@ -1,45 +1,33 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AppWindow, CheckCircle2, FileEdit, CircleCheck, ArrowUpRight, Activity, HeartPulse } from 'lucide-react';
 import { PageHeader } from '../ui/PageHeader.jsx';
-import { Card } from '../ui/Card.jsx';
 import { getApplications } from '../../services/api/platformApplicationsService.js';
-import { getEnvironments } from '../../services/api/platformEnvironmentsService.js';
-
+import { api } from '../../services/apiClient.js';
+import { useTenant } from '../../contexts/TenantProvider.jsx';
+import BMStatusBadge from './BMStatusBadge.jsx';
+const panel='rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs';
+const dateLabel=value=>value && Number.isFinite(Date.parse(value))?new Date(value).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):null;
+function relativeTime(value) { const time=Date.parse(value); if(!Number.isFinite(time))return null; const seconds=(time-Date.now())/1000; const unit=Math.abs(seconds)>86400?'day':Math.abs(seconds)>3600?'hour':'minute';return new Intl.RelativeTimeFormat('fr',{numeric:'auto'}).format(Math.round(seconds/({day:86400,hour:3600,minute:60}[unit])),unit); }
 export default function BMOverview() {
-  const [appCount, setAppCount] = useState(null);
-  const [envCount, setEnvCount] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadCounts() {
-      try {
-        const [apps, envs] = await Promise.allSettled([getApplications(), getEnvironments()]);
-        if (apps.status === 'fulfilled') setAppCount((apps.value || []).length);
-        if (envs.status === 'fulfilled') setEnvCount((envs.value || []).length);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadCounts();
-  }, []);
-
-  return (
-    <>
-      <PageHeader
-        title="Business Manager"
-        subtitle="Vue d'ensemble du Business Manager"
-      />
-      <div className="p-6"><a href="/business-manager/applications" className="text-blue-700 underline">Gérer les applications</a></div>
-      <div className="p-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card title="Applications" description="Gérer les applications métier">
-          <div className="text-3xl font-bold">{loading ? '...' : appCount ?? 'Indisponible'}</div>
-        </Card>
-        <Card title="Environnements" description="Déploiements et environnements">
-          <div className="text-3xl font-bold">{loading ? '...' : envCount ?? 'Indisponible'}</div>
-        </Card>
-        <Card title="Contrats" description="Registre des contrats applicatifs">
-          <p>Consultez les contrats dans le contexte de la version.</p>
-        </Card>
-      </div>
-    </>
-  );
+ const navigate=useNavigate(), {activeTenant}=useTenant();
+ const [data,setData]=useState({}), [loading,setLoading]=useState(true), [revision,setRevision]=useState(0);
+ useEffect(()=>{let live=true;setLoading(true);setData({});if(!activeTenant){setLoading(false);return;}
+ Promise.allSettled([getApplications(),api.get('/business-manager/versions').then(r=>r.data),api.get('/business-manager/activity').then(r=>r.data),api.get('/business-manager/dashboard').then(r=>r.data)]).then(results=>{if(live){const keys=['applications','versions','activity','health'];setData(Object.fromEntries(results.map((r,i)=>[keys[i],r.status==='fulfilled'?r.value:null])));setLoading(false);}});return()=>{live=false;};},[activeTenant?.id,revision]);
+ const apps=Array.isArray(data.applications)?data.applications:null, versions=Array.isArray(data.versions)?data.versions:null;
+ const recent=apps?[...apps].sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0)).slice(0,5):[];
+ const counts=versions?versions.reduce((v,item)=>({...v,[item.status]:(v[item.status]||0)+1}),{}):{};
+ const kpis=[{label:'Applications',value:apps?.length,sub:'Catalogue métier',Icon:AppWindow,tone:'bg-blue-50 text-blue-600'},{label:'Actives',value:apps?.filter(a=>a.status==='ACTIVE').length,sub:'Applications actives',Icon:CheckCircle2,tone:'bg-emerald-50 text-emerald-600'},{label:'Brouillons',value:versions?.filter(v=>v.status==='DRAFT').length,sub:'Versions en brouillon',Icon:FileEdit,tone:'bg-slate-100 text-slate-500'},{label:'Prêtes à publier',value:versions?.filter(v=>v.status==='READY').length,sub:'Versions au statut READY',Icon:CircleCheck,tone:'bg-indigo-50 text-indigo-500'}];
+ const state=(value,empty)=>loading?<div role="status" className="animate-pulse space-y-3 py-6"><div className="h-3 w-3/4 rounded bg-slate-100"/><div className="h-3 w-1/2 rounded bg-slate-100"/></div>:value===null||value===undefined?<div role="alert" className="py-6 text-sm text-slate-500">Données indisponibles. <button className="font-medium text-blue-600" onClick={()=>setRevision(v=>v+1)}>Réessayer</button></div>:empty?<p className="py-6 text-sm text-slate-500">Aucune donnée pour le moment.</p>:null;
+ return <div className="space-y-5">
+ <PageHeader title="Vue d’ensemble" subtitle="Pilotez vos applications métier depuis un seul espace." breadcrumb={[{label:'Business Manager',onClick:()=>navigate('/business-manager')},{label:'Vue d’ensemble'}]} action={{label:'+ Nouvelle application',onClick:()=>navigate('/business-manager/applications/new')}}/>
+ <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">{kpis.map(({label,value,sub,Icon,tone})=><div key={label} className="rounded-xl border border-slate-200/70 bg-white px-5 py-4 shadow-2xs"><div className="flex items-center justify-between gap-2"><p className="text-xs font-medium text-slate-500">{label}</p><span className={`rounded-lg p-2 ${tone}`}><Icon size={17}/></span></div><p className="mt-1 text-[32px] font-semibold leading-tight tracking-tight text-slate-900">{loading?'…':value??'—'}</p><p className="mt-1 text-[11px] text-slate-400">{value===undefined&&!loading?'Indisponible':sub}</p></div>)}</div>
+ <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
+ <section className={panel}><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-base font-semibold">Applications récentes</h2><Link to="/business-manager/applications" className="flex items-center gap-1 text-xs font-medium text-blue-600">Voir toutes<ArrowUpRight size={14}/></Link></div>
+ {state(apps,!apps?.length)||<ul className="divide-y divide-slate-100">{recent.map(app=><li key={app.id}><Link to={'/business-manager/applications/'+app.id} className="flex flex-wrap items-center gap-3 rounded-lg py-3 hover:bg-slate-50/70 transition-colors duration-150 ease-out motion-reduce:transition-none"><span className="rounded-lg bg-blue-50 p-2 text-blue-500"><AppWindow size={17}/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{app.name||app.code}</p>{app.code&&<p className="mt-0.5 truncate text-[11px] text-slate-400">{app.code}</p>}</div><BMStatusBadge status={app.status}/>{dateLabel(app.updatedAt)&&<time className="w-24 text-right text-[11px] text-slate-400" dateTime={app.updatedAt}>{dateLabel(app.updatedAt)}</time>}</Link></li>)}</ul>}
+ </section>
+ <section className={panel}><h2 className="mb-5 text-base font-semibold">Cycle de vie des versions</h2>{state(versions,!versions?.length)||<div className="space-y-4">{Object.entries(counts).map(([status,count])=><div key={status}><div className="mb-1.5 flex items-center justify-between"><BMStatusBadge status={status}/><span className="text-sm font-semibold tabular-nums">{count}</span></div><div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-400" style={{width:100*count/versions.length+'%'}}/></div></div>)}</div>}</section>
+ <section className={panel}><h2 className="mb-3 text-base font-semibold">Activité récente</h2>{state(data.activity,!data.activity?.length)||<ul className="divide-y divide-slate-100">{data.activity.slice(0,5).map((event,i)=><li key={event.resourceId+':'+event.timestamp+':'+i} className="flex items-start gap-3 rounded-lg py-3 hover:bg-slate-50/70 transition-colors duration-150 ease-out motion-reduce:transition-none"><span className="rounded-full bg-slate-50 p-2 text-slate-400"><Activity size={15}/></span><div className="min-w-0 flex-1"><p className="text-xs font-medium text-slate-700">{event.description || event.reason || [event.resource,event.action].filter(Boolean).join(' · ')}</p>{event.actor&&<p className="mt-1 truncate text-[11px] text-slate-500">{event.actor}</p>}</div>{relativeTime(event.timestamp)&&<time dateTime={event.timestamp} className="whitespace-nowrap text-[11px] text-slate-400">{relativeTime(event.timestamp)}</time>}</li>)}</ul>}</section>
+ <section className={panel}><h2 className="mb-5 text-base font-semibold">Santé plateforme</h2>{state(data.health,false)||<><div className="flex items-center gap-3"><span className="rounded-lg bg-slate-50 p-3 text-slate-500"><HeartPulse size={22}/></span><BMStatusBadge status={data.health.status}/></div>{Array.isArray(data.health.alerts)&&<div className="mt-5 border-t border-slate-100 pt-4"><p className="text-sm text-slate-600">{data.health.alerts.length} alerte(s) signalée(s)</p>{data.health.alerts.map((alert,i)=><p key={i} className="mt-2 text-xs text-amber-700">{alert.message}</p>)}</div>}</>}</section>
+ </div></div>;
 }

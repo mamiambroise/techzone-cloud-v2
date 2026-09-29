@@ -130,13 +130,13 @@ export default function ConfigurationView() {
 
   return (
     <div className="w-full space-y-5">
-      <nav aria-label="Fil d’Ariane" className="text-sm text-slate-500"><Link to={ROUTES.bm}>Business Manager</Link> / Configuration</nav>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <nav aria-label="Fil d’Ariane" className="text-xs text-slate-400"><Link to={ROUTES.bm}>Business Manager</Link> / Configuration</nav>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div><h1 className="text-2xl font-semibold text-slate-900">Configuration</h1><p className="mt-2 text-sm text-slate-600">Gérez les paramètres et leurs valeurs effectives pour la version courante.</p></div>
         <div className="flex items-center gap-2.5 shrink-0 mt-4 sm:mt-0">
           <button
             onClick={() => setShowSecrets(!showSecrets)}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-700 transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-700 transition-all "
             title="Masquer ou afficher les références de secrets"
           >
             {showSecrets ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
@@ -149,7 +149,7 @@ export default function ConfigurationView() {
               resetForm();
               setShowAddModal(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm "
           >
             <Plus className="w-4 h-4" />
             <span>Ajouter un paramètre</span>
@@ -159,16 +159,16 @@ export default function ConfigurationView() {
 
       <ContextBar application={contextLabels.application} version={contextLabels.version} status={contextLabels.status} tenant={activeTenant?.name || activeTenant?.code} />
       {saveError && <p role="alert" className="text-red-700">{saveError}</p>}
-      <div role="tablist" aria-label="Configuration" className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{[['definitions','Définitions'],['values','Valeurs'],['effective','Configuration effective']].map(([id,label]) => <button key={id} role="tab" aria-selected={tab===id} onClick={() => setTab(id)} className={`rounded-lg px-4 py-2 text-sm ${tab===id?'bg-blue-600 text-white':'bg-slate-100 text-slate-700'}`}>{label}</button>)}</div>
+      <div role="tablist" aria-label="Configuration" className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{[['definitions','Définitions'],['values','Valeurs'],['effective','Configuration effective']].map(([id,label]) => <button key={id} role="tab" aria-selected={tab===id} onClick={() => setTab(id)} className={`rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 ease-out motion-reduce:transition-none ${tab===id?'border-blue-100 bg-blue-50 text-blue-700':'border-transparent bg-white text-slate-500 hover:bg-slate-50'}`}>{label}</button>)}</div>
       {configLoading && <p role="status">Chargement des paramètres…</p>}
-      {configError && <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">Impossible de charger les paramètres. {configError}</p>}
+      {configError && <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">Impossible de charger les paramètres. <button className="ml-2 text-blue-600" onClick={()=>dispatch(fetchConfigsAsync())}>Réessayer</button></p>}
       {tab === 'effective' ? <section className="rounded-xl border bg-white p-5 space-y-4"><h2 className="text-lg font-semibold">Valeurs effectives et provenance</h2>
         {!hasContext ? <p className="text-slate-600">Sélectionnez une application, une version et un environnement pour résoudre les valeurs effectives. Le contexte complet n’est pas encore fourni par tous les écrans.</p> : <button disabled={effectiveLoading} onClick={loadEffective} className="rounded bg-blue-600 px-4 py-2 text-white">{effectiveLoading?'Chargement…':'Résoudre les valeurs'}</button>}
         {effectiveError && <p role="alert">{effectiveError}</p>}
-        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Paramètre</th><th>Valeur effective</th><th>Provenance</th></tr></thead><tbody>{effective.map(item => <tr key={item.id}><td className="py-3">{item.key}</td><td>{JSON.stringify(item.value)}</td><td>{item.scope} / {item.scopeId || 'Plateforme'}</td></tr>)}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50/80 text-xs text-slate-500"><tr><th>Paramètre</th><th>Valeur effective</th><th>Provenance</th></tr></thead><tbody>{effective.map(item => <tr key={item.id} className="border-t border-slate-100 bg-white hover:bg-slate-50/50 transition-colors duration-150 ease-out motion-reduce:transition-none"><td className="py-3">{item.key}</td><td>{JSON.stringify(item.value)}</td><td>{item.scope} / {item.scopeId || 'Plateforme'}</td></tr>)}</tbody></table></div>
       </section> : <>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 bg-slate-200/50 rounded-2xl w-fit">
+        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 bg-slate-200/50 rounded-xl w-fit">
           <button
             onClick={() => dispatch(setSelectedScope('ALL'))}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
@@ -220,7 +220,7 @@ export default function ConfigurationView() {
       </div>
 
       {searchQuery && (
-        <div className="flex items-center justify-between gap-2 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-2xl text-xs text-amber-950 animate-in fade-in mb-4">
+        <div className="flex items-center justify-between gap-2 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-950 animate-in fade-in mb-4">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
@@ -238,12 +238,12 @@ export default function ConfigurationView() {
       )}
 
       {filteredConfigs.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden p-12 text-center">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-12 text-center">
           <Search className="w-6 h-6 mx-auto text-slate-300 mb-2" />
           <p className="text-slate-500">Aucune clé de configuration ne correspond à votre recherche.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
@@ -262,7 +262,7 @@ export default function ConfigurationView() {
                   const isInvalid = item.status === 'INVALID';
 
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                    <tr key={item.id} className="bg-white hover:bg-slate-50/50 transition-colors duration-150 ease-out motion-reduce:transition-none">
                       <td className="py-3.5 px-5">
                         <div className="font-mono font-bold text-slate-900">{item.key}</div>
                         {item.description && (
@@ -368,7 +368,7 @@ export default function ConfigurationView() {
       </>}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
             <h3 className="text-sm font-bold text-slate-900">
               {editingItem ? 'Modifier le paramètre de configuration' : 'Déclarer un nouveau paramètre'}
             </h3>
@@ -486,7 +486,7 @@ export default function ConfigurationView() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+                  className="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                 >
                   {editingItem ? 'Mettre à jour' : 'Enregistrer'}
                 </button>

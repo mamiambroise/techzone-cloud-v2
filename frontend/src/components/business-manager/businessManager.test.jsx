@@ -21,29 +21,33 @@ vi.mock('../../services/api/platformEnvironmentsService.js', () => ({
   getEnvironmentHistory: () => Promise.resolve([]),
 }));
 
+vi.mock('../../contexts/TenantProvider.jsx',()=>({useTenant:()=>({activeTenant:{id:'tenant-test'}})}));
+vi.mock('../../services/apiClient.js',()=>({api:{get:vi.fn(async url=>({data:url.endsWith('/dashboard')?{status:'HEALTHY',alerts:[]}:[]}))}}));
+
 describe('BMOverview', () => {
   it('renders without crashing', () => {
-    render(<BMOverview />);
+    render(<MemoryRouter><BMOverview /></MemoryRouter>);
     expect(screen.getByText('Business Manager')).toBeInTheDocument();
-    expect(screen.getByText("Vue d'ensemble du Business Manager")).toBeInTheDocument();
+    expect(screen.getByText('Pilotez vos applications métier depuis un seul espace.')).toBeInTheDocument();
   });
 
   it('renders section cards', () => {
-    render(<BMOverview />);
-    expect(screen.getByText('Applications')).toBeInTheDocument();
-    expect(screen.getByText('Environnements')).toBeInTheDocument();
-    expect(screen.getByText('Contrats')).toBeInTheDocument();
+    render(<MemoryRouter><BMOverview /></MemoryRouter>);
+    expect(screen.getAllByText('Applications').length).toBeGreaterThan(0);
+    expect(screen.getByText('Cycle de vie des versions')).toBeInTheDocument();
+    expect(screen.getByText('Santé plateforme')).toBeInTheDocument();
   });
 });
 
 describe('BMApplicationsRoute', () => {
-  it('renders the applications page header', () => {
+  it('renders the applications page header', async () => {
     render(
       <MemoryRouter>
         <BMApplicationsRoute />
       </MemoryRouter>
     );
-    expect(screen.getByText('Applications')).toBeInTheDocument();
+    expect(screen.getByRole('heading',{name:'Applications',level:1})).toBeInTheDocument();
+    await screen.findByText(/Aucune application/i);
   });
 
   it('shows empty state message', async () => {

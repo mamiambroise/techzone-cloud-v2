@@ -1,0 +1,40 @@
+[
+  {
+    "route": "/health",
+    "status": 403,
+    "hasTenant": false,
+    "userPresent": false,
+    "cookieCount": 0
+  },
+  {
+    "route": "/api/iam/auth/login",
+    "status": 403,
+    "hasTenant": false,
+    "userPresent": false,
+    "cookieCount": 0
+  },
+  {
+    "route": "/api/iam/auth/me",
+    "status": 401,
+    "code": "UNAUTHENTICATED",
+    "hasTenant": false,
+    "userPresent": false,
+    "cookieCount": 0
+  },
+  {
+    "route": "/api/iam/auth/tenants",
+    "status": 401,
+    "code": "UNAUTHENTICATED",
+    "hasTenant": false,
+    "userPresent": false,
+    "cookieCount": 0
+  },
+  {
+    "route": "/api/business-manager/configurations",
+    "status": 401,
+    "code": "UNAUTHENTICATED",
+    "hasTenant": false,
+    "userPresent": false,
+    "cookieCount": 0
+  }
+]
