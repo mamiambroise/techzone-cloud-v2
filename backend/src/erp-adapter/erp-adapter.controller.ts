@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { ErpAdapterService } from './erp-adapter.service';
+import { IErpAdapter } from './interfaces/erp-adapter.interface';
 import { ErpRegistryService } from '../erp-registry/erp-registry.service';
 import { Public } from '../iam/decorators/public.decorator';
 import { Permissions } from '../iam/iam-permissions.guard';
@@ -46,13 +47,12 @@ export class ErpAdapterController {
     private readonly erpRegistry: ErpRegistryService,
   ) {}
 
-  private async resolveErpFromTenant(principal: IamAuthContext): Promise<string> {
+  private async resolveErpFromTenant(principal: IamAuthContext): Promise<IErpAdapter> {
     const tenantId = principal.tenantId;
     if (!tenantId) {
       throw new ForbiddenException('TENANT_REQUIRED: tenantId manquant dans le principal');
     }
-    const erp = await this.erpRegistry.getActiveForTenant({ tenantId });
-    return erp.code;
+    return this.adapterService.resolveAdapterForTenant(tenantId);
   }
 
   // === ADAPTATEURS ===
@@ -72,9 +72,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les clients depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des clients' })
   async getClients(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/clients [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/clients [tenant=${principal.tenantId}]`);
     return adapter.getClients();
   }
 
@@ -85,9 +84,8 @@ export class ErpAdapterController {
   @ApiResponse({ status: 200, description: 'Client trouve' })
   @ApiResponse({ status: 404, description: 'Client non trouve' })
   async getClientById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/clients/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/clients/${id} [tenant=${principal.tenantId}]`);
     return adapter.getClientById(id);
   }
 
@@ -97,9 +95,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un client' })
   @ApiResponse({ status: 201, description: 'Client cree' })
   async createClient(@Body() dto: CreateClientDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/clients [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/clients [tenant=${principal.tenantId}]`);
     return adapter.createClient(dto);
   }
 
@@ -109,9 +106,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du client' })
   @ApiResponse({ status: 200, description: 'Client mis a jour' })
   async updateClient(@Param('id') id: string, @Body() dto: CreateClientDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/clients/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/clients/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateClient(id, dto);
   }
 
@@ -122,9 +118,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du client' })
   @ApiResponse({ status: 204, description: 'Client supprime' })
   async deleteClient(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/clients/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/clients/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteClient(id);
   }
 
@@ -135,9 +130,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les produits depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des produits' })
   async getProducts(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/products [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/products [tenant=${principal.tenantId}]`);
     return adapter.getProducts();
   }
 
@@ -147,9 +141,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du produit' })
   @ApiResponse({ status: 200, description: 'Produit trouve' })
   async getProductById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/products/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/products/${id} [tenant=${principal.tenantId}]`);
     return adapter.getProductById(id);
   }
 
@@ -159,9 +152,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un produit' })
   @ApiResponse({ status: 201, description: 'Produit cree' })
   async createProduct(@Body() dto: CreateProductDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/products [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/products [tenant=${principal.tenantId}]`);
     return adapter.createProduct({ ...dto, stock: dto.stock ?? 0 });
   }
 
@@ -171,9 +163,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du produit' })
   @ApiResponse({ status: 200, description: 'Produit mis a jour' })
   async updateProduct(@Param('id') id: string, @Body() dto: CreateProductDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/products/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/products/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateProduct(id, dto);
   }
 
@@ -184,9 +175,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du produit' })
   @ApiResponse({ status: 204, description: 'Produit supprime' })
   async deleteProduct(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/products/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/products/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteProduct(id);
   }
 
@@ -197,9 +187,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les commandes depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des commandes' })
   async getOrders(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/orders [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/orders [tenant=${principal.tenantId}]`);
     return adapter.getOrders();
   }
 
@@ -209,9 +198,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la commande' })
   @ApiResponse({ status: 200, description: 'Commande trouvee' })
   async getOrderById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/orders/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/orders/${id} [tenant=${principal.tenantId}]`);
     return adapter.getOrderById(id);
   }
 
@@ -221,9 +209,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une commande' })
   @ApiResponse({ status: 201, description: 'Commande creee' })
   async createOrder(@Body() dto: CreateOrderDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/orders [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/orders [tenant=${principal.tenantId}]`);
     return adapter.createOrder(dto);
   }
 
@@ -233,9 +220,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la commande' })
   @ApiResponse({ status: 200, description: 'Commande mise a jour' })
   async updateOrder(@Param('id') id: string, @Body() dto: Partial<CreateOrderDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/orders/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/orders/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateOrder(id, dto);
   }
 
@@ -246,9 +232,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la commande' })
   @ApiResponse({ status: 204, description: 'Commande supprimee' })
   async deleteOrder(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/orders/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/orders/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteOrder(id);
   }
 
@@ -260,9 +245,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'productId', description: 'ID du produit' })
   @ApiResponse({ status: 200, description: 'Information de stock' })
   async getStock(@Param('productId') productId: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/stock/${productId} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/stock/${productId} [tenant=${principal.tenantId}]`);
     return adapter.getStock(productId);
   }
 
@@ -276,9 +260,8 @@ export class ErpAdapterController {
     @Body('quantity') quantity: number,
     @CurrentUser() principal: IamAuthContext,
   ) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/stock/${productId} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/stock/${productId} [tenant=${principal.tenantId}]`);
     return adapter.updateStock(productId, quantity);
   }
 
@@ -287,9 +270,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister le stock de tous les produits' })
   @ApiResponse({ status: 200, description: 'Stocks de tous les produits' })
   async getStocks(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/stocks [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/stocks [tenant=${principal.tenantId}]`);
     return adapter.getStocks();
   }
 
@@ -300,9 +282,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les fournisseurs depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des fournisseurs' })
   async getSuppliers(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/suppliers [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/suppliers [tenant=${principal.tenantId}]`);
     return adapter.getSuppliers();
   }
 
@@ -312,9 +293,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du fournisseur' })
   @ApiResponse({ status: 200, description: 'Fournisseur trouve' })
   async getSupplierById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/suppliers/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/suppliers/${id} [tenant=${principal.tenantId}]`);
     return adapter.getSupplierById(id);
   }
 
@@ -324,9 +304,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un fournisseur' })
   @ApiResponse({ status: 201, description: 'Fournisseur cree' })
   async createSupplier(@Body() dto: CreateSupplierDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/suppliers [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/suppliers [tenant=${principal.tenantId}]`);
     return adapter.createSupplier(dto);
   }
 
@@ -336,9 +315,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du fournisseur' })
   @ApiResponse({ status: 200, description: 'Fournisseur mis a jour' })
   async updateSupplier(@Param('id') id: string, @Body() dto: CreateSupplierDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/suppliers/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/suppliers/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateSupplier(id, dto);
   }
 
@@ -349,9 +327,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du fournisseur' })
   @ApiResponse({ status: 204, description: 'Fournisseur supprime' })
   async deleteSupplier(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/suppliers/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/suppliers/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteSupplier(id);
   }
 
@@ -362,9 +339,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les devis depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des devis' })
   async getQuotes(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/quotes [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/quotes [tenant=${principal.tenantId}]`);
     return adapter.getQuotes();
   }
 
@@ -374,9 +350,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du devis' })
   @ApiResponse({ status: 200, description: 'Devis trouve' })
   async getQuoteById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/quotes/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/quotes/${id} [tenant=${principal.tenantId}]`);
     return adapter.getQuoteById(id);
   }
 
@@ -386,9 +361,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un devis' })
   @ApiResponse({ status: 201, description: 'Devis cree' })
   async createQuote(@Body() dto: CreateQuoteDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/quotes [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/quotes [tenant=${principal.tenantId}]`);
     return adapter.createQuote(dto);
   }
 
@@ -398,9 +372,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du devis' })
   @ApiResponse({ status: 200, description: 'Devis mis a jour' })
   async updateQuote(@Param('id') id: string, @Body() dto: Partial<CreateQuoteDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/quotes/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/quotes/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateQuote(id, dto);
   }
 
@@ -411,9 +384,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du devis' })
   @ApiResponse({ status: 204, description: 'Devis supprime' })
   async deleteQuote(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/quotes/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/quotes/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteQuote(id);
   }
 
@@ -424,9 +396,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les factures depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des factures' })
   async getInvoices(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/invoices [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/invoices [tenant=${principal.tenantId}]`);
     return adapter.getInvoices();
   }
 
@@ -436,9 +407,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la facture' })
   @ApiResponse({ status: 200, description: 'Facture trouvee' })
   async getInvoiceById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/invoices/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/invoices/${id} [tenant=${principal.tenantId}]`);
     return adapter.getInvoiceById(id);
   }
 
@@ -448,9 +418,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une facture' })
   @ApiResponse({ status: 201, description: 'Facture creee' })
   async createInvoice(@Body() dto: CreateInvoiceDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/invoices [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/invoices [tenant=${principal.tenantId}]`);
     return adapter.createInvoice(dto);
   }
 
@@ -460,9 +429,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la facture' })
   @ApiResponse({ status: 200, description: 'Facture mise a jour' })
   async updateInvoice(@Param('id') id: string, @Body() dto: Partial<CreateInvoiceDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/invoices/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/invoices/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateInvoice(id, dto);
   }
 
@@ -473,9 +441,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la facture' })
   @ApiResponse({ status: 204, description: 'Facture supprimee' })
   async deleteInvoice(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/invoices/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/invoices/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteInvoice(id);
   }
 
@@ -486,9 +453,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les paiements depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des paiements' })
   async getPayments(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/payments [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/payments [tenant=${principal.tenantId}]`);
     return adapter.getPayments();
   }
 
@@ -498,9 +464,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du paiement' })
   @ApiResponse({ status: 200, description: 'Paiement trouve' })
   async getPaymentById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/payments/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/payments/${id} [tenant=${principal.tenantId}]`);
     return adapter.getPaymentById(id);
   }
 
@@ -510,9 +475,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Enregistrer un paiement' })
   @ApiResponse({ status: 201, description: 'Paiement enregistre' })
   async createPayment(@Body() dto: CreatePaymentDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/payments [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/payments [tenant=${principal.tenantId}]`);
     return adapter.createPayment(dto);
   }
 
@@ -523,9 +487,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les entrepots depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des entrepots' })
   async getWarehouses(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/warehouses [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/warehouses [tenant=${principal.tenantId}]`);
     return adapter.getWarehouses();
   }
 
@@ -535,9 +498,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de lentrepot' })
   @ApiResponse({ status: 200, description: 'Entrepot trouve' })
   async getWarehouseById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/warehouses/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/warehouses/${id} [tenant=${principal.tenantId}]`);
     return adapter.getWarehouseById(id);
   }
 
@@ -547,9 +509,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un entrepot' })
   @ApiResponse({ status: 201, description: 'Entrepot cree' })
   async createWarehouse(@Body() dto: CreateWarehouseDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/warehouses [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/warehouses [tenant=${principal.tenantId}]`);
     return adapter.createWarehouse(dto);
   }
 
@@ -559,9 +520,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de lentrepot' })
   @ApiResponse({ status: 200, description: 'Entrepot mis a jour' })
   async updateWarehouse(@Param('id') id: string, @Body() dto: CreateWarehouseDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/warehouses/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/warehouses/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateWarehouse(id, dto);
   }
 
@@ -572,9 +532,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de lentrepot' })
   @ApiResponse({ status: 204, description: 'Entrepot supprime' })
   async deleteWarehouse(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/warehouses/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/warehouses/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteWarehouse(id);
   }
 
@@ -585,9 +544,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les expeditions depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des expeditions' })
   async getShipments(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/shipments [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/shipments [tenant=${principal.tenantId}]`);
     return adapter.getShipments();
   }
 
@@ -597,9 +555,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de lexpedition' })
   @ApiResponse({ status: 200, description: 'Expedition trouvee' })
   async getShipmentById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/shipments/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/shipments/${id} [tenant=${principal.tenantId}]`);
     return adapter.getShipmentById(id);
   }
 
@@ -609,9 +566,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une expedition' })
   @ApiResponse({ status: 201, description: 'Expedition creee' })
   async createShipment(@Body() dto: CreateShipmentDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/shipments [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/shipments [tenant=${principal.tenantId}]`);
     return adapter.createShipment(dto);
   }
 
@@ -621,9 +577,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de lexpedition' })
   @ApiResponse({ status: 200, description: 'Expedition mise a jour' })
   async updateShipment(@Param('id') id: string, @Body() dto: Partial<CreateShipmentDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/shipments/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/shipments/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateShipment(id, dto);
   }
 
@@ -634,9 +589,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les documents depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des documents' })
   async getDocuments(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/documents [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/documents [tenant=${principal.tenantId}]`);
     return adapter.getDocuments();
   }
 
@@ -646,9 +600,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du document' })
   @ApiResponse({ status: 200, description: 'Document trouve' })
   async getDocumentById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/documents/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/documents/${id} [tenant=${principal.tenantId}]`);
     return adapter.getDocumentById(id);
   }
 
@@ -658,9 +611,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un document' })
   @ApiResponse({ status: 201, description: 'Document cree' })
   async createDocument(@Body() dto: CreateDocumentDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/documents [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/documents [tenant=${principal.tenantId}]`);
     return adapter.createDocument(dto);
   }
 
@@ -671,9 +623,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du document' })
   @ApiResponse({ status: 204, description: 'Document supprime' })
   async deleteDocument(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/documents/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/documents/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteDocument(id);
   }
 
@@ -684,9 +635,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les mouvements de stock depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des mouvements de stock' })
   async getStockMovements(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/stock-movements [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/stock-movements [tenant=${principal.tenantId}]`);
     return adapter.getStockMovements();
   }
 
@@ -696,9 +646,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un mouvement de stock' })
   @ApiResponse({ status: 201, description: 'Mouvement cree' })
   async createStockMovement(@Body() dto: CreateStockMovementDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/stock-movements [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/stock-movements [tenant=${principal.tenantId}]`);
     return adapter.createStockMovement(dto);
   }
 
@@ -709,9 +658,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les achats depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des achats' })
   async getPurchaseOrders(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/purchases [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/purchases [tenant=${principal.tenantId}]`);
     return adapter.getPurchaseOrders();
   }
 
@@ -721,9 +669,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de l achat' })
   @ApiResponse({ status: 200, description: 'Achat trouve' })
   async getPurchaseOrderById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/purchases/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/purchases/${id} [tenant=${principal.tenantId}]`);
     return adapter.getPurchaseOrderById(id);
   }
 
@@ -733,9 +680,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un achat' })
   @ApiResponse({ status: 201, description: 'Achat cree' })
   async createPurchaseOrder(@Body() dto: CreatePurchaseOrderDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/purchases [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/purchases [tenant=${principal.tenantId}]`);
     return adapter.createPurchaseOrder(dto);
   }
 
@@ -745,9 +691,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de l achat' })
   @ApiResponse({ status: 200, description: 'Achat mis a jour' })
   async updatePurchaseOrder(@Param('id') id: string, @Body() dto: CreatePurchaseOrderDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/purchases/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/purchases/${id} [tenant=${principal.tenantId}]`);
     return adapter.updatePurchaseOrder(id, dto);
   }
 
@@ -758,9 +703,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les projets depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des projets' })
   async getProjects(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/projects [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/projects [tenant=${principal.tenantId}]`);
     return adapter.getProjects();
   }
 
@@ -770,9 +714,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du projet' })
   @ApiResponse({ status: 200, description: 'Projet trouve' })
   async getProjectById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/projects/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/projects/${id} [tenant=${principal.tenantId}]`);
     return adapter.getProjectById(id);
   }
 
@@ -782,9 +725,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un projet' })
   @ApiResponse({ status: 201, description: 'Projet cree' })
   async createProject(@Body() dto: CreateProjectDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/projects [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/projects [tenant=${principal.tenantId}]`);
     return adapter.createProject(dto);
   }
 
@@ -794,9 +736,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du projet' })
   @ApiResponse({ status: 200, description: 'Projet mis a jour' })
   async updateProject(@Param('id') id: string, @Body() dto: CreateProjectDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/projects/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/projects/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateProject(id, dto);
   }
 
@@ -807,9 +748,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les evenements d agenda depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des evenements' })
   async getAgenda(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/agenda [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/agenda [tenant=${principal.tenantId}]`);
     return adapter.getAgenda();
   }
 
@@ -819,9 +759,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un evenement d agenda' })
   @ApiResponse({ status: 201, description: 'Evenement cree' })
   async createAgendaEvent(@Body() dto: CreateAgendaEventDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/agenda [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/agenda [tenant=${principal.tenantId}]`);
     return adapter.createAgendaEvent(dto);
   }
 
@@ -831,9 +770,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de l evenement' })
   @ApiResponse({ status: 200, description: 'Evenement modifie' })
   async updateAgendaEvent(@Param('id') id: string, @Body() dto: Partial<CreateAgendaEventDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/agenda/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/agenda/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateAgendaEvent(id, dto);
   }
 
@@ -843,9 +781,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de l evenement' })
   @ApiResponse({ status: 200, description: 'Evenement supprime' })
   async deleteAgendaEvent(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/agenda/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/agenda/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteAgendaEvent(id);
     return { success: true, id };
   }
@@ -858,9 +795,8 @@ export class ErpAdapterController {
   @ApiQuery({ name: 'productId', required: false, description: 'Filtrer par produit' })
   @ApiResponse({ status: 200, description: 'Liste des variantes' })
   async getProductVariants(@CurrentUser() principal: IamAuthContext, @Query('productId') productId?: string) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/product-variants [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/product-variants [tenant=${principal.tenantId}]`);
     if (productId) return adapter.getProductVariantsByProduct(productId);
     return adapter.getProductVariants();
   }
@@ -871,9 +807,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une variante de produit' })
   @ApiResponse({ status: 201, description: 'Variante creee' })
   async createProductVariant(@Body() dto: CreateProductVariantDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/product-variants [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/product-variants [tenant=${principal.tenantId}]`);
     return adapter.createProductVariant(dto);
   }
 
@@ -883,9 +818,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la variante' })
   @ApiResponse({ status: 200, description: 'Variante mise a jour' })
   async updateProductVariant(@Param('id') id: string, @Body() dto: Partial<CreateProductVariantDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/product-variants/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/product-variants/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateProductVariant(id, dto);
   }
 
@@ -895,9 +829,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la variante' })
   @ApiResponse({ status: 200, description: 'Variante supprimee' })
   async deleteProductVariant(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/product-variants/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/product-variants/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteProductVariant(id);
     return { success: true, id };
   }
@@ -909,9 +842,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les services depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des services' })
   async getServices(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/services [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/services [tenant=${principal.tenantId}]`);
     return adapter.getServices();
   }
 
@@ -921,9 +853,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du service' })
   @ApiResponse({ status: 200, description: 'Service trouve' })
   async getServiceById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/services/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/services/${id} [tenant=${principal.tenantId}]`);
     return adapter.getServiceById(id);
   }
 
@@ -933,9 +864,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un service' })
   @ApiResponse({ status: 201, description: 'Service cree' })
   async createService(@Body() dto: CreateServiceDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/services [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/services [tenant=${principal.tenantId}]`);
     return adapter.createService(dto);
   }
 
@@ -945,9 +875,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du service' })
   @ApiResponse({ status: 200, description: 'Service mis a jour' })
   async updateService(@Param('id') id: string, @Body() dto: Partial<CreateServiceDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/services/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/services/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateService(id, dto);
   }
 
@@ -957,9 +886,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du service' })
   @ApiResponse({ status: 200, description: 'Service supprime' })
   async deleteService(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`DELETE /erp/services/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`DELETE /erp/services/${id} [tenant=${principal.tenantId}]`);
     await adapter.deleteService(id);
     return { success: true, id };
   }
@@ -971,9 +899,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les transferts de stock depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des transferts' })
   async getStockTransfers(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/stock-transfers [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/stock-transfers [tenant=${principal.tenantId}]`);
     return adapter.getStockTransfers();
   }
 
@@ -983,9 +910,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un transfert de stock' })
   @ApiResponse({ status: 201, description: 'Transfert cree' })
   async createStockTransfer(@Body() dto: CreateStockTransferDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/stock-transfers [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/stock-transfers [tenant=${principal.tenantId}]`);
     return adapter.createStockTransfer(dto);
   }
 
@@ -995,9 +921,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du transfert' })
   @ApiResponse({ status: 200, description: 'Transfert mis a jour' })
   async updateStockTransfer(@Param('id') id: string, @Body() dto: Partial<CreateStockTransferDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/stock-transfers/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/stock-transfers/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateStockTransfer(id, dto);
   }
 
@@ -1008,9 +933,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les inventaires depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des inventaires' })
   async getInventories(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/inventories [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/inventories [tenant=${principal.tenantId}]`);
     return adapter.getInventories();
   }
 
@@ -1020,9 +944,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de l inventaire' })
   @ApiResponse({ status: 200, description: 'Inventaire trouve' })
   async getInventoryById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/inventories/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/inventories/${id} [tenant=${principal.tenantId}]`);
     return adapter.getInventoryById(id);
   }
 
@@ -1032,9 +955,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un inventaire' })
   @ApiResponse({ status: 201, description: 'Inventaire cree' })
   async createInventory(@Body() dto: CreateInventoryDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/inventories [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/inventories [tenant=${principal.tenantId}]`);
     return adapter.createInventory(dto);
   }
 
@@ -1044,9 +966,8 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de l inventaire' })
   @ApiResponse({ status: 200, description: 'Inventaire mis a jour' })
   async updateInventory(@Param('id') id: string, @Body() dto: Partial<CreateInventoryDto>, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`PUT /erp/inventories/${id} [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`PUT /erp/inventories/${id} [tenant=${principal.tenantId}]`);
     return adapter.updateInventory(id, dto);
   }
 
@@ -1057,9 +978,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les alertes de stock depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des alertes' })
   async getStockAlerts(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/stock-alerts [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/stock-alerts [tenant=${principal.tenantId}]`);
     return adapter.getStockAlerts();
   }
 
@@ -1069,9 +989,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une alerte de stock' })
   @ApiResponse({ status: 201, description: 'Alerte creee' })
   async createStockAlert(@Body() dto: CreateStockAlertDto, @CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`POST /erp/stock-alerts [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`POST /erp/stock-alerts [tenant=${principal.tenantId}]`);
     return adapter.createStockAlert(dto);
   }
 
@@ -1082,9 +1001,8 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les retours depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des retours' })
   async getReturns(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    this.logger.log(`GET /erp/returns [tenant=${principal.tenantId}, erp=${erpCode}]`);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
+    this.logger.log(`GET /erp/returns [tenant=${principal.tenantId}]`);
     return adapter.getReturns();
   }
 
@@ -1094,7 +1012,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du retour' })
   @ApiResponse({ status: 200, description: 'Retour trouve' })
   async getReturnById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getReturnById(id);
   }
 
@@ -1104,7 +1022,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer un retour' })
   @ApiResponse({ status: 201, description: 'Retour cree' })
   async createReturn(@Body() dto: CreateReturnDto, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.createReturn(dto);
   }
 
@@ -1114,7 +1032,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID du retour' })
   @ApiResponse({ status: 200, description: 'Retour mis a jour' })
   async updateReturn(@Param('id') id: string, @Body() dto: Partial<CreateReturnDto>, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.updateReturn(id, dto);
   }
 
@@ -1125,7 +1043,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les promotions depuis un ERP' })
   @ApiResponse({ status: 200, description: 'Liste des promotions' })
   async getPromotions(@CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getPromotions();
   }
 
@@ -1135,7 +1053,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la promotion' })
   @ApiResponse({ status: 200, description: 'Promotion trouvee' })
   async getPromotionById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getPromotionById(id);
   }
 
@@ -1145,7 +1063,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une promotion' })
   @ApiResponse({ status: 201, description: 'Promotion creee' })
   async createPromotion(@Body() dto: CreatePromotionDto, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.createPromotion(dto);
   }
 
@@ -1155,7 +1073,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la promotion' })
   @ApiResponse({ status: 200, description: 'Promotion mise a jour' })
   async updatePromotion(@Param('id') id: string, @Body() dto: Partial<CreatePromotionDto>, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.updatePromotion(id, dto);
   }
 
@@ -1165,7 +1083,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la promotion' })
   @ApiResponse({ status: 200, description: 'Promotion supprimee' })
   async deletePromotion(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     await adapter.deletePromotion(id);
     return { success: true, id };
   }
@@ -1177,7 +1095,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les caisses depuis un ERP' })
   @ApiResponse({ status: 200, description: 'Liste des caisses' })
   async getCashRegisters(@CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getCashRegisters();
   }
 
@@ -1187,7 +1105,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la caisse' })
   @ApiResponse({ status: 200, description: 'Caisse trouvee' })
   async getCashRegisterById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getCashRegisterById(id);
   }
 
@@ -1197,7 +1115,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une caisse' })
   @ApiResponse({ status: 201, description: 'Caisse creee' })
   async createCashRegister(@Body() dto: CreateCashRegisterDto, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.createCashRegister(dto);
   }
 
@@ -1207,7 +1125,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la caisse' })
   @ApiResponse({ status: 200, description: 'Caisse mise a jour' })
   async updateCashRegister(@Param('id') id: string, @Body() dto: Partial<CreateCashRegisterDto>, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.updateCashRegister(id, dto);
   }
 
@@ -1218,7 +1136,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les depenses depuis un ERP' })
   @ApiResponse({ status: 200, description: 'Liste des depenses' })
   async getExpenses(@CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getExpenses();
   }
 
@@ -1228,7 +1146,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la depense' })
   @ApiResponse({ status: 200, description: 'Depense trouvee' })
   async getExpenseById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getExpenseById(id);
   }
 
@@ -1238,7 +1156,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une depense' })
   @ApiResponse({ status: 201, description: 'Depense creee' })
   async createExpense(@Body() dto: CreateExpenseDto, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.createExpense(dto);
   }
 
@@ -1248,7 +1166,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la depense' })
   @ApiResponse({ status: 200, description: 'Depense supprimee' })
   async deleteExpense(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     await adapter.deleteExpense(id);
     return { success: true, id };
   }
@@ -1260,7 +1178,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les reservations depuis un ERP' })
   @ApiResponse({ status: 200, description: 'Liste des reservations' })
   async getReservations(@CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getReservations();
   }
 
@@ -1270,7 +1188,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la reservation' })
   @ApiResponse({ status: 200, description: 'Reservation trouvee' })
   async getReservationById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getReservationById(id);
   }
 
@@ -1280,7 +1198,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Creer une reservation' })
   @ApiResponse({ status: 201, description: 'Reservation creee' })
   async createReservation(@Body() dto: CreateReservationDto, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.createReservation(dto);
   }
 
@@ -1290,7 +1208,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de la reservation' })
   @ApiResponse({ status: 200, description: 'Reservation mise a jour' })
   async updateReservation(@Param('id') id: string, @Body() dto: Partial<CreateReservationDto>, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.updateReservation(id, dto);
   }
 
@@ -1301,7 +1219,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Lister les utilisateurs depuis un ERP' })
   @ApiResponse({ status: 200, description: 'Liste des utilisateurs' })
   async getUsers(@CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getUsers();
   }
 
@@ -1310,7 +1228,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Utilisateur courant (proprietaire de la cle API)' })
   @ApiResponse({ status: 200, description: 'Utilisateur courant' })
   async getCurrentUser(@CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getCurrentUser();
   }
 
@@ -1320,7 +1238,7 @@ export class ErpAdapterController {
   @ApiParam({ name: 'id', description: 'ID de l utilisateur' })
   @ApiResponse({ status: 200, description: 'Utilisateur trouve' })
   async getUserById(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getUserById(id);
   }
 
@@ -1331,7 +1249,7 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Obtenir les statistiques ERP' })
   @ApiResponse({ status: 200, description: 'Statistiques globales' })
   async getStats(@CurrentUser() principal: IamAuthContext) {
-    const adapter = this.adapterService.getAdapter(await this.resolveErpFromTenant(principal));
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.getStats();
   }
 
@@ -1373,8 +1291,7 @@ export class ErpAdapterController {
   @ApiResponse({ status: 200, description: 'Etat de sante du ERP du tenant' })
   @ApiResponse({ status: 403, description: 'Permission insuffisante' })
   async tenantHealthCheck(@CurrentUser() principal: IamAuthContext) {
-    const erpCode = await this.resolveErpFromTenant(principal);
-    const adapter = this.adapterService.getAdapter(erpCode);
+    const adapter = await this.resolveErpFromTenant(principal);
     return adapter.healthCheck();
   }
 }
