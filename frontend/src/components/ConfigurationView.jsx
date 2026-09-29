@@ -32,6 +32,7 @@ import {
   Filter,
   X,
 } from 'lucide-react';
+import { BmBreadcrumb, BmBadge, BmButton } from './business-manager/bm/ui.jsx';
 
 export default function ConfigurationView() {
   const dispatch = useDispatch();
@@ -130,18 +131,19 @@ export default function ConfigurationView() {
 
   return (
     <div className="w-full space-y-5">
-      <nav aria-label="Fil d’Ariane" className="text-xs text-slate-400"><Link to={ROUTES.bm}>Business Manager</Link> / Configuration</nav>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div><h1 className="text-2xl font-semibold text-slate-900">Configuration</h1><p className="mt-2 text-sm text-slate-600">Gérez les paramètres et leurs valeurs effectives pour la version courante.</p></div>
+      <BmBreadcrumb items={[{ label: 'Business Manager', to: ROUTES.bm }, { label: 'Configuration' }]} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div><h1 className="text-2xl font-bold tracking-tight text-slate-900">Configuration</h1><p className="mt-1 text-sm text-slate-500">Gérez les paramètres et leurs valeurs effectives pour la version courante.</p></div>
         <div className="flex items-center gap-2.5 shrink-0 mt-4 sm:mt-0">
-          <button
+          <BmButton
+            variant="secondary"
             onClick={() => setShowSecrets(!showSecrets)}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-700 transition-all "
+
             title="Masquer ou afficher les références de secrets"
           >
             {showSecrets ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
             <span>{showSecrets ? 'Masquer Références' : 'Voir Références Vault'}</span>
-          </button>
+          </BmButton>
 
           <button
             onClick={() => {
@@ -149,7 +151,7 @@ export default function ConfigurationView() {
               resetForm();
               setShowAddModal(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm "
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all active:scale-95 bm-focus shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>Ajouter un paramètre</span>
@@ -159,7 +161,7 @@ export default function ConfigurationView() {
 
       <ContextBar application={contextLabels.application} version={contextLabels.version} status={contextLabels.status} tenant={activeTenant?.name || activeTenant?.code} />
       {saveError && <p role="alert" className="text-red-700">{saveError}</p>}
-      <div role="tablist" aria-label="Configuration" className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{[['definitions','Définitions'],['values','Valeurs'],['effective','Configuration effective']].map(([id,label]) => <button key={id} role="tab" aria-selected={tab===id} onClick={() => setTab(id)} className={`rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 ease-out motion-reduce:transition-none ${tab===id?'border-blue-100 bg-blue-50 text-blue-700':'border-transparent bg-white text-slate-500 hover:bg-slate-50'}`}>{label}</button>)}</div>
+      <div role="tablist" aria-label="Configuration" className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{[['definitions','Définitions'],['values','Valeurs'],['effective','Configuration effective']].map(([id,label]) => <button key={id} role="tab" aria-selected={tab===id} onClick={() => setTab(id)} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-150 bm-focus ${tab===id?'bg-blue-600 text-white':'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{label}</button>)}</div>
       {configLoading && <p role="status">Chargement des paramètres…</p>}
       {configError && <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">Impossible de charger les paramètres. <button className="ml-2 text-blue-600" onClick={()=>dispatch(fetchConfigsAsync())}>Réessayer</button></p>}
       {tab === 'effective' ? <section className="rounded-xl border bg-white p-5 space-y-4"><h2 className="text-lg font-semibold">Valeurs effectives et provenance</h2>
@@ -280,7 +282,7 @@ export default function ConfigurationView() {
                       </td>
 
                       <td className="py-3.5 px-3">
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
                           {item.type}
                         </span>
                       </td>
@@ -299,22 +301,19 @@ export default function ConfigurationView() {
                       </td>
 
                       <td className="py-3.5 px-3">
-                        {isInvalid ? (
-                          <div className="flex items-start gap-1 text-rose-600 font-semibold">
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <div>
-                              <span>INVALID</span>
-                              <div className="text-[10px] text-rose-500 font-normal font-sans">
-                                {item.validationError || 'Validation échouée'}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-emerald-600 font-semibold">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>VALID</span>
-                          </div>
-                        )}
+                        {/* Statut réel du backend (ConfigurationStatus: DRAFT/VALIDATING/READY/ACTIVE/…) —
+                            complété par la validation de schéma locale qui peut marquer INVALID. */}
+                        <div className="flex flex-col items-start gap-1">
+                          <BmBadge tone={item.status === 'ACTIVE' ? 'green' : item.status === 'READY' ? 'blue' : item.status === 'DEPRECATED' || item.status === 'ARCHIVED' ? 'neutral' : 'amber'} dot>
+                            {item.status || 'DRAFT'}
+                          </BmBadge>
+                          {item.validationError && (
+                            <span className="flex items-center gap-1 text-[10px] font-semibold text-rose-600">
+                              <AlertTriangle className="w-3 h-3 shrink-0" />
+                              INVALID
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-3 font-mono text-slate-500">v{item.version || 1}</td>
@@ -463,9 +462,7 @@ export default function ConfigurationView() {
                   />
                   <span>Obligatoire</span>
                 </label>
-              </div>
-
-              <div>
+              </div>              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
                 <textarea
                   rows={2}

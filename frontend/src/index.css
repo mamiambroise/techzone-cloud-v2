@@ -37,3 +37,101 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ============================================
+   Business Manager — Design System (BM UI)
+   Canvas slate très clair, surfaces blanches,
+   accent bleu Techzone, radius 10-12px,
+   ombres discrètes, micro-animations 150-180ms.
+   ============================================ */
+
+:root {
+  --bm-canvas: #f8fafc;
+  --bm-surface: #ffffff;
+  --bm-border: #e2e8f0;
+  --bm-accent: #2563eb;
+  --bm-accent-soft: #eff6ff;
+  --bm-text: #0f172a;
+  --bm-text-muted: #64748b;
+  --bm-radius: 12px;
+}
+
+/* Focus ring bleu léger, uniforme pour tout BM */
+.bm-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(37, 99, 235, 0.35);
+}
+.bm-focus {
+  transition: box-shadow 150ms ease-out, background-color 150ms ease-out,
+    border-color 150ms ease-out, color 150ms ease-out;
+}
+
+/* Cards : hover très léger (150-180ms ease-out, -1px) */
+.bm-hover-lift {
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out,
+    border-color 160ms ease-out;
+}
+.bm-hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.08);
+}
+
+/* Skeleton discret (utilisé par Loaders.jsx et les états BM) */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e2e8f0;
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  animation: bm-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes bm-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Chevrons / accordéons : rotation douce */
+.bm-chevron {
+  transition: transform 200ms ease-out;
+}
+.bm-chevron-open {
+  transform: rotate(180deg);
+}
+
+/* Fondu discret à l'entrée des panneaux */
+@keyframes bm-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.bm-fade-in {
+  animation: bm-fade-in 160ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bm-hover-lift,
+  .bm-focus,
+  .bm-chevron,
+  .bm-fade-in,
+  .skeleton::after {
+    animation: none;
+    transition: none;
+  }
+}

@@ -737,7 +737,7 @@ model IntegrationLog {
   id String @id @default(uuid()) @db.Uuid
 
   traceId  String  @db.VarChar(100)
-  tenantId String? @db.VarChar(100)
+  tenantId String? @db.Uuid
 
   connectorId String? @db.Uuid
 
@@ -1090,7 +1090,7 @@ model DeploymentHistory {
 // Table principale des ERP enregistrÃ©s
 model ERPRegistry {
   id             String    @id @default(uuid())
-  tenantId       String    @db.VarChar(100)
+  tenantId       String    @db.Uuid
   code           String    @unique
   nom            String
   type           String
@@ -1129,7 +1129,7 @@ model AdapterRegistry {
 // Table des correspondances d'entitÃ©s
 model EntityMapping {
   id            String   @id @default(uuid())
-  tenantId      String   @db.VarChar(100)
+  tenantId      String   @db.Uuid
   erpId         String   @map("erp_id")
   entity        String
   erpEntity     String   @map("erp_entity")
@@ -1225,7 +1225,7 @@ model IamUser {
   timezone            String?
   status              UserStatus @default(PENDING)
   isAdmin             Boolean    @default(false)
-  defaultTenantId     String?
+  defaultTenantId     String? @db.Uuid
   metadata            Json?
   statusChangedAt     DateTime?
   statusChangedBy     String?
@@ -1323,7 +1323,7 @@ model IamDevice {
 model IamSession {
   id                  String        @id @default(uuid())
   userId              String
-  tenantId            String?
+  tenantId            String? @db.Uuid
   organizationId      String?
   siteId              String?
   applicationId       String?
@@ -1649,7 +1649,7 @@ model ExternalIdentityLink {
 }
 
 model Tenant {
-  id                  String        @id @default(uuid())
+  id                  String        @id @default(uuid()) @db.Uuid
   code                String        @unique
   name                String
   description         String?
@@ -1685,7 +1685,7 @@ model Tenant {
 
 model Organization {
   id                  String            @id @default(uuid())
-  tenantId            String
+  tenantId            String @db.Uuid
   code                String
   name                String
   description         String?
@@ -1740,7 +1740,7 @@ model Site {
 model Membership {
   id                  String           @id @default(uuid())
   userId              String
-  tenantId            String
+  tenantId            String @db.Uuid
   organizationId      String?
   siteId              String?
   status              MembershipStatus @default(INVITED)
@@ -1773,7 +1773,7 @@ model Membership {
 
 model Group {
   id                  String    @id @default(uuid())
-  tenantId            String
+  tenantId            String @db.Uuid
   organizationId      String?
   code                String
   name                String
@@ -1844,7 +1844,7 @@ model Permission {
 
 model Role {
   id                  String    @id @default(uuid())
-  tenantId            String?
+  tenantId            String? @db.Uuid
   code                String
   name                String
   description         String?
@@ -1894,7 +1894,7 @@ model RoleAssignment {
   userId              String?
   groupId             String?
   serviceAccountId    String?
-  tenantId            String?
+  tenantId            String? @db.Uuid
   organizationId      String?
   siteId              String?
   validFrom           DateTime?
@@ -1924,7 +1924,7 @@ model RoleAssignment {
 
 model AccessPolicy {
   id                  String       @id @default(uuid())
-  tenantId            String?
+  tenantId            String? @db.Uuid
   code                String
   name                String
   description         String?
@@ -1979,7 +1979,7 @@ model AuthorizationDecision {
   traceId           String
   userId            String?
   identityId        String?
-  tenantId          String?
+  tenantId          String? @db.Uuid
   organizationId    String?
   siteId            String?
   applicationId     String?
@@ -2040,7 +2040,7 @@ model RecoveryCode {
 
 model ServiceAccount {
   id                  String                @id @default(uuid())
-  tenantId            String
+  tenantId            String @db.Uuid
   identityId          String                @unique
   code                String
   name                String
@@ -2097,7 +2097,7 @@ model SecurityEvent {
   severity      SecuritySeverity
   userId        String?
   identityId    String?
-  tenantId      String?
+  tenantId      String? @db.Uuid
   organizationId String?
   siteId        String?
   sessionId     String?
@@ -2121,7 +2121,7 @@ model ContextSnapshot {
   traceId         String?
   userId          String
   identityId      String?
-  tenantId        String?
+  tenantId        String? @db.Uuid
   organizationId  String?
   siteId          String?
   applicationId   String?
@@ -2175,7 +2175,7 @@ model ContextInvalidation {
   id              String   @id @default(uuid())
   subjectType     String
   subjectId       String
-  tenantId        String?
+  tenantId        String? @db.Uuid
   reason          String
   revision        Int      @default(1)
   sourceEventType String?
@@ -2196,7 +2196,7 @@ model AuditEvent {
   actorId         String?
   effectiveIdentityId String?
   effectiveUserId String?
-  tenantId        String?
+  tenantId        String? @db.Uuid
   organizationId  String?
   siteId          String?
   sessionId       String?
@@ -2288,7 +2288,7 @@ model PlanEntitlement {
 
 model Subscription {
   id              String             @id @default(uuid())
-  tenantId        String
+  tenantId        String @db.Uuid
   planId          String
   applicationCode String?
   status          SubscriptionStatus @default(TRIAL)
@@ -2366,7 +2366,7 @@ model QuotaUsage {
 
 model Invoice {
   id            String      @id @default(uuid())
-  tenantId      String
+  tenantId      String @db.Uuid
   subscriptionId String?
   invoiceNumber  String      @unique
   status         InvoiceStatus @default(DRAFT)
@@ -2442,7 +2442,7 @@ model Payment {
 model BillingEvent {
   id            String   @id @default(uuid())
   traceId       String?
-  tenantId      String
+  tenantId      String @db.Uuid
   subscriptionId String?
   invoiceId     String?
   paymentId     String?
@@ -2461,7 +2461,7 @@ model BillingEvent {
 
 model AdminDelegation {
   id                  String  @id @default(uuid())
-  tenantId            String?
+  tenantId            String? @db.Uuid
   grantorUserId       String
   granteeUserId       String
   scopeType           String
@@ -2488,7 +2488,7 @@ model AdministrativeAction {
   id              String  @id @default(uuid())
   traceId         String?
   actorId         String
-  tenantId        String?
+  tenantId        String? @db.Uuid
   actionType      String
   targetType      String
   targetId        String?

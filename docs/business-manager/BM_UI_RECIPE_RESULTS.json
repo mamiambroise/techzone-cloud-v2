@@ -1,0 +1,121 @@
+{
+  "timestamp": "2026-09-29T10:07:03.071Z",
+  "login": 200,
+  "screens": {
+    "overview": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {
+        "dashboard": {
+          "status": 200,
+          "rows": "object"
+        },
+        "activity": {
+          "status": 200,
+          "rows": 1
+        },
+        "applications": {
+          "status": 200,
+          "rows": 2
+        }
+      }
+    },
+    "applications": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {
+        "applications": {
+          "status": 200,
+          "rows": 2
+        }
+      }
+    },
+    "configuration": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {
+        "configurations": {
+          "status": 200,
+          "rows": 2
+        }
+      }
+    },
+    "features-index": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {}
+    },
+    "navigation-index": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {}
+    },
+    "models-index": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {}
+    },
+    "validation-index": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {}
+    },
+    "models-workspace": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {
+        "f739f2c5-3a67-4e9c-a43f-f216e4aae237/schema": {
+          "status": 200,
+          "rows": 1
+        },
+        "f739f2c5-3a67-4e9c-a43f-f216e4aae237/relations": {
+          "status": 200,
+          "rows": 0
+        }
+      }
+    },
+    "features-workspace": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {
+        "features/f739f2c5-3a67-4e9c-a43f-f216e4aae237": {
+          "status": 200,
+          "rows": 1
+        },
+        "f739f2c5-3a67-4e9c-a43f-f216e4aae237/dependencies": {
+          "status": 200,
+          "rows": 1
+        }
+      }
+    },
+    "navigation-workspace": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {
+        "f739f2c5-3a67-4e9c-a43f-f216e4aae237/menus": {
+          "status": 200,
+          "rows": 1
+        }
+      }
+    },
+    "validation-workspace": {
+      "httpStatus": 200,
+      "servedByVite": true,
+      "api": {
+        "f739f2c5-3a67-4e9c-a43f-f216e4aae237/reports": {
+          "status": 200,
+          "rows": 3
+        },
+        "f739f2c5-3a67-4e9c-a43f-f216e4aae237/gate-status": {
+          "status": 200,
+          "rows": "object"
+        }
+      }
+    }
+  },
+  "context": {
+    "application": "payment-gateway",
+    "version": "1.1.0",
+    "status": "DRAFT"
+  }
+}

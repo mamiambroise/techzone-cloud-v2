@@ -11,7 +11,7 @@ function mount() { return render(<MemoryRouter initialEntries={['/business-manag
 describe('BM workspace',()=>{
   it('loads schema for the explicitly selected version and preserves tenant context',async()=>{
     api.get.mockImplementation(async url=>({data:url.endsWith('/applications')?[{id:'app-a',name:'Application A'}]:url.endsWith('/versions')?[{id:'version-a',version:'1.0',status:'DRAFT'}]:[]}));
-    mount();await screen.findByText('Créer une entité');
+    mount();await screen.findAllByText('Créer une entité');
     expect(api.get).toHaveBeenCalledWith('/business-manager/data-model/version-a/schema');
     expect(JSON.parse(sessionStorage.getItem('bm-context:tenant-a'))).toEqual({applicationId:'app-a',versionId:'version-a'});
   });
