@@ -21,16 +21,9 @@ export class PrismaService
 
     const schema = new URL(connectionString).searchParams.get('schema') || 'public';
 
-    const searchSchemas = ['public'];
-    if (schema && !searchSchemas.includes(schema)) {
-      searchSchemas.unshift(schema);
-    }
-    if (!searchSchemas.includes('auth_aim')) {
-      searchSchemas.push('auth_aim');
-    }
-    const searchPath = searchSchemas.join(',');
-
-    const adapter = new PrismaPg({ connectionString }, { schema: searchPath });
+    // PrismaPg expects one schema identifier, not a PostgreSQL search_path list.
+    // Cross-schema models require explicit Prisma mappings and migration review.
+    const adapter = new PrismaPg({ connectionString }, { schema });
 
     super({ adapter });
   }

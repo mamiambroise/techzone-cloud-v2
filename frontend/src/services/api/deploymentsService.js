@@ -16,14 +16,14 @@ export const deploymentsService = {
     if (query.environmentId) params.append('environmentId', query.environmentId);
     if (query.releaseId) params.append('releaseId', query.releaseId);
     if (query.status) params.append('status', query.status);
-    return api.get(`/api/deployments?${params.toString()}`).then(unwrap).then((res) => {
+    return api.get(`/deployments?${params.toString()}`).then(unwrap).then((res) => {
       const items = Array.isArray(res) ? res : res.data || [];
       return items.map((d) => ({ ...d, status: toFrontendDeploymentStatus(d.status) }));
     });
   },
-  getDeployment: (id) => api.get(`/api/deployments/${id}`).then(unwrap),
-  createDeployment: (body) => api.post('/api/deployments', body).then(unwrap),
-  verifyDeployment: (id, body) => api.post(`/api/deployments/${id}/verify`, body).then(unwrap),
-  cancelDeployment: (id, actor) => api.post(`/api/deployments/${id}/cancel`, { actor }).then(unwrap),
-  retryDeployment: (id, actor) => api.post(`/api/deployments/${id}/retry`, { actor }).then(unwrap),
+  getDeployment: (id) => api.get(`/deployments/${id}`).then(unwrap),
+  createDeployment: (body) => api.post('/deployments', body).then(unwrap),
+  verifyDeployment: (id, body) => api.post(`/deployments/${id}/verify`, body).then(unwrap),
+  cancelDeployment: (id, actor) => api.post(`/deployments/${id}/cancel`, { actor }).then(unwrap),
+  retryDeployment: (id, actor) => api.post(`/deployments/${id}/retry`, { actor }).then(unwrap),
 };

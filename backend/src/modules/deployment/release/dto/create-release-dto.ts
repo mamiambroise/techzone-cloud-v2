@@ -30,6 +30,10 @@ export class CreateReleaseDto {
   createdBy: string;
 
   @IsOptional()
+  @IsString()
+  tenantId?: string | null;
+
+  @IsOptional()
   artifactRefs?: Record<string, unknown>;
 
   @IsOptional()

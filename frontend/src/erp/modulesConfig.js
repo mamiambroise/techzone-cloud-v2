@@ -49,6 +49,7 @@ import {
 
 export const MODULES = [
   {
+    key: 'clients',
     title: 'Clients',
     subtitle: 'Tiers clients Dolibarr (thirdparties)',
     icon: UsersIcon,

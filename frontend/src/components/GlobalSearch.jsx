@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { routeForTab } from '../app/navigationConfig.js';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setSearchQuery, setActiveTab, addToast } from '../store/platformSlice.js';
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function GlobalSearch({ isMobileExpanded = false, onCloseMobile }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -125,7 +128,7 @@ export default function GlobalSearch({ isMobileExpanded = false, onCloseMobile }
 
   const handleSelectApp = (app) => {
     dispatch(setSelectedAppId(app.id));
-    dispatch(setActiveTab('applications'));
+    navigate(routeForTab('applications'));
     setIsOpen(false);
     if (onCloseMobile) onCloseMobile();
     dispatch(
@@ -139,7 +142,7 @@ export default function GlobalSearch({ isMobileExpanded = false, onCloseMobile }
 
   const handleSelectEnv = (env) => {
     dispatch(setSelectedEnvId(env.id));
-    dispatch(setActiveTab('environments'));
+    navigate(routeForTab('environments'));
     setIsOpen(false);
     if (onCloseMobile) onCloseMobile();
     dispatch(
@@ -153,7 +156,7 @@ export default function GlobalSearch({ isMobileExpanded = false, onCloseMobile }
 
   const handleSelectConfig = (cfg) => {
     dispatch(setSelectedScope(cfg.scope));
-    dispatch(setActiveTab('config'));
+    navigate(routeForTab('config'));
     setIsOpen(false);
     if (onCloseMobile) onCloseMobile();
     dispatch(

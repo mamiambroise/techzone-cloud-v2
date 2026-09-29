@@ -2,10 +2,13 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IamIdentityService } from './iam-identity.service';
 import { IamAdminGuard } from './iam-admin-guard';
+import { Permissions } from './iam-permissions.guard';
+import { IAM_ADMIN } from './iam.constants';
 import { CreateIdentityDto } from './dto/create-identity.dto';
 import { UpdateIdentityDto } from './dto/update-identity.dto';
 
 @ApiTags('iam-identity')
+@Permissions(IAM_ADMIN)
 @UseGuards(IamAdminGuard)
 @Controller('api/iam/identities')
 export class IamIdentitiesController {

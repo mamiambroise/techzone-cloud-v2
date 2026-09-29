@@ -292,40 +292,31 @@ export function validateConfigEntry(config) {
 export const fetchConfigsAsync = createAsyncThunk(
   'config/fetchConfigs',
   async (_, { getState }) => {
-    const { providerMode } = getState().integration;
-    if (providerMode === 'MOCK') {
-      return { skipped: true };
-    }
     return getConfigs();
-  }
+  },
+  { condition: (_, { getState }) => !getState().config.loading }
 );
 
 export const addConfigItemAsync = createAsyncThunk(
   'config/addConfigItem',
   async (body, { getState }) => {
-    const { providerMode } = getState().integration;
-    if (providerMode === 'MOCK') {
-      return { skipped: true };
-    }
     return createConfig(body);
   }
 );
 
 export const updateConfigItemAsync = createAsyncThunk(
   'config/updateConfigItem',
-  async ({ id, body }, { getState }) => {
-    const { providerMode } = getState().integration;
-    if (providerMode === 'MOCK') {
-      return { skipped: true };
-    }
-    return updateConfig(id, body);
+  async ({ id, body, ...fields }, { getState }) => {
+    return updateConfig(id, body ?? fields);
   }
 );
 
 const configSlice = createSlice({
   name: 'config',
   initialState: {
-    items: initialConfigs,
+    items: [],
+    loading: false,
+    error: null,
     selectedScope: 'ALL',
     selectedScopeId: '',
   },
@@ -368,7 +359,10 @@ const configSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchConfigsAsync.pending, state => { state.loading = true; state.error = null; state.items = []; })
+      .addCase(fetchConfigsAsync.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
       .addCase(fetchConfigsAsync.fulfilled, (state, action) => {
+        state.loading = false;
         if (!action.payload.skipped && action.payload) {
           state.items = action.payload;
         }

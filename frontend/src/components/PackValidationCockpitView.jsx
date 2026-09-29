@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { routeForTab } from '../app/navigationConfig.js';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveTab, addToast } from '../store/platformSlice.js';
@@ -19,6 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function PackValidationCockpitView({ onOpenNewApp }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const [activeAnomalyFilter, setActiveAnomalyFilter] = useState('ALL');
   const [resolvedDependency, setResolvedDependency] = useState(false);
@@ -83,7 +86,7 @@ export default function PackValidationCockpitView({ onOpenNewApp }) {
               <span>Rafraîchir</span>
             </button>
             <button
-              onClick={() => dispatch(setActiveTab('applications'))}
+              onClick={() => navigate(routeForTab('applications'))}
               className="px-3.5 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
             >
               Registre des Packs

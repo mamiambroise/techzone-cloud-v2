@@ -1,14 +1,15 @@
+import { useLocation } from 'react-router-dom';
+import { activeNavigation, navigationGroups } from '../app/navigationConfig.js';
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  setActiveTenant,
   setActiveUser,
   setSearchQuery,
   dismissAlert,
   addToast,
-  IAM_ROLES,
-  TENANTS,
 } from '../store/platformSlice.js';
+import { useAuth } from '../auth/AuthProvider.jsx';
+import { useTenant } from '../contexts/TenantProvider.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
 import {
   Menu,
@@ -27,12 +28,13 @@ import {
 
 export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
   const dispatch = useDispatch();
+  const { user } = useAuth();
+  const { activeTenant, tenants, switchTenant, hasMultipleTenants, loading: tenantLoading } = useTenant();
   const activeTab = useSelector((state) => state.platform.activeTab);
   const activeIntegrationTab = useSelector((state) => state.integration?.activeIntegrationTab || 'cockpit');
   const activeDeploymentTab = useSelector((state) => state.deployment?.activeTab || 'cockpit');
   const activeModuleId = useSelector((state) => state.platform.activeModuleId || '01');
-  const activeUser = useSelector((state) => state.platform.activeUser);
-  const activeTenant = useSelector((state) => state.platform.activeTenant);
+  const activeUser = user || useSelector((state) => state.platform.activeUser);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
   const alerts = useSelector((state) => state.platform.alerts || []);
 
@@ -53,93 +55,14 @@ export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
     return () => clearInterval(interval);
   }, []);
 
-  const getSectionInfo = () => {
-    const isDepLayer = activeModuleId === 'dep-layer' || activeTab === 'deployment' || activeTab.startsWith('dep-');
-    const isApiLayer = !isDepLayer && (activeModuleId === 'api-layer' || activeTab === 'integrations' || activeTab.startsWith('api-'));
+  const { pathname } = useLocation();
+  const currentRoute = activeNavigation(pathname);
+  const currentGroup = navigationGroups.find(group => group.id === currentRoute?.group);
+  const sectionInfo = { section: currentGroup?.label || 'Techzone Cloud', title: currentRoute?.label || 'Page introuvable', cdc: currentGroup?.label || 'Navigation', color: 'blue' };
 
-    if (isDepLayer) {
-      switch (activeDeploymentTab) {
-        case 'contracts-v1':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-00', title: 'Socle & Deployment Contracts v1', color: 'amber' };
-        case 'cockpit':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-01', title: 'Deployment Cockpit', color: 'amber' };
-        case 'releases':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-02', title: 'Release Manager & Manifest Sealing', color: 'amber' };
-        case 'pipelines':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-03', title: 'Pipelines & Stratégies de Déploiement', color: 'amber' };
-        case 'promotions':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-04', title: 'Portes de Sécurité & Promotions', color: 'amber' };
-        case 'rollback':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-05', title: 'Rollback Logique & Disaster Recovery', color: 'amber' };
-        case 'diagnostics':
-          return { section: 'DEP Publication', cdc: 'DEP-CDC-06', title: 'Diagnostics & Audit Trail', color: 'amber' };
-        case 'specifications':
-          return { section: 'DEP Publication', cdc: 'DEP-DOC', title: 'Index des CDC (DEP-CDC-00 à 06)', color: 'amber' };
-        default:
-          return { section: 'DEP Publication', cdc: 'DEP-CDC', title: 'Déploiement & Publication', color: 'amber' };
-      }
-    }
-
-    if (isApiLayer) {
-      switch (activeIntegrationTab) {
-        case 'contracts-v1':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-00', title: 'Socle & Integration Contracts v1', color: 'indigo' };
-        case 'cockpit':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-01', title: 'Vue d’ensemble / Integration Cockpit', color: 'indigo' };
-        case 'connectors':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-02', title: 'Connector Manager', color: 'indigo' };
-        case 'apis':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-03', title: 'API Manager', color: 'indigo' };
-        case 'webhooks':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-04', title: 'Webhook Manager', color: 'indigo' };
-        case 'credentials':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-05', title: 'Credentials & Secrets Manager', color: 'indigo' };
-        case 'sync':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-06', title: 'Synchronization Manager', color: 'indigo' };
-        case 'diagnostics':
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC-07', title: 'Integration Logs & Diagnostics', color: 'indigo' };
-        case 'specifications':
-          return { section: 'API_Integration_Layer', cdc: 'API-DOC', title: 'Index des CDC (API-CDC-00 à 07)', color: 'indigo' };
-        default:
-          return { section: 'API_Integration_Layer', cdc: 'API-CDC', title: 'Couche Intégrations', color: 'indigo' };
-      }
-    }
-
-    switch (activeTab) {
-      case 'platform-contract':
-      case 'contract-v1':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-00', title: 'Socle & Platform Contract v1', color: 'blue' };
-      case 'cockpit':
-      case 'overview':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-01', title: 'Platform Cockpit', color: 'blue' };
-      case 'applications':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-02', title: 'Catalogue Applications', color: 'blue' };
-      case 'workspace':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-02', title: 'Workspace & Configuration', color: 'blue' };
-      case 'versions':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-02', title: 'Versions & Releases', color: 'blue' };
-      case 'validation':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-02', title: 'Cockpit de Validation', color: 'blue' };
-      case 'publication':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-02', title: 'Publication & Déploiement', color: 'blue' };
-      case 'environments':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-03', title: 'Environnements', color: 'blue' };
-      case 'contracts':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-04', title: 'Registre de Contrats', color: 'blue' };
-      case 'config':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-05', title: 'Configuration Manager', color: 'blue' };
-      case 'snapshots':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-06', title: 'Snapshots Immuables', color: 'blue' };
-      case 'history':
-        return { section: 'Platform Foundation', cdc: 'PF-CDC-06', title: 'Historique & Rollback', color: 'blue' };
-      case 'specifications':
-        return { section: 'Platform Foundation', cdc: 'PF-DOC', title: 'Index des CDC (PF-00 à 06)', color: 'blue' };
-      default:
-        return { section: 'Platform Foundation', cdc: 'PF-CDC', title: 'Platform Foundation', color: 'blue' };
-    }
-  };
-
-  const sectionInfo = getSectionInfo();
+  const currentUserLabel = activeUser?.name || activeUser?.displayName || activeUser?.username || 'Utilisateur';
+  const currentUserEmail = activeUser?.email || activeUser?.primaryEmail || '';
+  const userRole = activeUser?.isAdmin ? 'Administrateur' : 'Utilisateur';
 
   return (
     <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
@@ -294,14 +217,14 @@ export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
                 className="flex items-center gap-2 p-1 pl-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
               >
                 <div className="w-7 h-7 rounded-md bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                  RA
+                  {currentUserLabel.charAt(0) ?? 'RA'}
                 </div>
                 <div className="hidden lg:block text-left">
                   <div className="text-xs font-bold text-slate-900 leading-none">
-                    {activeUser?.name || 'Ranja Avo Efraim'}
+                    {currentUserLabel}
                   </div>
                   <div className="text-[10px] text-slate-500 mt-0.5 leading-none">
-                    Administrateur
+                    {userRole}
                   </div>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
@@ -310,59 +233,49 @@ export default function Header({ onToggleMobileSidebar, onOpenNewApp }) {
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-50 space-y-3">
                   <div className="border-b border-slate-100 pb-2">
-                    <div className="font-bold text-slate-900 text-xs">{activeUser?.name}</div>
-                    <div className="text-[11px] text-slate-500">{activeUser?.email}</div>
+                    <div className="font-bold text-slate-900 text-xs">{currentUserLabel}</div>
+                    <div className="text-[11px] text-slate-500">{currentUserEmail}</div>
                     <div className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-mono font-semibold">
-                      {activeUser?.role}
+                      {userRole}
                     </div>
                   </div>
 
+                  {hasMultipleTenants && (
                   <div className="space-y-1 text-xs">
-                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                      Rôle IAM (Simulation)
-                    </label>
-                    <select
-                      value={activeUser?.id}
-                      onChange={(e) => {
-                        const selected = Object.values(IAM_ROLES).find(
-                          (r) => r.id === e.target.value
-                        );
-                        if (selected) {
-                          dispatch(setActiveUser(selected));
-                          dispatch(
-                            addToast({
-                              type: 'info',
-                              title: 'Contexte IAM basculé',
-                              message: `Rôle actif: ${selected.role} (${selected.name})`,
-                            })
-                          );
-                        }
-                      }}
-                      className="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-hidden"
-                    >
-                      {Object.values(IAM_ROLES).map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name} ({role.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1 text-xs pt-1 border-t border-slate-100">
                     <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
                       Tenant Actif
                     </label>
                     <select
-                      value={activeTenant}
-                      onChange={(e) => dispatch(setActiveTenant(e.target.value))}
+                      value={activeTenant?.id ?? ''}
+                      onChange={async (e) => {
+                        try {
+                          await switchTenant(e.target.value);
+                        } catch (err) {
+                          dispatch(addToast({ type: 'error', title: 'Erreur', message: err.message }));
+                        }
+                      }}
+                      disabled={tenantLoading}
                       className="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-hidden"
                     >
-                      {TENANTS.map((t) => (
+                      {tenants.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.code} - {t.name}
                         </option>
                       ))}
                     </select>
+                  </div>
+                  )}
+
+                  <div className="pt-1 border-t border-slate-100">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        dispatch(addToast({ type: 'info', title: 'Déconnexion', message: 'Veuillez vous reconnecter.' }));
+                      }}
+                      className="w-full text-left text-xs text-slate-700 hover:bg-slate-50 py-1.5 px-2 rounded-lg"
+                    >
+                      Changer de locataire
+                    </button>
                   </div>
                 </div>
               )}

@@ -2,8 +2,11 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IamBillingService } from './iam-billing.service';
 import { IamAdminGuard } from './iam-admin-guard';
+import { Permissions } from './iam-permissions.guard';
+import { IAM_ADMIN } from './iam.constants';
 
 @ApiTags('iam-billing')
+@Permissions(IAM_ADMIN)
 @UseGuards(IamAdminGuard)
 @Controller('api/iam/billing')
 export class IamBillingController {

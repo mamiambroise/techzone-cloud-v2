@@ -64,21 +64,26 @@ enum ContractStatus {
 
 model Application {
   id          String            @id @default(uuid()) @db.Uuid
-  code        String            @unique @db.VarChar(100)
+  code        String            @db.VarChar(100)
   name        String            @db.VarChar(255)
   description String?
   status      ApplicationStatus @default(ACTIVE)
-  tenantScope String            @db.VarChar(100)
+  tenantId    String?           @db.Uuid
+  tenantScope String?           @db.VarChar(100) @default("TENANT")
 
   versions               ApplicationVersion[]
   releases               Release[]
   environmentDeployments EnvironmentDeployment[]
   deploymentHistory      DeploymentHistory[]
+  snapshots              Snapshot[]
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  snapshots Snapshot[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
   @@index([tenantScope])
   @@index([status])
   @@map("applications")
@@ -93,6 +98,7 @@ model ApplicationVersion {
   status        ApplicationVersionStatus @default(DRAFT)
   releaseNotes  String?
   createdFrom   String?                  @db.Uuid
+  tenantId      String?                  @db.Uuid
 
   releases Release[]
 
@@ -104,6 +110,7 @@ model ApplicationVersion {
 
   @@unique([applicationId, version])
   @@index([applicationId])
+  @@index([tenantId])
   @@index([status])
   @@map("application_versions")
 }
@@ -112,23 +119,26 @@ model ApplicationVersion {
 
 model Environment {
   id               String            @id @default(uuid()) @db.Uuid
-  code             String            @unique @db.VarChar(100)
+  code             String            @db.VarChar(100)
   name             String            @db.VarChar(255)
   type             EnvironmentType
   status           EnvironmentStatus @default(ACTIVE)
   region           String?           @db.VarChar(100)
   baseUrl          String?           @db.VarChar(500)
   configurationRef String?           @db.VarChar(255)
+  tenantId         String?           @db.Uuid
 
   deployments            Deployment[]
   environmentDeployments EnvironmentDeployment[]
   deploymentHistory      DeploymentHistory[]
   history                EnvironmentHistory[]
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   snapshots Snapshot[]
 
+  @@unique([tenantId, code])
+  @@index([tenantId])
   @@index([type])
   @@index([status])
   @@map("environments")
@@ -145,6 +155,7 @@ enum EnvironmentHistoryAction {
 model EnvironmentHistory {
   id            String @id @default(uuid()) @db.Uuid
   environmentId String @db.Uuid
+  tenantId      String? @db.Uuid
 
   action   EnvironmentHistoryAction
   actor    String?                  @db.VarChar(100)
@@ -155,6 +166,7 @@ model EnvironmentHistory {
 
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([environmentId])
   @@index([action])
   @@index([createdAt])
@@ -167,6 +179,7 @@ model Contract {
   contractVersion String         @db.VarChar(50)
   ownerTeam       String         @db.VarChar(100)
   status          ContractStatus @default(DRAFT)
+  tenantId        String?        @db.Uuid
 
   schema              Json
   compatibilityPolicy Json
@@ -183,7 +196,8 @@ model Contract {
   providers ContractProvider[]
   consumers ContractConsumer[]
 
-  @@unique([contractCode, contractVersion])
+  @@unique([tenantId, contractCode, contractVersion])
+  @@index([tenantId])
   @@index([contractCode])
   @@index([status])
   @@index([ownerTeam])
@@ -203,6 +217,7 @@ enum ContractHistoryAction {
 model ContractHistory {
   id         String @id @default(uuid()) @db.Uuid
   contractId String @db.Uuid
+  tenantId   String? @db.Uuid
 
   action   ContractHistoryAction
   actor    String?               @db.VarChar(100)
@@ -213,6 +228,7 @@ model ContractHistory {
 
   contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([contractId])
   @@index([action])
   @@index([createdAt])
@@ -308,15 +324,17 @@ model Configuration {
   required Boolean @default(false)
   schema   Json?
 
-  version String              @default("1.0.0") @db.VarChar(50)
-  status  ConfigurationStatus @default(DRAFT)
+  version  String              @default("1.0.0") @db.VarChar(50)
+  status   ConfigurationStatus @default(DRAFT)
+  tenantId String?             @db.Uuid
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   history ConfigurationHistory[]
 
-  @@unique([key, scope, scopeId, version])
+  @@unique([tenantId, key, scope, scopeId, version])
+  @@index([tenantId])
   @@index([key])
   @@index([scope, scopeId])
   @@index([status])
@@ -336,6 +354,7 @@ model ConfigurationHistory {
   id String @id @default(uuid()) @db.Uuid
 
   configurationId String @db.Uuid
+  tenantId        String? @db.Uuid
 
   action ConfigurationHistoryAction
 
@@ -348,6 +367,7 @@ model ConfigurationHistory {
 
   configuration Configuration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([configurationId])
   @@index([action])
   @@index([createdAt])
@@ -384,6 +404,7 @@ model Snapshot {
   createdAt            DateTime           @default(now())
   hash                 String             @db.VarChar(128)
   status               SnapshotStatus     @default(DRAFT)
+  tenantId             String?            @db.Uuid
   releases             Release[]
   application          Application        @relation(fields: [applicationId], references: [id])
   applicationVersion   ApplicationVersion @relation(fields: [applicationVersionId], references: [id])
@@ -391,6 +412,7 @@ model Snapshot {
   history              SnapshotHistory[]
 
   @@unique([applicationVersionId, environmentId, hash])
+  @@index([tenantId])
   @@index([applicationId])
   @@index([applicationVersionId])
   @@index([environmentId])
@@ -402,6 +424,7 @@ model Snapshot {
 model SnapshotHistory {
   id         String @id @default(uuid()) @db.Uuid
   snapshotId String @db.Uuid
+  tenantId   String? @db.Uuid
 
   action    SnapshotHistoryAction
   createdBy String                @db.VarChar(100)
@@ -410,6 +433,7 @@ model SnapshotHistory {
   createdAt DateTime              @default(now())
   snapshot  Snapshot              @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([snapshotId])
   @@index([action])
   @@index([createdAt])
@@ -775,6 +799,7 @@ model Release {
 
   createdBy String   @db.VarChar(100)
   createdAt DateTime @default(now())
+  tenantId  String?  @db.Uuid
 
   approvedAt                     DateTime?
   releasedAt                     DateTime?
@@ -793,7 +818,8 @@ model Release {
 
   deployments Deployment[]
 
-  @@unique([code, version])
+  @@unique([tenantId, code, version])
+  @@index([tenantId])
   @@index([applicationId])
   @@index([applicationVersionId])
   @@index([snapshotId])
@@ -824,6 +850,7 @@ model Deployment {
 
   releaseId     String @db.Uuid
   environmentId String @db.Uuid
+  tenantId      String? @db.Uuid
 
   status   DeploymentStatus   @default(PENDING)
   strategy DeploymentStrategy @default(STANDARD)
@@ -846,6 +873,7 @@ model Deployment {
   rollbacks Rollback[]
   history   DeploymentHistory[]
 
+  @@index([tenantId])
   @@index([releaseId])
   @@index([environmentId])
   @@index([status])
@@ -869,6 +897,7 @@ model EnvironmentDeployment {
 
   environmentId String @db.Uuid
   applicationId String @db.Uuid
+  tenantId      String? @db.Uuid
 
   currentReleaseId  String? @db.Uuid
   previousReleaseId String? @db.Uuid
@@ -890,6 +919,7 @@ model EnvironmentDeployment {
   previousRelease Release? @relation("PreviousRelease", fields: [previousReleaseId], references: [id])
 
   @@unique([environmentId, applicationId])
+  @@index([tenantId])
   @@index([environmentId])
   @@index([applicationId])
   @@index([currentReleaseId])
@@ -1015,6 +1045,7 @@ model DeploymentHistory {
   id String @id @default(uuid()) @db.Uuid
 
   traceId String @db.VarChar(100)
+  tenantId String? @db.Uuid
 
   releaseId     String? @db.Uuid
   deploymentId  String? @db.Uuid
@@ -1056,7 +1087,7 @@ model DeploymentHistory {
 // ERP ADAPTER PLATFORM MODELS (merged from new erp-adapter-platform/backend)
 // =============================================================================
 
-// Table principale des ERP enregistrés
+// Table principale des ERP enregistrÃ©s
 model ERPRegistry {
   id             String    @id @default(uuid())
   tenantId       String    @db.VarChar(100)
@@ -1095,7 +1126,7 @@ model AdapterRegistry {
   @@map("adapter_registry")
 }
 
-// Table des correspondances d'entités
+// Table des correspondances d'entitÃ©s
 model EntityMapping {
   id            String   @id @default(uuid())
   tenantId      String   @db.VarChar(100)
@@ -1638,6 +1669,7 @@ model Tenant {
 
   defaultUsers        IamUser[]     @relation("DefaultTenantUsers")
   organizations       Organization[]
+  applications        Application[]
   memberships         Membership[]
   groups              Group[]
   roles               Role[]
@@ -2570,3 +2602,815 @@ model WebhookEvent {
   @@map("webhook_event")
 }
 
+
+// ==================================================================================================================
+// BUSINESS MANAGER MODELS (BM-CDC-03 to BM-CDC-08)
+// ==================================================================================================================
+
+// ENUMS â€” Data Model (BM-CDC-03)
+
+enum BmEntityStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum BmDataTypeCode {
+  TEXT
+  LONG_TEXT
+  INTEGER
+  BIG_INTEGER
+  DECIMAL
+  CURRENCY
+  PERCENTAGE
+  BOOLEAN
+  DATE
+  DATETIME
+  TIME
+  EMAIL
+  PHONE
+  URL
+  ENUM
+  MULTI_ENUM
+  UUID
+  SEQUENCE
+  FILE
+  IMAGE
+  JSON
+  RELATION
+  FORMULA
+}
+
+enum BmDataClassification {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  SENSITIVE
+}
+
+enum BmDataScope {
+  GLOBAL
+  ORGANIZATION
+  SITE
+  USER
+  CONTEXT
+}
+
+enum BmRelationType {
+  ONE_TO_ONE
+  ONE_TO_MANY
+  MANY_TO_ONE
+  MANY_TO_MANY
+}
+
+enum BmDeleteBehavior {
+  RESTRICT
+  CASCADE
+  SET_NULL
+}
+
+enum BmConstraintType {
+  PRIMARY
+  UNIQUE
+  NOT_NULL
+  VALUE_RANGE
+  FORMAT
+  RELATION
+  COMPOSITE_UNIQUE
+  DECLARATIVE_CUSTOM
+}
+
+enum BmIndexType {
+  SIMPLE
+  UNIQUE
+  COMPOSITE
+}
+
+enum BmValidationType {
+  REQUIRED
+  MIN
+  MAX
+  MIN_LENGTH
+  MAX_LENGTH
+  REGEX
+  EMAIL
+  URL
+  ALLOWED_VALUES
+  PRECISION
+  SCALE
+}
+
+// ENUMS â€” Features / Capabilities (BM-CDC-04)
+
+enum BmFeatureStatus {
+  DRAFT
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+}
+
+enum BmCapabilityStatus {
+  DRAFT
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+}
+
+enum BmDependencyType {
+  REQUIRED
+  OPTIONAL
+  CONFLICTS_WITH
+}
+
+// ENUMS â€” Navigation (BM-CDC-05)
+
+enum BmNavigationStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum BmMenuLocation {
+  SIDEBAR
+  TOPBAR
+  CONTEXT_MENU
+  FOOTER
+  DASHBOARD
+  CUSTOM
+}
+
+enum BmMenuItemType {
+  LINK
+  GROUP
+  SEPARATOR
+  EXTERNAL_LINK
+}
+
+enum BmNavigationVisibility {
+  VISIBLE
+  HIDDEN
+  DISABLED
+}
+
+// ENUMS â€” Runtime Bridge (BM-CDC-07)
+
+enum BmContractStatus {
+  DRAFT
+  VALIDATING
+  LOCKED
+  ACTIVE
+  DEPRECATED
+  RETIRED
+}
+
+enum BmRuntimeReadiness {
+  NOT_READY
+  READY
+  ERROR
+  DEGRADED
+}
+
+// ENUMS â€” Quality Engine (BM-CDC-08)
+
+enum BmqSeverity {
+  INFO
+  WARNING
+  ERROR
+  BLOCKER
+}
+
+enum BmqStatus {
+  PENDING
+  RUNNING
+  PASSED
+  WARNING
+  FAILED
+  BLOCKED
+  CANCELLED
+}
+
+enum BmqGateResult {
+  PASS
+  WARNING
+  FAIL
+  BLOCKED
+}
+
+// MODELS â€” Data Model (BM-CDC-03)
+
+model BmEntity {
+  id                  String         @id @default(uuid()) @db.Uuid
+  applicationId       String         @db.Uuid
+  applicationVersionId String         @db.Uuid
+  code                String         @db.VarChar(100)
+  name                String         @db.VarChar(255)
+  pluralName          String?        @db.VarChar(255)
+  description         String?
+  icon                String?        @db.VarChar(50)
+  status              BmEntityStatus @default(DRAFT)
+  scope               BmDataScope?
+  classification      BmDataClassification?
+  version             String         @default("1.0.0") @db.VarChar(50)
+  tenantId            String?        @db.Uuid
+
+  fields         BmField[]        @relation("EntityFields")
+  constraints    BmConstraint[]   @relation("EntityConstraints")
+  indexes        BmIndex[]        @relation("EntityIndexes")
+  computedFields BmComputedField[] @relation("EntityComputedFields")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, applicationId, applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("bm_entities")
+}
+
+model BmField {
+  id            String            @id @default(uuid()) @db.Uuid
+  entityId      String            @db.Uuid
+  code          String            @db.VarChar(100)
+  label         String?           @db.VarChar(255)
+  description   String?
+  type          BmDataTypeCode
+  required      Boolean           @default(false)
+  unique        Boolean           @default(false)
+  readonly      Boolean           @default(false)
+  indexed       Boolean           @default(false)
+  defaultValue  String?
+  position      Int               @default(0)
+  scope         BmDataScope?
+  classification BmDataClassification?
+  configuration Json?
+  version       String?           @db.VarChar(50)
+  tenantId      String?           @db.Uuid
+
+  validations  BmFieldValidation[]
+  constraints  BmConstraint[]     @relation("FieldConstraints")
+
+  entity BmEntity @relation("EntityFields", fields: [entityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entityId, code])
+  @@index([entityId])
+  @@index([tenantId])
+  @@map("bm_fields")
+}
+
+model BmFieldValidation {
+  id             String            @id @default(uuid()) @db.Uuid
+  fieldId        String            @db.Uuid
+  validationType BmValidationType
+  value          String?
+  message        String?
+  configuration  Json?
+  version        String?           @db.VarChar(50)
+  tenantId       String?           @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  field BmField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([fieldId])
+  @@index([tenantId])
+  @@map("bm_field_validations")
+}
+
+model BmRelation {
+  id                  String             @id @default(uuid()) @db.Uuid
+  applicationVersionId String             @db.Uuid
+  sourceEntityId       String             @db.Uuid
+  targetEntityId       String             @db.Uuid
+  code                 String             @db.VarChar(100)
+  relationType         BmRelationType   @default(ONE_TO_MANY)
+  sourceLabel          String?
+  targetLabel          String?
+  required             Boolean            @default(false)
+  deleteBehavior       BmDeleteBehavior   @default(RESTRICT)
+  configuration        Json?
+  version              String?            @db.VarChar(50)
+  tenantId             String?            @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicationVersionId, sourceEntityId, targetEntityId, code])
+  @@index([applicationVersionId])
+  @@index([sourceEntityId])
+  @@index([targetEntityId])
+  @@map("bm_relations")
+}
+
+model BmConstraint {
+  id             String            @id @default(uuid()) @db.Uuid
+  entityId       String            @db.Uuid
+  fieldId        String?           @db.Uuid
+  code           String            @db.VarChar(100)
+  constraintType BmConstraintType @default(UNIQUE)
+  name           String?           @db.VarChar(255)
+  definition     Json?
+  version        String?           @db.VarChar(50)
+  tenantId       String?           @db.Uuid
+
+  entity BmEntity  @relation("EntityConstraints", fields: [entityId], references: [id], onDelete: Cascade)
+  field  BmField?   @relation("FieldConstraints", fields: [fieldId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entityId, code])
+  @@index([entityId])
+  @@index([fieldId])
+  @@index([tenantId])
+  @@map("bm_constraints")
+}
+
+model BmIndex {
+  id        String      @id @default(uuid()) @db.Uuid
+  entityId  String      @db.Uuid
+  code      String      @db.VarChar(100)
+  name      String?     @db.VarChar(255)
+  indexType BmIndexType @default(SIMPLE)
+  unique    Boolean     @default(false)
+  definition Json?
+  version   String?     @db.VarChar(50)
+  tenantId  String?     @db.Uuid
+
+  fields BmIndexField[] @relation("IndexFields")
+
+  entity BmEntity @relation("EntityIndexes", fields: [entityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entityId, code])
+  @@index([entityId])
+  @@index([tenantId])
+  @@map("bm_indexes")
+}
+
+model BmIndexField {
+  id       String @id @default(uuid()) @db.Uuid
+  indexId  String @db.Uuid
+  fieldId  String @db.Uuid
+  sort     String @default("ASC") @db.VarChar(10)
+  position Int    @default(0)
+
+  index BmIndex @relation("IndexFields", fields: [indexId], references: [id], onDelete: Cascade)
+
+  @@unique([indexId, fieldId, position])
+  @@index([indexId])
+  @@index([fieldId])
+  @@map("bm_index_fields")
+}
+
+model BmComputedField {
+  id                  String   @id @default(uuid()) @db.Uuid
+  entityId            String   @db.Uuid
+  applicationId       String   @db.Uuid
+  applicationVersionId String  @db.Uuid
+  code                String   @db.VarChar(100)
+  name                String   @db.VarChar(255)
+  expression          String?
+  targetFieldCode     String?
+  description         String?
+  configuration       Json?
+  version             String? @db.VarChar(50)
+  tenantId            String? @db.Uuid
+
+  entity BmEntity @relation("EntityComputedFields", fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationVersionId, entityId, code])
+  @@index([applicationVersionId])
+  @@index([entityId])
+  @@index([tenantId])
+  @@map("bm_computed_fields")
+}
+
+// MODELS â€” Features / Capabilities (BM-CDC-04)
+
+model BmFeature {
+  id                  String          @id @default(uuid()) @db.Uuid
+  applicationId       String          @db.Uuid
+  applicationVersionId String         @db.Uuid
+  code                String          @db.VarChar(100)
+  name                String          @db.VarChar(255)
+  description         String?
+  category            String?         @db.VarChar(100)
+  tags                String[]
+  status              BmFeatureStatus @default(DRAFT)
+  source              String?         @db.VarChar(50)
+  version             String          @default("1.0.0") @db.VarChar(50)
+  tenantId            String?         @db.Uuid
+
+  capabilities BmFeatureCapability[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, applicationId, applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("bm_features")
+}
+
+model BmFeatureCapability {
+  id              String             @id @default(uuid()) @db.Uuid
+  featureId       String             @db.Uuid
+  code            String             @db.VarChar(100)
+  name            String             @db.VarChar(255)
+  description     String?
+  required        Boolean            @default(false)
+  status          BmCapabilityStatus @default(DRAFT)
+  requiredEntities String[]
+  configuration   Json?
+  version         String?            @db.VarChar(50)
+  tenantId        String?            @db.Uuid
+
+  dependencies BmCapabilityDependency[]
+
+  feature BmFeature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([featureId, code])
+  @@index([featureId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("bm_feature_capabilities")
+}
+
+model BmCapabilityDependency {
+  id               String           @id @default(uuid()) @db.Uuid
+  capabilityId     String           @db.Uuid
+  targetCapabilityCode String   @db.VarChar(100)
+  dependencyType   BmDependencyType
+  configuration    Json?
+  tenantId         String?          @db.Uuid
+
+  capability BmFeatureCapability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+
+  @@unique([capabilityId, targetCapabilityCode, dependencyType])
+  @@index([capabilityId])
+  @@map("bm_capability_dependencies")
+}
+
+model BmVersionFeature {
+  id                  String          @id @default(uuid()) @db.Uuid
+  applicationId       String          @db.Uuid
+  applicationVersionId String         @db.Uuid
+  featureCode         String          @db.VarChar(100)
+  enabled             Boolean         @default(true)
+  activationStrategy  String?         @db.VarChar(50)
+  configuration       Json?
+  version             String          @default("1.0.0") @db.VarChar(50)
+  tenantId            String?         @db.Uuid
+
+  @@unique([applicationVersionId, featureCode])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@map("bm_version_features")
+}
+
+model BmVersionCapability {
+  id                  String          @id @default(uuid()) @db.Uuid
+  applicationId       String          @db.Uuid
+  applicationVersionId String         @db.Uuid
+  featureCode         String          @db.VarChar(100)
+  capabilityCode      String          @db.VarChar(100)
+  enabled             Boolean         @default(true)
+  required            Boolean         @default(false)
+  tenantId            String?         @db.Uuid
+
+  @@unique([applicationVersionId, capabilityCode])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@map("bm_version_capabilities")
+}
+
+// MODELS â€” Menu Engine / Navigation (BM-CDC-05)
+
+model BmMenu {
+  id                  String             @id @default(uuid()) @db.Uuid
+  applicationId       String             @db.Uuid
+  applicationVersionId String            @db.Uuid
+  code                String             @db.VarChar(100)
+  name                String             @db.VarChar(255)
+  description         String?
+  location            BmMenuLocation     @default(SIDEBAR)
+  status              BmNavigationStatus @default(DRAFT)
+  version             String             @default("1.0.0") @db.VarChar(50)
+  tenantId            String?            @db.Uuid
+
+  items BmNavigationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, applicationId, applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("bm_menus")
+}
+
+model BmNavigationItem {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  menuId               String                 @db.Uuid
+  parentItemId         String?                @db.Uuid
+  code                 String                 @db.VarChar(100)
+  label                String?                @db.VarChar(255)
+  itemType             BmMenuItemType         @default(LINK)
+  routePath            String?
+  icon                 String?                @db.VarChar(50)
+  requiredCapabilities String[]
+  capabilityOperator   String                 @default("ANY") @db.VarChar(10)
+  visibility           BmNavigationVisibility @default(VISIBLE)
+  orderIndex           Int                    @default(0)
+  configuration        Json?
+  version              String?                @db.VarChar(50)
+  tenantId             String?                @db.Uuid
+
+  menu     BmMenu                   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   BmNavigationItem?        @relation("NavigationTree", fields: [parentItemId], references: [id])
+  children BmNavigationItem[]       @relation("NavigationTree")
+
+  @@unique([menuId, code])
+  @@index([menuId])
+  @@index([parentItemId])
+  @@index([tenantId])
+  @@map("bm_navigation_items")
+}
+
+// MODELS â€” Runtime Bridge (BM-CDC-07)
+
+model BmBusinessContract {
+  id                  String          @id @default(uuid()) @db.Uuid
+  applicationId       String          @db.Uuid
+  applicationVersionId String         @db.Uuid
+  code                String          @db.VarChar(100)
+  name                String          @db.VarChar(255)
+  description         String?
+  version             String          @default("1.0.0") @db.VarChar(50)
+  status              BmContractStatus @default(DRAFT)
+  contractHash        String?         @db.VarChar(255)
+  manifest            Json?
+  tenantId            String?         @db.Uuid
+
+  contractVersions BmContractVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, applicationId, applicationVersionId, code, version])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("bm_contracts")
+}
+
+model BmContractVersion {
+  id            String           @id @default(uuid()) @db.Uuid
+  contractId    String           @db.Uuid
+  versionNumber String           @db.VarChar(50)
+  content       Json?
+  hash          String?          @db.VarChar(255)
+  compatibility String?          @db.VarChar(50)
+  status        BmContractStatus @default(DRAFT)
+  tenantId      String?          @db.Uuid
+
+  contract BmBusinessContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, versionNumber])
+  @@index([contractId])
+  @@map("bm_contract_versions")
+}
+
+model BmRuntimeManifest {
+  id                  String             @id @default(uuid()) @db.Uuid
+  applicationId       String             @db.Uuid
+  applicationVersionId String            @db.Uuid
+  code                String             @db.VarChar(100)
+  name                String             @db.VarChar(255)
+  description         String?
+  version             String             @default("1.0.0") @db.VarChar(50)
+  status              BmNavigationStatus @default(DRAFT)
+  manifest            Json?
+  hash                String?          @db.VarChar(255)
+  tenantId            String?            @db.Uuid
+
+  bindings BmRuntimeBinding[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, applicationId, applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("bm_runtime_manifests")
+}
+
+model BmRuntimeBinding {
+  id           String            @id @default(uuid()) @db.Uuid
+  manifestId   String            @db.Uuid
+  targetType   String            @db.VarChar(50)
+  targetId     String            @db.VarChar(255)
+  configuration Json?
+  status       BmRuntimeReadiness @default(NOT_READY)
+  tenantId     String?            @db.Uuid
+
+  manifest BmRuntimeManifest @relation(fields: [manifestId], references: [id], onDelete: Cascade)
+
+  @@unique([manifestId, targetType, targetId])
+  @@index([manifestId])
+  @@index([tenantId])
+  @@map("bm_runtime_bindings")
+}
+
+// MODELS â€” Quality Engine (BM-CDC-08)
+
+model BmqQualityReport {
+  id                  String       @id @default(uuid()) @db.Uuid
+  applicationId       String       @db.Uuid
+  applicationVersionId String      @db.Uuid
+  code                String       @db.VarChar(100)
+  name                String       @db.VarChar(255)
+  description         String?
+  scope               String?      @db.VarChar(50)
+  status              BmqStatus    @default(PENDING)
+  score               Float?
+  gateResult          BmqGateResult?
+  triggeredBy         String?      @db.VarChar(100)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  tenantId            String?      @db.Uuid
+
+  issues  BmqQualityIssue[] @relation("ReportIssues")
+  metrics BmqQualityMetric[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("bm_quality_reports")
+}
+
+model BmqQualityIssue {
+  id           String    @id @default(uuid()) @db.Uuid
+  reportId     String?   @db.Uuid
+  runId        String?   @db.Uuid
+  ruleCode     String?   @db.VarChar(100)
+  severity     BmqSeverity
+  code         String    @db.VarChar(100)
+  message      String
+  details      Json?
+  source       String?   @db.VarChar(100)
+  waived       Boolean   @default(false)
+  waiverReason String?
+  tenantId     String?   @db.Uuid
+
+  report BmqQualityReport?  @relation("ReportIssues", fields: [reportId], references: [id], onDelete: Cascade)
+  run    BmqValidationRun?  @relation("RunIssues", fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([runId])
+  @@index([ruleCode])
+  @@index([severity])
+  @@map("bm_quality_issues")
+}
+
+model BmqQualityMetric {
+  id           String   @id @default(uuid()) @db.Uuid
+  reportId     String?  @db.Uuid
+  key          String   @db.VarChar(100)
+  label        String?  @db.VarChar(255)
+  value        String?
+  numericValue Float?
+  unit         String?  @db.VarChar(50)
+  tenantId     String?  @db.Uuid
+
+  report BmqQualityReport? @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("bm_quality_metrics")
+}
+
+model BmqQualityGate {
+  id                  String          @id @default(uuid()) @db.Uuid
+  applicationVersionId String         @db.Uuid
+  code                String          @db.VarChar(100)
+  name                String          @db.VarChar(255)
+  description         String?
+  blockOnFailure      Boolean         @default(true)
+  rules               Json?
+  result              BmqGateResult?
+  tenantId            String?         @db.Uuid
+
+  @@unique([applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@map("bm_quality_gates")
+}
+
+model BmqValidationCampaign {
+  id                  String       @id @default(uuid()) @db.Uuid
+  applicationVersionId String      @db.Uuid
+  code                String       @db.VarChar(100)
+  name                String       @db.VarChar(255)
+  description         String?
+  profileCode         String?      @db.VarChar(100)
+  status              BmqStatus    @default(PENDING)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  trigger             String?      @db.VarChar(50)
+  tenantId            String?      @db.Uuid
+
+  runs BmqValidationRun[]
+
+  @@unique([applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@map("bm_validation_campaigns")
+}
+
+model BmqValidationRun {
+  id            String       @id @default(uuid()) @db.Uuid
+  campaignId    String       @db.Uuid
+  code          String       @db.VarChar(100)
+  name          String       @db.VarChar(255)
+  status        BmqStatus    @default(PENDING)
+  validatorCode String?      @db.VarChar(100)
+  result        Json?
+  durationMs    Int?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  tenantId      String?      @db.Uuid
+
+  issues BmqQualityIssue[] @relation("RunIssues")
+
+  campaign BmqValidationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, code])
+  @@index([campaignId])
+  @@index([tenantId])
+  @@map("bm_validation_runs")
+}
+
+model BmqTestSuite {
+  id                  String       @id @default(uuid()) @db.Uuid
+  applicationVersionId String      @db.Uuid
+  code                String       @db.VarChar(100)
+  name                String       @db.VarChar(255)
+  description         String?
+  status              BmqStatus    @default(PENDING)
+  tenantId            String?      @db.Uuid
+
+  testCases BmqTestCase[]
+
+  @@unique([applicationVersionId, code])
+  @@index([applicationVersionId])
+  @@map("bm_test_suites")
+}
+
+model BmqTestCase {
+  id          String    @id @default(uuid()) @db.Uuid
+  suiteId     String    @db.Uuid
+  code        String    @db.VarChar(100)
+  name        String    @db.VarChar(255)
+  description String?
+  status      BmqStatus @default(PENDING)
+  expectedResult Json?
+  actualResult Json?
+  durationMs  Int?
+  tenantId    String?   @db.Uuid
+
+  suite BmqTestSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  runs  BmqTestRun[]
+
+  @@unique([suiteId, code])
+  @@index([suiteId])
+  @@map("bm_test_cases")
+}
+
+model BmqTestRun {
+  id          String    @id @default(uuid()) @db.Uuid
+  testCaseId  String    @db.Uuid
+  status      BmqStatus @default(PENDING)
+  result      Json?
+  durationMs  Int?
+  executedAt  DateTime?
+  tenantId    String?   @db.Uuid
+
+  testCase BmqTestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@index([testCaseId])
+  @@map("bm_test_runs")
+}

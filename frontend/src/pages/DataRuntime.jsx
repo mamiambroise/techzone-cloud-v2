@@ -187,7 +187,7 @@ function DataRuntime() {
                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">Requête déclarative</h3>
               </div>
               <div className="p-6">
-                <form onSubmit={runQuery} className="space-y-3">
+                <form id="query" onSubmit={runQuery} className="space-y-3">
                   <div>
                     <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Champs (séparés par virgules)</label>
                     <input

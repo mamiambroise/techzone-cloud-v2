@@ -3,6 +3,63 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const IAM_URL = import.meta.env.VITE_IAM_URL || '/api/iam';
 
+let refreshPromise = null;
+export function refreshSession() {
+  if (!refreshPromise) refreshPromise = authApi.post('/auth/refresh').finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+
+function normalizeResponse(response) {
+  const body = response.data;
+  if (body && typeof body === 'object' && 'success' in body && 'data' in body) {
+    response.data = body.data;
+  }
+  return response;
+}
+
+function buildNormalizedError(response, config, error) {
+  const statusCode = response?.status;
+  const data = response?.data || {};
+  const traceId =
+    response?.headers?.['x-trace-id'] ||
+    response?.headers?.['x-request-id'] ||
+    data.traceId ||
+    config?.headers?.['X-Trace-Id'] ||
+    null;
+  const message = data?.message || error.message || 'Network error';
+  const code = data?.code;
+
+  let type = 'ERROR';
+  if (statusCode === 401) type = 'UNAUTHORIZED';
+  else if (statusCode === 403) type = 'FORBIDDEN';
+  else if (code === 'ERP_INSTANCE_NOT_CONFIGURED') type = 'ERP_NOT_CONFIGURED';
+  else if (code === 'ERP_UNAVAILABLE') type = 'ERP_UNAVAILABLE';
+  else if (code === 'ERP_PROVIDER_REQUIRED') type = 'ERP_PROVIDER_REQUIRED';
+  else if (code === 'ERP_PROVIDER_UNSUPPORTED') type = 'ERP_PROVIDER_UNSUPPORTED';
+  else if (code === 'TENANT_REQUIRED') type = 'TENANT_REQUIRED';
+  else if (code === 'USER_REQUIRED') type = 'USER_REQUIRED';
+
+  const normalized = {
+    type,
+    statusCode: statusCode || 500,
+    code,
+    message,
+    traceId,
+    details: data?.details,
+  };
+
+  if (type === 'UNAUTHORIZED') {
+    window.dispatchEvent(new CustomEvent('iam:unauthorized'));
+  }
+
+  if (code === 'TENANT_REQUIRED') {
+    window.dispatchEvent(new CustomEvent('tenant:required', { detail: normalized }));
+  }
+
+  window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
+  return normalized;
+}
+
 function createApiClient(baseURL) {
   const instance = axios.create({
     baseURL,
@@ -13,55 +70,50 @@ function createApiClient(baseURL) {
     },
   });
 
-  instance.interceptors.response.use(
-    (response) => {
-      const body = response.data;
-      if (body && typeof body === 'object' && 'success' in body && 'data' in body) {
-        response.data = body.data;
-      }
-      return response;
-    },
-    async (error) => {
-      const { response = {}, config = {} } = error;
-      const statusCode = response.status;
-      const data = response.data || {};
-      const traceId =
-        response.headers?.['x-trace-id'] ||
-        response.headers?.['x-request-id'] ||
-        data.traceId ||
-        config.headers?.['X-Trace-Id'] ||
-        null;
-      const message = data?.message || error.message || 'Network error';
-      const code = data?.code;
+  instance.interceptors.response.use(normalizeResponse, (error) => {
+    const { response, config = {} } = error;
+    const statusCode = response?.status;
 
-      let type = 'ERROR';
-      if (statusCode === 401) type = 'UNAUTHORIZED';
-      else if (statusCode === 403) type = 'FORBIDDEN';
-      else if (code === 'ERP_INSTANCE_NOT_CONFIGURED') type = 'ERP_NOT_CONFIGURED';
-      else if (code === 'ERP_UNAVAILABLE') type = 'ERP_UNAVAILABLE';
-      else if (code === 'ERP_PROVIDER_REQUIRED') type = 'ERP_PROVIDER_REQUIRED';
-      else if (code === 'ERP_PROVIDER_UNSUPPORTED') type = 'ERP_PROVIDER_UNSUPPORTED';
-      else if (code === 'TENANT_REQUIRED') type = 'TENANT_REQUIRED';
-      else if (code === 'USER_REQUIRED') type = 'USER_REQUIRED';
+    if (!response || statusCode === 401) {
+      const isAuthEndpoint = config.url?.includes('/auth/refresh') ||
+        config.url?.includes('/auth/login') ||
+        config.url?.includes('/auth/register') ||
+        config.url?.includes('/auth/login/mfa') ||
+        config.url?.includes('/auth/forgot') ||
+        config.url?.includes('/auth/reset');
 
-      const normalized = {
-        type,
-        statusCode: statusCode || 500,
-        code,
-        message,
-        traceId,
-        details: data?.details,
-      };
-
-      if (type === 'UNAUTHORIZED') {
-        window.dispatchEvent(new CustomEvent('iam:unauthorized'));
+      if (isAuthEndpoint) {
+        const normalized = buildNormalizedError(response, config, error);
+        error.normalized = normalized;
+        return Promise.reject(error);
       }
 
-      window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
-      error.normalized = normalized;
-      return Promise.reject(error);
+      if (!response) {
+        const normalized = {
+          type: 'ERROR',
+          statusCode: 500,
+          code: null,
+          message: error.message || 'Network error',
+          traceId: null,
+          details: null,
+        };
+        window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
+        error.normalized = normalized;
+        return Promise.reject(error);
+      }
+
+      if (config._retriedAfterRefresh) {
+        error.normalized = buildNormalizedError(response, config, error);
+        return Promise.reject(error);
+      }
+      config._retriedAfterRefresh = true;
+      return refreshSession().then(() => instance(config));
     }
-  );
+
+    const normalized = buildNormalizedError(response, config, error);
+    error.normalized = normalized;
+    return Promise.reject(error);
+  });
 
   return instance;
 }
@@ -302,7 +354,7 @@ export const automationService = {
   activeRules: () => api.get('/automation/rules/active'),
   rule: (code) => api.get(`/automation/rules/${code}`),
   evaluateRules: (context) => api.post('/automation/rules/evaluate', { context }),
-  simulateRule: (ruleCode, context) => api.post('/automation/rules/simulate', { ruleCode, context }),
+  simulateRule: (ruleCode, context) => api.post(`/automation/rules/simulate`, { ruleCode, context }),
   workflows: () => api.get('/automation/workflows'),
   startWorkflow: (workflowCode, variables) => api.post('/automation/workflows/start', { workflowCode, variables }),
   executions: () => api.get('/automation/workflows/executions'),
@@ -412,7 +464,6 @@ export const iamBillingService = {
   createFeature: (body) => authApi.post('/billing/features', body),
   updateFeature: (code, body) => authApi.patch(`/billing/features/${code}`, body),
   deprecateFeature: (code) => authApi.post(`/billing/features/${code}/deprecate`),
-
   checkAccess: (body) => authApi.post('/billing/access/decide', body),
 };
 

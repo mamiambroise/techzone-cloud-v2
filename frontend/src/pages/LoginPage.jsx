@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../auth/AuthProvider.jsx';
-import { Navigate } from 'react-router-dom';
+import { ROUTES } from '../app/routes.js';
+import { Navigate, useLocation } from 'react-router-dom';
 
 export default function LoginPage() {
+  const location = useLocation();
+  const from = location.state?.from;
+  const destination = from?.pathname?.startsWith('/') && !from.pathname.startsWith('//') && from.pathname !== ROUTES.login ? { pathname: from.pathname, search: from.search, hash: from.hash } : ROUTES.dashboard;
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,7 +38,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isAuthenticated) return <Navigate to="/cockpit" replace />;
+  if (isAuthenticated) return <Navigate to={destination} replace />;
 
   return (
     <div className="min-h-screen bg-[#081026] flex items-center justify-center px-4">

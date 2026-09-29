@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { IamError } from './iam-error';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { CreateMembershipDto } from './dto/create-membership.dto';
 
 @Injectable()
 export class IamTenantsService {
@@ -112,6 +113,40 @@ export class IamTenantsService {
     return this.prisma.membership.findMany({
       where: { tenantId },
       include: { user: { select: { id: true, username: true, primaryEmail: true, firstName: true, lastName: true, displayName: true } } },
+    });
+  }
+
+  async createMembership(tenantId: string, dto: CreateMembershipDto, actorId: string) {
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) {
+      throw new IamError('Tenant introuvable', 404, 'TENANT_NOT_FOUND');
+    }
+
+    const user = await this.prisma.iamUser.findUnique({ where: { id: dto.userId } });
+    if (!user) {
+      throw new IamError('Utilisateur introuvable', 404, 'USER_NOT_FOUND');
+    }
+
+    const existing = await this.prisma.membership.findFirst({
+      where: { userId: dto.userId, tenantId },
+    });
+    if (existing) {
+      throw new IamError('L appartenance existe deja', 409, 'MEMBERSHIP_EXISTS');
+    }
+
+    return this.prisma.membership.create({
+      data: {
+        userId: dto.userId,
+        tenantId,
+        organizationId: dto.organizationId ?? null,
+        siteId: dto.siteId ?? null,
+        status: dto.status as any,
+        validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
+        validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
+        joinedAt: dto.status === 'ACTIVE' ? new Date() : null,
+        createdBy: actorId,
+      },
+      include: { user: { select: { id: true, username: true, primaryEmail: true } }, tenant: { select: { id: true, code: true, name: true } } },
     });
   }
 

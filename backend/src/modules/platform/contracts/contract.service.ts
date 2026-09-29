@@ -20,21 +20,16 @@ import { CreateContractDto } from './dto/create-contract.dto';
 export class ContractsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateContractDto) {
+  async create(dto: CreateContractDto, tenantId: string | null) {
     const contractCode = dto.contractCode.trim();
     const contractVersion = dto.contractVersion.trim();
     const ownerTeam = dto.ownerTeam.trim();
 
-    /*
-     * Une combinaison contractCode + contractVersion
-     * représente une version unique d'un contrat.
-     */
-    const existing = await this.prisma.contract.findUnique({
+    const existing = await this.prisma.contract.findFirst({
       where: {
-        contractCode_contractVersion: {
-          contractCode,
-          contractVersion,
-        },
+        tenantId: tenantId ?? undefined,
+        contractCode,
+        contractVersion,
       },
     });
 
@@ -46,11 +41,6 @@ export class ContractsService {
       );
     }
 
-    /*
-     * Représentation canonique du contrat.
-     *
-     * Le même contenu produit le même hash.
-     */
     const canonicalContract = {
       contractCode,
       contractVersion,
@@ -65,10 +55,6 @@ export class ContractsService {
       .update(canonicalJson, 'utf8')
       .digest('hex');
 
-    /*
-     * Création du contrat et de son historique
-     * dans une seule transaction.
-     */
     return this.prisma.$transaction(async (tx) => {
       const contract = await tx.contract.create({
         data: {
@@ -76,6 +62,7 @@ export class ContractsService {
           contractVersion,
           ownerTeam,
           status: ContractStatus.DRAFT,
+          tenantId: tenantId ?? undefined,
 
           schema: dto.schema as Prisma.InputJsonValue,
 
@@ -90,6 +77,7 @@ export class ContractsService {
           contractId: contract.id,
           action: ContractHistoryAction.CREATED,
           actor: null,
+          tenantId: tenantId ?? undefined,
 
           changes: {
             contractCode: contract.contractCode,
@@ -109,18 +97,22 @@ export class ContractsService {
     });
   }
 
-  async findAll() {
+  async findAll(tenantId: string | null) {
     return this.prisma.contract.findMany({
+      where: {
+        tenantId: tenantId ?? undefined,
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  async findOne(id: string) {
-    const contract = await this.prisma.contract.findUnique({
+  async findOne(id: string, tenantId: string | null) {
+    const contract = await this.prisma.contract.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
       include: {
         providers: true,
@@ -144,10 +136,11 @@ export class ContractsService {
     return contract;
   }
 
-  async validate(id: string) {
-    const contract = await this.prisma.contract.findUnique({
+  async validate(id: string, tenantId: string | null) {
+    const contract = await this.prisma.contract.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -159,7 +152,6 @@ export class ContractsService {
       );
     }
 
-    // Un contrat verrouillé ou actif ne doit plus être revalidé/modifié
     if (
       contract.status === ContractStatus.LOCKED ||
       contract.status === ContractStatus.ACTIVE ||
@@ -173,7 +165,6 @@ export class ContractsService {
       );
     }
 
-    // La validation doit commencer depuis DRAFT
     if (contract.status !== ContractStatus.DRAFT) {
       throw new PlatformException(
         PlatformErrorCode.CONTRACT_INVALID_STATUS,
@@ -182,7 +173,6 @@ export class ContractsService {
       );
     }
 
-    // Validation minimale du schema
     if (
       !contract.schema ||
       typeof contract.schema !== 'object' ||
@@ -195,7 +185,6 @@ export class ContractsService {
       );
     }
 
-    // Validation minimale de la politique de compatibilité
     if (
       !contract.compatibilityPolicy ||
       typeof contract.compatibilityPolicy !== 'object' ||
@@ -223,6 +212,7 @@ export class ContractsService {
           contractId: contract.id,
           action: ContractHistoryAction.VALIDATED,
           actor: null,
+          tenantId: tenantId ?? undefined,
           changes: {
             previousStatus: ContractStatus.DRAFT,
             newStatus: ContractStatus.VALIDATING,
@@ -237,10 +227,11 @@ export class ContractsService {
     });
   }
 
-  async lock(id: string) {
-    const contract = await this.prisma.contract.findUnique({
+  async lock(id: string, tenantId: string | null) {
+    const contract = await this.prisma.contract.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -252,7 +243,6 @@ export class ContractsService {
       );
     }
 
-    // Seul un contrat en cours de validation peut être verrouillé
     if (contract.status !== ContractStatus.VALIDATING) {
       throw new PlatformException(
         PlatformErrorCode.CONTRACT_INVALID_STATUS,
@@ -277,6 +267,7 @@ export class ContractsService {
           contractId: contract.id,
           action: ContractHistoryAction.LOCKED,
           actor: null,
+          tenantId: tenantId ?? undefined,
           changes: {
             previousStatus: ContractStatus.VALIDATING,
             newStatus: ContractStatus.LOCKED,
@@ -292,10 +283,11 @@ export class ContractsService {
     });
   }
 
-  async getCompatibility(id: string) {
-    const contract = await this.prisma.contract.findUnique({
+  async getCompatibility(id: string, tenantId: string | null) {
+    const contract = await this.prisma.contract.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
       include: {
         consumers: true,
@@ -311,9 +303,9 @@ export class ContractsService {
       );
     }
 
-    // Récupérer la version précédente du même contrat
     const previousContract = await this.prisma.contract.findFirst({
       where: {
+        tenantId: tenantId ?? undefined,
         contractCode: contract.contractCode,
         contractVersion: {
           not: contract.contractVersion,
@@ -369,12 +361,13 @@ export class ContractsService {
     };
   }
 
-  async getHistory(id: string) {
-    await this.findOne(id);
+  async getHistory(id: string, tenantId: string | null) {
+    await this.findOne(id, tenantId);
 
     return this.prisma.contractHistory.findMany({
       where: {
         contractId: id,
+        tenantId: tenantId ?? undefined,
       },
       orderBy: {
         createdAt: 'desc',
@@ -406,22 +399,17 @@ export class ContractsService {
     const previousRequired = previous.required ?? [];
     const currentRequired = current.required ?? [];
 
-    // Une propriété existante supprimée = breaking change
     for (const property of Object.keys(previousProperties)) {
       if (!(property in currentProperties)) {
         return true;
       }
     }
 
-    // Une nouvelle propriété obligatoire = breaking change
     for (const property of currentRequired) {
       if (!previousRequired.includes(property)) {
         return true;
       }
     }
-
-    // Une propriété obligatoire supprimée n'est pas breaking
-    // car les anciens consommateurs peuvent toujours l'envoyer.
 
     return false;
   }

@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { MailModule } from './common/mail/mail.module';
 import { IamModule } from './iam/iam.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { BusinessManagerModule } from './modules/business-manager/business-manager.module';
 import { IntegrationModule } from './modules/integration/integration.module';
 import { DeploymentModule } from './modules/deployment/deployment.module';
 import { ErpAdapterModule } from './erp-adapter/erp-adapter.module';
@@ -22,6 +23,7 @@ import { ConfigController } from './config/config.controller';
     MailModule,
     IamModule,
     PlatformModule,
+    BusinessManagerModule,
     IntegrationModule,
     DeploymentModule,
     ErpRegistryModule,

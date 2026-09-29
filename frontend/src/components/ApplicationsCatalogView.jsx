@@ -1,3 +1,6 @@
+import { useNavigate } from 'react-router-dom';
+import { applicationPath } from '../app/routes.js';
+import { routeForTab } from '../app/navigationConfig.js';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setSelectedAppId } from '../store/applicationsSlice.js';
@@ -35,6 +38,7 @@ const ICON_MAP = {
 };
 
 export default function ApplicationsCatalogView({ onOpenNewApp }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const applications = useSelector((state) => state.applications.applications);
 
@@ -101,7 +105,7 @@ export default function ApplicationsCatalogView({ onOpenNewApp }) {
 
   const handleOpenApp = (app) => {
     dispatch(setSelectedAppId(app.id));
-    dispatch(setActiveTab('workspace'));
+    navigate(applicationPath(app.id));
   };
 
   const renderStatusBadge = (status) => {

@@ -31,20 +31,14 @@ function TechzoneLayoutInner() {
 
         <SubNavBar />
 
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
+        <main className="flex-1 w-full px-3.5 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
           <div className="animate-in fade-in duration-150">
-            {mobileSidebarOpen && (
-              <div
-                className="fixed inset-0 z-30 bg-slate-950/60 lg:hidden"
-                onClick={() => setMobileSidebarOpen(false)}
-              />
-            )}
             <ApiErrorBanner />
             <Outlet />
           </div>
         </main>
 
-        <footer className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pb-6">
+        <footer className="w-full px-3.5 sm:px-6 lg:px-8 pb-6">
           <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2.5 font-mono">
             <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
@@ -62,7 +56,7 @@ function TechzoneLayoutInner() {
                 Opérationnel
               </span>
               <span className="text-slate-300">•</span>
-              <span className="text-slate-800 font-semibold">{activeUser?.name || 'Utilisateur'}</span>
+              <span className="text-slate-800 font-semibold">{activeUser?.name || activeUser?.displayName || 'Utilisateur'}</span>
             </div>
           </div>
         </footer>

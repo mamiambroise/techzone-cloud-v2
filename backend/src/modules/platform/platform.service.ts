@@ -20,7 +20,7 @@ export class PlatformService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async getDashboard() {
+  async getDashboard(tenantId: string | null) {
     const [
       applications,
       versions,
@@ -29,12 +29,12 @@ export class PlatformService {
       configurations,
       snapshots,
     ] = await Promise.all([
-      this.applicationsService.findAll(),
-      this.applicationVersionsService.findAll(),
-      this.environmentsService.findAll(),
-      this.contractsService.findAll(),
-      this.configurationService.findAll(),
-      this.snapshotsService.findAll(),
+      this.applicationsService.findAll(tenantId),
+      this.applicationVersionsService.findAll(tenantId),
+      this.environmentsService.findAll(tenantId),
+      this.contractsService.findAll(tenantId),
+      this.configurationService.findAll(tenantId),
+      this.snapshotsService.findAll(tenantId),
     ]);
 
     const activeVersions = versions.filter(
@@ -61,15 +61,6 @@ export class PlatformService {
       (snapshot) => snapshot.status === 'INVALID',
     ).length;
 
-    /*
-     * État global du cockpit.
-     *
-     * Pour l'instant :
-     * - CRITICAL : configurations ou snapshots invalides
-     * - DEGRADED : environnement dégradé
-     * - WARNING  : environnement en maintenance
-     * - HEALTHY  : aucun problème détecté
-     */
     const hasCriticalIssue = invalidSnapshots > 0;
 
     const hasDegradedEnvironment = environments.some(
@@ -203,7 +194,9 @@ export class PlatformService {
     };
   }
 
-  async getActivity(limit = 20) {
+  async getActivity(tenantId: string | null, limit = 20) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
     const [
       configurationHistory,
       environmentHistory,
@@ -211,6 +204,7 @@ export class PlatformService {
       snapshotHistory,
     ] = await Promise.all([
       this.prisma.configurationHistory.findMany({
+        where: tenantFilter,
         orderBy: {
           createdAt: 'desc',
         },
@@ -218,6 +212,7 @@ export class PlatformService {
       }),
 
       this.prisma.environmentHistory.findMany({
+        where: tenantFilter,
         orderBy: {
           createdAt: 'desc',
         },
@@ -225,6 +220,7 @@ export class PlatformService {
       }),
 
       this.prisma.contractHistory.findMany({
+        where: tenantFilter,
         orderBy: {
           createdAt: 'desc',
         },
@@ -232,19 +228,13 @@ export class PlatformService {
       }),
 
       this.prisma.snapshotHistory.findMany({
+        where: tenantFilter,
         orderBy: {
           createdAt: 'desc',
         },
         take: limit,
       }),
     ]);
-
-    console.log({
-      configurationHistory: configurationHistory.length,
-      environmentHistory: environmentHistory.length,
-      contractHistory: contractHistory.length,
-      snapshotHistory: snapshotHistory.length,
-    });
 
     const activities = [
       ...configurationHistory.map((item) => ({
@@ -288,10 +278,5 @@ export class PlatformService {
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       )
       .slice(0, limit);
-
-    // return activities.sort(
-    //   (a, b) =>
-    //     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    // );
   }
 }

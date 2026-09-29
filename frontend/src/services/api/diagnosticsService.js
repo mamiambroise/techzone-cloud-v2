@@ -18,7 +18,7 @@ const BACKEND_TO_FRONTEND_STATUS = {
 };
 
 export function getDiagnosticsMetrics() {
-  return api.get('/api/integrations/diagnostics/metrics').then(unwrap);
+  return api.get('/integrations/diagnostics/metrics').then(unwrap);
 }
 export function getLogs(filters = {}) {
   const params = new URLSearchParams();
@@ -34,7 +34,7 @@ export function getLogs(filters = {}) {
   if (filters.page) params.append('page', String(filters.page));
   if (filters.limit) params.append('limit', String(filters.limit));
 
-  return api.get(`/api/integrations/diagnostics/logs?${params.toString()}`).then(unwrap).then((res) => {
+  return api.get(`/integrations/diagnostics/logs?${params.toString()}`).then(unwrap).then((res) => {
     const items = Array.isArray(res) ? res : res.data || [];
     return items.map((log) => ({
       ...log,
@@ -46,5 +46,5 @@ export function getLogs(filters = {}) {
   });
 }
 export function getTimeline(traceId) {
-  return api.get(`/api/integrations/diagnostics/timeline/${traceId}`).then(unwrap);
+  return api.get(`/integrations/diagnostics/timeline/${traceId}`).then(unwrap);
 }

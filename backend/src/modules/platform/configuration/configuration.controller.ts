@@ -1,3 +1,4 @@
+import { BmTenantGuard } from '../../business-manager/bm-tenant.guard';
 import {
   Body,
   Controller,
@@ -6,76 +7,94 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 
 import { ConfigurationService } from './configuration.service';
+import { CurrentPrincipal } from '../../../iam/principal.decorator';
+import type { IamPrincipal } from '../../../iam/principal.decorator';
+import { TenantResource } from '../../../iam/tenant-resource.decorator';
+import { TenantGuard } from '../../../iam/tenant.guard';
 
 import { CreateConfigurationDto } from './dto/create-config.dto';
-import { UpdateConfigurationDto } from '../configuration/dto/update-config.dto';
+import { UpdateConfigurationDto } from './dto/update-config.dto';
 
-@Controller('api/platform/config')
+@TenantResource({ table: 'configuration', idParam: 'id' })
+@UseGuards(BmTenantGuard, TenantGuard)
+@Controller('api/business-manager/configurations')
 export class ConfigurationController {
   constructor(private readonly configurationService: ConfigurationService) {}
 
-  // GET /api/platform/config
   @Get()
-  findAll() {
-    return this.configurationService.findAll();
+  findAll(@CurrentPrincipal() principal: IamPrincipal) {
+    return this.configurationService.findAll(principal.tenantId);
   }
 
   @Get('effective/:applicationId/:applicationVersionId/:environmentId')
   resolveEffectiveConfigurations(
     @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
     @Param('applicationVersionId', new ParseUUIDPipe())
-    applicationVersionId: string,
+      applicationVersionId: string,
     @Param('environmentId', new ParseUUIDPipe()) environmentId: string,
+    @CurrentPrincipal() principal: IamPrincipal,
   ) {
-    return this.configurationService.resolveEffectiveConfigurations({
-      applicationId,
-      applicationVersionId,
-      environmentId,
-    });
+    return this.configurationService.resolveEffectiveConfigurations(
+      {
+        applicationId,
+        applicationVersionId,
+        environmentId,
+      },
+      principal.tenantId,
+    );
   }
 
-  // GET /api/platform/config/:id/history
   @Get(':id/history')
-  getHistory(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.configurationService.getHistory(id);
+  getHistory(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentPrincipal() principal: IamPrincipal,
+  ) {
+    return this.configurationService.getHistory(id, principal.tenantId);
   }
 
-  // GET /api/platform/config/:scope/:scopeId
   @Get(':scope/:scopeId')
   findByScope(
     @Param('scope') scope: string,
     @Param('scopeId') scopeId: string,
+    @CurrentPrincipal() principal: IamPrincipal,
   ) {
-    return this.configurationService.findByScope(scope, scopeId);
+    return this.configurationService.findByScope(scope, scopeId, principal.tenantId);
   }
 
-  // POST /api/platform/config
   @Post()
-  create(@Body() dto: CreateConfigurationDto) {
-    return this.configurationService.create(dto);
+  create(
+    @Body() dto: CreateConfigurationDto,
+    @CurrentPrincipal() principal: IamPrincipal,
+  ) {
+    return this.configurationService.create(dto, principal.tenantId);
   }
 
-  // PATCH /api/platform/config/:id
   @Patch(':id')
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateConfigurationDto,
+    @CurrentPrincipal() principal: IamPrincipal,
   ) {
-    return this.configurationService.update(id, dto);
+    return this.configurationService.update(id, dto, principal.tenantId);
   }
 
-  // POST /api/platform/config/:id/activate
   @Post(':id/activate')
-  activate(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.configurationService.activate(id);
+  activate(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentPrincipal() principal: IamPrincipal,
+  ) {
+    return this.configurationService.activate(id, principal.tenantId);
   }
 
-  // POST /api/platform/config/:id/validate
   @Post(':id/validate')
-  validate(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.configurationService.validate(id);
+  validate(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentPrincipal() principal: IamPrincipal,
+  ) {
+    return this.configurationService.validate(id, principal.tenantId);
   }
 }

@@ -72,12 +72,9 @@ export class IamMfaController {
     await this.prisma.iamDevice.create({
       data: {
         userId: ctx.userId,
-        label: userAgent || 'Unknown',
-        userAgent,
+        name: userAgent || 'Unknown',
         trustLevel: 'TRUSTED',
-        riskScore: 0,
-        firstSeenAt: new Date(),
-        lastSeenAt: new Date(),
+        metadata: { userAgent, riskScore: 0 },
       },
     });
     return { success: true, message: 'Appareil mémorisé' };

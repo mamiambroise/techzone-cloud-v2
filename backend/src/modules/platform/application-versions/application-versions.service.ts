@@ -12,12 +12,13 @@ import { UpdateApplicationVersionDto } from './dto/update-app-version.dto';
 export class ApplicationVersionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findByApplication(applicationId: string) {
-    await this.ensureApplicationExists(applicationId);
+  async findByApplication(applicationId: string, tenantId: string | null) {
+    await this.ensureApplicationExists(applicationId, tenantId);
 
     return this.prisma.applicationVersion.findMany({
       where: {
         applicationId,
+        tenantId: tenantId ?? undefined,
       },
       orderBy: {
         createdAt: 'desc',
@@ -25,16 +26,23 @@ export class ApplicationVersionsService {
     });
   }
 
-  async findAll() {
+  async findAll(tenantId: string | null) {
     return this.prisma.applicationVersion.findMany({
+      where: {
+        tenantId: tenantId ?? undefined,
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  async create(applicationId: string, dto: CreateApplicationVersionDto) {
-    await this.ensureApplicationExists(applicationId);
+  async create(
+    applicationId: string,
+    dto: CreateApplicationVersionDto,
+    tenantId: string | null,
+  ) {
+    await this.ensureApplicationExists(applicationId, tenantId);
 
     const version = dto.version.trim();
 
@@ -42,6 +50,7 @@ export class ApplicationVersionsService {
       where: {
         applicationId,
         version,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -60,14 +69,16 @@ export class ApplicationVersionsService {
         releaseNotes: dto.releaseNotes?.trim(),
         createdFrom: dto.createdFrom?.trim(),
         status: 'DRAFT',
+        tenantId: tenantId ?? undefined,
       },
     });
   }
 
-  async findOne(id: string) {
-    const version = await this.prisma.applicationVersion.findUnique({
+  async findOne(id: string, tenantId: string | null) {
+    const version = await this.prisma.applicationVersion.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
       include: {
         application: true,
@@ -87,8 +98,12 @@ export class ApplicationVersionsService {
     return version;
   }
 
-  async update(id: string, dto: UpdateApplicationVersionDto) {
-    const version = await this.findOne(id);
+  async update(
+    id: string,
+    dto: UpdateApplicationVersionDto,
+    tenantId: string | null,
+  ) {
+    const version = await this.findOne(id, tenantId);
 
     const immutableStatuses = [
       'ACTIVE',
@@ -115,8 +130,12 @@ export class ApplicationVersionsService {
     });
   }
 
-  async changeStatus(id: string, nextStatus: string) {
-    const version = await this.findOne(id);
+  async changeStatus(
+    id: string,
+    nextStatus: string,
+    tenantId: string | null,
+  ) {
+    const version = await this.findOne(id, tenantId);
 
     const currentStatus = version.status;
 
@@ -141,7 +160,7 @@ export class ApplicationVersionsService {
     }
 
     const data: {
-      status: any;
+      status: string;
       publishedAt?: Date;
     } = {
       status: nextStatus,
@@ -155,16 +174,17 @@ export class ApplicationVersionsService {
       where: {
         id,
       },
-      data,
+      data: data as any,
     });
   }
 
-  async clone(id: string) {
-    const source = await this.findOne(id);
+  async clone(id: string, tenantId: string | null) {
+    const source = await this.findOne(id, tenantId);
 
     const newVersion = await this.generateCloneVersion(
       source.applicationId,
       source.version,
+      tenantId,
     );
 
     return this.prisma.applicationVersion.create({
@@ -176,6 +196,7 @@ export class ApplicationVersionsService {
           : `Cloned from ${source.version}`,
         createdFrom: source.id,
         status: 'DRAFT',
+        tenantId: tenantId ?? undefined,
       },
     });
   }
@@ -183,6 +204,7 @@ export class ApplicationVersionsService {
   private async generateCloneVersion(
     applicationId: string,
     sourceVersion: string,
+    tenantId: string | null,
   ): Promise<string> {
     const match = sourceVersion.match(/^(\d+)\.(\d+)\.(\d+)$/);
 
@@ -205,6 +227,7 @@ export class ApplicationVersionsService {
         where: {
           applicationId,
           version: candidate,
+          tenantId: tenantId ?? undefined,
         },
       });
 
@@ -226,10 +249,14 @@ export class ApplicationVersionsService {
     }
   }
 
-  private async ensureApplicationExists(applicationId: string) {
-    const application = await this.prisma.application.findUnique({
+  private async ensureApplicationExists(
+    applicationId: string,
+    tenantId: string | null,
+  ) {
+    const application = await this.prisma.application.findFirst({
       where: {
         id: applicationId,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -250,19 +277,5 @@ export class ApplicationVersionsService {
     }
 
     return application;
-  }
-
-  private buildCloneVersion(sourceVersion: string): string {
-    const match = sourceVersion.match(/^(\d+)\.(\d+)\.(\d+)$/);
-
-    if (!match) {
-      return `${sourceVersion}-clone`;
-    }
-
-    const major = Number(match[1]);
-    const minor = Number(match[2]);
-    const patch = Number(match[3]);
-
-    return `${major}.${minor}.${patch + 1}`;
   }
 }

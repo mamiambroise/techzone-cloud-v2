@@ -15,8 +15,8 @@ export class CreateApplicationDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(50)
-  tenantScope: string;
+  tenantScope?: string;
 }

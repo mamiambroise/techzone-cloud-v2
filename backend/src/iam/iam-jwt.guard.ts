@@ -72,8 +72,8 @@ export class IamJwtGuard implements CanActivate {
     const principal = {
       userId: decoded.userId,
       sessionId: decoded.sessionId,
-      tenantId: decoded.tenantId ?? null,
-      organizationId: decoded.organizationId ?? null,
+       tenantId: session.tenantId ?? null,
+      organizationId: session.organizationId ?? decoded.organizationId ?? null,
       authenticationLevel: decoded.authenticationLevel ?? null,
       roles,
       permissions,

@@ -26,35 +26,35 @@ const toBackendSync = (sync) => {
 };
 
 export function getSynchronizations() {
-  return api.get('/api/integrations/synchronizations').then(unwrap).then((res) => {
+  return api.get('/integrations/synchronizations').then(unwrap).then((res) => {
     const items = Array.isArray(res) ? res : res.data || [];
     return items.map(toFrontendSync);
   });
 }
 export function getSync(id) {
-  return api.get(`/api/integrations/synchronizations/${id}`).then(unwrap).then((res) => toFrontendSync(res?.data ?? res));
+  return api.get(`/integrations/synchronizations/${id}`).then(unwrap).then((res) => toFrontendSync(res?.data ?? res));
 }
 export function createSync(body) {
-  return api.post('/api/integrations/synchronizations', toBackendSync(body)).then(unwrap).then((res) => toFrontendSync(res?.data ?? res));
+  return api.post('/integrations/synchronizations', toBackendSync(body)).then(unwrap).then((res) => toFrontendSync(res?.data ?? res));
 }
 export function updateSync(id, body) {
-  return api.patch(`/api/integrations/synchronizations/${id}`, toBackendSync(body)).then(unwrap).then((res) => toFrontendSync(res?.data ?? res));
+  return api.patch(`/integrations/synchronizations/${id}`, toBackendSync(body)).then(unwrap).then((res) => toFrontendSync(res?.data ?? res));
 }
 export function runSync(id) {
-  return api.post(`/api/integrations/synchronizations/${id}/run`).then(unwrap);
+  return api.post(`/integrations/synchronizations/${id}/run`).then(unwrap);
 }
 export function pauseSync(id) {
-  return api.post(`/api/integrations/synchronizations/${id}/pause`).then(unwrap);
+  return api.post(`/integrations/synchronizations/${id}/pause`).then(unwrap);
 }
 export function resumeSync(id) {
-  return api.post(`/api/integrations/synchronizations/${id}/resume`).then(unwrap);
+  return api.post(`/integrations/synchronizations/${id}/resume`).then(unwrap);
 }
 export function cancelSync(id) {
-  return api.post(`/api/integrations/synchronizations/${id}/cancel`).then(unwrap);
+  return api.post(`/integrations/synchronizations/${id}/cancel`).then(unwrap);
 }
 export function getCheckpoint(id) {
-  return api.get(`/api/integrations/synchronizations/${id}/checkpoint`).then(unwrap);
+  return api.get(`/integrations/synchronizations/${id}/checkpoint`).then(unwrap);
 }
 export function deleteSync(id) {
-  return api.delete(`/api/integrations/synchronizations/${id}`).then(unwrap);
+  return api.delete(`/integrations/synchronizations/${id}`).then(unwrap);
 }

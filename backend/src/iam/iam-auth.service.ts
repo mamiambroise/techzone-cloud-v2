@@ -26,6 +26,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import type { IamAuthContext } from './decorators/current-user.decorator';
+import { IamContextService } from './iam-context.service';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 
@@ -44,6 +45,7 @@ export class IamAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
+    private readonly contextService: IamContextService,
   ) {}
 
   // ================= Helpers =================
@@ -325,11 +327,9 @@ export class IamAuthService {
     return this.prisma.iamDevice.create({
       data: {
         userId,
-        label: 'Unknown',
+        name: 'Unknown',
         trustLevel: 'TRUSTED',
-        firstSeenAt: new Date(),
-        lastSeenAt: new Date(),
-        riskScore: 0,
+        metadata: { riskScore: 0 },
       },
     });
   }
@@ -338,6 +338,9 @@ export class IamAuthService {
 
   async refresh(dto: RefreshDto) {
     this.assertEnv();
+    if (!dto.refreshToken) {
+      throw new IamError('Session de renouvellement absente', 401, 'UNAUTHENTICATED');
+    }
     return this.rotateRefreshToken(dto.refreshToken);
   }
 
@@ -548,14 +551,39 @@ export class IamAuthService {
       where: { id: ctx.sessionId },
     });
 
+    const tenants = await this.contextService.listActiveTenants(ctx.userId);
+
     return {
       user: this.sanitizeUser(user),
+      activeTenant: session?.tenantId ?? null,
+      tenants,
       session: {
         id: ctx.sessionId,
         authenticationLevel: session?.authenticationLevel ?? null,
         createdAt: session?.createdAt ?? null,
         lastActivityAt: session?.lastActivityAt ?? null,
       },
+    };
+  }
+
+  async listTenants(ctx: IamAuthContext) {
+    return this.contextService.listActiveTenants(ctx.userId);
+  }
+
+  async switchTenant(ctx: IamAuthContext, tenantId: string) {
+    await this.contextService.switchTenant(ctx.userId, tenantId);
+
+    await this.prisma.iamSession.update({
+      where: { id: ctx.sessionId },
+      data: { tenantId, lastActivityAt: new Date() },
+    });
+
+    const newTokens = await this.issueTokenPair(ctx.sessionId);
+
+    return {
+      message: 'Locataire changé',
+      activeTenant: tenantId,
+      ...newTokens,
     };
   }
 
@@ -655,6 +683,23 @@ export class IamAuthService {
     });
   }
 
+  private async resolveTenantId(userId: string): Promise<string | null> {
+    const user = await this.prisma.iamUser.findUnique({
+      where: { id: userId },
+      select: { defaultTenantId: true },
+    });
+    if (user?.defaultTenantId) {
+      return user.defaultTenantId;
+    }
+
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId, status: 'ACTIVE' },
+      select: { tenantId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    return membership?.tenantId ?? null;
+  }
+
   private async createSession({
     userId,
     tenantId,
@@ -681,10 +726,12 @@ export class IamAuthService {
     const now = new Date();
     const { idleExpiresAt, expiresAt } = this.computeExpirations(now);
 
+    const resolvedTenantId = tenantId ?? (await this.resolveTenantId(userId));
+
     return this.prisma.iamSession.create({
       data: {
         userId,
-        tenantId: tenantId ?? null,
+        tenantId: resolvedTenantId ?? null,
         organizationId: organizationId ?? null,
         siteId: siteId ?? null,
         applicationId: applicationId ?? null,

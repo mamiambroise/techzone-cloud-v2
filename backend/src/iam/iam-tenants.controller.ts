@@ -2,12 +2,16 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IamTenantsService } from './iam-tenants.service';
 import { IamAdminGuard } from './iam-admin-guard';
+import { Permissions } from './iam-permissions.guard';
+import { IAM_ADMIN } from './iam.constants';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { IamAuthContext } from './decorators/current-user.decorator';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { CreateMembershipDto } from './dto/create-membership.dto';
 
 @ApiTags('iam-tenants')
+@Permissions(IAM_ADMIN)
 @UseGuards(IamAdminGuard)
 @Controller('api/iam/admin/tenants')
 export class IamTenantsController {
@@ -66,6 +70,13 @@ export class IamTenantsController {
   async memberships(@Param('id') id: string) {
     const data = await this.tenantsService.getTenantMemberships(id);
     return { success: true, message: 'OK', data };
+  }
+
+  @Post(':id/memberships')
+  @ApiOperation({ summary: 'Créer une appartenance utilisateur à un tenant (admin)' })
+  async createMembership(@Param('id') id: string, @Body() dto: CreateMembershipDto, @CurrentUser() ctx: IamAuthContext, ) {
+    const data = await this.tenantsService.createMembership(id, dto, ctx.userId);
+    return { success: true, message: 'Appartenance créée', data, statusCode: 201 };
   }
 
   @Get(':id/subscriptions')

@@ -1,810 +1,314 @@
-import { MODULES } from '../erp/modulesConfig.js';
-
+import { matchPath } from 'react-router-dom';
+import { ROUTES } from './routes.js';
+export const navigationSections = [{id:'principal',label:'Principal'}, {id:'construction',label:'Construction'}, {id:'integrations',label:'Int\u00e9grations'}, {id:'platform',label:'Plateforme'}];
 export const navigationGroups = [
   {
-    "id": "home",
-    "label": "Accueil"
+    "id": "dashboard",
+    "label": "Tableau de bord",
+    "section": "principal",
+    "icon": "LayoutDashboard"
   },
   {
-    "id": "business",
-    "label": "Business Manager"
+    "id": "applications",
+    "label": "Applications",
+    "section": "principal",
+    "icon": "AppWindow"
+  },
+  {
+    "id": "bm",
+    "label": "Business Manager",
+    "section": "construction",
+    "icon": "BriefcaseBusiness"
+  },
+  {
+    "id": "ui",
+    "label": "UI Builder",
+    "section": "construction",
+    "icon": "PanelsTopLeft"
+  },
+  {
+    "id": "automation",
+    "label": "Automatisation",
+    "section": "construction",
+    "icon": "Workflow"
   },
   {
     "id": "packs",
-    "label": "Pack Management"
+    "label": "Packs",
+    "section": "construction",
+    "icon": "Package"
   },
   {
     "id": "erp",
-    "label": "ERP & Data"
-  },
-  {
-    "id": "automation",
-    "label": "Automation"
-  },
-  {
-    "id": "iam",
-    "label": "IAM & Administration"
+    "label": "Données & ERP",
+    "section": "integrations",
+    "icon": "Database"
   },
   {
     "id": "billing",
-    "label": "Subscription & Billing"
+    "label": "Abonnements & Facturation",
+    "section": "platform",
+    "icon": "CreditCard"
+  },
+  {
+    "id": "iam",
+    "label": "IAM & Administration",
+    "section": "platform",
+    "icon": "ShieldCheck"
   },
   {
     "id": "observability",
-    "label": "Observability"
-  },
-  {
-    "id": "platform",
-    "label": "Platform"
-  }
-];
-
-export const routeDefinitions = [
-  {
-    "route": "/cockpit",
-    "component": "CockpitRoute",
-    "id": "cockpit",
-    "label": "Dashboard",
-    "group": "home",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "cockpit"
-  },
-  {
-    "route": "/overview",
-    "component": "OverviewRoute",
-    "id": "overview",
-    "label": "Packs",
-    "group": "packs",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "overview"
-  },
-  {
-    "route": "/applications",
-    "component": "ApplicationsRoute",
-    "id": "applications",
-    "label": "Applications",
-    "group": "business",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "applications"
-  },
-  {
-    "route": "/workspace",
-    "component": "WorkspaceConfigView",
-    "id": "workspace",
-    "label": "Configuration des packs",
-    "group": "packs",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "workspace"
-  },
-  {
-    "route": "/versions",
-    "component": "VersionsDetailView",
-    "id": "versions",
-    "label": "Versions",
-    "group": "packs",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "versions"
-  },
-  {
-    "route": "/validation",
-    "component": "ValidationRoute",
-    "id": "validation",
-    "label": "Validation / qualit?",
-    "group": "business",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "validation"
-  },
-  {
-    "route": "/publication",
-    "component": "PublicationView",
-    "id": "publication",
-    "label": "Publication",
-    "group": "packs",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "publication"
-  },
-  {
-    "route": "/history",
-    "component": "HistoryRollbackView",
-    "id": "history",
-    "label": "Historique",
-    "group": "packs",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "history"
-  },
-  {
-    "route": "/specifications",
-    "component": "SpecificationsView",
-    "id": "specifications",
-    "label": "Sp?cifications",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "specifications"
-  },
-  {
-    "route": "/environments",
-    "component": "EnvironmentsView",
-    "id": "environments",
-    "label": "Environnements",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "environments"
-  },
-  {
-    "route": "/contracts",
-    "component": "ContractsView",
-    "id": "contracts",
-    "label": "Registre des contrats",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "contracts"
-  },
-  {
-    "route": "/config",
-    "component": "ConfigurationView",
-    "id": "config",
-    "label": "Configuration / metadata",
-    "group": "business",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "config"
-  },
-  {
-    "route": "/snapshots",
-    "component": "SnapshotsRoute",
-    "id": "snapshots",
-    "label": "Snapshots",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "snapshots"
-  },
-  {
-    "route": "/platform-contract",
-    "component": "PlatformContractView",
-    "id": "platform-contract",
-    "label": "Socle & contrat",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "01",
-    "tab": "platform-contract"
-  },
-  {
-    "route": "/integrations",
-    "component": "IntegrationsView",
-    "id": "integrations",
-    "label": "integrations",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": false,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "cockpit"
-  },
-  {
-    "route": "/integrations/cockpit",
-    "component": "IntegrationsView",
-    "id": "integrations-cockpit",
-    "label": "cockpit",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "cockpit"
-  },
-  {
-    "route": "/integrations/connectors",
-    "component": "IntegrationsView",
-    "id": "integrations-connectors",
-    "label": "connectors",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "connectors"
-  },
-  {
-    "route": "/integrations/apis",
-    "component": "IntegrationsView",
-    "id": "integrations-apis",
-    "label": "apis",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "apis"
-  },
-  {
-    "route": "/integrations/webhooks",
-    "component": "IntegrationsView",
-    "id": "integrations-webhooks",
-    "label": "webhooks",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "webhooks"
-  },
-  {
-    "route": "/integrations/credentials",
-    "component": "IntegrationsView",
-    "id": "integrations-credentials",
-    "label": "credentials",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "credentials"
-  },
-  {
-    "route": "/integrations/sync",
-    "component": "IntegrationsView",
-    "id": "integrations-sync",
-    "label": "sync",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "sync"
-  },
-  {
-    "route": "/integrations/diagnostics",
-    "component": "IntegrationsView",
-    "id": "integrations-diagnostics",
-    "label": "diagnostics",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "diagnostics"
-  },
-  {
-    "route": "/integrations/specifications",
-    "component": "IntegrationsView",
-    "id": "integrations-specifications",
-    "label": "specifications",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "api-layer",
-    "tab": "integrations",
-    "integrationTab": "specifications"
-  },
-  {
-    "route": "/deployment",
-    "component": "DeploymentPublicationView",
-    "id": "deployment",
-    "label": "deployment",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": false,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "cockpit"
-  },
-  {
-    "route": "/deployment/cockpit",
-    "component": "DeploymentPublicationView",
-    "id": "deployment-cockpit",
-    "label": "cockpit",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "cockpit"
-  },
-  {
-    "route": "/deployment/releases",
-    "component": "DeploymentPublicationView",
-    "id": "deployment-releases",
-    "label": "releases",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "releases"
-  },
-  {
-    "route": "/deployment/pipelines",
-    "component": "DeploymentPublicationView",
-    "id": "deployment-pipelines",
-    "label": "pipelines",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "pipelines"
-  },
-  {
-    "route": "/deployment/promotion",
-    "component": "DeploymentPublicationView",
-    "id": "deployment-promotion",
-    "label": "promotion",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "promotions"
-  },
-  {
-    "route": "/deployment/rollback",
-    "component": "DeploymentPublicationView",
-    "id": "deployment-rollback",
-    "label": "rollback",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "rollback"
-  },
-  {
-    "route": "/deployment/diagnostics",
-    "component": "DeploymentPublicationView",
-    "id": "deployment-diagnostics",
-    "label": "diagnostics",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "diagnostics"
-  },
-  {
-    "route": "/deployment/specifications",
-    "component": "DeploymentPublicationView",
-    "id": "deployment-specifications",
-    "label": "specifications",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true,
-    "moduleId": "dep-layer",
-    "tab": "deployment",
-    "deploymentTab": "specifications"
-  },
-  {
-    "route": "/iam/users",
-    "component": "IamUsersPage",
-    "id": "iam-users",
-    "label": "users",
-    "group": "iam",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/sessions",
-    "component": "SessionsPage",
-    "id": "iam-sessions",
-    "label": "sessions",
-    "group": "iam",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/identities",
-    "component": "IdentitiesPage",
-    "id": "iam-identities",
-    "label": "identities",
-    "group": "iam",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/roles",
-    "component": "RolesPage",
-    "id": "iam-roles",
-    "label": "roles",
-    "group": "iam",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/policies",
-    "component": "PoliciesPage",
-    "id": "iam-policies",
-    "label": "policies",
-    "group": "iam",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/tenants",
-    "component": "TenantsPage",
-    "id": "iam-tenants",
-    "label": "tenants",
-    "group": "iam",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/observability",
-    "component": "ObservabilityOverview",
-    "id": "iam-observability",
-    "label": "observability",
-    "group": "observability",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/observability/logs",
-    "component": "LogsPage",
-    "id": "iam-observability-logs",
-    "label": "logs",
-    "group": "observability",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/observability/audit",
-    "component": "AuditPage",
-    "id": "iam-observability-audit",
-    "label": "audit",
-    "group": "observability",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/observability/security-events",
-    "component": "SecurityEventsPage",
-    "id": "iam-observability-security-events",
-    "label": "security-events",
-    "group": "observability",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/observability/monitoring",
-    "component": "MonitoringPage",
-    "id": "iam-observability-monitoring",
-    "label": "monitoring",
-    "group": "observability",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/iam/observability/alerts",
-    "component": "AlertManagerPage",
-    "id": "iam-observability-alerts",
-    "label": "alerts",
-    "group": "observability",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/erp",
-    "component": "ERPDashboard",
-    "id": "erp",
-    "label": "ERP Dashboard",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/erp/:moduleKey",
-    "component": "ErpModule",
-    "id": "erp-:moduleKey",
-    "label": ":moduleKey",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": false
-  },
-  {
-    "route": "/erps",
-    "component": "ERPList",
-    "id": "erps",
-    "label": "ERP Registry",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/erps/create",
-    "component": "ERPCreate",
-    "id": "erps-create",
-    "label": "create",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": false
-  },
-  {
-    "route": "/erps/edit/:id",
-    "component": "ERPEdit",
-    "id": "erps-edit-:id",
-    "label": ":id",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": false
-  },
-  {
-    "route": "/data-runtime",
-    "component": "DataRuntime",
-    "id": "data-runtime",
-    "label": "Data Runtime / Query",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/data-runtime/history",
-    "component": "DataRuntimeHistory",
-    "id": "data-runtime-history",
-    "label": "history",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/automation",
-    "component": "AutomationCockpit",
-    "id": "automation",
-    "label": "Automations",
-    "group": "automation",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/automation/conditions",
-    "component": "AutomationConditions",
-    "id": "automation-conditions",
-    "label": "conditions",
-    "group": "automation",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/automation/history",
-    "component": "AutomationHistory",
-    "id": "automation-history",
-    "label": "history",
-    "group": "automation",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/automation/rules",
-    "component": "AutomationRules",
-    "id": "automation-rules",
-    "label": "rules",
-    "group": "automation",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/automation/triggers",
-    "component": "AutomationTriggers",
-    "id": "automation-triggers",
-    "label": "triggers",
-    "group": "automation",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "route": "/automation/workflows",
-    "component": "AutomationWorkflows",
-    "id": "automation-workflows",
-    "label": "workflows",
-    "group": "automation",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "id": "adapters",
-    "route": "/adapters",
-    "component": "Adapters",
-    "label": "Adaptateurs ERP",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "id": "mapping",
-    "route": "/mapping",
-    "component": "Mapping",
-    "label": "Mapping ERP",
-    "group": "erp",
-    "status": "ACTIVE",
-    "menu": true
+    "label": "Observabilité",
+    "section": "platform",
+    "icon": "Activity"
   },
   {
     "id": "settings",
-    "route": "/settings",
-    "component": "Settings",
-    "label": "Param?tres ERP",
-    "group": "platform",
-    "status": "ACTIVE",
-    "menu": true
-  },
-  {
-    "id": "billing-overview",
-    "route": "/billing/overview",
-    "component": "DemoPage",
-    "pageId": "billing-overviewpage",
-    "label": "Overview",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-plans",
-    "route": "/billing/plans",
-    "component": "DemoPage",
-    "pageId": "billing-planspage",
-    "label": "Plans",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-subscriptions",
-    "route": "/billing/subscriptions",
-    "component": "DemoPage",
-    "pageId": "billing-subscriptionspage",
-    "label": "Subscriptions",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-invoices",
-    "route": "/billing/invoices",
-    "component": "DemoPage",
-    "pageId": "billing-invoicespage",
-    "label": "Invoices",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-payments",
-    "route": "/billing/payments",
-    "component": "DemoPage",
-    "pageId": "billing-paymentspage",
-    "label": "Payments",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-webhooks",
-    "route": "/billing/webhooks",
-    "component": "DemoPage",
-    "pageId": "billing-webhookspage",
-    "label": "Webhooks",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-entitlements",
-    "route": "/billing/entitlements",
-    "component": "DemoPage",
-    "pageId": "billing-entitlementspage",
-    "label": "Entitlements / Quotas",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-access-rules",
-    "route": "/billing/access-rules",
-    "component": "DemoPage",
-    "pageId": "billing-accessrulespage",
-    "label": "Access Rules",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "billing-features",
-    "route": "/billing/features",
-    "component": "DemoPage",
-    "pageId": "billing-featurespage",
-    "label": "Features",
-    "group": "billing",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "iam-organisations",
-    "route": "/iam/organisations",
-    "component": "DemoPage",
-    "pageId": "organisations-organisationspage",
-    "label": "Organisations",
-    "group": "iam",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "iam-contexts",
-    "route": "/iam/contexts",
-    "component": "DemoPage",
-    "pageId": "contexts-contextspage",
-    "label": "Contextes",
-    "group": "iam",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "iam-identity-links",
-    "route": "/iam/identity-links",
-    "component": "DemoPage",
-    "pageId": "identitylinks-identitylinkspage",
-    "label": "Liaisons ERP",
-    "group": "iam",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "iam-identity-groups",
-    "route": "/iam/identity-groups",
-    "component": "DemoPage",
-    "pageId": "identitygroups-identitygroupspage",
-    "label": "Groupes",
-    "group": "iam",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "admin",
-    "route": "/iam/admin",
-    "component": "DemoPage",
-    "pageId": "admin-overviewpage",
-    "label": "Administration (maquette)",
-    "group": "platform",
-    "status": "PLACEHOLDER",
-    "menu": true
-  },
-  {
-    "id": "demo",
-    "route": "/demo/iam/:demoId",
-    "component": "DemoPage",
-    "group": "platform",
-    "status": "PLACEHOLDER",
-    "menu": false
+    "label": "Paramètres",
+    "section": "platform",
+    "icon": "Settings"
   }
 ];
-
-export const navigationEntries = [
- ...routeDefinitions.filter(r => r.menu),
- ...MODULES.map(m => ({ id: 'erp-' + m.key, label: m.title, route: '/erp/' + m.key, group: 'erp', status: 'ACTIVE', component: 'ErpModule' })),
+export const pageDefinitions = [
+  { ...{"id":"admin","group":"platform","label":"Administration (maquette)","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"admin-overviewpage","permission":null}, route: ROUTES["admin"] },
+  { ...{"id":"demo","group":"platform","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","permission":null}, route: ROUTES["demo"] },
+  { ...{"component":"CockpitRoute","id":"dashboard","label":"Vue d’ensemble","group":"dashboard","status":"PARTIAL","menu":true,"moduleId":"01","tab":"cockpit","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["dashboard"] },
+  { ...{"component":"ApplicationsRoute","id":"applications","label":"Applications","group":"applications","status":"PARTIAL","menu":true,"moduleId":"01","tab":"applications","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["applications"] },
+  { ...{"component":"NewApplicationRoute","id":"applicationNew","label":"Nouvelle application","group":"applications","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["applicationNew"] },
+  { ...{"component":"ApplicationDetailRoute","id":"applicationDetail","label":"Détail application","group":"applications","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["applicationDetail"] },
+  { ...{"component":"WorkspaceConfigView","id":"applicationWorkspace","label":"Configuration application","group":"applications","status":"PARTIAL","menu":true,"moduleId":"01","tab":"workspace","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["applicationWorkspace"] },
+  { ...{"component":"BMOverview","id":"bm","label":"Vue d’ensemble","group":"bm","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bm"] },
+  { ...{"component":"BMApplicationsRoute","id":"bmApplications","label":"Applications","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmApplications"] },
+  { ...{"id":"bmVersionsIndex","group":"bm","label":"Versions","component":"BMVersionsRoute","menu":false,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE"}, route: ROUTES["bmVersionsIndex"] },
+  { ...{"id":"bmModels","group":"bm","label":"Modèles de données","component":"BMWorkspaceRoute","menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","description":"La définition des entités, champs et relations métier sera intégrée avec le Data Model Manager."}, route: ROUTES["bmModels"] },
+  { ...{"id":"bmFeaturesIndex","group":"bm","label":"Fonctionnalités & Capabilities","component":"BMWorkspaceRoute","menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","description":"La définition des fonctionnalités et capacités métier sera intégrée avec le Feature & Capability Manager."}, route: ROUTES["bmFeaturesIndex"] },
+  { ...{"id":"bmNavigationIndex","group":"bm","label":"Menus & Navigation","component":"BMWorkspaceRoute","menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","description":"La composition des menus des applications sera intégrée avec le Menu Engine."}, route: ROUTES["bmNavigationIndex"] },
+  { ...{"component":"ConfigurationView","id":"bmConfiguration","label":"Configuration","group":"bm","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"tab":"config"}, route: ROUTES["bmConfiguration"] },
+  { ...{"id":"bmRuntimeIndex","group":"bm","label":"Intégration & Runtime","component":"ComingSoon","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","description":"La liaison entre les contrats des applications et leurs fournisseurs sera intégrée avec le Runtime Bridge."}, route: ROUTES["bmRuntimeIndex"] },
+  { ...{"id":"bmQuality","group":"bm","label":"Validation / Qualité","component":"BMWorkspaceRoute","menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","tab":"validation"}, route: ROUTES["bmQuality"] },
+  { ...{"component":"BMApplicationNewRoute","id":"bmApplicationNew","label":"Nouvelle application","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmApplicationNew"] },
+  { ...{"component":"BMVersionsRoute","id":"bmVersions","label":"Versions","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmVersions"] },
+  { ...{"id":"bmDataModel","label":"Modèles de données","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"phase":4,"component":"BMWorkspaceRoute","versionSection":true}, route: ROUTES["bmDataModel"] },
+  { ...{"id":"bmFeatures","label":"Fonctionnalités & Capabilities","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"phase":5,"component":"BMWorkspaceRoute","versionSection":true}, route: ROUTES["bmFeatures"] },
+  { ...{"id":"bmNavigation","label":"Menus & Navigation","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"phase":6,"component":"BMWorkspaceRoute","versionSection":true}, route: ROUTES["bmNavigation"] },
+  { ...{"id":"bmRuntime","label":"Runtime","group":"bm","menu":false,"protected":true,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","implemented":false,"phase":8,"component":"ComingSoon","versionSection":true}, route: ROUTES["bmRuntime"] },
+  { ...{"id":"bmValidation","label":"Validation / Qualité","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"component":"BMWorkspaceRoute","versionSection":true}, route: ROUTES["bmValidation"] },
+  { ...{"component":"BMApplicationDetailRoute","id":"bmApplicationDetail","label":"Détail application","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmApplicationDetail"] },
+  { ...{"component":"BMWorkspaceRoute","id":"bmVersionDetail","label":"Version détaillée","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmVersionDetail"] },
+  { ...{"id":"uiPages","group":"ui","label":"Pages","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La gestion des pages et de leur organisation visuelle sera intégrée dans une prochaine phase."}, route: ROUTES["uiPages"] },
+  { ...{"id":"uiBuilder","group":"ui","label":"Page Builder","component":"ComingSoon","menu":false,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La construction visuelle des pages nécessite le futur Page Builder."}, route: ROUTES["uiBuilder"] },
+  { ...{"id":"uiForms","group":"ui","label":"Formulaires","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La conception des champs, validations et mises en page de formulaires sera disponible dans le futur UI Builder."}, route: ROUTES["uiForms"] },
+  { ...{"id":"uiComponents","group":"ui","label":"Composants","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Le catalogue de composants réutilisables du UI Builder n’est pas encore disponible."}, route: ROUTES["uiComponents"] },
+  { ...{"id":"uiThemes","group":"ui","label":"Thèmes","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La personnalisation des couleurs, styles et thèmes des applications sera intégrée au UI Builder."}, route: ROUTES["uiThemes"] },
+  { ...{"id":"uiPreview","group":"ui","label":"Prévisualisation","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La prévisualisation des interfaces nécessitera les pages et le moteur UI Builder."}, route: ROUTES["uiPreview"] },
+  { ...{"id":"ui","group":"ui","label":"UI Builder","component":"ComingSoon","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE"}, route: ROUTES["ui"] },
+  { ...{"id":"uiPage","group":"ui","label":"Détail page","component":"ComingSoon","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE"}, route: ROUTES["uiPage"] },
+  { ...{"component":"AutomationCockpit","id":"automation","label":"Vue d’ensemble","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automation"] },
+  { ...{"component":"AutomationRules","id":"automationRules","label":"Règles","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automationRules"] },
+  { ...{"id":"automationFormulas","group":"automation","label":"Formules","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"permission":"automation:read","description":"L’éditeur de formules et leur évaluation ne sont pas encore intégrés à la console."}, route: ROUTES["automationFormulas"] },
+  { ...{"component":"AutomationWorkflows","id":"automationWorkflows","label":"Workflows","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automationWorkflows"] },
+  { ...{"component":"AutomationTriggers","id":"automationTriggers","label":"Déclencheurs","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automationTriggers"] },
+  { ...{"id":"automationActions","group":"automation","label":"Actions","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"permission":"automation:read","description":"Le gestionnaire des actions automatisées n’est pas disponible. Les handlers existants ne constituent pas encore un gestionnaire complet."}, route: ROUTES["automationActions"] },
+  { ...{"component":"AutomationHistory","id":"automationExecutions","label":"Exécutions","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automationExecutions"] },
+  { ...{"component":"AutomationConditions","id":"automation-conditions","label":"conditions","group":"automation","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read"}, route: ROUTES["automation-conditions"] },
+  { ...{"component":"OverviewRoute","id":"packs","label":"Mes Packs","group":"packs","status":"PARTIAL","menu":true,"moduleId":"01","tab":"overview","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["packs"] },
+  { ...{"id":"packManager","group":"packs","label":"Pack Manager","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La composition et la gestion des packs nécessitent le futur Pack Manager."}, route: ROUTES["packManager"] },
+  { ...{"id":"packRegistry","group":"packs","label":"Registry","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Le catalogue central de packs publiés n’est pas encore intégré."}, route: ROUTES["packRegistry"] },
+  { ...{"component":"VersionsDetailView","id":"packVersions","label":"Versions","group":"packs","status":"PARTIAL","menu":true,"moduleId":"01","tab":"versions","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["packVersions"] },
+  { ...{"id":"packDependencies","group":"packs","label":"Dépendances","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"L’inspection et la résolution des dépendances des packs seront disponibles dans une prochaine phase."}, route: ROUTES["packDependencies"] },
+  { ...{"component":"PublicationView","id":"packPublication","label":"Publication","group":"packs","status":"PARTIAL","menu":true,"moduleId":"01","tab":"publication","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["packPublication"] },
+  { ...{"id":"packRuntime","group":"packs","label":"Pack Runtime","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"L’exécution et le suivi des packs nécessitent le futur moteur Pack Runtime."}, route: ROUTES["packRuntime"] },
+  { ...{"component":"HistoryRollbackView","id":"history","label":"Historique","group":"packs","status":"PARTIAL","menu":false,"moduleId":"01","tab":"history","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["history"] },
+  { ...{"component":"ERPDashboard","id":"erp","label":"ERP Dashboard","group":"erp","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erp"] },
+  { ...{"component":"ERPList","id":"erpRegistry","label":"ERP Registry","group":"erp","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erpRegistry"] },
+  { ...{"id":"erp-clients","group":"erp","label":"Clients","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"clients"}, route: ROUTES["erp-clients"] },
+  { ...{"id":"erp-products","group":"erp","label":"Produits","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"products"}, route: ROUTES["erp-products"] },
+  { ...{"id":"erp-orders","group":"erp","label":"Commandes","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"orders"}, route: ROUTES["erp-orders"] },
+  { ...{"id":"erp-invoices","group":"erp","label":"Factures","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"invoices"}, route: ROUTES["erp-invoices"] },
+  { ...{"id":"erp-stocks","group":"erp","label":"Stocks","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"stock-movements"}, route: ROUTES["erp-stocks"] },
+  { ...{"component":"Mapping","id":"erpMapping","label":"Entity Mapping","group":"erp","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erpMapping"] },
+  { ...{"component":"DataRuntime","id":"dataRuntime","label":"Data Runtime","group":"erp","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"data-runtime:read"}, route: ROUTES["dataRuntime"] },
+  { ...{"component":"ErpModule","id":"erp-:moduleKey","label":":moduleKey","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erp-:moduleKey"] },
+  { ...{"component":"ERPCreate","id":"erps-create","label":"create","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erps-create"] },
+  { ...{"component":"ERPEdit","id":"erps-edit-:id","label":":id","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erps-edit-:id"] },
+  { ...{"component":"DataRuntimeHistory","id":"data-runtime-history","label":"history","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["data-runtime-history"] },
+  { ...{"component":"Adapters","id":"adapters","label":"Adaptateurs ERP","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["adapters"] },
+  { ...{"id":"dataQuery","group":"erp","label":"Requêtes","component":null,"menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","redirectTo":"/data-runtime#query","permission":"data-runtime:query"}, route: ROUTES["dataQuery"] },
+  { ...{"component":"ComingSoon","id":"billingPlans","pageId":"billing-planspage","label":"Plans","group":"billing","status":"NOT_IMPLEMENTED","menu":true,"protected":true,"classification":"PLANNED_PAGE","implemented":false,"description":"La gestion des offres commerciales et de leurs tarifs n’est pas encore intégrée."}, route: ROUTES["billingPlans"] },
+  { ...{"component":"ComingSoon","id":"billingSubscriptions","pageId":"billing-subscriptionspage","label":"Abonnements","group":"billing","status":"NOT_IMPLEMENTED","menu":true,"protected":true,"classification":"PLANNED_PAGE","implemented":false,"description":"La souscription, le renouvellement et la résiliation des abonnements seront intégrés dans une prochaine phase."}, route: ROUTES["billingSubscriptions"] },
+  { ...{"id":"billingEntitlements","group":"billing","label":"Entitlements","component":"ComingSoon","menu":true,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","description":"La gestion des droits commerciaux des abonnements est distincte des permissions IAM et n’est pas encore disponible."}, route: ROUTES["billingEntitlements"] },
+  { ...{"id":"billingQuotas","group":"billing","label":"Quotas","component":"ComingSoon","menu":true,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","description":"Le suivi de consommation et les limites des abonnements ne sont pas encore disponibles."}, route: ROUTES["billingQuotas"] },
+  { ...{"id":"billingInvoices","group":"billing","label":"Facturation","component":"ComingSoon","menu":true,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","description":"L’émission et le suivi des factures d’abonnement ne sont pas encore intégrés."}, route: ROUTES["billingInvoices"] },
+  { ...{"id":"billing-payments","group":"billing","label":"Payments","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"billing-paymentspage","permission":null}, route: ROUTES["billing-payments"] },
+  { ...{"id":"billing-webhooks","group":"billing","label":"Webhooks","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"billing-webhookspage","permission":null}, route: ROUTES["billing-webhooks"] },
+  { ...{"id":"billing-access-rules","group":"billing","label":"Access Rules","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"billing-accessrulespage","permission":null}, route: ROUTES["billing-access-rules"] },
+  { ...{"id":"billing-features","group":"billing","label":"Features","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"billing-featurespage","permission":null}, route: ROUTES["billing-features"] },
+  { ...{"component":"IamUsersPage","id":"iam-users","label":"Utilisateurs","group":"iam","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["iam-users"] },
+  { ...{"component":"IdentitiesPage","id":"iam-identities","label":"Identités","group":"iam","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["iam-identities"] },
+  { ...{"component":"TenantsPage","id":"iam-tenants","label":"Tenants","group":"iam","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["iam-tenants"] },
+  { ...{"component":"RolesPage","id":"iam-roles","label":"Rôles","group":"iam","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["iam-roles"] },
+  { ...{"component":"PoliciesPage","id":"iam-policies","label":"Politiques","group":"iam","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["iam-policies"] },
+  { ...{"component":"SessionsPage","id":"iam-sessions","label":"Sessions","group":"iam","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["iam-sessions"] },
+  { ...{"id":"iam-organizations","group":"iam","label":"Organisations / Sites","component":"ComingSoon","menu":true,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","permission":"iam:admin"}, route: ROUTES["iam-organizations"] },
+  { ...{"id":"iam-devices","group":"iam","label":"Appareils","component":"ComingSoon","menu":true,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","permission":"iam:admin"}, route: ROUTES["iam-devices"] },
+  { ...{"id":"iam-contexts","group":"iam","label":"Contextes","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"contexts-contextspage","permission":"iam:admin"}, route: ROUTES["iam-contexts"] },
+  { ...{"id":"iam-identity-links","group":"iam","label":"Liaisons ERP","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"identitylinks-identitylinkspage","permission":"iam:admin"}, route: ROUTES["iam-identity-links"] },
+  { ...{"id":"iam-identity-groups","group":"iam","label":"Groupes","component":"DemoPage","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"EXISTING_PARTIAL_PAGE","pageId":"identitygroups-identitygroupspage","permission":"iam:admin"}, route: ROUTES["iam-identity-groups"] },
+  { ...{"component":"ObservabilityOverview","id":"observability","label":"Vue d’ensemble","group":"observability","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["observability"] },
+  { ...{"component":"MonitoringPage","id":"observability-monitoring","label":"Monitoring","group":"observability","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["observability-monitoring"] },
+  { ...{"component":"LogsPage","id":"observability-logs","label":"Logs","group":"observability","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["observability-logs"] },
+  { ...{"component":"AuditPage","id":"observability-audit","label":"Audit","group":"observability","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["observability-audit"] },
+  { ...{"component":"SecurityEventsPage","id":"observability-security-events","label":"Événements de sécurité","group":"observability","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["observability-security-events"] },
+  { ...{"component":"AlertManagerPage","id":"observability-alerts","label":"Alertes","group":"observability","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["observability-alerts"] },
+  { ...{"id":"settingsGeneral","group":"settings","label":"Paramètres généraux","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Les préférences générales de la plateforme ne disposent pas encore d’un écran dédié."}, route: ROUTES["settingsGeneral"] },
+  { ...{"component":"IntegrationsView","id":"settingsIntegrations","label":"Intégrations","group":"settings","status":"PARTIAL","menu":true,"moduleId":"api-layer","tab":"integrations","integrationTab":"cockpit","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["settingsIntegrations"] },
+  { ...{"component":"Settings","id":"settingsErp","label":"Configuration ERP","group":"settings","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["settingsErp"] },
+  { ...{"id":"settingsSecurity","group":"settings","label":"Sécurité","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La configuration des options de sécurité ne dispose pas encore d’un écran dédié."}, route: ROUTES["settingsSecurity"] },
+  { ...{"id":"settingsProfile","group":"settings","label":"Profil","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La modification du profil utilisateur sera intégrée à la console dans une prochaine phase."}, route: ROUTES["settingsProfile"] },
+  { ...{"component":"SpecificationsView","id":"specifications","label":"Spécifications","group":"settings","status":"PARTIAL","menu":false,"moduleId":"01","tab":"specifications","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["specifications"] },
+  { ...{"component":"EnvironmentsView","id":"environments","label":"Environnements","group":"settings","status":"PARTIAL","menu":false,"moduleId":"01","tab":"environments","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["environments"] },
+  { ...{"component":"ContractsView","id":"contracts","label":"Registre des contrats","group":"settings","status":"PARTIAL","menu":false,"moduleId":"01","tab":"contracts","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["contracts"] },
+  { ...{"component":"SnapshotsRoute","id":"snapshots","label":"Snapshots","group":"settings","status":"PARTIAL","menu":false,"moduleId":"01","tab":"snapshots","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["snapshots"] },
+  { ...{"component":"PlatformContractView","id":"platform-contract","label":"Socle & contrat","group":"settings","status":"PARTIAL","menu":false,"moduleId":"01","tab":"platform-contract","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["platform-contract"] },
+  { ...{"component":"IntegrationsView","id":"integrations-connectors","label":"connectors","group":"settings","status":"PARTIAL","menu":false,"moduleId":"api-layer","tab":"integrations","integrationTab":"connectors","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["integrations-connectors"] },
+  { ...{"component":"IntegrationsView","id":"integrations-apis","label":"apis","group":"settings","status":"PARTIAL","menu":false,"moduleId":"api-layer","tab":"integrations","integrationTab":"apis","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["integrations-apis"] },
+  { ...{"component":"IntegrationsView","id":"integrations-webhooks","label":"webhooks","group":"settings","status":"PARTIAL","menu":false,"moduleId":"api-layer","tab":"integrations","integrationTab":"webhooks","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["integrations-webhooks"] },
+  { ...{"component":"IntegrationsView","id":"integrations-credentials","label":"credentials","group":"settings","status":"PARTIAL","menu":false,"moduleId":"api-layer","tab":"integrations","integrationTab":"credentials","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["integrations-credentials"] },
+  { ...{"component":"IntegrationsView","id":"integrations-sync","label":"sync","group":"settings","status":"PARTIAL","menu":false,"moduleId":"api-layer","tab":"integrations","integrationTab":"sync","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["integrations-sync"] },
+  { ...{"component":"IntegrationsView","id":"integrations-diagnostics","label":"diagnostics","group":"settings","status":"PARTIAL","menu":false,"moduleId":"api-layer","tab":"integrations","integrationTab":"diagnostics","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["integrations-diagnostics"] },
+  { ...{"component":"IntegrationsView","id":"integrations-specifications","label":"specifications","group":"settings","status":"PARTIAL","menu":false,"moduleId":"api-layer","tab":"integrations","integrationTab":"specifications","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["integrations-specifications"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment","label":"deployment","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"cockpit","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment-cockpit","label":"cockpit","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"cockpit","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment-cockpit"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment-releases","label":"releases","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"releases","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment-releases"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment-pipelines","label":"pipelines","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"pipelines","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment-pipelines"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment-promotion","label":"promotion","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"promotions","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment-promotion"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment-rollback","label":"rollback","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"rollback","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment-rollback"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment-diagnostics","label":"diagnostics","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"diagnostics","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment-diagnostics"] },
+  { ...{"component":"DeploymentPublicationView","id":"deployment-specifications","label":"specifications","group":"settings","status":"PARTIAL","menu":false,"moduleId":"dep-layer","tab":"deployment","deploymentTab":"specifications","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["deployment-specifications"] },
 ];
-
-export function activeNavigation(pathname) {
- return navigationEntries.find(e => e.route === pathname) || [...navigationEntries].sort((a,b) => b.route.length-a.route.length).find(e => pathname.startsWith(e.route + '/'));
-}
+export const routeDefinitions = pageDefinitions.filter(r => r.component);
+export const legacyRedirects = [
+  {
+    "from": "/business",
+    "to": "/business-manager"
+  },
+  {
+    "from": "/business/models",
+    "to": "/business-manager/models"
+  },
+  {
+    "from": "/business/features",
+    "to": "/business-manager/features"
+  },
+  {
+    "from": "/business/navigation",
+    "to": "/business-manager/navigation"
+  },
+  {
+    "from": "/business/configuration",
+    "to": "/business-manager/configuration"
+  },
+  {
+    "from": "/business/validation",
+    "to": "/business-manager/validation"
+  },
+  {
+    "from": "/cockpit",
+    "to": "/dashboard"
+  },
+  {
+    "from": "/workspace",
+    "to": "/applications/workspace"
+  },
+  {
+    "from": "/config",
+    "to": "/business-manager/configuration"
+  },
+  {
+    "from": "/validation",
+    "to": "/business-manager/validation"
+  },
+  {
+    "from": "/automation/history",
+    "to": "/automation/executions"
+  },
+  {
+    "from": "/overview",
+    "to": "/packs"
+  },
+  {
+    "from": "/versions",
+    "to": "/packs/versions"
+  },
+  {
+    "from": "/publication",
+    "to": "/packs/publication"
+  },
+  {
+    "from": "/mapping",
+    "to": "/erp/mappings"
+  },
+  {
+    "from": "/billing/overview",
+    "to": "/billing"
+  },
+  {
+    "from": "/iam/organisations",
+    "to": "/iam/organizations"
+  },
+  {
+    "from": "/iam/observability",
+    "to": "/observability"
+  },
+  {
+    "from": "/iam/observability/monitoring",
+    "to": "/observability/monitoring"
+  },
+  {
+    "from": "/iam/observability/logs",
+    "to": "/observability/logs"
+  },
+  {
+    "from": "/iam/observability/audit",
+    "to": "/observability/audit"
+  },
+  {
+    "from": "/iam/observability/security-events",
+    "to": "/observability/security-events"
+  },
+  {
+    "from": "/iam/observability/alerts",
+    "to": "/observability/alerts"
+  },
+  {
+    "from": "/integrations/cockpit",
+    "to": "/settings/integrations"
+  },
+  {
+    "from": "/settings",
+    "to": "/settings/erp"
+  },
+  {
+    "from": "/integrations",
+    "to": "/settings/integrations"
+  },
+  {
+    "from": "/",
+    "to": "/dashboard"
+  },
+  {
+    "from": "/iam",
+    "to": "/iam/users"
+  },
+  {
+    "from": "/billing",
+    "to": "/billing/plans"
+  }
+];
+export const redirects = [...legacyRedirects, ...pageDefinitions.filter(r => r.redirectTo).map(r => ({from:r.route,to:r.redirectTo}))];
+export const navigationEntries = pageDefinitions.filter(r => r.menu);
+export function resolveRoute(pathname) { return [...pageDefinitions].sort((a,b) => Number(a.route.includes(':'))-Number(b.route.includes(':')) || b.route.length-a.route.length).find(r => matchPath({path:r.route,end:true},pathname)); }
+export function activeNavigation(pathname) { const entry = resolveRoute(pathname); const ids = {bmDataModel:'bmModels',bmVersionDetail:'bmModels',bmFeatures:'bmFeaturesIndex',bmNavigation:'bmNavigationIndex',bmValidation:'bmQuality'}; return ids[entry?.id] ? pageDefinitions.find(p => p.id === ids[entry.id]) : entry; }
+export function groupEntries(id) { return navigationEntries.filter(r => r.group === id); }
+export function groupDestination(id) { return groupEntries(id).find(r => r.component || r.redirectTo)?.route; }
+export function routeForTab(tab) { return pageDefinitions.find(r => r.tab === (tab === 'contract-v1' ? 'platform-contract' : tab))?.route; }

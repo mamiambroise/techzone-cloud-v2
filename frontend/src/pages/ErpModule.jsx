@@ -95,8 +95,9 @@ function StatusBadge({ value }) {
   return <span className="text-slate-700 dark:text-slate-200">{value}</span>;
 }
 
-function ErpModule() {
-  const { moduleKey } = useParams();
+function ErpModule({ moduleKeyOverride }) {
+  const { moduleKey: routeModuleKey } = useParams();
+  const moduleKey = moduleKeyOverride || routeModuleKey;
   const mod = MODULES_BY_KEY[moduleKey];
 
   const [rows, setRows] = useState([]);

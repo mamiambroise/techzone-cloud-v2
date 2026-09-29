@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { IAM_PERMISSIONS_KEY, ROLES, ROLE_PERMISSIONS } from './iam.constants';
+import { ROLES, ROLE_PERMISSIONS } from './iam.constants';
+import { PERMISSIONS_KEY } from './iam-permissions.guard';
 import type { IamAuthContext } from './decorators/current-user.decorator';
 
 @Injectable()
@@ -8,17 +9,21 @@ export class IamAdminGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(IAM_PERMISSIONS_KEY, [
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
     if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true;
+      throw new ForbiddenException({
+        success: false,
+        message: 'Accès refusé — aucune permission explicite déclarée sur cette route administrative',
+        statusCode: 403,
+      });
     }
 
     const request = context.switchToHttp().getRequest();
-    const ctx: IamAuthContext = request.user;
+    const ctx: IamAuthContext = request.iamAuth;
 
     if (!ctx) {
       throw new ForbiddenException({
@@ -31,23 +36,17 @@ export class IamAdminGuard implements CanActivate {
     const userRoles = ctx.roles ?? [];
     const userPermissions = ctx.permissions ?? [];
 
-    const adminPerms = Object.values(ROLE_PERMISSIONS[ROLES.ADMIN] ?? {}).flat() as string[];
-
     for (const role of userRoles) {
       if (role === ROLES.ADMIN) {
         return true;
       }
-      const rolePerms = ROLE_PERMISSIONS[role] ? Object.values(ROLE_PERMISSIONS[role]).flat() as string[] : [];
+      const rolePerms = ROLE_PERMISSIONS[role] ? (Array.isArray(ROLE_PERMISSIONS[role]) ? ROLE_PERMISSIONS[role] : Object.values(ROLE_PERMISSIONS[role]).flat() as string[]) : [];
       if (rolePerms.some((p) => requiredPermissions.includes(p))) {
         return true;
       }
     }
 
     if (userPermissions.some((p) => requiredPermissions.includes(p))) {
-      return true;
-    }
-
-    if (adminPerms.some((p) => requiredPermissions.includes(p))) {
       return true;
     }
 

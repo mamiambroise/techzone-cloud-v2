@@ -13,6 +13,9 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SwitchTenantDto } from './dto/switch-tenant.dto';
+import { IamError } from './iam-error';
+import { TenantOptional } from './tenant-resource.decorator';
 import {
   COOKIE_ACCESS_TOKEN,
   COOKIE_OPTIONS,
@@ -20,6 +23,7 @@ import {
 } from './iam.constants';
 
 @ApiTags('iam-auth')
+@TenantOptional()
 @Controller('api/iam/auth')
 export class IamAuthController {
   constructor(private readonly authService: IamAuthService) {}
@@ -67,8 +71,12 @@ export class IamAuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() dto: RefreshDto, @Res() res: Response) {
-    const data = await this.authService.refresh(dto);
+  async refresh(@Body() dto: RefreshDto, @Req() req: Request, @Res() res: Response) {
+    const refreshToken = req.cookies?.[COOKIE_REFRESH_TOKEN] || dto.refreshToken;
+    if (typeof refreshToken !== 'string' || !refreshToken) {
+      throw new IamError('Session de renouvellement absente', 401, 'UNAUTHENTICATED');
+    }
+    const data = await this.authService.refresh({ refreshToken });
     this.setTokenCookies(res, data.accessToken, data.refreshToken);
     res.json({ success: true, message: 'Token rafraîchi' });
   }
@@ -121,10 +129,24 @@ export class IamAuthController {
     return this.authService.resetPassword(dto);
   }
 
-  @Get('me')
+   @Get('me')
   async me(@CurrentUser() ctx: IamAuthContext) {
     const data = await this.authService.me(ctx);
     return { success: true, message: 'OK', data };
+  }
+
+  @Get('tenants')
+  async tenants(@CurrentUser() ctx: IamAuthContext) {
+    const data = await this.authService.listTenants(ctx);
+    return { success: true, message: 'OK', data };
+  }
+
+  @Post('tenant/switch')
+  @HttpCode(HttpStatus.OK)
+  async switchTenant(@CurrentUser() ctx: IamAuthContext, @Body() dto: SwitchTenantDto, @Res() res: Response) {
+    const data = await this.authService.switchTenant(ctx, dto.tenantId);
+    this.setTokenCookies(res, data.accessToken, data.refreshToken);
+    res.json({ success: true, message: 'Locataire changé', data: { activeTenantId: data.activeTenant } });
   }
 
   @Patch('profile')

@@ -7,6 +7,7 @@ import { IamAdminService } from './iam-admin.service';
 import { IamJwtGuard } from './iam-jwt.guard';
 import { IamPermissionGuard } from './iam-permission.guard';
 import { IamPermissionsGuard } from './iam-permissions.guard';
+import { TenantGuard } from './tenant.guard';
 import { IamAdminUsersController } from './iam-admin-users.controller';
 import { IamAuthController } from './iam-auth.controller';
 import { IamUsersController } from './iam-users.controller';
@@ -26,6 +27,7 @@ import { IamObservabilityController } from './iam-observability.controller';
 import { IamObservabilityService } from './iam-observability.service';
 import { IamConfigController } from './iam-config.controller';
 import { IamConfigService } from './iam-config.service';
+import { IamContextService } from './iam-context.service';
 import { IamContextController } from './iam-context.controller';
 import { IamHealthController } from './iam-health.controller';
 import { IamBillingController } from './iam-billing.controller';
@@ -61,6 +63,7 @@ import { IamAdminGuard } from './iam-admin-guard';
     IamMfaService,
     IamObservabilityService,
     IamConfigService,
+    IamContextService,
     IamBillingService,
     IamJwtGuard,
     IamAdminGuard,
@@ -78,7 +81,11 @@ import { IamAdminGuard } from './iam-admin-guard';
       provide: APP_GUARD,
       useClass: IamPermissionsGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: TenantGuard,
+    },
   ],
-  exports: [IamAuthService, IamAdminService, IamMfaService],
+  exports: [IamAuthService, IamContextService, IamAdminService, IamMfaService],
 })
 export class IamModule {}

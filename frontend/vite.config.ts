@@ -1,32 +1,48 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig, mergeConfig } from 'vite';
+import { configDefaults } from 'vitest/config';
 
-export default defineConfig(() => {
-  return {
-    plugins: [react(), tailwindcss()],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+const commonConfig = {
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.'),
     },
-     server: {
-       port: 3000,
-       proxy: {
-         '/api/iam': {
-           target: 'http://localhost:3003',
-           changeOrigin: true,
-         },
-         '/api': {
-           target: 'http://localhost:3003',
-           changeOrigin: true,
-         },
-       },
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+  },
+};
+
+export default defineConfig(({ mode }) => {
+  if (mode === 'test') {
+    return mergeConfig(commonConfig, {
+      test: {
+        environment: 'happy-dom',
+        globals: true,
+        setupFiles: ['./src/tests/setup.js'],
+        include: ['src/**/*.test.{js,jsx}'],
+        exclude: [...configDefaults.exclude, 'node_modules/*'],
+        css: true,
+        mockReset: true,
+      },
+    });
+  }
+
+  return {
+    ...commonConfig,
+    server: {
+      port: 3000,
+      proxy: {
+        '/api/iam': {
+          target: 'http://localhost:3003',
+          changeOrigin: true,
+        },
+        '/api': {
+          target: 'http://localhost:3003',
+          changeOrigin: true,
+        },
+      },
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };

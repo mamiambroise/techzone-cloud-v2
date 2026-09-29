@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { routeForTab } from '../app/navigationConfig.js';
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveTab, setPlatformHealth } from '../store/platformSlice.js';
@@ -22,6 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const applications = useSelector((state) => state.applications.applications);
@@ -127,7 +130,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
               <span>Nouveau Snapshot</span>
             </button>
             <button
-              onClick={() => dispatch(setActiveTab('contracts'))}
+              onClick={() => navigate(routeForTab('contracts'))}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all active:scale-95"
             >
               <Shield className="w-4 h-4 text-emerald-400" />
@@ -184,7 +187,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
           return (
             <button
               key={kpi.label}
-              onClick={() => dispatch(setActiveTab(kpi.tab))}
+              onClick={() => navigate(routeForTab(kpi.tab))}
               className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-slate-300 hover:shadow-md transition-all duration-200 text-left group flex flex-col justify-between"
             >
               <div className="flex items-center justify-between mb-3">
@@ -218,7 +221,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
               </div>
             </div>
             <button
-              onClick={() => dispatch(setActiveTab('environments'))}
+              onClick={() => navigate(routeForTab('environments'))}
               className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-indigo-50/60 transition-colors"
             >
               <span>Gérer</span>
@@ -246,7 +249,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
                   key={env.id}
                   onClick={() => {
                     dispatch(setSelectedEnvId(env.id));
-                    dispatch(setActiveTab('environments'));
+                    navigate(routeForTab('environments'));
                   }}
                   className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer group"
                 >
@@ -290,7 +293,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
               </div>
             </div>
             <button
-              onClick={() => dispatch(setActiveTab('contracts'))}
+              onClick={() => navigate(routeForTab('contracts'))}
               className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-50/60"
             >
               Registre
@@ -303,7 +306,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
                 key={contr.id}
                 onClick={() => {
                   dispatch(setSelectedContractId(contr.id));
-                  dispatch(setActiveTab('contracts'));
+                  navigate(routeForTab('contracts'));
                 }}
                 className="p-3.5 rounded-2xl border border-slate-100 bg-slate-50/60 hover:border-indigo-200 hover:bg-indigo-50/20 transition-all cursor-pointer flex items-center justify-between"
               >
@@ -326,7 +329,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
 
           <div className="p-4 bg-slate-50/80 border-t border-slate-100 text-center">
             <button
-              onClick={() => dispatch(setActiveTab('contract-v1'))}
+              onClick={() => navigate(routeForTab('contract-v1'))}
               className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl hover:bg-white transition-all border border-transparent hover:border-slate-200/80 shadow-none hover:shadow-sm"
             >
               <Shield className="w-3.5 h-3.5 text-emerald-500" />
@@ -351,7 +354,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
               </div>
             </div>
             <button
-              onClick={() => dispatch(setActiveTab('applications'))}
+              onClick={() => navigate(routeForTab('applications'))}
               className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-indigo-50/60"
             >
               <span>Toutes les applications ({applications.length})</span>
@@ -369,7 +372,7 @@ export default function CockpitView({ onOpenNewSnapshot, onOpenNewApp }) {
                   key={app.id}
                   onClick={() => {
                     dispatch(setSelectedAppId(app.id));
-                    dispatch(setActiveTab('applications'));
+                    navigate(routeForTab('applications'));
                   }}
                   className="p-5 hover:bg-slate-50/70 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >

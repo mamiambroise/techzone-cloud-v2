@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { routeForTab } from '../app/navigationConfig.js';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setSelectedAppId } from '../store/applicationsSlice.js';
@@ -27,6 +29,7 @@ import {
 } from 'lucide-react';
 
 export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const applications = useSelector((state) => state.applications.applications);
 
@@ -48,7 +51,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
   const handleOpenApp = (appId) => {
     dispatch(setSelectedAppId(appId));
-    dispatch(setActiveTab('workspace'));
+    navigate(routeForTab('workspace'));
   };
 
   return (
@@ -162,7 +165,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-slate-900">Applications récentes</h2>
             <button
-              onClick={() => dispatch(setActiveTab('applications'))}
+              onClick={() => navigate(routeForTab('applications'))}
               className="text-xs text-blue-600 hover:underline font-medium inline-flex items-center gap-1"
             >
               Voir tout (3) <ArrowRight className="w-3 h-3" />
@@ -478,7 +481,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 3: Banc d'homologation */}
           <button
-            onClick={() => dispatch(setActiveTab('validation'))}
+            onClick={() => navigate(routeForTab('validation'))}
             className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
           >
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
@@ -510,7 +513,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 5: Environnements */}
           <button
-            onClick={() => dispatch(setActiveTab('environments'))}
+            onClick={() => navigate(routeForTab('environments'))}
             className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
           >
             <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-colors">
@@ -524,7 +527,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 6: Paramètres P0.1 */}
           <button
-            onClick={() => dispatch(setActiveTab('config'))}
+            onClick={() => navigate(routeForTab('config'))}
             className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
           >
             <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-colors">

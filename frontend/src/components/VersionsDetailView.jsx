@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { routeForTab } from '../app/navigationConfig.js';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveTab, addToast } from '../store/platformSlice.js';
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function VersionsDetailView() {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const selectedAppId = useSelector((state) => state.applications.selectedAppId);
   const applications = useSelector((state) => state.applications.applications);
@@ -75,7 +78,7 @@ export default function VersionsDetailView() {
         <span>Business Manager</span>
         <ChevronRight className="w-3.5 h-3.5 mx-1.5 text-slate-400 shrink-0" />
         <button
-          onClick={() => dispatch(setActiveTab('applications'))}
+          onClick={() => navigate(routeForTab('applications'))}
           className="hover:text-blue-600 transition-colors"
         >
           Versions
@@ -388,7 +391,7 @@ export default function VersionsDetailView() {
             </div>
 
             <button
-              onClick={() => dispatch(setActiveTab('environments'))}
+              onClick={() => navigate(routeForTab('environments'))}
               className="text-xs text-blue-600 hover:underline font-medium inline-flex items-center gap-1 pt-1"
             >
               Voir tous les déploiements <ArrowRight className="w-3 h-3" />
@@ -431,7 +434,7 @@ export default function VersionsDetailView() {
             </div>
 
             <button
-              onClick={() => dispatch(setActiveTab('validation'))}
+              onClick={() => navigate(routeForTab('validation'))}
               className="text-xs text-blue-600 hover:underline font-medium inline-flex items-center gap-1 pt-1"
             >
               Voir le rapport complet <ArrowRight className="w-3 h-3" />

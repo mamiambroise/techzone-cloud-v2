@@ -1,17 +1,19 @@
-import { api, authApi } from './apiClient.js';
+import { api, authApi, refreshSession } from './apiClient.js';
 
 export const iamAuthService = {
   login: (body) => authApi.post('/auth/login', body),
   verifyMfa: (body) => authApi.post('/auth/login/mfa', body),
-  refresh: () => authApi.post('/auth/refresh'),
+  refresh: refreshSession,
   logout: () => authApi.post('/auth/logout'),
   logoutAll: (body) => authApi.post('/auth/logout-all', body),
-  me: () => authApi.get('/me'),
+  me: () => authApi.get('/auth/me'),
   register: (body) => authApi.post('/auth/register', body),
   forgotPassword: (body) => authApi.post('/auth/forgot-password', body),
   resetPassword: (body) => authApi.post('/auth/reset-password', body),
   changePassword: (body) => authApi.post('/auth/change-password', body),
   getPublicConfig: () => api.get('/config/public'),
+  getTenants: () => authApi.get('/auth/tenants'),
+  switchTenant: (tenantId) => authApi.post('/auth/tenant/switch', { tenantId }),
 };
 
 export async function getDeviceFingerprint() {

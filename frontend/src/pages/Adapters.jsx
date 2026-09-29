@@ -145,7 +145,7 @@ function Adapters() {
             <ServerStackIcon className="w-5 h-5 text-[#5469D4]" />
             Modules exposes par l adapter Dolibarr
           </h3>
-          <Link to="/mapping" className="text-sm text-[#5469D4] hover:text-[#4355B9] font-medium">
+          <Link to="/erp/mappings" className="text-sm text-[#5469D4] hover:text-[#4355B9] font-medium">
             Voir le mapping
           </Link>
         </div>

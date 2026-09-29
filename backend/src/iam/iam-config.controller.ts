@@ -2,6 +2,8 @@ import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/co
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IamConfigService } from './iam-config.service';
 import { IamAdminGuard } from './iam-admin-guard';
+import { Permissions } from './iam-permissions.guard';
+import { IAM_ADMIN } from './iam.constants';
 
 @ApiTags('iam-config')
 @Controller('api/iam/config')
@@ -23,6 +25,7 @@ export class IamConfigController {
   }
 
   @Get('security')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Configuration de sécurité (admin)' })
   async securityConfig() {
@@ -31,6 +34,7 @@ export class IamConfigController {
   }
 
   @Post('security/test')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Tester la configuration de sécurité (admin)' })
   async testSecurity(@Body() body: { policyCode?: string; value?: string }) {
@@ -39,6 +43,7 @@ export class IamConfigController {
   }
 
   @Get('tenants/:id')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Configuration d un tenant (admin)' })
   async tenantConfig(@Param('id') id: string) {
@@ -47,6 +52,7 @@ export class IamConfigController {
   }
 
   @Patch('tenants/:id')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Mettre à jour la configuration d un tenant (admin)' })
   async updateTenantConfig(@Param('id') id: string, @Body() body: Record<string, unknown>) {

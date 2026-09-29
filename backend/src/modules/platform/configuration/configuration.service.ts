@@ -21,12 +21,11 @@ import { UpdateConfigurationDto } from './dto/update-config.dto';
 export class ConfigurationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateConfigurationDto) {
+  async create(dto: CreateConfigurationDto, tenantId: string | null) {
     const key = dto.key.trim();
 
     const version = dto.version ?? '1.0.0';
 
-    // PLATFORM ne doit pas avoir de scopeId
     if (dto.scope === ConfigurationScope.PLATFORM && dto.scopeId) {
       throw new PlatformException(
         PlatformErrorCode.CONFIGURATION_INVALID_SCOPE,
@@ -35,7 +34,6 @@ export class ConfigurationService {
       );
     }
 
-    // Les autres scopes doivent avoir un scopeId
     if (dto.scope !== ConfigurationScope.PLATFORM && !dto.scopeId) {
       throw new PlatformException(
         PlatformErrorCode.CONFIGURATION_INVALID_SCOPE,
@@ -44,12 +42,12 @@ export class ConfigurationService {
       );
     }
 
-    await this.validateScopeTarget(dto.scope, dto.scopeId);
+    await this.validateScopeTarget(dto.scope, dto.scopeId, tenantId);
 
-    // Vérifier qu'une configuration identique n'existe pas déjà
     const existing = dto.scopeId
       ? await this.prisma.configuration.findFirst({
           where: {
+            tenantId: tenantId ?? undefined,
             key,
             scope: dto.scope,
             scopeId: dto.scopeId,
@@ -58,6 +56,7 @@ export class ConfigurationService {
         })
       : await this.prisma.configuration.findFirst({
           where: {
+            tenantId: tenantId ?? undefined,
             key,
             scope: dto.scope,
             scopeId: null,
@@ -75,7 +74,6 @@ export class ConfigurationService {
 
     this.validateSecretConfiguration(dto.value, dto.schema);
 
-    // Vérification de base de la valeur selon son type
     this.validateValueType(dto.type, dto.value, dto.schema);
 
     return this.prisma.$transaction(async (tx) => {
@@ -104,7 +102,7 @@ export class ConfigurationService {
               : (dto.schema as Prisma.InputJsonValue),
 
           version,
-
+          tenantId: tenantId ?? undefined,
           status: ConfigurationStatus.DRAFT,
         },
       });
@@ -113,6 +111,7 @@ export class ConfigurationService {
         data: {
           configurationId: configuration.id,
           action: ConfigurationHistoryAction.CREATED,
+          tenantId: tenantId ?? undefined,
 
           changes: {
             key,
@@ -132,28 +131,39 @@ export class ConfigurationService {
     });
   }
 
-  async findAll() {
+  async findAll(tenantId: string | null) {
     return this.prisma.configuration.findMany({
+      where: {
+        tenantId: tenantId ?? undefined,
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  async resolveEffectiveConfigurations(params: {
-    applicationId: string;
-    applicationVersionId: string;
-    environmentId: string;
-  }) {
+  async resolveEffectiveConfigurations(
+    params: {
+      applicationId: string;
+      applicationVersionId: string;
+      environmentId: string;
+    },
+    tenantId: string | null,
+  ) {
     const { applicationId, applicationVersionId, environmentId } = params;
 
     const configurations = await this.prisma.configuration.findMany({
       where: {
+        tenantId: tenantId ?? undefined,
         status: ConfigurationStatus.ACTIVE,
         OR: [
           {
             scope: ConfigurationScope.PLATFORM,
             scopeId: null,
+          },
+          {
+            scope: ConfigurationScope.TENANT,
+            scopeId: tenantId ?? null,
           },
           {
             scope: ConfigurationScope.APPLICATION,
@@ -176,10 +186,10 @@ export class ConfigurationService {
 
     const priority: Record<ConfigurationScope, number> = {
       [ConfigurationScope.PLATFORM]: 1,
-      [ConfigurationScope.APPLICATION]: 2,
-      [ConfigurationScope.APPLICATION_VERSION]: 3,
-      [ConfigurationScope.ENVIRONMENT]: 4,
-      [ConfigurationScope.TENANT]: 5,
+      [ConfigurationScope.TENANT]: 2,
+      [ConfigurationScope.APPLICATION]: 3,
+      [ConfigurationScope.APPLICATION_VERSION]: 4,
+      [ConfigurationScope.ENVIRONMENT]: 5,
     };
 
     const effective = new Map<string, (typeof configurations)[number]>();
@@ -279,7 +289,6 @@ export class ConfigurationService {
         break;
 
       case ConfigurationType.ENUM:
-        // La vraie validation de l'enum sera faite avec `schema`
         break;
     }
 
@@ -310,7 +319,6 @@ export class ConfigurationService {
 
     const constraints = schema as Record<string, unknown>;
 
-    // NUMBER
     if (type === ConfigurationType.NUMBER) {
       if (typeof value !== 'number' || !Number.isFinite(value)) {
         return;
@@ -363,7 +371,6 @@ export class ConfigurationService {
       }
     }
 
-    // STRING / URL
     if (type === ConfigurationType.STRING || type === ConfigurationType.URL) {
       if (typeof value !== 'string') {
         return;
@@ -446,7 +453,6 @@ export class ConfigurationService {
       }
     }
 
-    // DURATION
     if (type === ConfigurationType.DURATION) {
       if (typeof value !== 'string') {
         return;
@@ -550,6 +556,7 @@ export class ConfigurationService {
   private async validateScopeTarget(
     scope: ConfigurationScope,
     scopeId?: string,
+    tenantId?: string | null,
   ) {
     if (scope === ConfigurationScope.PLATFORM) {
       return;
@@ -563,10 +570,12 @@ export class ConfigurationService {
       );
     }
 
+    const tenantFilter = tenantId ? { tenantId } : {};
+
     switch (scope) {
       case ConfigurationScope.APPLICATION: {
-        const application = await this.prisma.application.findUnique({
-          where: { id: scopeId },
+        const application = await this.prisma.application.findFirst({
+          where: { id: scopeId, ...tenantFilter },
           select: { id: true },
         });
 
@@ -582,8 +591,8 @@ export class ConfigurationService {
       }
 
       case ConfigurationScope.APPLICATION_VERSION: {
-        const version = await this.prisma.applicationVersion.findUnique({
-          where: { id: scopeId },
+        const version = await this.prisma.applicationVersion.findFirst({
+          where: { id: scopeId, ...tenantFilter },
           select: { id: true },
         });
 
@@ -599,8 +608,8 @@ export class ConfigurationService {
       }
 
       case ConfigurationScope.ENVIRONMENT: {
-        const environment = await this.prisma.environment.findUnique({
-          where: { id: scopeId },
+        const environment = await this.prisma.environment.findFirst({
+          where: { id: scopeId, ...tenantFilter },
           select: { id: true },
         });
 
@@ -616,14 +625,11 @@ export class ConfigurationService {
       }
 
       case ConfigurationScope.TENANT:
-        // Le modèle Tenant n'existe pas encore dans ton schéma.
-        // Ce scope sera traité lorsque la gestion TENANT
-        // sera implémentée.
         break;
     }
   }
 
-  async findByScope(scope: string, scopeId: string) {
+  async findByScope(scope: string, scopeId: string, tenantId: string | null) {
     if (
       !Object.values(ConfigurationScope).includes(scope as ConfigurationScope)
     ) {
@@ -636,6 +642,7 @@ export class ConfigurationService {
 
     return this.prisma.configuration.findMany({
       where: {
+        tenantId: tenantId ?? undefined,
         scope: scope as ConfigurationScope,
         scopeId,
       },
@@ -645,9 +652,12 @@ export class ConfigurationService {
     });
   }
 
-  async update(id: string, dto: UpdateConfigurationDto) {
-    const configuration = await this.prisma.configuration.findUnique({
-      where: { id },
+  async update(id: string, dto: UpdateConfigurationDto, tenantId: string | null) {
+    const configuration = await this.prisma.configuration.findFirst({
+      where: {
+        id,
+        tenantId: tenantId ?? undefined,
+      },
     });
 
     if (!configuration) {
@@ -658,7 +668,6 @@ export class ConfigurationService {
       );
     }
 
-    // Vérifier le nouveau type de valeur
     if (dto.value !== undefined) {
       const newValue =
         dto.value !== undefined ? dto.value : configuration.value;
@@ -669,7 +678,6 @@ export class ConfigurationService {
       this.validateValueType(configuration.type, newValue, newSchema);
     }
 
-    // Construire l'historique des changements
     const changes: Record<string, unknown> = {};
 
     if (dto.key !== undefined && dto.key.trim() !== configuration.key) {
@@ -707,21 +715,16 @@ export class ConfigurationService {
       };
     }
 
-    // Aucun changement
     if (Object.keys(changes).length === 0) {
       return configuration;
     }
 
-    /*
-     * Une configuration ACTIVE est immutable.
-     * Toute modification crée une nouvelle version.
-     */
     if (configuration.status === ConfigurationStatus.ACTIVE) {
       const newVersion = this.incrementPatchVersion(configuration.version);
 
-      // Vérifier que cette nouvelle version n'existe pas déjà
       const existingVersion = await this.prisma.configuration.findFirst({
         where: {
+          tenantId: tenantId ?? undefined,
           key: dto.key?.trim() ?? configuration.key,
           scope: configuration.scope,
           scopeId: configuration.scopeId,
@@ -768,16 +771,16 @@ export class ConfigurationService {
                 : (configuration.schema as Prisma.InputJsonValue),
 
             version: newVersion,
-
+            tenantId: tenantId ?? undefined,
             status: ConfigurationStatus.DRAFT,
           },
         });
 
-        // Historique sur l'ancienne configuration
         await tx.configurationHistory.create({
           data: {
             configurationId: configuration.id,
             action: ConfigurationHistoryAction.UPDATED,
+            tenantId: tenantId ?? undefined,
             changes: {
               ...changes,
               newVersion,
@@ -789,11 +792,11 @@ export class ConfigurationService {
           },
         });
 
-        // Historique sur la nouvelle configuration
         await tx.configurationHistory.create({
           data: {
             configurationId: newConfiguration.id,
             action: ConfigurationHistoryAction.CREATED,
+            tenantId: tenantId ?? undefined,
             changes: {
               basedOn: configuration.id,
               previousVersion: configuration.version,
@@ -810,10 +813,6 @@ export class ConfigurationService {
       });
     }
 
-    /*
-     * DRAFT / READY / autres états modifiables :
-     * modification de la configuration existante.
-     */
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.configuration.update({
         where: { id },
@@ -844,6 +843,7 @@ export class ConfigurationService {
         data: {
           configurationId: configuration.id,
           action: ConfigurationHistoryAction.UPDATED,
+          tenantId: tenantId ?? undefined,
           changes: changes as Prisma.InputJsonValue,
           metadata: {
             source: 'CONFIGURATION_MANAGER',
@@ -873,9 +873,12 @@ export class ConfigurationService {
     return `${major}.${minor}.${patch}`;
   }
 
-  async validate(id: string) {
-    const configuration = await this.prisma.configuration.findUnique({
-      where: { id },
+  async validate(id: string, tenantId: string | null) {
+    const configuration = await this.prisma.configuration.findFirst({
+      where: {
+        id,
+        tenantId: tenantId ?? undefined,
+      },
     });
 
     if (!configuration) {
@@ -886,7 +889,6 @@ export class ConfigurationService {
       );
     }
 
-    // Une configuration déjà active ou archivée ne doit pas être revalidée
     if (
       configuration.status === ConfigurationStatus.ACTIVE ||
       configuration.status === ConfigurationStatus.ARCHIVED ||
@@ -899,7 +901,6 @@ export class ConfigurationService {
       );
     }
 
-    // Une valeur obligatoire doit être présente
     if (
       configuration.required &&
       (configuration.value === null || configuration.value === undefined)
@@ -911,7 +912,6 @@ export class ConfigurationService {
       );
     }
 
-    // Vérification du type
     if (configuration.value !== null && configuration.value !== undefined) {
       this.validateValueType(
         configuration.type,
@@ -920,7 +920,6 @@ export class ConfigurationService {
       );
     }
 
-    // Validation spécifique ENUM
     if (configuration.type === ConfigurationType.ENUM) {
       const schema = configuration.schema;
 
@@ -961,7 +960,6 @@ export class ConfigurationService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Passage temporaire en VALIDATING
       await tx.configuration.update({
         where: { id },
         data: {
@@ -973,6 +971,7 @@ export class ConfigurationService {
         data: {
           configurationId: configuration.id,
           action: ConfigurationHistoryAction.VALIDATED,
+          tenantId: tenantId ?? undefined,
           changes: {
             from: configuration.status,
             to: ConfigurationStatus.VALIDATING,
@@ -983,7 +982,6 @@ export class ConfigurationService {
         },
       });
 
-      // Validation réussie → READY
       const validated = await tx.configuration.update({
         where: { id },
         data: {
@@ -995,6 +993,7 @@ export class ConfigurationService {
         data: {
           configurationId: configuration.id,
           action: ConfigurationHistoryAction.VALIDATED,
+          tenantId: tenantId ?? undefined,
           changes: {
             from: ConfigurationStatus.VALIDATING,
             to: ConfigurationStatus.READY,
@@ -1009,9 +1008,12 @@ export class ConfigurationService {
     });
   }
 
-  async activate(id: string) {
-    const configuration = await this.prisma.configuration.findUnique({
-      where: { id },
+  async activate(id: string, tenantId: string | null) {
+    const configuration = await this.prisma.configuration.findFirst({
+      where: {
+        id,
+        tenantId: tenantId ?? undefined,
+      },
     });
 
     if (!configuration) {
@@ -1022,7 +1024,6 @@ export class ConfigurationService {
       );
     }
 
-    // Seule une configuration READY peut être activée
     if (configuration.status !== ConfigurationStatus.READY) {
       throw new PlatformException(
         PlatformErrorCode.CONFIGURATION_IMMUTABLE,
@@ -1032,9 +1033,9 @@ export class ConfigurationService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Chercher l'ancienne version ACTIVE
       const previousActive = await tx.configuration.findFirst({
         where: {
+          tenantId: tenantId ?? undefined,
           key: configuration.key,
           scope: configuration.scope,
           scopeId: configuration.scopeId,
@@ -1045,7 +1046,6 @@ export class ConfigurationService {
         },
       });
 
-      // Déprécier l'ancienne version si elle existe
       if (previousActive) {
         await tx.configuration.update({
           where: {
@@ -1060,6 +1060,7 @@ export class ConfigurationService {
           data: {
             configurationId: previousActive.id,
             action: ConfigurationHistoryAction.DEPRECATED,
+            tenantId: tenantId ?? undefined,
             changes: {
               from: ConfigurationStatus.ACTIVE,
               to: ConfigurationStatus.DEPRECATED,
@@ -1074,7 +1075,6 @@ export class ConfigurationService {
         });
       }
 
-      // Activer la nouvelle version
       const activated = await tx.configuration.update({
         where: {
           id: configuration.id,
@@ -1084,11 +1084,11 @@ export class ConfigurationService {
         },
       });
 
-      // Historique de l'activation
       await tx.configurationHistory.create({
         data: {
           configurationId: configuration.id,
           action: ConfigurationHistoryAction.ACTIVATED,
+          tenantId: tenantId ?? undefined,
           changes: {
             from: ConfigurationStatus.READY,
             to: ConfigurationStatus.ACTIVE,
@@ -1105,9 +1105,12 @@ export class ConfigurationService {
     });
   }
 
-  async getHistory(id: string) {
-    const configuration = await this.prisma.configuration.findUnique({
-      where: { id },
+  async getHistory(id: string, tenantId: string | null) {
+    const configuration = await this.prisma.configuration.findFirst({
+      where: {
+        id,
+        tenantId: tenantId ?? undefined,
+      },
       select: {
         id: true,
       },
@@ -1124,6 +1127,7 @@ export class ConfigurationService {
     return this.prisma.configurationHistory.findMany({
       where: {
         configurationId: id,
+        tenantId: tenantId ?? undefined,
       },
       orderBy: {
         createdAt: 'desc',

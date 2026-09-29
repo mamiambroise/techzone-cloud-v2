@@ -48,7 +48,7 @@ export class IamLogger {
   static tenantDeny(
     request: any,
     principal: { userId: string; tenantId: string | null },
-    resourceTenantId: string,
+    resourceTenantId: string | undefined,
     reason: string,
   ): void {
     IamLogger.logger.warn(

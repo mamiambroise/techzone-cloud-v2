@@ -183,7 +183,7 @@ export default function ObservabilityOverview() {
             ))}
           </div>
           <div className="mt-4">
-            <a href="/iam/observability/security-events" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
+            <a href="/observability/security-events" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
               Voir tous les événements <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -207,7 +207,7 @@ export default function ObservabilityOverview() {
             )}
           </div>
           <div className="mt-4">
-            <a href="/iam/observability/alerts" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
+            <a href="/observability/alerts" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
               Voir le gestionnaire d'alertes <ExternalLink className="w-3 h-3" />
             </a>
           </div>

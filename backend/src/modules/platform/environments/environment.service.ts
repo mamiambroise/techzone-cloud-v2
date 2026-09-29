@@ -19,11 +19,12 @@ import {
 export class EnvironmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateEnvironmentDto) {
+  async create(dto: CreateEnvironmentDto, tenantId: string | null) {
     const code = dto.code.trim();
 
-    const existing = await this.prisma.environment.findUnique({
+    const existing = await this.prisma.environment.findFirst({
       where: {
+        tenantId: tenantId ?? undefined,
         code,
       },
     });
@@ -31,7 +32,7 @@ export class EnvironmentsService {
     if (existing) {
       throw new PlatformException(
         PlatformErrorCode.ENVIRONMENT_CODE_EXISTS,
-        `Environment with code "${code}" already exists`,
+        `Environment with code "${code}" already exists in this tenant`,
         HttpStatus.CONFLICT,
       );
     }
@@ -46,6 +47,7 @@ export class EnvironmentsService {
           region: dto.region?.trim(),
           baseUrl: dto.baseUrl?.trim(),
           configurationRef: dto.configurationRef?.trim(),
+          tenantId: tenantId ?? undefined,
         },
       });
 
@@ -54,6 +56,7 @@ export class EnvironmentsService {
           environmentId: environment.id,
           action: EnvironmentHistoryAction.CREATED,
           actor: null,
+          tenantId: tenantId ?? undefined,
           changes: {
             code: environment.code,
             name: environment.name,
@@ -70,18 +73,22 @@ export class EnvironmentsService {
     });
   }
 
-  async findAll() {
+  async findAll(tenantId: string | null) {
     return this.prisma.environment.findMany({
+      where: {
+        tenantId: tenantId ?? undefined,
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  async findOne(id: string) {
-    const environment = await this.prisma.environment.findUnique({
+  async findOne(id: string, tenantId: string | null) {
+    const environment = await this.prisma.environment.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -96,10 +103,11 @@ export class EnvironmentsService {
     return environment;
   }
 
-  async update(id: string, dto: UpdateEnvironmentDto) {
-    const environment = await this.prisma.environment.findUnique({
+  async update(id: string, dto: UpdateEnvironmentDto, tenantId: string | null) {
+    const environment = await this.prisma.environment.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -197,7 +205,6 @@ export class EnvironmentsService {
       }
     }
 
-    // Aucun changement réel
     if (Object.keys(changes).length === 0) {
       return environment;
     }
@@ -230,6 +237,7 @@ export class EnvironmentsService {
           environmentId: id,
           action,
           actor: null,
+          tenantId: tenantId ?? undefined,
           changes: changes as Prisma.InputJsonValue,
         },
       });
@@ -238,10 +246,11 @@ export class EnvironmentsService {
     });
   }
 
-  async archive(id: string) {
-    const environment = await this.prisma.environment.findUnique({
+  async archive(id: string, tenantId: string | null) {
+    const environment = await this.prisma.environment.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -280,6 +289,7 @@ export class EnvironmentsService {
           environmentId: id,
           action: EnvironmentHistoryAction.ARCHIVED,
           actor: null,
+          tenantId: tenantId ?? undefined,
           changes: {
             status: {
               from: environment.status,
@@ -293,12 +303,13 @@ export class EnvironmentsService {
     });
   }
 
-  async getHistory(id: string) {
-    await this.findOne(id);
+  async getHistory(id: string, tenantId: string | null) {
+    await this.findOne(id, tenantId);
 
     return this.prisma.environmentHistory.findMany({
       where: {
         environmentId: id,
+        tenantId: tenantId ?? undefined,
       },
       orderBy: {
         createdAt: 'desc',

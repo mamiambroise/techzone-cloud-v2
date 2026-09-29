@@ -34,7 +34,7 @@ const toFrontendRetryPolicy = (policy) => {
 };
 
 export function getWebhooks() {
-  return api.get('/api/integrations/webhooks').then(unwrap).then((res) => {
+  return api.get('/integrations/webhooks').then(unwrap).then((res) => {
     const items = Array.isArray(res) ? res : res.data || [];
     return items.map((webhook) => ({
       ...webhook,
@@ -46,24 +46,24 @@ export function getWebhooks() {
   });
 }
 export function createWebhook(body) {
-  return api.post('/api/integrations/webhooks', {
+  return api.post('/integrations/webhooks', {
     ...body,
     signaturePolicy: toBackendSignaturePolicy(body.signaturePolicy),
     retryPolicy: toBackendRetryPolicy(body.retryPolicy),
   }).then(unwrap);
 }
 export function updateWebhook(id, body) {
-  return api.patch(`/api/integrations/webhooks/${id}`, {
+  return api.patch(`/integrations/webhooks/${id}`, {
     ...body,
     signaturePolicy: body.signaturePolicy ? toBackendSignaturePolicy(body.signaturePolicy) : undefined,
     retryPolicy: body.retryPolicy ? toBackendRetryPolicy(body.retryPolicy) : undefined,
   }).then(unwrap);
 }
 export function transitionWebhookStatus(id, status) {
-  return api.post(`/api/integrations/webhooks/${id}/transition`, { status }).then(unwrap);
+  return api.post(`/integrations/webhooks/${id}/transition`, { status }).then(unwrap);
 }
 export function deleteWebhook(id) {
-  return api.delete(`/api/integrations/webhooks/${id}`).then(unwrap);
+  return api.delete(`/integrations/webhooks/${id}`).then(unwrap);
 }
 export function triggerInboundTest(code, payload) {
   return api.post(`/webhooks/inbound/${code}`, payload || { test: true }, {

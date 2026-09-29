@@ -2,6 +2,8 @@ import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@ne
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IamObservabilityService } from './iam-observability.service';
 import { IamAdminGuard } from './iam-admin-guard';
+import { Permissions } from './iam-permissions.guard';
+import { IAM_ADMIN } from './iam.constants';
 
 @ApiTags('iam-observability')
 @Controller('api/iam')
@@ -9,6 +11,7 @@ export class IamObservabilityController {
   constructor(private readonly observabilityService: IamObservabilityService) {}
 
   @Get('security/events')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Liste des événements de sécurité (admin)' })
   @ApiQuery({ name: 'severity', required: false })
@@ -34,6 +37,7 @@ export class IamObservabilityController {
   }
 
   @Patch('security/events/:id')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Mettre à jour un événement de sécurité (admin)' })
   async updateSecurityEvent(@Param('id') id: string, @Body() body: { status?: string; metadata?: Record<string, unknown> }) {
@@ -42,6 +46,7 @@ export class IamObservabilityController {
   }
 
   @Get('observability/dashboard')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Dashboard d observabilité (admin)' })
   async dashboard() {
@@ -50,6 +55,7 @@ export class IamObservabilityController {
   }
 
   @Get('logs/search')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Recherche de logs (admin)' })
   @ApiQuery({ name: 'level', required: false })
@@ -71,6 +77,7 @@ export class IamObservabilityController {
   }
 
   @Get('audit/search')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Recherche d audit (admin)' })
   @ApiQuery({ name: 'action', required: false })
@@ -94,6 +101,7 @@ export class IamObservabilityController {
   }
 
   @Get('alerts/rules')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Liste des règles d alerte (admin)' })
   @ApiQuery({ name: 'enabled', required: false })
@@ -108,6 +116,7 @@ export class IamObservabilityController {
   }
 
   @Patch('alerts/rules/:id')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Toggle une règle d alerte (admin)' })
   async toggleAlertRule(@Param('id') id: string, @Body() body: { enabled?: boolean }) {
@@ -116,6 +125,7 @@ export class IamObservabilityController {
   }
 
   @Get('alerts')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Liste des alertes (admin)' })
   @ApiQuery({ name: 'status', required: false })
@@ -135,6 +145,7 @@ export class IamObservabilityController {
   }
 
   @Post('alerts/:id/acknowledge')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Acquitter une alerte (admin)' })
   async acknowledgeAlert(@Param('id') id: string) {
@@ -143,6 +154,7 @@ export class IamObservabilityController {
   }
 
   @Post('alerts/:id/resolve')
+  @Permissions(IAM_ADMIN)
   @UseGuards(IamAdminGuard)
   @ApiOperation({ summary: 'Résoudre une alerte (admin)' })
   async resolveAlert(@Param('id') id: string) {

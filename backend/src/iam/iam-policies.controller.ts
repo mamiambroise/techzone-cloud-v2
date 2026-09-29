@@ -2,10 +2,13 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IamPoliciesService } from './iam-policies.service';
 import { IamAdminGuard } from './iam-admin-guard';
+import { Permissions } from './iam-permissions.guard';
+import { IAM_ADMIN } from './iam.constants';
 import { CreatePolicyDto } from './dto/create-policy.dto';
 import { UpdatePolicyDto } from './dto/update-policy.dto';
 
 @ApiTags('iam-policies')
+@Permissions(IAM_ADMIN)
 @UseGuards(IamAdminGuard)
 @Controller('api/iam/policies')
 export class IamPoliciesController {

@@ -244,8 +244,8 @@ function MonitoringPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1">
                     <button type="button" className="text-blue-600 hover:text-blue-800 text-sm" onClick={() => setDetailService(service)}>Détail</button>
-                    <button type="button" className="text-blue-600 hover:text-blue-800 text-sm" title="Voir les logs" onClick={() => navigate('/iam/observability/logs')}>Logs</button>
-                    <button type="button" className="text-blue-600 hover:text-blue-800 text-sm" title="Voir les événements" onClick={() => navigate('/iam/observability/security-events')}>Sécurité</button>
+                    <button type="button" className="text-blue-600 hover:text-blue-800 text-sm" title="Voir les logs" onClick={() => navigate('/observability/logs')}>Logs</button>
+                    <button type="button" className="text-blue-600 hover:text-blue-800 text-sm" title="Voir les événements" onClick={() => navigate('/observability/security-events')}>Sécurité</button>
                   </div>
                 </td>
               </tr>
@@ -291,8 +291,8 @@ function MonitoringPage() {
                 <div><span className="text-xs font-medium text-slate-500">Détails</span><p className="text-sm text-slate-900 mt-0.5">{detailService.detailsSafe}</p></div>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-100" onClick={() => navigate('/iam/observability/logs')}>Voir les logs</button>
-                <button type="button" className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-100" onClick={() => navigate('/iam/observability/security-events')}>Voir les événements</button>
+                <button type="button" className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-100" onClick={() => navigate('/observability/logs')}>Voir les logs</button>
+                <button type="button" className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-100" onClick={() => navigate('/observability/security-events')}>Voir les événements</button>
               </div>
             </div>
           </div>

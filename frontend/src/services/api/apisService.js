@@ -38,7 +38,7 @@ const toFrontendOperations = (ops) => {
 };
 
 export async function getApis() {
-  const response = await api.get('/api/integrations/apis');
+  const response = await api.get('/integrations/apis');
   const res = response.data;
   const items = Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : [];
   return items.map((apiItem) => ({
@@ -53,7 +53,7 @@ export async function getApis() {
 }
 
 export function createApi(body) {
-  return api.post('/api/integrations/apis', {
+  return api.post('/integrations/apis', {
     ...body,
     operations: toBackendOperations(body.operations),
     rateLimit: body.rateLimit && typeof body.rateLimit === 'string' ? { max: body.rateLimit } : body.rateLimit,
@@ -62,7 +62,7 @@ export function createApi(body) {
 }
 
 export function updateApi(id, body) {
-  return api.patch(`/api/integrations/apis/${id}`, {
+  return api.patch(`/integrations/apis/${id}`, {
     ...body,
     operations: body.operations ? toBackendOperations(body.operations) : undefined,
     rateLimit: body.rateLimit && typeof body.rateLimit === 'string' ? { max: body.rateLimit } : body.rateLimit,
@@ -76,19 +76,19 @@ export async function transitionApiStatus(id, targetStatus, idempotencyKey) {
     if (!allowed.includes(targetStatus)) {
       const next = allowed.find((s) => BACKEND_API_TRANSITIONS[s]?.includes(targetStatus));
       if (!next) throw new Error(`Cannot transition API from ${currentStatus} to ${targetStatus}`);
-      await api.post(`/api/integrations/apis/${id}/transition`, { status: next }, { headers: { 'Idempotency-Key': idempotencyKey || crypto.randomUUID() } });
+      await api.post(`/integrations/apis/${id}/transition`, { status: next }, { headers: { 'Idempotency-Key': idempotencyKey || crypto.randomUUID() } });
       await chain(next);
     } else {
-      await api.post(`/api/integrations/apis/${id}/transition`, { status: targetStatus }, { headers: { 'Idempotency-Key': idempotencyKey || crypto.randomUUID() } });
+      await api.post(`/integrations/apis/${id}/transition`, { status: targetStatus }, { headers: { 'Idempotency-Key': idempotencyKey || crypto.randomUUID() } });
     }
   };
   return chain('DRAFT');
 }
 
 export function deleteApi(id) {
-  return api.delete(`/api/integrations/apis/${id}`).then(unwrap);
+  return api.delete(`/integrations/apis/${id}`).then(unwrap);
 }
 
 export function executeApi(id, body) {
-  return api.post(`/api/integrations/apis/${id}/execute`, body).then(unwrap);
+  return api.post(`/integrations/apis/${id}/execute`, body).then(unwrap);
 }

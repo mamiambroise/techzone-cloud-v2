@@ -18,6 +18,15 @@ export class AppController {
   }
 
   /**
+   * Readiness check — verifies PostgreSQL connectivity.
+   */
+  @Get('ready')
+  @Public()
+  getReady() {
+    return this.appService.getReady();
+  }
+
+  /**
    * Route racine — publique (health équivalent).
    */
   @Get()

@@ -11,11 +11,12 @@ import { ApplicationStatus } from '../../../generated/prisma/enums';
 export class ApplicationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateApplicationDto) {
+  async create(dto: CreateApplicationDto, tenantId: string | null) {
     const code = dto.code.trim();
 
-    const existing = await this.prisma.application.findUnique({
+    const existing = await this.prisma.application.findFirst({
       where: {
+        tenantId: tenantId ?? undefined,
         code,
       },
     });
@@ -23,7 +24,7 @@ export class ApplicationsService {
     if (existing) {
       throw new PlatformException(
         PlatformErrorCode.APPLICATION_CODE_EXISTS,
-        `Application with code "${code}" already exists`,
+        `Application with code "${code}" already exists in this tenant`,
         HttpStatus.CONFLICT,
       );
     }
@@ -33,23 +34,28 @@ export class ApplicationsService {
         code,
         name: dto.name.trim(),
         description: dto.description?.trim(),
-        tenantScope: dto.tenantScope?.trim(),
+        tenantId: tenantId ?? undefined,
+        tenantScope: dto.tenantScope?.trim() ?? 'TENANT',
       },
     });
   }
 
-  async findAll() {
+  async findAll(tenantId: string | null) {
     return this.prisma.application.findMany({
+      where: {
+        tenantId: tenantId ?? undefined,
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  async findOne(id: string) {
-    const application = await this.prisma.application.findUnique({
+  async findOne(id: string, tenantId: string | null) {
+    const application = await this.prisma.application.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
       include: {
         versions: {
@@ -71,10 +77,11 @@ export class ApplicationsService {
     return application;
   }
 
-  async update(id: string, dto: UpdateApplicationDto) {
-    const application = await this.prisma.application.findUnique({
+  async update(id: string, dto: UpdateApplicationDto, tenantId: string | null) {
+    const application = await this.prisma.application.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
     });
 
@@ -106,10 +113,11 @@ export class ApplicationsService {
     });
   }
 
-  async archive(id: string) {
-    const application = await this.prisma.application.findUnique({
+  async archive(id: string, tenantId: string | null) {
+    const application = await this.prisma.application.findFirst({
       where: {
         id,
+        tenantId: tenantId ?? undefined,
       },
     });
 

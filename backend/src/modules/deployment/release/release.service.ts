@@ -51,13 +51,12 @@ export class ReleaseService {
       );
     }
 
-    // 4. Vérifier l'unicité code + version
-    const existingRelease = await this.prisma.release.findUnique({
+    // 4. Vérifier l'unicité code + version + tenantId
+    const existingRelease = await this.prisma.release.findFirst({
       where: {
-        code_version: {
-          code: dto.code,
-          version: dto.version,
-        },
+        tenantId: dto.tenantId ?? undefined,
+        code: dto.code,
+        version: dto.version,
       },
     });
 
@@ -79,6 +78,7 @@ export class ReleaseService {
         applicationId: dto.applicationId,
         applicationVersionId: dto.applicationVersionId,
         snapshotId: dto.snapshotId,
+        tenantId: dto.tenantId ?? undefined,
         artifactRefs: (dto.artifactRefs ?? {
           containerImage: `registry.techzone.internal/${application.code}:${dto.version}`,
           digest: `sha256:${randomUUID().replace(/-/g, '')}`,

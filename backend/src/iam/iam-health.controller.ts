@@ -24,6 +24,19 @@ export class IamHealthController {
   @Public()
   @ApiOperation({ summary: 'IAM Readiness check' })
   async ready() {
-    return { success: true, message: 'Prêt', data: { status: 'ready', timestamp: new Date().toISOString() } };
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return {
+        success: true,
+        message: 'Prêt',
+        data: { status: 'ready', timestamp: new Date().toISOString() },
+      };
+    } catch {
+      return {
+        success: false,
+        message: 'Non prêt',
+        data: { status: 'not_ready', timestamp: new Date().toISOString() },
+      };
+    }
   }
 }

@@ -1,10 +1,14 @@
-import { routeDefinitions } from './app/navigationConfig.js';
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './auth/AuthProvider.jsx';
-import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import TenantBoundary from './components/TenantBoundary.jsx';
+import { routeDefinitions, redirects, navigationGroups } from './app/navigationConfig.js';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import TechzoneLayout from './layouts/TechzoneLayout.jsx';
 import RouteToTabSync from './app/RouteToTabSync.jsx';
+import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import { useDispatch, useSelector } from 'react-redux';
+import { setSelectedAppId } from './store/applicationsSlice.js';
+import { ROUTES } from './app/routes.js';
+import CreateAppModal from './components/CreateAppModal.jsx';
 import { useModal } from './app/ModalContext.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -26,6 +30,13 @@ const SnapshotsView = lazy(() => import('./components/SnapshotsView.jsx'));
 const PlatformContractView = lazy(() => import('./components/PlatformContractView.jsx'));
 const IntegrationsView = lazy(() => import('./components/IntegrationsView.jsx'));
 const DeploymentPublicationView = lazy(() => import('./components/deployment/DeploymentPublicationView.jsx'));
+
+const BMOverview = lazy(() => import('./components/business-manager/BMOverview.jsx'));
+const BMApplicationsRoute = lazy(() => import('./components/business-manager/BMApplicationsRoute.jsx').then(m => ({ default: m.BMApplicationsRoute })));
+const BMApplicationNewRoute = lazy(() => import('./components/business-manager/BMApplicationNewRoute.jsx').then(m => ({ default: m.BMApplicationNewRoute })));
+const BMApplicationDetailRoute = lazy(() => import('./components/business-manager/BMApplicationDetailRoute.jsx').then(m => ({ default: m.BMApplicationDetailRoute })));
+const BMVersionsRoute = lazy(() => import('./components/business-manager/BMVersionsRoute.jsx').then(m => ({ default: m.BMVersionsRoute })));
+const BMVersionDetailRoute = lazy(() => import('./components/business-manager/BMVersionDetailRoute.jsx').then(m => ({ default: m.BMVersionDetailRoute })));
 
 const Adapters = lazy(() => import('./pages/Adapters.jsx'));
 const Mapping = lazy(() => import('./pages/Mapping.jsx'));
@@ -60,6 +71,7 @@ const AutomationHistory = lazy(() => import('./pages/AutomationHistory.jsx'));
 const AutomationRules = lazy(() => import('./pages/AutomationRules.jsx'));
 const AutomationTriggers = lazy(() => import('./pages/AutomationTriggers.jsx'));
 const AutomationWorkflows = lazy(() => import('./pages/AutomationWorkflows.jsx'));
+const ComingSoon = lazy(() => import('./components/ComingSoon.jsx'));
 
 function CockpitRoute() {
   const { openModal } = useModal();
@@ -96,33 +108,54 @@ function SnapshotsRoute() {
   return <SnapshotsView onOpenCreateSnapshot={() => openModal('createSnapshot')} />;
 }
 
-const routeComponents = { CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage };
+function NewApplicationRoute() {
+  const navigate = useNavigate();
+  return <><ApplicationsRoute /><CreateAppModal isOpen onClose={() => navigate(ROUTES.applications)} /></>;
+}
+function ApplicationDetailRoute() {
+  const { applicationId } = useParams();
+  const dispatch = useDispatch();
+  const selected = useSelector(state => state.applications.selectedAppId);
+  const applications = useSelector(state => state.applications.applications);
+  const exists = applications.some(app => app.id === applicationId);
+  useEffect(() => { if (exists) dispatch(setSelectedAppId(applicationId)); }, [applicationId, exists, dispatch]);
+  if (!exists) return <NotFound />;
+  if (selected !== applicationId) return <ModernSpinner />;
+  return <WorkspaceConfigView />;
+}
+function LegacyRedirect({ to }) {
+  const location = useLocation();
+  const [pathname, anchor] = to.split('#');
+  return <Navigate to={{ pathname, search: location.search, hash: anchor ? '#' + anchor : location.hash }} replace />;
+}
+const BMWorkspaceRoute = lazy(() => import('./components/business-manager/BMWorkspaceRoute.jsx'));
+const routeComponents = { BMWorkspaceRoute, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <RouteToTabSync />
         <Suspense fallback={<div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center min-h-[400px]"><ModernSpinner /></div>}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<TechzoneLayout />}>
-                <Route path="/" element={<Navigate to="/cockpit" replace />} />
 
-                {routeDefinitions.map(({ route, component, pageId }) => {
+
+                {routeDefinitions.map(({ route, component, pageId, moduleKeyOverride, label, group, phase, implemented, description }) => {
                   const Component = routeComponents[component];
-                  return <Route key={route} path={route} element={<Component pageId={pageId} />} />;
+                  const module = navigationGroups.find(g => g.id === group)?.label;
+                  const content = <Component pageId={pageId} moduleKeyOverride={moduleKeyOverride} title={label} module={module} plannedPhase={phase} description={description || `L’espace « ${label} » du module ${module} n’est pas encore disponible. Ses outils seront intégrés lors d’une prochaine phase.`} />;
+                  return <Route key={route} path={route} element={implemented ? <TenantBoundary>{content}</TenantBoundary> : content} />;
                 })}
-                <Route path="/iam" element={<Navigate to="/iam/users" replace />} />
+                {redirects.map(({ from, to }) => <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
 
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Route>
           </Routes>
         </Suspense>
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
   );
 }
 

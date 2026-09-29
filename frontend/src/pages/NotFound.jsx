@@ -14,7 +14,7 @@ export default function NotFound() {
           La page que vous recherchez n'existe pas ou a été déplacée.
         </p>
         <Link
-          to="/cockpit"
+          to="/dashboard"
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
         >
           Retour au cockpit

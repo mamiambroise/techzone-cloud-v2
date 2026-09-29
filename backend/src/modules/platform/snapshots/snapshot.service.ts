@@ -49,11 +49,13 @@ export class SnapshotsService {
     return JSON.stringify(value);
   }
 
-  async create(dto: CreateSnapshotDto, traceId?: string) {
-    // 1. Vérifier l'application
-    const application = await this.prisma.application.findUnique({
+  async create(dto: CreateSnapshotDto, traceId?: string, tenantId?: string | null) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
+    const application = await this.prisma.application.findFirst({
       where: {
         id: dto.applicationId,
+        ...tenantFilter,
       },
     });
 
@@ -61,10 +63,10 @@ export class SnapshotsService {
       throw new NotFoundException('Application not found');
     }
 
-    // 2. Vérifier la version de l'application
-    const applicationVersion = await this.prisma.applicationVersion.findUnique({
+    const applicationVersion = await this.prisma.applicationVersion.findFirst({
       where: {
         id: dto.applicationVersionId,
+        ...tenantFilter,
       },
     });
 
@@ -72,17 +74,16 @@ export class SnapshotsService {
       throw new NotFoundException('Application version not found');
     }
 
-    // Vérifier que la version appartient bien à l'application
     if (applicationVersion.applicationId !== application.id) {
       throw new BadRequestException(
         'Application version does not belong to this application',
       );
     }
 
-    // 3. Vérifier l'environnement
-    const environment = await this.prisma.environment.findUnique({
+    const environment = await this.prisma.environment.findFirst({
       where: {
         id: dto.environmentId,
+        ...tenantFilter,
       },
     });
 
@@ -92,6 +93,7 @@ export class SnapshotsService {
 
     const contracts = await this.prisma.contract.findMany({
       where: {
+        ...tenantFilter,
         status: 'ACTIVE',
       },
       orderBy: [{ contractCode: 'asc' }, { contractVersion: 'asc' }],
@@ -99,6 +101,7 @@ export class SnapshotsService {
 
     const configurations = await this.prisma.configuration.findMany({
       where: {
+        ...tenantFilter,
         status: 'ACTIVE',
       },
       orderBy: [{ key: 'asc' }, { version: 'asc' }],
@@ -184,6 +187,7 @@ export class SnapshotsService {
           createdBy,
           hash,
           status: 'DRAFT',
+          tenantId: tenantId ?? undefined,
         },
       });
 
@@ -192,6 +196,7 @@ export class SnapshotsService {
           snapshotId: createdSnapshot.id,
           action: 'CREATED',
           createdBy,
+          tenantId: tenantId ?? undefined,
           traceId,
           reason: 'Snapshot created',
         },
@@ -203,18 +208,24 @@ export class SnapshotsService {
     return snapshot;
   }
 
-  async findAll() {
+  async findAll(tenantId?: string | null) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
     return this.prisma.snapshot.findMany({
+      where: tenantFilter,
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  async findOne(id: string) {
-    const snapshot = await this.prisma.snapshot.findUnique({
+  async findOne(id: string, tenantId?: string | null) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
+    const snapshot = await this.prisma.snapshot.findFirst({
       where: {
         id,
+        ...tenantFilter,
       },
     });
 
@@ -225,10 +236,11 @@ export class SnapshotsService {
     return snapshot;
   }
 
-  async getHistory(id: string) {
-    const snapshot = await this.prisma.snapshot.findUnique({
+  async getHistory(id: string, tenantId?: string | null) {
+    const snapshot = await this.prisma.snapshot.findFirst({
       where: {
         id,
+        ...tenantId ? { tenantId } : {},
       },
     });
 
@@ -239,6 +251,7 @@ export class SnapshotsService {
     return this.prisma.snapshotHistory.findMany({
       where: {
         snapshotId: id,
+        ...tenantId ? { tenantId } : {},
       },
       orderBy: {
         createdAt: 'asc',
@@ -246,16 +259,20 @@ export class SnapshotsService {
     });
   }
 
-  async compare(left: string, right: string) {
+  async compare(left: string, right: string, tenantId?: string | null) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
     const [leftSnapshot, rightSnapshot] = await Promise.all([
-      this.prisma.snapshot.findUnique({
+      this.prisma.snapshot.findFirst({
         where: {
           id: left,
+          ...tenantFilter,
         },
       }),
-      this.prisma.snapshot.findUnique({
+      this.prisma.snapshot.findFirst({
         where: {
           id: right,
+          ...tenantFilter,
         },
       }),
     ]);
@@ -397,10 +414,13 @@ export class SnapshotsService {
     };
   }
 
-  async validate(id: string, traceId?: string) {
-    const snapshot = await this.prisma.snapshot.findUnique({
+  async validate(id: string, traceId?: string, tenantId?: string | null) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
+    const snapshot = await this.prisma.snapshot.findFirst({
       where: {
         id,
+        ...tenantFilter,
       },
     });
 
@@ -408,7 +428,6 @@ export class SnapshotsService {
       throw new NotFoundException('Snapshot not found');
     }
 
-    // Un snapshot déjà validé ou archivé est immuable
     if (snapshot.status === 'VALID' || snapshot.status === 'ACTIVE') {
       return snapshot;
     }
@@ -417,7 +436,6 @@ export class SnapshotsService {
       throw new BadRequestException('Archived snapshot cannot be validated');
     }
 
-    // Passage temporaire en VALIDATING
     await this.prisma.snapshot.update({
       where: {
         id,
@@ -428,7 +446,6 @@ export class SnapshotsService {
     });
 
     try {
-      // Vérifications minimales du contenu du snapshot
       if (!snapshot.applicationVersionId) {
         throw new Error('Application version is missing');
       }
@@ -460,7 +477,6 @@ export class SnapshotsService {
         throw new Error('Snapshot integrity check failed');
       }
 
-      // Validation réussie
       const validatedSnapshot = await this.prisma.$transaction(async (tx) => {
         const updatedSnapshot = await tx.snapshot.update({
           where: {
@@ -476,6 +492,7 @@ export class SnapshotsService {
             snapshotId: id,
             action: 'VALIDATED',
             createdBy: snapshot.createdBy,
+            tenantId: tenantId ?? undefined,
             traceId,
             reason: 'Snapshot validated successfully',
           },
@@ -486,7 +503,6 @@ export class SnapshotsService {
 
       return validatedSnapshot;
     } catch (error) {
-      // Validation échouée
       await this.prisma.$transaction(async (tx) => {
         await tx.snapshot.update({
           where: {
@@ -502,6 +518,7 @@ export class SnapshotsService {
             snapshotId: id,
             action: 'VALIDATED',
             createdBy: snapshot.createdBy,
+            tenantId: tenantId ?? undefined,
             traceId,
             reason: `Snapshot validation failed: ${
               error instanceof Error ? error.message : 'Unknown error'
@@ -516,10 +533,13 @@ export class SnapshotsService {
     }
   }
 
-  async activate(id: string, traceId?: string) {
-    const snapshot = await this.prisma.snapshot.findUnique({
+  async activate(id: string, traceId?: string, tenantId?: string | null) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
+    const snapshot = await this.prisma.snapshot.findFirst({
       where: {
         id,
+        ...tenantFilter,
       },
     });
 
@@ -550,6 +570,7 @@ export class SnapshotsService {
           snapshotId: id,
           action: 'ACTIVATED',
           createdBy: snapshot.createdBy,
+          tenantId: tenantId ?? undefined,
           traceId,
           reason: 'Snapshot activated',
         },
@@ -561,10 +582,13 @@ export class SnapshotsService {
     return activatedSnapshot;
   }
 
-  async archive(id: string, traceId?: string) {
-    const snapshot = await this.prisma.snapshot.findUnique({
+  async archive(id: string, traceId?: string, tenantId?: string | null) {
+    const tenantFilter = tenantId ? { tenantId } : {};
+
+    const snapshot = await this.prisma.snapshot.findFirst({
       where: {
         id,
+        ...tenantFilter,
       },
     });
 
@@ -595,6 +619,7 @@ export class SnapshotsService {
           snapshotId: id,
           action: 'ARCHIVED',
           createdBy: snapshot.createdBy,
+          tenantId: tenantId ?? undefined,
           traceId,
           reason: 'Snapshot archived',
         },

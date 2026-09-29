@@ -1,3 +1,9 @@
+import { api } from '../services/apiClient.js';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ROUTES } from '../app/routes.js';
+import { useTenant } from '../contexts/TenantProvider.jsx';
+import { ContextBar } from './ContextBar.jsx';
+import { getEffective } from '../services/api/platformConfigService.js';
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -7,7 +13,6 @@ import {
   deleteConfigItem,
   CONFIG_SCOPES,
   CONFIG_TYPES,
-  validateConfigEntry,
   fetchConfigsAsync,
   addConfigItemAsync,
   updateConfigItemAsync,
@@ -15,7 +20,6 @@ import {
 import { logAuditAction } from '../store/auditSlice.js';
 import { addToast, setSearchQuery } from '../store/platformSlice.js';
 import {
-  Sliders,
   Lock,
   Eye,
   EyeOff,
@@ -24,10 +28,6 @@ import {
   Plus,
   Trash2,
   Edit2,
-  GitBranch,
-  Layers,
-  ArrowRight,
-  ShieldCheck,
   Search,
   Filter,
   X,
@@ -35,32 +35,39 @@ import {
 
 export default function ConfigurationView() {
   const dispatch = useDispatch();
+  const { activeTenant } = useTenant();
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState('definitions');
+  const [effective, setEffective] = useState([]);
+  const [effectiveError, setEffectiveError] = useState('');
+  const [effectiveLoading, setEffectiveLoading] = useState(false);
+  let storedContext = {};
+  try { storedContext = JSON.parse(sessionStorage.getItem('bm-context:'+activeTenant?.id) || '{}'); } catch {}
+  const context = {applicationId:params.get('applicationId') || storedContext.applicationId,applicationVersionId:params.get('applicationVersionId') || storedContext.versionId,environmentId:params.get('environmentId')};
+  const [contextLabels,setContextLabels] = useState({});
+  const [saveError,setSaveError] = useState('');
+  useEffect(()=>{let live=true;setContextLabels({});if(context.applicationId && context.applicationVersionId) Promise.all([api.get('/business-manager/applications/'+context.applicationId),api.get('/business-manager/versions/'+context.applicationVersionId)]).then(([a,v])=>{if(live)setContextLabels({application:a.data.name,version:v.data.version,status:v.data.status});}).catch(()=>{});return()=>{live=false;};},[activeTenant?.id,context.applicationId,context.applicationVersionId]);
+  const hasContext = Object.values(context).every(value => /^[0-9a-f-]{36}$/i.test(value || ''));
+  const loadEffective = async () => { setEffectiveLoading(true); setEffectiveError(''); try { const rows = await getEffective(context); setEffective(rows); } catch { setEffectiveError('Impossible de résoudre la configuration effective.'); } finally { setEffectiveLoading(false); } };
+  const configLoading = useSelector(state => state.config.loading);
+  const configError = useSelector(state => state.config.error);
 
   const configItems = useSelector((state) => state.config.items);
   const selectedScope = useSelector((state) => state.config.selectedScope);
-  const applications = useSelector((state) => state.applications.applications);
-  const environments = useSelector((state) => state.environments.environments);
   const activeUser = useSelector((state) => state.platform.activeUser);
   const searchQuery = useSelector((state) => state.platform.searchQuery);
-  const providerMode = useSelector((state) => state.platform.providerMode);
+  const providerMode = 'REAL';
 
   useEffect(() => {
     if (providerMode === 'REAL') {
       dispatch(fetchConfigsAsync());
     }
-  }, [dispatch, providerMode]);
+  }, [dispatch, providerMode, activeTenant?.id]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [showSecrets, setShowSecrets] = useState(false);
 
-  // Inspector state (PF-CDC-05 Section 5 - Priority Resolution)
-  const [inspectorKey, setInspectorKey] = useState('gateway.rate_limit.max_rps');
-  const [inspectorAppId, setInspectorAppId] = useState('app-core-api');
-  const [inspectorEnvId, setInspectorEnvId] = useState('env-prod');
-  const [inspectorTenantId, setInspectorTenantId] = useState('tenant-logistics-de');
-
-  // New config form state
   const [formKey, setFormKey] = useState('');
   const [formScope, setFormScope] = useState('PLATFORM');
   const [formScopeId, setFormScopeId] = useState('platform-root');
@@ -71,7 +78,6 @@ export default function ConfigurationView() {
   const [formIsSecret, setFormIsSecret] = useState(false);
   const [formDesc, setFormDesc] = useState('');
 
-  // Filtering
   const filteredConfigs = configItems.filter((item) => {
     const matchesScope = selectedScope === 'ALL' || item.scope === selectedScope;
     if (!searchQuery.trim()) return matchesScope;
@@ -85,149 +91,15 @@ export default function ConfigurationView() {
     return matchesScope && matchesSearch;
   });
 
-  // Calculate resolution inheritance for Inspector (PF-CDC-05 Section 5)
-  const computeResolutionHierarchy = (key) => {
-    // 1. Platform Default
-    const platItem = configItems.find((c) => c.key === key && c.scope === 'PLATFORM');
-    // 2. Application
-    const appItem = configItems.find((c) => c.key === key && c.scope === 'APPLICATION' && c.scopeId === inspectorAppId);
-    // 3. Application Version
-    const verItem = configItems.find((c) => c.key === key && c.scope === 'APPLICATION_VERSION');
-    // 4. Environment
-    const envItem = configItems.find((c) => c.key === key && c.scope === 'ENVIRONMENT' && c.scopeId === inspectorEnvId);
-    // 5. Tenant override
-    const tenantItem = configItems.find((c) => c.key === key && c.scope === 'TENANT' && c.scopeId === inspectorTenantId);
-
-    const steps = [
-      { level: '1. Platform Default', item: platItem, note: 'Valeur socle racine' },
-      { level: '2. Application', item: appItem, note: `Applicable à ${inspectorAppId}` },
-      { level: '3. Application Version', item: verItem, note: 'Spécifique à la release candidate' },
-      { level: '4. Environment', item: envItem, note: `Spécifique à ${inspectorEnvId}` },
-      { level: '5. Tenant Override', item: tenantItem, note: `Dérogation pour ${inspectorTenantId}` },
-    ];
-
-    // Winner is the last defined level from bottom up (highest precedence)
-    const effective = tenantItem || envItem || verItem || appItem || platItem;
-
-    return { steps, effective };
-  };
-
-  const hierarchyResult = computeResolutionHierarchy(inspectorKey);
-
-  const handleSaveConfig = (e) => {
-    e.preventDefault();
-
-    if (editingItem) {
-      if (providerMode === 'MOCK') {
-        dispatch(
-          updateConfigItem({
-            id: editingItem.id,
-            key: formKey.trim(),
-            scope: formScope,
-            scopeId: formScopeId,
-            type: formType,
-            value: formValue.trim(),
-            defaultValue: formDefaultValue.trim(),
-            required: formRequired,
-            isSecret: formIsSecret,
-            description: formDesc.trim(),
-            updatedBy: activeUser.email,
-          })
-        );
-        dispatch(
-          addToast({
-            type: 'success',
-            title: 'Configuration mise à jour',
-            message: `La clé ${formKey} a été réévaluée et validée.`,
-          })
-        );
-        setEditingItem(null);
-      } else {
-        dispatch(
-          updateConfigItemAsync({
-            id: editingItem.id,
-            key: formKey.trim(),
-            value: formValue.trim(),
-            defaultValue: formDefaultValue.trim() || formValue.trim(),
-            required: formRequired,
-            schema: editingItem.schema,
-          })
-        ).then((result) => {
-          if (result.meta.requestStatus === 'fulfilled') {
-            dispatch(
-              addToast({
-                type: 'success',
-                title: 'Configuration mise à jour',
-                message: `La clé ${formKey} a été réévaluée et validée.`,
-              })
-            );
-            setEditingItem(null);
-          }
-        });
-      }
-    } else {
-      if (providerMode === 'MOCK') {
-        dispatch(
-          addConfigItem({
-            key: formKey.trim(),
-            scope: formScope,
-            scopeId: formScopeId,
-            type: formType,
-            value: formValue.trim(),
-            defaultValue: formDefaultValue.trim() || formValue.trim(),
-            required: formRequired,
-            isSecret: formIsSecret,
-            description: formDesc.trim(),
-            updatedBy: activeUser.email,
-          })
-        );
-        dispatch(
-          addToast({
-            type: 'success',
-            title: 'Nouvelle configuration ajoutée',
-            message: `Clé ${formKey} déclarée sur le scope ${formScope}.`,
-          })
-        );
-      } else {
-        dispatch(
-          addConfigItemAsync({
-            key: formKey.trim(),
-            scope: formScope,
-            scopeId: formScopeId,
-            type: formType,
-            value: formValue.trim(),
-            defaultValue: formDefaultValue.trim() || formValue.trim(),
-            required: formRequired,
-            schema: {},
-          })
-        ).then((result) => {
-          if (result.meta.requestStatus === 'fulfilled') {
-            dispatch(
-              addToast({
-                type: 'success',
-                title: 'Nouvelle configuration ajoutée',
-                message: `Clé ${formKey} déclarée sur le scope ${formScope}.`,
-              })
-            );
-          }
-        });
-      }
-    }
-
-    dispatch(
-      logAuditAction({
-        actor: activeUser.email,
-        role: activeUser.role,
-        action: editingItem ? 'UPDATE_CONFIG' : 'CREATE_CONFIG',
-        resourceType: 'CONFIG',
-        resourceId: formKey,
-        details: `Modification de paramètre scope: ${formScope} / ${formScopeId}. Type: ${formType}`,
-        status: 'SUCCESS',
-      })
-    );
-
-    setShowAddModal(false);
-    resetForm();
+  const handleSaveConfig = async (e) => {
+    e.preventDefault(); setSaveError('');
+    try {
+      const body = {key:formKey.trim(),value:formValue.trim(),defaultValue:formDefaultValue.trim() || formValue.trim(),required:formRequired,schema:editingItem?.schema || {}};
+      if(editingItem) await dispatch(updateConfigItemAsync({id:editingItem.id,body})).unwrap();
+      else await dispatch(addConfigItemAsync({...body,scope:formScope,...(formScope!=='PLATFORM'?{scopeId:formScopeId}:{}),type:formType})).unwrap();
+      dispatch(addToast({type:'success',title:'Configuration enregistrée',message:formKey}));
+      setShowAddModal(false); setEditingItem(null); resetForm();
+    } catch { setSaveError('Enregistrement impossible. Vérifiez le scope, les valeurs et vos droits, puis réessayez.'); }
   };
 
   const resetForm = () => {
@@ -257,22 +129,11 @@ export default function ConfigurationView() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-              PF-CDC-05
-            </span>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">Configuration Manager (Typée & Versionnée)</h1>
-          </div>
-          <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-            Gestion des paramètres techniques selon les 5 portées (Platform, App, Version, Env, Tenant), masquage des secrets Vault et validation stricte.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 shrink-0">
+    <div className="w-full space-y-5">
+      <nav aria-label="Fil d’Ariane" className="text-sm text-slate-500"><Link to={ROUTES.bm}>Business Manager</Link> / Configuration</nav>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div><h1 className="text-2xl font-semibold text-slate-900">Configuration</h1><p className="mt-2 text-sm text-slate-600">Gérez les paramètres et leurs valeurs effectives pour la version courante.</p></div>
+        <div className="flex items-center gap-2.5 shrink-0 mt-4 sm:mt-0">
           <button
             onClick={() => setShowSecrets(!showSecrets)}
             className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-700 transition-all active:scale-95"
@@ -291,124 +152,75 @@ export default function ConfigurationView() {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span>Ajouter une Clé</span>
+            <span>Ajouter un paramètre</span>
           </button>
         </div>
       </div>
 
-      {/* Interactive Inheritance Resolution Inspector Bento Box (PF-CDC-05 Section 5) */}
-      <div className="bg-slate-950 text-white p-6 rounded-3xl border border-slate-800 shadow-md space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center">
-              <GitBranch className="w-4 h-4 text-indigo-400" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white tracking-tight">Inspecteur de Résolution d'Héritage (Precedence Cascade)</h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Ordre canonique : Platform Default {'>'} Application {'>'} App Version {'>'} Environment {'>'} Tenant Override
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* Select key */}
-            <select
-              value={inspectorKey}
-              onChange={(e) => setInspectorKey(e.target.value)}
-              className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono text-[11px] shadow-2xs"
-            >
-              {Array.from(new Set(configItems.map((c) => c.key))).map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* 5-Step Visual Waterfall */}
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-1">
-          {hierarchyResult.steps.map((step) => {
-            const hasValue = Boolean(step.item);
-            const isWinner = hierarchyResult.effective && step.item?.id === hierarchyResult.effective.id;
-
+      <ContextBar application={contextLabels.application} version={contextLabels.version} status={contextLabels.status} tenant={activeTenant?.name || activeTenant?.code} />
+      {saveError && <p role="alert" className="text-red-700">{saveError}</p>}
+      <div role="tablist" aria-label="Configuration" className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{[['definitions','Définitions'],['values','Valeurs'],['effective','Configuration effective']].map(([id,label]) => <button key={id} role="tab" aria-selected={tab===id} onClick={() => setTab(id)} className={`rounded-lg px-4 py-2 text-sm ${tab===id?'bg-blue-600 text-white':'bg-slate-100 text-slate-700'}`}>{label}</button>)}</div>
+      {configLoading && <p role="status">Chargement des paramètres…</p>}
+      {configError && <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">Impossible de charger les paramètres. {configError}</p>}
+      {tab === 'effective' ? <section className="rounded-xl border bg-white p-5 space-y-4"><h2 className="text-lg font-semibold">Valeurs effectives et provenance</h2>
+        {!hasContext ? <p className="text-slate-600">Sélectionnez une application, une version et un environnement pour résoudre les valeurs effectives. Le contexte complet n’est pas encore fourni par tous les écrans.</p> : <button disabled={effectiveLoading} onClick={loadEffective} className="rounded bg-blue-600 px-4 py-2 text-white">{effectiveLoading?'Chargement…':'Résoudre les valeurs'}</button>}
+        {effectiveError && <p role="alert">{effectiveError}</p>}
+        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Paramètre</th><th>Valeur effective</th><th>Provenance</th></tr></thead><tbody>{effective.map(item => <tr key={item.id}><td className="py-3">{item.key}</td><td>{JSON.stringify(item.value)}</td><td>{item.scope} / {item.scopeId || 'Plateforme'}</td></tr>)}</tbody></table></div>
+      </section> : <>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 bg-slate-200/50 rounded-2xl w-fit">
+          <button
+            onClick={() => dispatch(setSelectedScope('ALL'))}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
+              selectedScope === 'ALL'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+          >
+            Tous les Scopes ({configItems.length})
+          </button>
+          {CONFIG_SCOPES.map((sc) => {
+            const count = configItems.filter((c) => c.scope === sc).length;
             return (
-              <div
-                key={step.level}
-                className={`p-3.5 rounded-2xl border transition-all duration-150 text-xs flex flex-col justify-between ${
-                  isWinner
-                    ? 'bg-indigo-600/30 border-indigo-400 ring-2 ring-indigo-400/20 shadow-md'
-                    : hasValue
-                    ? 'bg-slate-900/90 border-slate-800'
-                    : 'bg-slate-950/60 border-slate-900 opacity-40'
+              <button
+                key={sc}
+                onClick={() => dispatch(setSelectedScope(sc))}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
+                  selectedScope === sc
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
               >
-                <div>
-                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold">{step.level}</div>
-                  <div className="mt-1 font-semibold text-slate-200 text-xs truncate">
-                    {hasValue ? (
-                      <span className="font-mono text-emerald-300">{step.item.value}</span>
-                    ) : (
-                      <span className="text-slate-500 italic">Non défini</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-2.5 pt-2 border-t border-slate-800 flex items-center justify-between text-[10px]">
-                  <span className="text-slate-400 truncate mr-1">{step.note}</span>
-                  {isWinner && (
-                    <span className="px-2 py-0.5 rounded-md bg-indigo-500 text-white font-bold font-mono text-[9px] shrink-0">
-                      GAGNANT
-                    </span>
-                  )}
-                </div>
-              </div>
+                {sc} ({count})
+              </button>
             );
           })}
         </div>
 
-        <div className="pt-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-300 font-mono">
-          <span className="text-slate-400">Valeur résolue effective pour l'exécution :</span>
-          <span className="px-3.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-xs w-fit">
-            {hierarchyResult.effective ? hierarchyResult.effective.value : 'N/A'}
-          </span>
+        <div className="relative w-full max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Rechercher une clé, scope, type..."
+              value={searchQuery}
+              onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+              className="w-full pl-10 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => dispatch(setSearchQuery(''))}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Scope Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 bg-slate-200/50 rounded-2xl w-fit">
-        <button
-          onClick={() => dispatch(setSelectedScope('ALL'))}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
-            selectedScope === 'ALL'
-              ? 'bg-white text-slate-900 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-          }`}
-        >
-          Tous les Scopes ({configItems.length})
-        </button>
-        {CONFIG_SCOPES.map((sc) => {
-          const count = configItems.filter((c) => c.scope === sc).length;
-          return (
-            <button
-              key={sc}
-              onClick={() => dispatch(setSelectedScope(sc))}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
-                selectedScope === sc
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-              }`}
-            >
-              {sc} ({count})
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Global Search Active Banner */}
       {searchQuery && (
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-2xl text-xs text-amber-950 animate-in fade-in">
+        <div className="flex items-center justify-between gap-2 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-2xl text-xs text-amber-950 animate-in fade-in mb-4">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
@@ -420,142 +232,140 @@ export default function ConfigurationView() {
             className="px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg transition-colors flex items-center gap-1"
           >
             <X className="w-3 h-3" />
-            <span>Réinitialiser le filtre</span>
+            <span>Réinitialiser</span>
           </button>
         </div>
       )}
 
-      {/* Config Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="py-3.5 px-5">Clé Technique</th>
-                <th className="py-3.5 px-3">Portée (Scope)</th>
-                <th className="py-3.5 px-3">Type</th>
-                <th className="py-3.5 px-4">Valeur Active</th>
-                <th className="py-3.5 px-3">Statut & Validation</th>
-                <th className="py-3.5 px-3">Version</th>
-                <th className="py-3.5 px-5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredConfigs.length === 0 ? (
+      {filteredConfigs.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden p-12 text-center">
+          <Search className="w-6 h-6 mx-auto text-slate-300 mb-2" />
+          <p className="text-slate-500">Aucune clé de configuration ne correspond à votre recherche.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <Search className="w-5 h-5 mx-auto text-slate-300 mb-1.5" />
-                    Aucune clé de configuration ne correspond à votre recherche.
-                  </td>
+                  <th className="py-3.5 px-5">Clé Technique</th>
+                  <th className="py-3.5 px-3">Portée (Scope)</th>
+                  <th className="py-3.5 px-3">Type</th>
+                  <th className="py-3.5 px-4">{tab === 'definitions' ? 'Valeur par défaut' : 'Valeur configurée'}</th>
+                  <th className="py-3.5 px-3">Statut</th>
+                  <th className="py-3.5 px-3">Version</th>
+                  <th className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
-              ) : (
-                filteredConfigs.map((item) => {
-                const isInvalid = item.status === 'INVALID';
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredConfigs.map((item) => {
+                  const isInvalid = item.status === 'INVALID';
 
-                return (
-                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 px-5">
-                      <div className="font-mono font-bold text-slate-900">{item.key}</div>
-                      {item.description && (
-                        <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{item.description}</div>
-                      )}
-                    </td>
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-5">
+                        <div className="font-mono font-bold text-slate-900">{item.key}</div>
+                        {item.description && (
+                          <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{item.description}</div>
+                        )}
+                      </td>
 
-                    <td className="py-3.5 px-3">
-                      <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold block w-fit">
-                        {item.scope}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono mt-0.5 block truncate max-w-[120px]">
-                        {item.scopeId}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-3">
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
-                        {item.type}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 font-mono">
-                      {item.isSecret ? (
-                        <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200 w-fit">
-                          <Lock className="w-3 h-3 text-amber-600" />
-                          <span>{showSecrets ? item.value : '•••••••••••••••• (Vault Ref)'}</span>
+                      <td className="py-3.5 px-3">
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">
+                          {item.scope}
                         </span>
-                      ) : (
-                        <span className={`font-semibold ${isInvalid ? 'text-rose-600 line-through' : 'text-slate-800'}`}>
-                          {item.value}
+                        <span className="text-[10px] text-slate-400 font-mono mt-0.5 block truncate max-w-[120px]">
+                          {item.scopeId}
                         </span>
-                      )}
-                    </td>
+                      </td>
 
-                    <td className="py-3.5 px-3">
-                      {isInvalid ? (
-                        <div className="flex items-start gap-1 text-rose-600 font-semibold">
-                          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <div>
-                            <span>INVALID</span>
-                            <div className="text-[10px] text-rose-500 font-normal font-sans">
-                              {item.validationError || 'Validation échouée'}
+                      <td className="py-3.5 px-3">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
+                          {item.type}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono">
+                        {item.isSecret ? (
+                          <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200 w-fit">
+                            <Lock className="w-3 h-3 text-amber-600" />
+                            <span>{showSecrets ? item.value : '•••••••••••••••• (Vault Ref)'}</span>
+                          </span>
+                        ) : (
+                          <span className={`font-semibold ${isInvalid ? 'text-rose-600 line-through' : 'text-slate-800'}`}>
+                            {JSON.stringify(tab === 'definitions' ? item.defaultValue : item.value)}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        {isInvalid ? (
+                          <div className="flex items-start gap-1 text-rose-600 font-semibold">
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <div>
+                              <span>INVALID</span>
+                              <div className="text-[10px] text-rose-500 font-normal font-sans">
+                                {item.validationError || 'Validation échouée'}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-emerald-600 font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>VALID</span>
-                        </div>
-                      )}
-                    </td>
+                        ) : (
+                          <div className="flex items-center gap-1 text-emerald-600 font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>VALID</span>
+                          </div>
+                        )}
+                      </td>
 
-                    <td className="py-3.5 px-3 font-mono text-slate-500">v{item.version || 1}</td>
+                      <td className="py-3.5 px-3 font-mono text-slate-500">v{item.version || 1}</td>
 
-                    <td className="py-3.5 px-5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => openEdit(item)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors"
-                          title="Éditer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (providerMode === 'REAL') {
-                              dispatch(
-                                addToast({
-                                  type: 'warning',
-                                  title: 'Suppression désactivée',
-                                  message: 'La suppression de configuration n\'est pas disponible en mode réel (pas d\'endpoint DELETE).',
-                                })
-                              );
-                              return;
-                            }
-                            if (window.confirm(`Supprimer la clé ${item.key} ?`)) {
-                              dispatch(deleteConfigItem(item.id));
-                              dispatch(addToast({ type: 'info', title: 'Clé supprimée', message: item.key }));
-                            }
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            providerMode === 'REAL'
-                              ? 'text-slate-300 cursor-not-allowed'
-                              : 'text-slate-400 hover:text-rose-600 hover:bg-slate-100'
-                          }`}
-                          title={providerMode === 'REAL' ? 'Non disponible en mode réel' : 'Supprimer'}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }))}
-            </tbody>
-          </table>
+                      <td className="py-3.5 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => openEdit(item)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Éditer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (providerMode === 'REAL') {
+                                dispatch(
+                                  addToast({
+                                    type: 'warning',
+                                    title: 'Suppression désactivée',
+                                    message: 'La suppression de configuration n\'est pas disponible en mode réel (pas d\'endpoint DELETE).',
+                                  })
+                                );
+                                return;
+                              }
+                              if (window.confirm(`Supprimer la clé ${item.key} ?`)) {
+                                dispatch(deleteConfigItem(item.id));
+                                dispatch(addToast({ type: 'info', title: 'Clé supprimée', message: item.key }));
+                              }
+                            }}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              providerMode === 'REAL'
+                                ? 'text-slate-300 cursor-not-allowed'
+                                : 'text-slate-400 hover:text-rose-600 hover:bg-slate-100'
+                            }`}
+                            title={providerMode === 'REAL' ? 'Non disponible en mode réel' : 'Supprimer'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Modal: Add/Edit Config */}
+      </>}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
@@ -580,7 +390,7 @@ export default function ConfigurationView() {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Portée (Scope)</label>
                   <select
                     value={formScope}
-                    onChange={(e) => setFormScope(e.target.value)}
+                    onChange={(e) => { const scope=e.target.value; setFormScope(scope); setFormScopeId(scope==='TENANT'?activeTenant?.id || '':scope==='APPLICATION'?context.applicationId || '':scope==='APPLICATION_VERSION'?context.applicationVersionId || '':''); }}
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-semibold"
                   >
                     {CONFIG_SCOPES.map((sc) => (

@@ -1,6 +1,8 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from './AuthProvider.jsx';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { resolveRoute } from '../app/navigationConfig.js';
+import { canAccess } from '../app/navigationAccess.js';
+import { useAuth, AuthLoadingBoundary } from '../auth/AuthProvider.jsx';
 
 export function ModernSpinner({ label = 'Chargement...' }) {
   return (
@@ -12,22 +14,28 @@ export function ModernSpinner({ label = 'Chargement...' }) {
 }
 
 export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, authState } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || ['DATABASE_UNAVAILABLE', 'ERROR'].includes(authState)) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <ModernSpinner label="Vérification de la session..." />
-      </div>
+      <AuthLoadingBoundary>
+        <div />
+      </AuthLoadingBoundary>
     );
+  }
+
+  if (authState === 'UNAUTHENTICATED' || authState === 'ERROR') {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  return children;
+  const metadata = resolveRoute(location.pathname);
+  if (metadata && !canAccess(metadata, user)) return <ForbiddenPage />;
+  return children ?? <Outlet />;
 }
 
 export function ForbiddenPage() {

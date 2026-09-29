@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { routeForTab } from '../app/navigationConfig.js';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setActiveTab, addToast } from '../store/platformSlice.js';
@@ -27,6 +29,7 @@ import {
 } from 'lucide-react';
 
 export default function WorkspaceConfigView() {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const selectedAppId = useSelector((state) => state.applications.selectedAppId);
   const applications = useSelector((state) => state.applications.applications);
@@ -91,7 +94,7 @@ export default function WorkspaceConfigView() {
       {/* Breadcrumb matching Screenshot 1 */}
       <nav className="flex items-center text-xs text-slate-500 font-medium overflow-x-auto py-1 whitespace-nowrap">
         <button
-          onClick={() => dispatch(setActiveTab('applications'))}
+          onClick={() => navigate(routeForTab('applications'))}
           className="hover:text-blue-600 transition-colors"
         >
           Applications
@@ -154,7 +157,7 @@ export default function WorkspaceConfigView() {
                 <button
                   onClick={() => {
                     setShowActionsMenu(false);
-                    dispatch(setActiveTab('versions'));
+                    navigate(routeForTab('versions'));
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2"
                 >
@@ -174,7 +177,7 @@ export default function WorkspaceConfigView() {
                 <button
                   onClick={() => {
                     setShowActionsMenu(false);
-                    dispatch(setActiveTab('validation'));
+                    navigate(routeForTab('validation'));
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2"
                 >
@@ -251,7 +254,7 @@ export default function WorkspaceConfigView() {
             <p className="text-xs text-slate-500 mt-1">Créée le 24/08/2026 par Alexandre D.</p>
           </div>
           <button
-            onClick={() => dispatch(setActiveTab('versions'))}
+            onClick={() => navigate(routeForTab('versions'))}
             className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
           >
             Voir les versions <ArrowRight className="w-3 h-3" />
@@ -273,7 +276,7 @@ export default function WorkspaceConfigView() {
             <p className="text-xs text-slate-500 mt-1">Test & validation</p>
           </div>
           <button
-            onClick={() => dispatch(setActiveTab('environments'))}
+            onClick={() => navigate(routeForTab('environments'))}
             className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
           >
             Changer d'environnement <ArrowRight className="w-3 h-3" />
@@ -299,7 +302,7 @@ export default function WorkspaceConfigView() {
             </p>
           </div>
           <button
-            onClick={() => dispatch(setActiveTab('history'))}
+            onClick={() => navigate(routeForTab('history'))}
             className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
           >
             Voir l'historique <ArrowRight className="w-3 h-3" />
@@ -535,7 +538,7 @@ export default function WorkspaceConfigView() {
               </div>
               <button
                 id="cfg-integrations-btn"
-                onClick={() => dispatch(setActiveTab('integrations'))}
+                onClick={() => navigate(routeForTab('integrations'))}
                 className="w-full py-1.5 px-3 rounded-lg border border-slate-300 text-xs font-medium text-slate-700 hover:bg-white hover:border-slate-400 transition-colors"
               >
                 Configurer
@@ -605,13 +608,13 @@ export default function WorkspaceConfigView() {
       <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
           <button
-            onClick={() => dispatch(setActiveTab('versions'))}
+            onClick={() => navigate(routeForTab('versions'))}
             className="px-3.5 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
           >
             Voir les versions
           </button>
           <button
-            onClick={() => dispatch(setActiveTab('validation'))}
+            onClick={() => navigate(routeForTab('validation'))}
             className="px-3.5 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
           >
             Valider pour publication
