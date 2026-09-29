@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Header from '../components/Header.jsx';
 import Sidebar from '../components/Sidebar.jsx';
@@ -13,6 +13,7 @@ import CreateSnapshotModal from '../components/CreateSnapshotModal.jsx';
 import AuditLogModal from '../components/AuditLogModal.jsx';
 
 function TechzoneLayoutInner() {
+  const isBM = useLocation().pathname.startsWith('/business-manager');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { openModal } = useModal();
   const activeUser = useSelector((state) => state.platform.activeUser);
@@ -32,13 +33,13 @@ function TechzoneLayoutInner() {
         <SubNavBar />
 
         <main className="flex-1 w-full px-3.5 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
-          <div className="animate-in fade-in duration-150">
+          <div className="min-w-0">
             <ApiErrorBanner />
             <Outlet />
           </div>
         </main>
 
-        <footer className="w-full px-3.5 sm:px-6 lg:px-8 pb-6">
+        {!isBM && <footer className="w-full px-3.5 sm:px-6 lg:px-8 pb-6">
           <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2.5 font-mono">
             <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
@@ -59,7 +60,7 @@ function TechzoneLayoutInner() {
               <span className="text-slate-800 font-semibold">{activeUser?.name || activeUser?.displayName || 'Utilisateur'}</span>
             </div>
           </div>
-        </footer>
+        </footer>}
       </div>
 
       <Modals />

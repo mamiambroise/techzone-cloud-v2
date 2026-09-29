@@ -1,0 +1,2609 @@
+{
+  "timestamp": "2026-09-27T11:13:21.716Z",
+  "mode": "LIVE_NO_MOCKS",
+  "routes": [
+    {
+      "route": "/cockpit",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/overview",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/applications",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/workspace",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/versions",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/validation",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/publication",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/history",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/specifications",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/environments",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/contracts",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/config",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/snapshots",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/platform-contract",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/cockpit",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/connectors",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/apis",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/webhooks",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/credentials",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/sync",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/diagnostics",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/integrations/specifications",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/deployment/cockpit",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/deployment/releases",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/deployment/pipelines",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/deployment/promotion",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/deployment/rollback",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/deployment/diagnostics",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/deployment/specifications",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/users",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/sessions",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/identities",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/roles",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/policies",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/tenants",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/observability",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/observability/logs",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/observability/audit",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/observability/security-events",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/observability/monitoring",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/observability/alerts",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erps",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/data-runtime",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/data-runtime/history",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/automation",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/automation/conditions",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/automation/history",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/automation/rules",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/automation/triggers",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/automation/workflows",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/adapters",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/mapping",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/settings",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/overview",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/plans",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/subscriptions",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/invoices",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/payments",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/webhooks",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/entitlements",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/access-rules",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/billing/features",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/organisations",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/contexts",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/identity-links",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/identity-groups",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/iam/admin",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/clients",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/products",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/product-variants",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/services",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/orders",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/quotes",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/invoices",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/payments",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/suppliers",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/warehouses",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/shipments",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/documents",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/purchases",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/stock-movements",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/stock-transfers",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/inventories",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/stock-alerts",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/returns",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/promotions",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/cash-registers",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/expenses",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/reservations",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/projects",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    },
+    {
+      "route": "/erp/agenda",
+      "finalPath": "/login",
+      "reactErrors": 0,
+      "loginVisible": true,
+      "status": "AUTH_REDIRECT_ONLY"
+    }
+  ],
+  "responsive": [
+    {
+      "name": "Desktop",
+      "width": 1440,
+      "horizontalOverflow": false,
+      "identifierLabel": 1,
+      "passwordLabel": 1,
+      "submitVisible": true
+    },
+    {
+      "name": "Tablet",
+      "width": 768,
+      "horizontalOverflow": false,
+      "identifierLabel": 1,
+      "passwordLabel": 1,
+      "submitVisible": true
+    },
+    {
+      "name": "Mobile",
+      "width": 390,
+      "horizontalOverflow": false,
+      "identifierLabel": 1,
+      "passwordLabel": 1,
+      "submitVisible": true
+    }
+  ],
+  "errors": [],
+  "http": [
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/login",
+      "status": 500
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/iam/me",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    }
+  ],
+  "loginLoadMs": 1840,
+  "login": {
+    "status": 500,
+    "reachedDashboard": false
+  },
+  "cookies": [],
+  "tokenStorage": {
+    "local": [],
+    "session": []
+  }
+}

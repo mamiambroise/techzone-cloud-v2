@@ -1,0 +1,467 @@
+{
+  "mode": "LIVE_NO_MOCKS",
+  "timestamp": "2026-09-28T03:57:47.302Z",
+  "routes": [
+    {
+      "group": "dashboard",
+      "url": "/dashboard",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": true,
+      "comingSoon": false,
+      "reactErrors": 0
+    },
+    {
+      "group": "applications",
+      "url": "/applications",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": true,
+      "comingSoon": false,
+      "reactErrors": 0
+    },
+    {
+      "group": "bm",
+      "url": "/business-manager",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": true,
+      "comingSoon": false,
+      "reactErrors": 0
+    },
+    {
+      "group": "ui",
+      "url": "/ui/pages",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": false,
+      "comingSoon": true,
+      "reactErrors": 0
+    },
+    {
+      "group": "automation",
+      "url": "/automation",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": true,
+      "comingSoon": false,
+      "reactErrors": 0
+    },
+    {
+      "group": "packs",
+      "url": "/packs",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": true,
+      "comingSoon": false,
+      "reactErrors": 0
+    },
+    {
+      "group": "erp",
+      "url": "/erp",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": true,
+      "comingSoon": false,
+      "reactErrors": 0
+    },
+    {
+      "group": "billing",
+      "url": "/billing/plans",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": false,
+      "comingSoon": true,
+      "reactErrors": 0
+    },
+    {
+      "group": "settings",
+      "url": "/settings/general",
+      "click": true,
+      "rendered": true,
+      "active": true,
+      "tenantBlocked": false,
+      "comingSoon": true,
+      "reactErrors": 0
+    },
+    {
+      "route": "/business-manager",
+      "url": "/business-manager",
+      "refreshUrl": "/business-manager",
+      "text": "Aucun tenant autorisé\n\nVotre compte est connecté. Un administrateur doit vous rattacher à un tenant pour accéder aux données métier."
+    },
+    {
+      "route": "/business-manager/applications",
+      "url": "/business-manager/applications",
+      "refreshUrl": "/business-manager/applications",
+      "text": "Aucun tenant autorisé\n\nVotre compte est connecté. Un administrateur doit vous rattacher à un tenant pour accéder aux données métier."
+    },
+    {
+      "route": "/business-manager/versions",
+      "url": "/business-manager/versions",
+      "refreshUrl": "/business-manager/versions",
+      "text": "Chargement du contexte tenant…"
+    },
+    {
+      "route": "/business-manager/models",
+      "url": "/business-manager/models",
+      "refreshUrl": "/business-manager/models",
+      "text": "Business Manager\n\nModèle de données\n\nL’espace « Modèle de données » du module Business Manager n’est pas encore disponible. Ses outils seront intégrés lors d’un"
+    },
+    {
+      "route": "/business-manager/features",
+      "url": "/business-manager/features",
+      "refreshUrl": "/business-manager/features",
+      "text": "Business Manager\n\nFonctionnalités\n\nL’espace « Fonctionnalités » du module Business Manager n’est pas encore disponible. Ses outils seront intégrés lors d’une pr"
+    },
+    {
+      "route": "/business-manager/navigation",
+      "url": "/business-manager/navigation",
+      "refreshUrl": "/business-manager/navigation",
+      "text": "Business Manager\n\nMenus & Navigation\n\nL’espace « Menus & Navigation » du module Business Manager n’est pas encore disponible. Ses outils seront intégrés lors d’"
+    },
+    {
+      "route": "/business-manager/configuration",
+      "url": "/business-manager/configuration",
+      "refreshUrl": "/business-manager/configuration",
+      "text": "Chargement du contexte tenant…"
+    },
+    {
+      "route": "/business-manager/runtime",
+      "url": "/business-manager/runtime",
+      "refreshUrl": "/business-manager/runtime",
+      "text": "Business Manager\n\nIntégration & Runtime\n\nL’espace « Intégration & Runtime » du module Business Manager n’est pas encore disponible. Ses outils seront intégrés l"
+    },
+    {
+      "route": "/business-manager/validation",
+      "url": "/business-manager/validation",
+      "refreshUrl": "/business-manager/validation",
+      "text": "Chargement du contexte tenant…"
+    },
+    {
+      "route": "/business/configuration",
+      "url": "/business-manager/configuration",
+      "refreshUrl": "/business-manager/configuration",
+      "text": "Chargement du contexte tenant…"
+    },
+    {
+      "route": "/ui/forms",
+      "url": "/ui/forms",
+      "refreshUrl": "/ui/forms",
+      "text": "UI Builder\n\nFormulaires\n\nL’espace « Formulaires » du module UI Builder n’est pas encore disponible. Ses outils seront intégrés lors d’une prochaine phase.\n\nFonc"
+    },
+    {
+      "route": "/erp/mappings",
+      "url": "/erp/mappings",
+      "refreshUrl": "/erp/mappings",
+      "text": "Chargement du contexte tenant…"
+    },
+    {
+      "route": "/not-a-route",
+      "url": "/not-a-route",
+      "refreshUrl": "/not-a-route",
+      "text": "404\n\nLa page que vous recherchez n'existe pas ou a été déplacée.\n\nRetour au cockpit"
+    }
+  ],
+  "responsive": [
+    {
+      "name": "desktop",
+      "overflow": false
+    },
+    {
+      "name": "wide",
+      "overflow": false
+    },
+    {
+      "name": "tablet",
+      "open": true,
+      "overlay": true
+    },
+    {
+      "name": "mobile",
+      "open": true,
+      "overlay": true
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    }
+  ],
+  "network": [
+    {
+      "path": "/api/iam/auth/me",
+      "status": 401
+    },
+    {
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    },
+    {
+      "path": "/api/iam/auth/login",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "path": "/api/iam/auth/tenants",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "authenticated": true,
+  "sidebarGroups": [
+    "dashboard",
+    "applications",
+    "bm",
+    "ui",
+    "automation",
+    "packs",
+    "erp",
+    "billing",
+    "settings"
+  ],
+  "failure": {
+    "name": "TimeoutError",
+    "message": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#main-sidebar button[aria-expanded=\"false\"]').nth(4)\u001b[22m\n"
+  }
+}

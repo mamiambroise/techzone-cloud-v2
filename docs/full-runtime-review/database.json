@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-09-27T10:48:16.731Z",
+  "configuration": {
+    "database": true,
+    "iam": [],
+    "erp": []
+  },
+  "attempts": [
+    {
+      "number": 1,
+      "tcp": "PASS",
+      "handshake": "PASS",
+      "sql": "PASS",
+      "schemas": [
+        "business_manager",
+        "auth_aim",
+        "erp_adapter"
+      ]
+    },
+    {
+      "number": 2,
+      "tcp": "NETWORK_TIMEOUT",
+      "sql": "NETWORK_TIMEOUT",
+      "code": null
+    },
+    {
+      "number": 3,
+      "tcp": "NETWORK_TIMEOUT",
+      "sql": "NETWORK_TIMEOUT",
+      "code": null
+    }
+  ]
+}

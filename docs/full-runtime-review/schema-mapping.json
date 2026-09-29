@@ -1,0 +1,773 @@
+[
+  {
+    "model": "Application",
+    "configuredTable": "applications",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "applications"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ApplicationVersion",
+    "configuredTable": "application_versions",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "application_versions"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Environment",
+    "configuredTable": "environments",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "environments"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "EnvironmentHistory",
+    "configuredTable": "environment_history",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "environment_history"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Contract",
+    "configuredTable": "contracts",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "contracts"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ContractHistory",
+    "configuredTable": "contract_history",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "contract_history"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ContractProvider",
+    "configuredTable": "contract_providers",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "contract_providers"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ContractConsumer",
+    "configuredTable": "contract_consumers",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "contract_consumers"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Configuration",
+    "configuredTable": "configurations",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "configurations"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ConfigurationHistory",
+    "configuredTable": "configuration_history",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "configuration_history"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Snapshot",
+    "configuredTable": "snapshots",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "snapshots"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "SnapshotHistory",
+    "configuredTable": "snapshot_history",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "snapshot_history"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Connector",
+    "configuredTable": "connectors",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "connectors"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ApiDefinition",
+    "configuredTable": "api_definitions",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "api_definitions"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Webhook",
+    "configuredTable": "webhooks",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "webhooks"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "WebhookDelivery",
+    "configuredTable": "webhook_deliveries",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "webhook_deliveries"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "CredentialReference",
+    "configuredTable": "credential_references",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "credential_references"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Synchronization",
+    "configuredTable": "synchronizations",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "synchronizations"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "IntegrationLog",
+    "configuredTable": "integration_logs",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "integration_logs"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Release",
+    "configuredTable": "releases",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "releases"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Deployment",
+    "configuredTable": "deployments",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "deployments"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "EnvironmentDeployment",
+    "configuredTable": "environment_deployments",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "environment_deployments"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "DeploymentGate",
+    "configuredTable": "deployment_gates",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "deployment_gates"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Rollback",
+    "configuredTable": "rollbacks",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "rollbacks"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "DeploymentHistory",
+    "configuredTable": "deployment_history",
+    "candidate": {
+      "table_schema": "business_manager",
+      "table_name": "deployment_history"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ERPRegistry",
+    "configuredTable": "erp_registry",
+    "candidate": {
+      "table_schema": "erp_adapter",
+      "table_name": "erp_registry"
+    },
+    "missingColumns": [
+      "tenantId"
+    ],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "AdapterRegistry",
+    "configuredTable": "adapter_registry",
+    "candidate": {
+      "table_schema": "erp_adapter",
+      "table_name": "adapter_registry"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "EntityMapping",
+    "configuredTable": "entity_mapping",
+    "candidate": {
+      "table_schema": "erp_adapter",
+      "table_name": "entity_mapping"
+    },
+    "missingColumns": [
+      "tenantId"
+    ],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "IamUser",
+    "configuredTable": "iam_user",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "User"
+    },
+    "missingColumns": [
+      "isAdmin",
+      "passwordResetToken",
+      "passwordResetExpiresAt"
+    ],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "IamCredential",
+    "configuredTable": "iam_credential",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Credential"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "IamPasswordHistory",
+    "configuredTable": "iam_password_history",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "PasswordHistory"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "IamDevice",
+    "configuredTable": "iam_device",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Device"
+    },
+    "missingColumns": [
+      "createdAt",
+      "updatedAt"
+    ],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "IamSession",
+    "configuredTable": "iam_session",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Session"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "IamRefreshToken",
+    "configuredTable": "iam_refresh_token",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "RefreshToken"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Identity",
+    "configuredTable": "identity",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Identity"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "UserIdentity",
+    "configuredTable": "user_identity",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "UserIdentity"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ExternalIdentityLink",
+    "configuredTable": "external_identity_link",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "ExternalIdentityLink"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Tenant",
+    "configuredTable": "tenant",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Tenant"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Organization",
+    "configuredTable": "organization",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Organization"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Site",
+    "configuredTable": "site",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Site"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Membership",
+    "configuredTable": "membership",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Membership"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Group",
+    "configuredTable": "groups",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Group"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "GroupMember",
+    "configuredTable": "group_member",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "GroupMember"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Permission",
+    "configuredTable": "permission",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Permission"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Role",
+    "configuredTable": "role",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Role"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "RolePermission",
+    "configuredTable": "role_permission",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "RolePermission"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "RoleAssignment",
+    "configuredTable": "role_assignment",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "RoleAssignment"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "AccessPolicy",
+    "configuredTable": "access_policy",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "AccessPolicy"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "PolicyCondition",
+    "configuredTable": "policy_condition",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "PolicyCondition"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "AuthorizationDecision",
+    "configuredTable": "authorization_decision",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "AuthorizationDecision"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "MfaMethod",
+    "configuredTable": "mfa_method",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "MfaMethod"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "RecoveryCode",
+    "configuredTable": "recovery_code",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "RecoveryCode"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ServiceAccount",
+    "configuredTable": "service_account",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "ServiceAccount"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ServiceAccountCredential",
+    "configuredTable": "service_account_credential",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "ServiceAccountCredential"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "SecurityEvent",
+    "configuredTable": "security_event",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "SecurityEvent"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ContextSnapshot",
+    "configuredTable": "context_snapshot",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "ContextSnapshot"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ContextSwitchEvent",
+    "configuredTable": "context_switch_event",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "ContextSwitchEvent"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "ContextInvalidation",
+    "configuredTable": "context_invalidation",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "ContextInvalidation"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "AuditEvent",
+    "configuredTable": "audit_event",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "AuditEvent"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "OutboxEvent",
+    "configuredTable": "outbox_event",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "OutboxEvent"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Plan",
+    "configuredTable": "plan",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Plan"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "PlanEntitlement",
+    "configuredTable": "plan_entitlement",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "PlanEntitlement"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Subscription",
+    "configuredTable": "subscription",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Subscription"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "SubscriptionEntitlementOverride",
+    "configuredTable": "subscription_entitlement_override",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "SubscriptionEntitlementOverride"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "QuotaUsage",
+    "configuredTable": "quota_usage",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "QuotaUsage"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Invoice",
+    "configuredTable": "invoice",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Invoice"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "InvoiceItem",
+    "configuredTable": "invoice_item",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "InvoiceItem"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Payment",
+    "configuredTable": "payment",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Payment"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "BillingEvent",
+    "configuredTable": "billing_event",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "BillingEvent"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "AdminDelegation",
+    "configuredTable": "admin_delegation",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "AdminDelegation"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "AdministrativeAction",
+    "configuredTable": "administrative_action",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "AdministrativeAction"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "PlatformService",
+    "configuredTable": "platform_service",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "PlatformService"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "PlatformDiagnostic",
+    "configuredTable": "platform_diagnostic",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "PlatformDiagnostic"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "PlatformMaintenance",
+    "configuredTable": "platform_maintenance",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "PlatformMaintenance"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "Feature",
+    "configuredTable": "feature",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "Feature"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  },
+  {
+    "model": "WebhookEvent",
+    "configuredTable": "webhook_event",
+    "candidate": {
+      "table_schema": "auth_aim",
+      "table_name": "WebhookEvent"
+    },
+    "missingColumns": [],
+    "status": "DATA_MIGRATION_REQUIRED_OR_MAPPING_REVIEW"
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "mode": "ISOLATED_UNIT_NOT_E2E",
+  "nestedProtectedRoute": "PASS",
+  "axiosBasePath": "PASS",
+  "navigationKeys": "PASS",
+  "duplicateApiPrefix": "PASS"
+}

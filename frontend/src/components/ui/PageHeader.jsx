@@ -2,9 +2,9 @@ import { ChevronLeft } from 'lucide-react';
 
 export function PageHeader({ title, subtitle, action, breadcrumb }) {
   return (
-    <div className="border-b border-gray-200 px-6 py-4">
+    <div className="pb-1">
       {breadcrumb && (
-        <nav aria-label="Fil d’Ariane" className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-2">
+        <nav aria-label="Fil d’Ariane" className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mb-1.5">
           {breadcrumb.map((crumb, i) => (
             <span key={i} className="flex items-center">
               {i > 0 && <span className="mx-1">/</span>}
@@ -17,15 +17,15 @@ export function PageHeader({ title, subtitle, action, breadcrumb }) {
           ))}
         </nav>
       )}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
+          {subtitle && <p className="text-sm text-slate-500 mt-1.5">{subtitle}</p>}
         </div>
         {action && (
           <button
             onClick={action.onClick}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="shrink-0 px-4 py-2.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-150 ease-out motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-blue-500"
           >
             {action.label}
           </button>

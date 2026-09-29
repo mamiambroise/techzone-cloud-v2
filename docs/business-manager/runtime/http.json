@@ -1,0 +1,62 @@
+{
+  "mode": "LIVE_NO_MOCKS",
+  "timestamp": "2026-09-28T03:44:52.446Z",
+  "requests": [
+    {
+      "method": "get",
+      "url": "/health",
+      "status": 200
+    },
+    {
+      "method": "post",
+      "url": "/api/iam/auth/login",
+      "status": 200
+    },
+    {
+      "method": "get",
+      "url": "/api/iam/auth/me",
+      "status": 200
+    },
+    {
+      "method": "get",
+      "url": "/api/iam/auth/tenants",
+      "status": 200
+    },
+    {
+      "method": "get",
+      "url": "/api/business-manager/configurations",
+      "status": 403
+    },
+    {
+      "method": "post",
+      "url": "/api/iam/auth/refresh",
+      "status": 200
+    },
+    {
+      "method": "get",
+      "url": "/api/iam/auth/me",
+      "status": 200
+    }
+  ],
+  "LOGIN_REAL": "REAL_PASS",
+  "cookies": [
+    {
+      "name": "iam_access_token",
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "iam_refresh_token",
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "AUTH_ME_REAL": "REAL_PASS",
+  "userIsAdmin": false,
+  "tenantCount": 0,
+  "tenants": [],
+  "CONFIGURATION_API": "BLOCKED_AUTH",
+  "REFRESH_REAL": "REAL_PASS"
+}
