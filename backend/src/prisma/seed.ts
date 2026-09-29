@@ -23,11 +23,15 @@ import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({
-    connectionString:
-      process.env.DATABASE_URL ||
-      'postgresql://postgres:postgres@localhost:5432/techzone',
-  }),
+  adapter: new PrismaPg(
+    {
+      connectionString:
+        process.env.DATABASE_URL ||
+        'postgresql://postgres:postgres@localhost:5432/techzone',
+    },
+    // Same schema resolution as PrismaService (business_manager by default).
+    { schema: new URL(process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/techzone').searchParams.get('schema') || 'business_manager' },
+  ),
 });
 
 async function main() {
@@ -599,12 +603,13 @@ async function main() {
     },
   });
 
+  await prisma.integrationLog.deleteMany({ where: { traceId: { in: ['trc-initial-sync-001'] } } });
   await prisma.integrationLog.createMany({
     data: [
       {
         id: 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091',
         traceId: 'trc-initial-sync-001',
-        tenantId: 'default',
+        tenantId: '00000000-0000-4000-8000-000000000000',
         connectorId: 'a7b8c9d0-e1f2-4a5b-4c5d-6e7f8091a2b3',
 
         operation: 'connector.health_check',
@@ -622,7 +627,7 @@ async function main() {
       {
         id: 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8091a2',
         traceId: 'trc-initial-sync-001',
-        tenantId: 'default',
+        tenantId: '00000000-0000-4000-8000-000000000000',
         connectorId: 'a7b8c9d0-e1f2-4a5b-4c5d-6e7f8091a2b3',
 
         operation: 'sync.pipeline',

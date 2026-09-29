@@ -73,7 +73,7 @@ const SERVICES = [
     tag: 'JASMINE',
     port: 3003,
     cwd: path.join(root, 'backend'),
-    cmd: () => ({ cmd: NODE, args: ['--env-file=.env', '--env-file-if-exists=.env.local', 'dist/main.js'] }),
+    cmd: () => ({ cmd: NODE, args: ['--env-file-if-exists=.env', '--env-file-if-exists=.env.local', 'dist/main.js'] }),
     build: (npm) => ({ cmd: NODE, args: [npm, 'run', 'build'] }),
     dist: ['dist/main.js'],
     url: 'http://localhost:3003',
