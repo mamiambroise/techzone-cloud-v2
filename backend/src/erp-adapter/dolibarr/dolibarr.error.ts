@@ -46,11 +46,24 @@ export class DolibarrError extends Error {
   /**
    * Traduit une erreur HTTP Dolibarr en DolibarrError
    */
+  static FORBIDDEN(message = 'Acces refuse (403)'): DolibarrError {
+    return new DolibarrError('FORBIDDEN', message, 403);
+  }
+
   static fromHttpError(status: number, data?: any): DolibarrError {
-    const msg = data?.error || data?.message || 'Erreur inconnue';
+    let msg: string;
+    if (data?.error?.message) {
+      msg = data.error.message;
+    } else if (data?.error) {
+      msg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+    } else {
+      msg = data?.message || data?.error || 'Erreur inconnue';
+    }
     switch (status) {
       case 401:
         return DolibarrError.AUTH_ERROR(msg);
+      case 403:
+        return DolibarrError.FORBIDDEN(`[${status}] ${msg}`);
       case 404:
         return DolibarrError.NOT_FOUND(msg);
       case 409:

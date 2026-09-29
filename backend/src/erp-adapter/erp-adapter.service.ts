@@ -5,7 +5,7 @@ import { DolibarrAdapter } from './dolibarr/dolibarr.adapter';
 import { ErpError } from './erp-error';
 import { ErpRegistryService } from '../erp-registry/erp-registry.service';
 import { ERPRegistry } from '../generated/prisma/client';
-import { DolibarrConfig } from './dolibarr/dolibarr.config';
+import { DolibarrConfig, DEFAULT_DOLIBARR_CONFIG } from './dolibarr/dolibarr.config';
 
 @Injectable()
 export class ErpAdapterService {
@@ -64,10 +64,12 @@ export class ErpAdapterService {
     if (type === 'DOLIBARR') {
       const adapter = new DolibarrAdapter();
       const capabilities = (registry.capabilities as Record<string, any>) || {};
+      const dbApiKey = String(capabilities.apiKey || '').trim();
+      const envApiKey = process.env.DOLIBARR_API_KEY || DEFAULT_DOLIBARR_CONFIG.apiKey || '';
       const config: Partial<DolibarrConfig> = {
-        baseUrl: registry.url,
-        apiKey: String(capabilities.apiKey || ''),
-        entity: Number(capabilities.entity || 1),
+        baseUrl: (registry.url || '').trim() || process.env.DOLIBARR_URL || DEFAULT_DOLIBARR_CONFIG.baseUrl,
+        apiKey: dbApiKey || envApiKey,
+        entity: Number(capabilities.entity || process.env.DOLIBARR_ENTITY || DEFAULT_DOLIBARR_CONFIG.entity || 1),
       };
       adapter.configure(config);
       return adapter;
