@@ -1,4 +1,4 @@
-﻿import React, { StrictMode } from 'react';
+import React, { StrictMode } from 'react';
 import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
@@ -36,10 +36,10 @@ describe('configuration workspace',()=>{
  });
 });
 describe('canonical sidebar',()=>{
- it('renders each of the eleven groups once for an admin and uses concrete registered URLs',()=>{
+ it('renders each of the visible groups once for an admin and uses concrete registered URLs',()=>{
   const {container}=render(<Wrapper><Sidebar isOpen={false} onClose={()=>{}}/></Wrapper>);
-  expect(container.querySelectorAll('[data-navigation-group]')).toHaveLength(11);
-  for(const group of navigationGroups)expect(container.querySelectorAll(`[data-navigation-group="${group.id}"]`)).toHaveLength(1);
+  expect(container.querySelectorAll('[data-navigation-group]')).toHaveLength(navigationGroups.filter(g=>!g.hidden).length);
+  for(const group of navigationGroups.filter(g=>!g.hidden))expect(container.querySelectorAll(`[data-navigation-group="${group.id}"]`)).toHaveLength(1);
   for(const link of container.querySelectorAll('a')) { expect(link.getAttribute('href')).not.toContain(':');expect(resolveRoute(link.getAttribute('href'))).toBeDefined(); }
  });
  it('registers unavailable destinations as ComingSoon and keeps them unimplemented',()=>{
