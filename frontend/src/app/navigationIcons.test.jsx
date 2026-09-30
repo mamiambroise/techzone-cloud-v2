@@ -23,6 +23,10 @@ describe('Sidebar icon registry and navigation',()=>{
     expect(screen.getByRole('link',{name:'Vue d’ensemble'})).toHaveAttribute('aria-current','page');
     fireEvent.change(screen.getByLabelText('Rechercher dans le menu'),{target:{value:'Navigation'}});
     expect(screen.getByRole('link',{name:'Navigation',exact:true})).toBeInTheDocument();
+    // Le groupe UI Builder est maintenant implémenté : il reste visible lors de
+    // la recherche tant qu'une de ses pages correspond (ici « Navigation »).
+    expect(screen.queryByRole('link',{name:'UI Builder'})).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Rechercher dans le menu'),{target:{value:'zzzz-inexistant'}});
     expect(screen.queryByRole('link',{name:'UI Builder'})).not.toBeInTheDocument();
   });
 });

@@ -8,6 +8,7 @@ import snapshotsReducer from './snapshotsSlice.js';
 import auditReducer from './auditSlice.js';
 import integrationReducer from './integrationSlice.js';
 import deploymentReducer from './deploymentSlice.js';
+import uiBuilderReducer from '../features/ui-builder/store/uiBuilderSlice.js';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     audit: auditReducer,
     integration: integrationReducer,
     deployment: deploymentReducer,
+    uiBuilder: uiBuilderReducer,
   },
 });
 

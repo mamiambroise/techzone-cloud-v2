@@ -25,6 +25,7 @@ export const ROUTES = {
   "uiPreview": "/ui/preview",
   "ui": "/ui",
   "uiPage": "/ui/pages/:pageId",
+  "uiNavigation": "/ui/navigation",
   "automation": "/automation",
   "automationRules": "/automation/rules",
   "automationFormulas": "/automation/formulas",
