@@ -37,7 +37,8 @@ for (const redirect of redirects) {
 }
 const before = JSON.parse(fs.readFileSync(path.join(root, 'docs/navigation/before.json')));
 for (const route of before) check(routeDefinitions.some(r => r.route === route.route) || redirects.some(r => r.from === route.route), `Lost legacy page: ${route.route}`);
-assert.deepEqual(navigationGroups.map(g => g.id), ['dashboard','applications','bm','ui','automation','packs','erp','billing','iam','observability','settings']);
+assert.deepEqual(navigationGroups.map(g => g.id), ['dashboard','applications','bm','ui','automation','packs','runtime','data','erp','api','environments','deployments','iam','observability','billing','admin']);
+assert.equal(resolveRoute('/packs/runtime').redirectTo, '/runtime');
 assert.equal(resolveRoute('/erp').id, 'erp');
 assert.equal(resolveRoute('/erps').id, 'erpRegistry');
 assert.equal(resolveRoute('/erps/edit/abc').component, 'ERPEdit');

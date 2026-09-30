@@ -1,12 +1,12 @@
 import TenantBoundary from './components/TenantBoundary.jsx';
 import { routeDefinitions, redirects, navigationGroups } from './app/navigationConfig.js';
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import TechzoneLayout from './layouts/TechzoneLayout.jsx';
 import RouteToTabSync from './app/RouteToTabSync.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import { useDispatch, useSelector } from 'react-redux';
-import { setSelectedAppId } from './store/applicationsSlice.js';
+import { setSelectedAppId, fetchApplicationsAsync } from './store/applicationsSlice.js';
 import { ROUTES } from './app/routes.js';
 import CreateAppModal from './components/CreateAppModal.jsx';
 import { useModal } from './app/ModalContext.jsx';
@@ -117,12 +117,16 @@ function ApplicationDetailRoute() {
   const dispatch = useDispatch();
   const selected = useSelector(state => state.applications.selectedAppId);
   const applications = useSelector(state => state.applications.applications);
-  const exists = applications.some(app => app.id === applicationId);
-  useEffect(() => { if (exists) dispatch(setSelectedAppId(applicationId)); }, [applicationId, exists, dispatch]);
-  if (!exists) return <NotFound />;
+  // Deep-link : charge le catalogue réel avant de conclure à une 404.
+  const [fetched, setFetched] = useState(false);
+  useEffect(() => { dispatch(fetchApplicationsAsync()).finally(() => setFetched(true)); }, [dispatch]);
+  useEffect(() => { if (fetched && applications.some(app => app.id === applicationId)) dispatch(setSelectedAppId(applicationId)); }, [applicationId, fetched, applications, dispatch]);
+  if (!fetched) return <ModernSpinner />;
+  if (!exists(applications, applicationId)) return <NotFound />;
   if (selected !== applicationId) return <ModernSpinner />;
   return <WorkspaceConfigView />;
 }
+function exists(applications, applicationId) { return applications.some(app => app.id === applicationId); }
 function LegacyRedirect({ to }) {
   const location = useLocation();
   const [pathname, anchor] = to.split('#');

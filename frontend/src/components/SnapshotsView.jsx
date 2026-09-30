@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setSelectedSnapshotId,
@@ -9,6 +9,7 @@ import {
 } from '../store/snapshotsSlice.js';
 import { logAuditAction } from '../store/auditSlice.js';
 import { addToast } from '../store/platformSlice.js';
+import { api } from '../services/apiClient.js';
 import { computeCanonicalHash } from '../utils/crypto.js';
 import {
   Camera,
@@ -38,6 +39,24 @@ export default function SnapshotsView({ onOpenCreateSnapshot }) {
 
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [showJsonExportModal, setShowJsonExportModal] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [revision, setRevision] = useState(0);
+
+  // REAL DATA ONLY : les snapshots sont chargés depuis l'API réelle.
+  useEffect(() => {
+    let live = true;
+    setLoadError(false);
+    api.get('/business-manager/snapshots')
+      .then((response) => {
+        if (!live) return;
+        const data = response.data ?? response;
+        if (Array.isArray(data)) {
+          data.forEach((snapshot) => dispatch(addSnapshot(snapshot)));
+        }
+      })
+      .catch(() => { if (live) setLoadError(true); });
+    return () => { live = false; };
+  }, [dispatch, revision]);
 
   const filteredSnapshots = snapshots.filter((s) => {
     return (

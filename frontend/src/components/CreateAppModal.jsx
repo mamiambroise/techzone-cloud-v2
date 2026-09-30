@@ -2,24 +2,27 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addApplication, addApplicationAsync } from '../store/applicationsSlice.js';
 import { logAuditAction } from '../store/auditSlice.js';
-import { addToast, TENANTS } from '../store/platformSlice.js';
+import { addToast } from '../store/platformSlice.js';
+import { useTenant } from '../contexts/TenantProvider.jsx';
 import { Boxes, X } from 'lucide-react';
 
 export default function CreateAppModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
   const activeUser = useSelector((state) => state.platform.activeUser);
   const providerMode = useSelector((state) => state.platform.providerMode);
+  const { activeTenant } = useTenant();
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [tenantScope, setTenantScope] = useState('tenant-core-global');
+  const tenantScope = activeTenant?.id ?? '';
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!code.trim() || !name.trim()) return;
+    if (!tenantScope) { dispatch(addToast({ type: 'error', title: 'Tenant requis', message: 'Sélectionnez un tenant actif avant de créer une application.' })); return; }
 
     const body = {
       code: code.trim().toUpperCase(),
@@ -126,17 +129,14 @@ export default function CreateAppModal({ isOpen, onClose }) {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Périmètre Tenant</label>
-            <select
-              value={tenantScope}
-              onChange={(e) => setTenantScope(e.target.value)}
-              className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              {TENANTS.filter((t) => t.id !== 'all').map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.code} — {t.name}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={activeTenant ? `${activeTenant.code ?? ''} — ${activeTenant.name ?? activeTenant.id}` : 'Aucun tenant actif'}
+              readOnly
+              disabled
+              className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 text-slate-500 font-mono"
+            />
+            <p className="mt-1 text-[10px] text-slate-400">L'application est rattachée au tenant actif de votre session IAM.</p>
           </div>
 
           <div>

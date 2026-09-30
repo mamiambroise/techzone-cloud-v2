@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from 'react';
+import { api } from '../services/apiClient.js';
 import {
   setSelectedContractId,
   setFilterStatus,
@@ -38,6 +40,24 @@ export default function ContractsView() {
   const [compatConsumer, setCompatConsumer] = useState('Team 4 Platform Foundation');
   const [compatVersion, setCompatVersion] = useState('1.0.0');
   const [compatResult, setCompatResult] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [revision, setRevision] = useState(0);
+
+  // REAL DATA ONLY : le registre est chargé depuis l'API réelle.
+  useEffect(() => {
+    let live = true;
+    setLoadError(false);
+    api.get('/business-manager/contracts')
+      .then((response) => {
+        if (!live) return;
+        const data = response.data ?? response;
+        if (Array.isArray(data)) {
+          data.forEach((contract) => dispatch(addContract(contract)));
+        }
+      })
+      .catch(() => { if (live) setLoadError(true); });
+    return () => { live = false; };
+  }, [dispatch, revision]);
 
   // New contract form
   const [newCode, setNewCode] = useState('');
