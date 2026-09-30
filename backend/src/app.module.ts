@@ -16,6 +16,9 @@ import { ErpAdapterModule } from './erp-adapter/erp-adapter.module';
 import { DataRuntimeModule } from './data-runtime/data-runtime.module';
 import { AutomationModule } from './automation/automation.module';
 import { ErpRegistryModule } from './erp-registry/erp-registry.module';
+import { PackManagerModule } from './modules/pack-manager/pack-manager.module';
+import { PackRuntimeModule } from './modules/pack-runtime/pack-runtime.module';
+import { UiBuilderModule } from './modules/ui-builder/ui-builder.module';
 import { ConfigController } from './config/config.controller';
 
 @Module({
@@ -34,6 +37,9 @@ import { ConfigController } from './config/config.controller';
     ErpAdapterModule,
     DataRuntimeModule,
     AutomationModule,
+    PackManagerModule,
+    PackRuntimeModule,
+    UiBuilderModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

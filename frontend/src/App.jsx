@@ -131,8 +131,20 @@ function LegacyRedirect({ to }) {
   return <Navigate to={{ pathname, search: location.search, hash: anchor ? '#' + anchor : location.hash }} replace />;
 }
 const BMWorkspaceRoute = lazy(() => import('./components/business-manager/BMWorkspaceRoute.jsx'));
+<<<<<<< HEAD
 function BMRuntimeRedirect() { const { applicationId, versionId } = useParams(); return <Navigate replace to={'/runtime/context'+(applicationId ? '?applicationId='+applicationId+'&businessVersionId='+versionId : '')}/>; }
 const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, BMWorkspaceRoute, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
+=======
+const UiBuilderOverview = lazy(() => import('./features/ui-builder/components/UiBuilderOverview.jsx'));
+const UiPagesManager = lazy(() => import('./features/ui-builder/components/UiPagesManager.jsx'));
+const UiVisualEditor = lazy(() => import('./features/ui-builder/components/UiVisualEditor.jsx'));
+const UiFormsBuilder = lazy(() => import('./features/ui-builder/components/UiFormsBuilder.jsx'));
+const UiComponentsCatalog = lazy(() => import('./features/ui-builder/components/UiComponentsCatalog.jsx'));
+const UiThemeBuilder = lazy(() => import('./features/ui-builder/components/UiThemeBuilder.jsx'));
+const UiNavigationPresentation = lazy(() => import('./features/ui-builder/components/UiNavigationPresentation.jsx'));
+const UiPreviewValidation = lazy(() => import('./features/ui-builder/components/UiPreviewValidation.jsx'));
+const routeComponents = { BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
+>>>>>>> dc5feb88fd597836d806457a7b2a50727b017d02
 
 function App() {
   return (
