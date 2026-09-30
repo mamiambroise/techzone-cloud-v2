@@ -1,3 +1,4 @@
+import BMContractsPanel from './BMContractsPanel.jsx';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -436,7 +437,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
         <>
           {/* ---- Validation & publication : workflow réel ---- */}
           {section === 'validation' && tab === 'workflow' && (
-            <ValidationWorkflow versionId={versionId} applicationId={applicationId} navigate={navigate} onError={setError} />
+            <><BMContractsPanel versionId={versionId} applicationId={applicationId}/><ValidationWorkflow versionId={versionId} applicationId={applicationId} navigate={navigate} onError={setError} /></>
           )}
 
           {section === 'validation' && tab === 'reports' && (

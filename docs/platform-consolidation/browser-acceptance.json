@@ -1,0 +1,274 @@
+{
+  "routes": [
+    {
+      "route": "/business-manager",
+      "title": "Vue d’ensemble",
+      "pass": true
+    },
+    {
+      "route": "/business-manager/applications",
+      "title": "Applications",
+      "pass": true
+    },
+    {
+      "route": "/business-manager/applications/efd7772d-a525-4bad-91df-e6c5ac20fd97/versions/e6572276-c628-4fee-9003-cc1b0f4fdd71/data-model",
+      "title": "Modèles de données",
+      "pass": true
+    },
+    {
+      "route": "/business-manager/applications/efd7772d-a525-4bad-91df-e6c5ac20fd97/versions/e6572276-c628-4fee-9003-cc1b0f4fdd71/features",
+      "title": "Fonctionnalités",
+      "pass": true
+    },
+    {
+      "route": "/business-manager/applications/efd7772d-a525-4bad-91df-e6c5ac20fd97/versions/e6572276-c628-4fee-9003-cc1b0f4fdd71/navigation",
+      "title": "Navigation",
+      "pass": true
+    },
+    {
+      "route": "/business-manager/configuration",
+      "title": "Configuration",
+      "pass": true
+    },
+    {
+      "route": "/business-manager/applications/efd7772d-a525-4bad-91df-e6c5ac20fd97/versions/e6572276-c628-4fee-9003-cc1b0f4fdd71/validation",
+      "title": "Validation & publication",
+      "pass": true
+    },
+    {
+      "route": "/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Vue d’ensemble",
+      "pass": true
+    },
+    {
+      "route": "/packs/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Packs",
+      "pass": true
+    },
+    {
+      "route": "/packs/versions?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Versions",
+      "pass": true
+    },
+    {
+      "route": "/packs/modules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Modules",
+      "pass": true
+    },
+    {
+      "route": "/packs/features?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Fonctionnalités",
+      "pass": true
+    },
+    {
+      "route": "/packs/capabilities?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Capacités",
+      "pass": true
+    },
+    {
+      "route": "/packs/dependencies?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Dépendances",
+      "pass": true
+    },
+    {
+      "route": "/packs/rules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Règles",
+      "pass": true
+    },
+    {
+      "route": "/packs/validation?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Validation & Manifest",
+      "pass": true
+    },
+    {
+      "route": "/packs/publication?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Publication",
+      "pass": true
+    },
+    {
+      "route": "/packs/registry?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "title": "Registry",
+      "pass": true
+    },
+    {
+      "route": "/runtime?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "title": "Vue d’ensemble Runtime",
+      "pass": true
+    },
+    {
+      "route": "/runtime/context?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "title": "Contextes",
+      "pass": true
+    },
+    {
+      "route": "/runtime/manifest?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "title": "Manifest publié",
+      "pass": true
+    },
+    {
+      "route": "/runtime/resolver?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "title": "Résolution",
+      "pass": true
+    },
+    {
+      "route": "/runtime/effective?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "title": "Configuration effective",
+      "pass": true
+    },
+    {
+      "route": "/runtime/cache?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "title": "Cache",
+      "pass": true
+    },
+    {
+      "route": "/runtime/diagnostics?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "title": "Diagnostics",
+      "pass": true
+    }
+  ],
+  "responsive": [
+    {
+      "width": 1920,
+      "route": "/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "route": "/packs/modules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=b3283216-4397-413f-b0f2-8d56c7335fe2",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "route": "/runtime/effective?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "route": "/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "route": "/packs/modules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=b3283216-4397-413f-b0f2-8d56c7335fe2",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "route": "/runtime/effective?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "route": "/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "route": "/packs/modules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=b3283216-4397-413f-b0f2-8d56c7335fe2",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "route": "/runtime/effective?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "route": "/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "route": "/packs/modules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=b3283216-4397-413f-b0f2-8d56c7335fe2",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "route": "/runtime/effective?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "route": "/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "route": "/packs/modules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=b3283216-4397-413f-b0f2-8d56c7335fe2",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "route": "/runtime/effective?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "route": "/packs?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=08d81495-7ce1-44d6-9ec2-fc88af9de37c",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "route": "/packs/modules?pack=17607082-8296-4ffb-866b-6ba2c9543c67&version=b3283216-4397-413f-b0f2-8d56c7335fe2",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "route": "/runtime/effective?resolution=d729f9ad-f9b6-4131-8549-be4587f5b4b0",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "route": "/login",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "route": "/login",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "route": "/login",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "route": "/login",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "route": "/login",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "route": "/login",
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "network": [],
+  "authExpected": [
+    {
+      "path": "/api/runtime/resolutions/d729f9ad-f9b6-4131-8549-be4587f5b4b0/reresolve",
+      "status": 401
+    },
+    {
+      "path": "/api/iam/auth/refresh",
+      "status": 401
+    }
+  ],
+  "actions": [
+    "CREATE_MODULE_UI",
+    "UPDATE_MODULE_UI",
+    "AUTHENTICATED_REFRESH",
+    "ANONYMOUS_REDIRECT",
+    "INVALID_LOGIN_INLINE_ERROR",
+    "REVOKED_SESSION_401_REDIRECT",
+    "DOUBLE_SUBMIT_ONE_REQUEST_AND_RETURN_ROUTE",
+    "ORDINARY_USER_403_UI_AND_API"
+  ],
+  "pass": true
+}

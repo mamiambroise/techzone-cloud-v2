@@ -16,7 +16,7 @@ afterEach(cleanup);
 beforeEach(()=>{getConfigs.mockReset();});
 function Wrapper({children}) {
  const store=configureStore({reducer:{config:configReducer,platform:(s={providerMode:'REAL',searchQuery:'',activeUser:{id:'u'},sidebarCollapsed:false})=>s,integration:(s={providerMode:'REAL'})=>s}});
- return <Provider store={store}><AuthContext.Provider value={{user:{id:'u',isAdmin:true}}}><TenantContext.Provider value={{activeTenant:{id:'tenant',name:'Recette'}}}><MemoryRouter initialEntries={['/business-manager/configuration']}>{children}</MemoryRouter></TenantContext.Provider></AuthContext.Provider></Provider>;
+ return <Provider store={store}><AuthContext.Provider value={{user:{id:'u',isAdmin:true,permissions:['*'],isSuperAdmin:true}}}><TenantContext.Provider value={{activeTenant:{id:'tenant',name:'Recette'}}}><MemoryRouter initialEntries={['/business-manager/configuration']}>{children}</MemoryRouter></TenantContext.Provider></AuthContext.Provider></Provider>;
 }
 describe('configuration workspace',()=>{
  it('fetches once under StrictMode and renders truthful empty state and tabs',async()=>{

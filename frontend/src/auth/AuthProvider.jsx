@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { createContext, useContext, useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { iamAuthService, getDeviceFingerprint } from '../services/authService.js';
 import { useDispatch } from 'react-redux';
 import { setActiveUser, setApiStatus, setActiveTenant } from '../store/platformSlice.js';
@@ -12,16 +12,21 @@ function loadSession() {
 }
 const unwrap = response => response?.data?.data ?? response?.data;
 export function AuthProvider({ children }) {
+  const wasAuthenticated = useRef(false);
+  const [sessionExpired,setSessionExpired] = useState(false);
   const [user, setUser] = useState(null);
   const [authState, setAuthState] = useState(AUTH_STATES.BOOTING);
   const dispatch = useDispatch();
-  const clearAuth = useCallback(() => {
+  const clearAuth = useCallback((event) => {
+    if (event?.type && wasAuthenticated.current) setSessionExpired(true);
+    wasAuthenticated.current = false;
     setUser(null); setAuthState(AUTH_STATES.UNAUTHENTICATED);
     dispatch(setActiveUser(null)); dispatch(setActiveTenant(null)); dispatch(setApiStatus('DISCONNECTED'));
   }, [dispatch]);
   const setAuthenticated = useCallback(data => {
     const profile = data?.user ?? data;
     if (!profile?.id) { clearAuth(); return; }
+    wasAuthenticated.current = true; setSessionExpired(false);
     setUser(profile); setAuthState(AUTH_STATES.AUTHENTICATED);
     dispatch(setActiveUser(profile)); dispatch(setActiveTenant(data?.activeTenant ?? null)); dispatch(setApiStatus('CONNECTED'));
   }, [dispatch, clearAuth]);
@@ -47,7 +52,8 @@ export function AuthProvider({ children }) {
     return data;
   }, [setAuthenticated]);
   const logout = useCallback(async () => { try { await iamAuthService.logout(); } finally { clearAuth(); } }, [clearAuth]);
-  const value = useMemo(() => ({user,authState,loading:authState===AUTH_STATES.BOOTING,isAuthenticated:authState===AUTH_STATES.AUTHENTICATED,apiStatus:authState===AUTH_STATES.AUTHENTICATED?'CONNECTED':'DISCONNECTED',login,logout,clearAuth,refreshAccessToken:iamAuthService.refresh}), [user,authState,login,logout,clearAuth]);
+  const refreshPrincipal = useCallback(async () => { setAuthenticated(unwrap(await iamAuthService.me())); }, [setAuthenticated]);
+  const value = useMemo(() => ({user,authState,sessionExpired,refreshPrincipal,loading:authState===AUTH_STATES.BOOTING,isAuthenticated:authState===AUTH_STATES.AUTHENTICATED,apiStatus:authState===AUTH_STATES.AUTHENTICATED?'CONNECTED':'DISCONNECTED',login,logout,clearAuth,refreshAccessToken:iamAuthService.refresh}), [user,authState,sessionExpired,refreshPrincipal,login,logout,clearAuth]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function AuthLoadingBoundary({ children }) {

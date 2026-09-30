@@ -6,6 +6,7 @@ import { navigationIcons, resolveNavigationIcon } from './navigationIcons.js';
 import Sidebar from '../components/Sidebar.jsx';
 vi.mock('react-redux',()=>({useDispatch:()=>vi.fn(),useSelector:selector=>selector({platform:{sidebarCollapsed:false}})}));
 vi.mock('../auth/AuthProvider.jsx',()=>({useAuth:()=>({user:{displayName:'Compte de recette',permissions:['*']},logout:vi.fn()})}));
+vi.mock('../contexts/TenantProvider.jsx',()=>({useTenant:()=>({activeTenant:{id:'tenant-a'},loading:false,error:null})}));
 describe('Sidebar icon registry and navigation',()=>{
   it('resolves every configured icon and renders unknown names safely',()=>{
     for(const group of navigationGroups) expect(navigationIcons[group.icon]).toBeDefined();

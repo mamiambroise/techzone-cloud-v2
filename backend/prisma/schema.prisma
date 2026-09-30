@@ -3235,6 +3235,7 @@ model BmRuntimeBinding {
 // MODELS â€” Quality Engine (BM-CDC-08)
 
 model BmqQualityReport {
+  inputHash           String?
   id                  String       @id @default(uuid()) @db.Uuid
   applicationId       String       @db.Uuid
   applicationVersionId String      @db.Uuid
@@ -3413,4 +3414,360 @@ model BmqTestRun {
 
   @@index([testCaseId])
   @@map("bm_test_runs")
+}
+
+// Pack Manager / Pack Runtime: adapted domain models from Mami. Canonical audit reused.
+model Pack {
+  id          String        @id @default(uuid()) @db.Uuid
+  tenantId    String @db.Uuid
+  code        String
+  name        String
+  shortName   String?
+  description String?
+  categoryId  String?
+  iconKey     String?
+  logoRef     String?
+  status      String        @default("DRAFT")
+  sourceType  String        @default("CUSTOM")
+  metadata    Json?
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  createdBy   String
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
+  updatedBy   String?
+  archivedAt  DateTime?     @db.Timestamptz(6)
+  rowVersion  Int           @default(1)
+  versions    PackVersion[]
+  @@unique([id, tenantId])
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("pm_packs")
+}
+
+model PackVersion {
+  id               String           @id @default(uuid()) @db.Uuid
+  tenantId         String @db.Uuid
+  packId           String           @db.Uuid
+  versionNumber    String
+  label            String?
+  description      String?
+  status           String           @default("DRAFT")
+  validationStatus String           @default("NOT_RUN")
+  manifestStatus   String           @default("NOT_GENERATED")
+  changeType       String           @default("INITIAL")
+  sourceVersionId  String?          @db.Uuid
+  releaseNotes     String?
+  snapshotHash     String?
+  manifestHash     String?
+  createdAt        DateTime         @default(now()) @db.Timestamptz(6)
+  createdBy        String
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(6)
+  updatedBy        String?
+  validatedAt      DateTime?        @db.Timestamptz(6)
+  validatedBy      String?
+  publishedAt      DateTime?        @db.Timestamptz(6)
+  publishedBy      String?
+  deprecatedAt     DateTime?        @db.Timestamptz(6)
+  archivedAt       DateTime?        @db.Timestamptz(6)
+  rowVersion       Int              @default(1)
+  pack             Pack             @relation(fields: [packId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  modules          PackModule[]
+  features         PackFeature[]
+  dependencies     PackDependency[]
+  rules            PackRule[]
+  validations      PackValidation[]
+  snapshot         PackSnapshot?
+  manifest         PackManifest?
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, packId, versionNumber])
+  @@index([tenantId, status])
+  @@map("pm_pack_versions")
+}
+
+model PackModule {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String @db.Uuid
+  packVersionId String        @db.Uuid
+  code          String
+  name          String
+  shortName     String?
+  description   String?
+  moduleType    String        @default("BUSINESS")
+  status        String        @default("DRAFT")
+  enabled       Boolean       @default(true)
+  displayOrder  Int           @default(0)
+  iconKey       String?
+  configuration Json?
+  metadata      Json?
+  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
+  createdBy     String
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(6)
+  updatedBy     String?
+  archivedAt    DateTime?     @db.Timestamptz(6)
+  rowVersion    Int           @default(1)
+  packVersion   PackVersion   @relation(fields: [packVersionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  features      PackFeature[]
+
+  @@unique([id, packVersionId, tenantId])
+  @@unique([tenantId, packVersionId, code])
+  @@index([tenantId, packVersionId, displayOrder])
+  @@map("pm_pack_modules")
+}
+
+model PackFeature {
+  id             String                  @id @default(uuid()) @db.Uuid
+  tenantId       String @db.Uuid
+  packVersionId  String                  @db.Uuid
+  moduleId       String?                 @db.Uuid
+  code           String
+  name           String
+  shortName      String?
+  description    String?
+  featureType    String                  @default("BUSINESS")
+  status         String                  @default("DRAFT")
+  enabled        Boolean                 @default(true)
+  defaultEnabled Boolean                 @default(true)
+  visibility     String                  @default("VISIBLE")
+  configuration  Json?
+  metadata       Json?
+  createdAt      DateTime                @default(now()) @db.Timestamptz(6)
+  createdBy      String
+  updatedAt      DateTime                @updatedAt @db.Timestamptz(6)
+  updatedBy      String?
+  archivedAt     DateTime?               @db.Timestamptz(6)
+  rowVersion     Int                     @default(1)
+  packVersion    PackVersion             @relation(fields: [packVersionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  module         PackModule?             @relation(fields: [moduleId, packVersionId, tenantId], references: [id, packVersionId, tenantId], onDelete: Restrict)
+  capabilities   PackFeatureCapability[]
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, packVersionId, code])
+  @@index([tenantId, moduleId])
+  @@map("pm_pack_features")
+}
+
+model PackCapability {
+  id              String                  @id @default(uuid()) @db.Uuid
+  tenantId        String? @db.Uuid
+  code            String
+  name            String
+  description     String?
+  capabilityType  String                  @default("BUSINESS")
+  scope           String                  @default("TENANT")
+  status          String                  @default("ACTIVE")
+  contractRef     String?
+  contractVersion String?
+  metadata        Json?
+  createdAt       DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime                @updatedAt @db.Timestamptz(6)
+  features        PackFeatureCapability[]
+
+  @@unique([tenantId, code])
+  @@index([code, status])
+  @@map("pm_capabilities")
+}
+
+model PackFeatureCapability {
+  id            String         @id @default(uuid()) @db.Uuid
+  tenantId      String @db.Uuid
+  featureId     String         @db.Uuid
+  capabilityId  String         @db.Uuid
+  relationType  String         @default("REQUIRES")
+  required      Boolean        @default(true)
+  configuration Json?
+  feature       PackFeature    @relation(fields: [featureId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  capability    PackCapability @relation(fields: [capabilityId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, featureId, capabilityId, relationType])
+  @@index([tenantId, capabilityId])
+  @@map("pm_feature_capabilities")
+}
+
+model PackDependency {
+  id                 String      @id @default(uuid()) @db.Uuid
+  tenantId           String @db.Uuid
+  packVersionId      String      @db.Uuid
+  sourceType         String
+  sourceId           String
+  dependencyType     String      @default("REQUIRES")
+  targetType         String
+  targetRef          String
+  targetVersionRange String?
+  required           Boolean     @default(true)
+  conditionRef       String?
+  reason             String?
+  status             String      @default("ACTIVE")
+  resolutionStatus   String      @default("NOT_RESOLVED")
+  metadata           Json?
+  createdAt          DateTime    @default(now()) @db.Timestamptz(6)
+  createdBy          String
+  updatedAt          DateTime    @updatedAt @db.Timestamptz(6)
+  updatedBy          String?
+  archivedAt         DateTime?   @db.Timestamptz(6)
+  rowVersion         Int         @default(1)
+  packVersion        PackVersion @relation(fields: [packVersionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@unique([tenantId, packVersionId, sourceType, sourceId, dependencyType, targetType, targetRef])
+  @@index([tenantId, packVersionId, resolutionStatus])
+  @@map("pm_dependencies")
+}
+
+model PackRule {
+  id                String      @id @default(uuid()) @db.Uuid
+  tenantId          String @db.Uuid
+  packVersionId     String      @db.Uuid
+  code              String
+  name              String
+  description       String?
+  ruleType          String      @default("ACTIVATION")
+  targetType        String
+  targetId          String
+  effect            String
+  priority          Int         @default(0)
+  status            String      @default("DRAFT")
+  enabled           Boolean     @default(true)
+  expressionVersion String      @default("1.0")
+  expression        Json
+  ruleHash          String?
+  metadata          Json?
+  createdAt         DateTime    @default(now()) @db.Timestamptz(6)
+  createdBy         String
+  updatedAt         DateTime    @updatedAt @db.Timestamptz(6)
+  updatedBy         String?
+  archivedAt        DateTime?   @db.Timestamptz(6)
+  rowVersion        Int         @default(1)
+  packVersion       PackVersion @relation(fields: [packVersionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@unique([tenantId, packVersionId, code])
+  @@index([tenantId, packVersionId, enabled, priority])
+  @@map("pm_rules")
+}
+
+model PackValidation {
+  id            String      @id @default(uuid()) @db.Uuid
+  tenantId      String @db.Uuid
+  packVersionId String      @db.Uuid
+  status        String
+  issues        Json
+  summary       Json
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  createdBy     String
+  packVersion   PackVersion @relation(fields: [packVersionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@index([tenantId, packVersionId, createdAt])
+  @@map("pm_validations")
+}
+
+model PackSnapshot {
+  id            String      @id @default(uuid()) @db.Uuid
+  tenantId      String @db.Uuid
+  packVersionId String      @unique @db.Uuid
+  snapshotHash  String
+  content       Json
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  packVersion   PackVersion @relation(fields: [packVersionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@unique([packVersionId, tenantId])
+  @@index([tenantId, snapshotHash])
+  @@map("pm_snapshots")
+}
+
+model PackManifest {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String @db.Uuid
+  packVersionId   String      @unique @db.Uuid
+  contractVersion String      @default("1.0.0")
+  manifestHash    String
+  status          String      @default("GENERATED")
+  content         Json
+  createdAt       DateTime    @default(now()) @db.Timestamptz(6)
+  publishedAt     DateTime?   @db.Timestamptz(6)
+  packVersion     PackVersion @relation(fields: [packVersionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@unique([packVersionId, tenantId])
+  @@index([tenantId, manifestHash])
+  @@map("pm_manifests")
+}
+
+model RuntimeResolution {
+  id                String                    @id @default(uuid()) @db.Uuid
+  tenantId          String @db.Uuid
+  applicationId     String
+  environment       String
+  packId            String                    @db.Uuid
+  packVersionId     String                    @db.Uuid
+  requestHash       String
+  status            String                    @default("PENDING")
+  context           Json
+  result            Json?
+  diagnostics       Json?
+  startedAt         DateTime                  @default(now()) @db.Timestamptz(6)
+  completedAt       DateTime?                 @db.Timestamptz(6)
+  createdBy         String
+  steps             RuntimeResolutionStep[]
+  diagnosticRecords RuntimeDiagnostic[]
+  @@unique([id, tenantId])
+  effectiveManifest RuntimeEffectiveManifest?
+
+  @@unique([tenantId, requestHash])
+  @@index([tenantId, applicationId, environment, startedAt])
+  @@map("pr_runtime_resolutions")
+}
+
+model RuntimeResolutionStep {
+  id           String            @id @default(uuid()) @db.Uuid
+  resolutionId String            @db.Uuid
+  code         String
+  status       String
+  displayOrder Int
+  inputHash    String?
+  outputHash   String?
+  details      Json?
+  startedAt    DateTime          @default(now()) @db.Timestamptz(6)
+  completedAt  DateTime?         @db.Timestamptz(6)
+  resolution   RuntimeResolution @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+
+  @@unique([resolutionId, code])
+  @@index([resolutionId, displayOrder])
+  @@map("pr_runtime_resolution_steps")
+}
+
+model RuntimeEffectiveManifest {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String @db.Uuid
+  resolutionId    String            @unique @db.Uuid
+  applicationId   String
+  environment     String
+  manifestHash    String
+  functionalHash  String
+  contractVersion String            @default("1.0.0")
+  status          String
+  executable      Boolean
+  content         Json
+  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
+  resolution      RuntimeResolution @relation(fields: [resolutionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@unique([resolutionId, tenantId])
+  @@index([tenantId, applicationId, environment, createdAt])
+  @@index([manifestHash])
+  @@map("pr_effective_manifests")
+}
+
+model RuntimeDiagnostic {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String @db.Uuid
+  resolutionId String?  @db.Uuid
+  severity     String
+  category     String
+  code         String
+  message      String
+  details      Json?
+  traceId      String
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  resolution RuntimeResolution? @relation(fields: [resolutionId, tenantId], references: [id, tenantId], onDelete: Restrict)
+  @@index([tenantId, resolutionId, createdAt])
+  @@index([tenantId, severity, category])
+  @@map("pr_runtime_diagnostics")
 }

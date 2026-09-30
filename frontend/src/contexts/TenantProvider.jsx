@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthProvider.jsx';
 import { normalizeTenants } from './tenantNormalization.js';
 export const TenantContext = createContext(null);
 export function TenantProvider({ children }) {
-  const { user, authState } = useAuth();
+  const { user, authState, refreshPrincipal } = useAuth();
   const dispatch = useDispatch();
   const [tenants, setTenants] = useState([]);
   const [activeTenant, setActive] = useState(null);
@@ -23,12 +23,13 @@ export function TenantProvider({ children }) {
     setLoading(true);
     try {
       await iamAuthService.switchTenant(id);
+      await refreshPrincipal?.();
       if (current !== generation.current) return;
       localStorage.setItem('techzone_active_tenant', id); commit(tenant); setError(null);
       return tenant;
     } catch (failure) { if (current === generation.current) setError(failure); throw failure; }
     finally { if (current === generation.current) setLoading(false); }
-  }, [tenants, commit]);
+  }, [tenants, commit, refreshPrincipal]);
   useEffect(() => {
     const current = ++generation.current;
     setTenants([]); commit(null); setError(null);
@@ -41,12 +42,13 @@ export function TenantProvider({ children }) {
       const selected = list.length === 1 ? list[0] : list.find(t => t.id === stored);
       if (selected) {
         await iamAuthService.switchTenant(selected.id);
+        await refreshPrincipal?.();
         if (current === generation.current) { commit(selected); localStorage.setItem('techzone_active_tenant', selected.id); }
       }
     }).catch(failure => { if (current === generation.current) setError(failure); })
       .finally(() => { if (current === generation.current) setLoading(false); });
     return () => { generation.current++; };
-  }, [authState, userId, revision, commit]);
+  }, [authState, userId, revision, commit, refreshPrincipal]);
   const value = useMemo(() => ({tenants,activeTenant,loading,error,switchTenant,refreshTenants:()=>setRevision(r=>r+1),hasMultipleTenants:tenants.length>1}), [tenants,activeTenant,loading,error,switchTenant]);
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 }

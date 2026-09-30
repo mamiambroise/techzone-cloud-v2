@@ -64,6 +64,14 @@ export const TENANTS = [
   { id: 'tenant-logistics-de', name: 'Techzone Logistics DACH', code: 'TZ-LOG-DE' },
 ];
 
+function persistedSidebarCollapsed() {
+  try {
+    return JSON.parse(localStorage.getItem('techzone.nav.collapsed')) === true;
+  } catch {
+    return false;
+  }
+}
+
 const initialState = {
   activeTab: 'workspace',
   activeUser: IAM_ROLES.ADMIN,
@@ -73,27 +81,10 @@ const initialState = {
   apiStatus: 'CONNECTING',
   platformContractLocked: true,
   activeModuleId: '01',
-  sidebarCollapsed: false,
+  sidebarCollapsed: persistedSidebarCollapsed(),
   providerMode: 'REAL',
   toasts: [],
-  alerts: [
-    {
-      id: 'alt-1',
-      type: 'warning',
-      title: 'Configuration incomplète sur TEST',
-      message: 'La clé platform.metrics.sample_rate est absente sur le scope TEST.',
-      timestamp: 'Il y a 12 min',
-      code: 'PLATFORM_CONFIG_INVALID',
-    },
-    {
-      id: 'alt-2',
-      type: 'info',
-      title: 'Platform Contract v1 verrouillé',
-      message: 'Intégrité certifiée par Team 4. Aucune rupture détectée.',
-      timestamp: 'Il y a 45 min',
-      code: 'PLATFORM_CONTRACT_LOCKED',
-    },
-  ],
+  alerts: [],
 };
 
 const platformSlice = createSlice({

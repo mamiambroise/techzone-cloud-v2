@@ -14,6 +14,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import { ModernSpinner } from './components/Loaders.jsx';
 
+const PackManagerPage = lazy(() => import('./components/pack-manager/PackManagerPage.jsx'));
+const RuntimePage = lazy(() => import('./components/pack-runtime/RuntimePage.jsx'));
 const GeneralOverviewView = lazy(() => import('./components/GeneralOverviewView.jsx'));
 const ApplicationsCatalogView = lazy(() => import('./components/ApplicationsCatalogView.jsx'));
 const WorkspaceConfigView = lazy(() => import('./components/WorkspaceConfigView.jsx'));
@@ -129,7 +131,8 @@ function LegacyRedirect({ to }) {
   return <Navigate to={{ pathname, search: location.search, hash: anchor ? '#' + anchor : location.hash }} replace />;
 }
 const BMWorkspaceRoute = lazy(() => import('./components/business-manager/BMWorkspaceRoute.jsx'));
-const routeComponents = { BMWorkspaceRoute, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
+function BMRuntimeRedirect() { const { applicationId, versionId } = useParams(); return <Navigate replace to={'/runtime/context'+(applicationId ? '?applicationId='+applicationId+'&businessVersionId='+versionId : '')}/>; }
+const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, BMWorkspaceRoute, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
 
 function App() {
   return (

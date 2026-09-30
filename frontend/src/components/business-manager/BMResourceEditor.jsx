@@ -26,7 +26,7 @@ export function BMResourceEditor({ fields, initial = {}, onSave, onCancel }) {
   }
   return <form onSubmit={submit} className="my-4 rounded-lg border bg-slate-50 p-4 space-y-4">
     <div className="grid gap-4 md:grid-cols-2">{fields.map(f => <label key={f.key} className="text-sm space-y-1"><span>{f.label}</span>
-      {f.options ? <select aria-label={f.label} className={inputClass} required={f.required} value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})}><option value="">Sélectionner</option>{f.options.map(o => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}</select>
+      {f.render ? f.render({ value:values[f.key],onChange:value => setValues({...values,[f.key]:value}) }) : f.options ? <select aria-label={f.label} className={inputClass} required={f.required} value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})}><option value="">Sélectionner</option>{f.options.map(o => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}</select>
         : f.type === 'json' ? <textarea aria-label={f.label} className={inputClass} value={typeof values[f.key] === 'object' ? JSON.stringify(values[f.key], null, 2) : values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})} />
           : <input aria-label={f.label} className={f.type === 'checkbox' ? 'ml-2' : inputClass} type={f.type || 'text'} required={f.required} maxLength={f.key === 'code' ? 100 : undefined} checked={f.type === 'checkbox' ? values[f.key] : undefined} value={f.type === 'checkbox' ? undefined : values[f.key]} onChange={e => setValues({...values, [f.key]: f.type === 'checkbox' ? e.target.checked : e.target.value})} />}
     </label>)}</div>

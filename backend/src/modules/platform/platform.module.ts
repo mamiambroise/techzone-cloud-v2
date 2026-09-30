@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 
 import { PlatformController } from './platform.controller';
 import { PlatformService } from './platform.service';
+import { DashboardService } from './dashboard.service';
+import { DashboardController } from './dashboard.controller';
 
 import { ApplicationsModule } from '../platform/applications/applications..module';
 import { ApplicationVersionsModule } from '../platform/application-versions/application-versions.module';
@@ -20,8 +22,8 @@ import { SnapshotsModule } from '../platform/snapshots/snapshot.module';
     SnapshotsModule,
   ],
 
-  controllers: [PlatformController],
+  controllers: [PlatformController, DashboardController],
 
-  providers: [PlatformService],
+  providers: [PlatformService, DashboardService],
 })
 export class PlatformModule {}

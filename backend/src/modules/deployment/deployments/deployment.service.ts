@@ -65,6 +65,14 @@ export class DeploymentService {
       );
     }
 
+    if (!release.tenantId || release.tenantId !== environment.tenantId) {
+      throw new DeploymentException(
+        DeploymentErrorCode.DEP_ENVIRONMENT_NOT_FOUND,
+        'Release and environment must belong to the same tenant',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     // Vérifier si l'environnement a un verrouillage
     const envDeployment = await this.prisma.environmentDeployment.findFirst({
       where: {
@@ -103,6 +111,7 @@ export class DeploymentService {
     // 5. Création du déploiement
     const deployment = await this.prisma.deployment.create({
       data: {
+        tenantId: release.tenantId,
         releaseId: dto.releaseId,
         environmentId: dto.environmentId,
         status: 'RUNNING',
@@ -156,6 +165,7 @@ export class DeploymentService {
     } else {
       await this.prisma.environmentDeployment.create({
         data: {
+          tenantId: release.tenantId,
           environmentId: environment.id,
           applicationId: release.applicationId,
           currentReleaseId: release.id,

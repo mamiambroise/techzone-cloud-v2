@@ -1,3 +1,8 @@
+import {
+  createDeploymentFixture,
+  removeDeploymentFixture,
+  DeploymentFixture,
+} from '../deployment-test.fixture';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnvironmentDeploymentService } from './environment-deployment.service';
 import { DeploymentService } from '../deployments/deployment.service';
@@ -6,6 +11,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
   let service: EnvironmentDeploymentService;
   let prisma: PrismaService;
+  let fixture: DeploymentFixture;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -20,6 +26,15 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
       EnvironmentDeploymentService,
     );
     prisma = module.get<PrismaService>(PrismaService);
+    fixture = await createDeploymentFixture(prisma);
+  });
+
+  afterEach(async () => {
+    try {
+      await removeDeploymentFixture(prisma, fixture);
+    } finally {
+      await prisma.$disconnect();
+    }
   });
 
   it('should be defined', () => {
@@ -33,7 +48,7 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
   });
 
   it('should get detailed environment status and drift check', async () => {
-    const environments = await prisma.environment.findMany();
+    const environments = [fixture.environment];
     const status = await service.getStatus(environments[0].id);
     expect(status).toHaveProperty('environment');
     expect(status).toHaveProperty('deployments');
@@ -44,7 +59,7 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
   });
 
   it('should lock and unlock an environment', async () => {
-    const environments = await prisma.environment.findMany();
+    const environments = [fixture.environment];
     const envId = environments[0].id;
 
     const lockResult = await service.lock(envId, {

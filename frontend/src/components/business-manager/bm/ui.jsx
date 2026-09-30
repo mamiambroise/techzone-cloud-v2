@@ -170,6 +170,15 @@ export function BmTabs({ tabs, active, onChange, ariaLabel = 'Onglets' }) {
             role="tab"
             type="button"
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
+            onKeyDown={(event) => {
+              if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+              event.preventDefault();
+              const buttons = [...event.currentTarget.parentElement.querySelectorAll('[role="tab"]')];
+              const index = buttons.indexOf(event.currentTarget);
+              const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+              buttons[next]?.focus(); buttons[next]?.click();
+            }}
             onClick={() => onChange(id)}
             className={`-mb-px rounded-t-lg border-b-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 bm-focus ${
               isActive
@@ -243,6 +252,15 @@ export function BmBadge({ children, tone = 'neutral', dot = false }) {
 const STATUS_TONES = {
   // Application
   ACTIVE: 'green',
+  PUBLISHED: 'green',
+  RESOLVED: 'green',
+  VALID: 'green',
+  COMPLETED: 'green',
+  UP: 'green',
+  OUTDATED: 'amber',
+  INVALID: 'red',
+  DOWN: 'red',
+  INACTIVE: 'neutral',
   ARCHIVED: 'neutral',
   DISABLED: 'red',
   // Version / entité / feature / capability / menu
@@ -289,7 +307,7 @@ export function BmButton({ children, variant = 'primary', size = 'md', icon, cla
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center font-semibold transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed bm-focus ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-semibold transition-all duration-150 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed bm-focus ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {icon && <span className="shrink-0" aria-hidden="true">{icon}</span>}
@@ -385,7 +403,7 @@ export function BmPlannedState({ title, description }) {
 export function BmLoading({ label = 'Chargement…' }) {
   return (
     <div role="status" className="flex items-center justify-center gap-2 px-6 py-10 text-sm text-slate-500">
-      <Loader2 className="h-4 w-4 animate-spin text-blue-500" aria-hidden="true" />
+      <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none text-blue-500" aria-hidden="true" />
       {label}
     </div>
   );
