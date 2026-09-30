@@ -3414,3 +3414,592 @@ model BmqTestRun {
   @@index([testCaseId])
   @@map("bm_test_runs")
 }
+
+/**
+ * ==================================================================================================================
+ * PACK MANAGER (PM-CDC-00 → PM-CDC-07)
+ * Design-time : packs versionnés, modules, features, capabilities,
+ * dépendances, règles, validation, manifest, publication.
+ * ==================================================================================================================
+ */
+
+enum PmPackStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  DEPRECATED
+  ARCHIVED
+}
+
+enum PmSourceType {
+  INTERNAL
+  IMPORTED
+  TEMPLATE
+}
+
+enum PmVersionStatus {
+  DRAFT
+  CONFIGURING
+  VALIDATING
+  READY
+  PUBLISHED
+  SUPERSEDED
+  DEPRECATED
+  ARCHIVED
+  INVALID
+  ERROR
+}
+
+enum PmValidationStatus {
+  NOT_RUN
+  RUNNING
+  VALID
+  INVALID
+  OUTDATED
+  ERROR
+}
+
+enum PmManifestStatus {
+  NOT_GENERATED
+  GENERATING
+  VALID
+  INVALID
+  OUTDATED
+  ERROR
+}
+
+enum PmDependencyType {
+  REQUIRED
+  OPTIONAL
+  CONFLICTS_WITH
+  RECOMMENDS
+  IMPLIES
+}
+
+enum PmDependencyTargetType {
+  PACK
+  MODULE
+  FEATURE
+  CAPABILITY
+}
+
+enum PmRuleType {
+  ACTIVATION
+  AVAILABILITY
+  CONSTRAINT
+}
+
+enum PmSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+// ---- PACK ----
+
+model PmPack {
+  id          String       @id @default(uuid()) @db.Uuid
+  code        String       @db.VarChar(100)
+  name        String       @db.VarChar(255)
+  shortName   String?      @db.VarChar(80)
+  description String?
+  category    String?      @db.VarChar(100)
+  iconKey     String?      @db.VarChar(100)
+  status      PmPackStatus @default(DRAFT)
+  sourceType  PmSourceType @default(INTERNAL)
+  metadata    Json?
+  tenantId    String?      @db.Uuid
+
+  versions        PmPackVersion[]
+  dependenciesIn  PmDependency[]  @relation("pmDependencyTargetPack")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  archivedAt DateTime?
+  rowVersion Int       @default(1)
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([status])
+  @@index([category])
+  @@map("pm_packs")
+}
+
+// ---- PACK VERSION ----
+
+model PmPackVersion {
+  id               String             @id @default(uuid()) @db.Uuid
+  packId           String             @db.Uuid
+  versionNumber    String             @db.VarChar(50)
+  label            String?            @db.VarChar(150)
+  description      String?
+  status           PmVersionStatus    @default(DRAFT)
+  validationStatus PmValidationStatus @default(NOT_RUN)
+  manifestStatus   PmManifestStatus   @default(NOT_GENERATED)
+  sourceVersionId  String?            @db.Uuid
+  snapshotHash     String?            @db.VarChar(128)
+  releaseNotes     String?
+  tenantId         String?            @db.Uuid
+
+  pack         PmPack           @relation(fields: [packId], references: [id], onDelete: Cascade)
+  sourceVersion PmPackVersion?  @relation("pmVersionClones", fields: [sourceVersionId], references: [id])
+  clones        PmPackVersion[]  @relation("pmVersionClones")
+
+  modules       PmModule[]
+  features      PmFeature[]
+  capabilities  PmCapability[]
+  dependencies  PmDependency[]
+  rules         PmRule[]
+  validations   PmValidation[]
+  manifests     PmManifest[]
+  snapshots     PmSnapshot[]
+  auditEvents   PmAuditEvent[]
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  rowVersion  Int       @default(1)
+
+  @@unique([packId, versionNumber])
+  @@index([tenantId])
+  @@index([packId])
+  @@index([status])
+  @@index([validationStatus])
+  @@map("pm_pack_versions")
+}
+
+// ---- MODULE ----
+
+model PmModule {
+  id          String  @id @default(uuid()) @db.Uuid
+  versionId   String  @db.Uuid
+  code        String  @db.VarChar(100)
+  name        String  @db.VarChar(255)
+  description String?
+  enabled     Boolean @default(true)
+  orderIndex  Int     @default(0)
+  config      Json?
+  tenantId    String? @db.Uuid
+
+  version     PmPackVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  features    PmModuleFeature[]
+  rules       PmRule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([versionId, code])
+  @@index([versionId])
+  @@index([tenantId])
+  @@map("pm_modules")
+}
+
+// ---- FEATURE ----
+
+model PmFeature {
+  id          String  @id @default(uuid()) @db.Uuid
+  versionId   String  @db.Uuid
+  code        String  @db.VarChar(150)
+  name        String  @db.VarChar(255)
+  description String?
+  enabled     Boolean @default(true)
+  metadata    Json?
+  tenantId    String? @db.Uuid
+
+  version      PmPackVersion       @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  capabilities PmFeatureCapability[]
+  moduleLinks  PmModuleFeature[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([versionId, code])
+  @@index([versionId])
+  @@index([tenantId])
+  @@map("pm_features")
+}
+
+// ---- CAPABILITY ----
+
+model PmCapability {
+  id          String  @id @default(uuid()) @db.Uuid
+  versionId   String  @db.Uuid
+  code        String  @db.VarChar(150)
+  name        String  @db.VarChar(255)
+  description String?
+  required    Boolean @default(false)
+  metadata    Json?
+  tenantId    String? @db.Uuid
+
+  version PmPackVersion        @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  featureLinks PmFeatureCapability[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([versionId, code])
+  @@index([versionId])
+  @@index([tenantId])
+  @@map("pm_capabilities")
+}
+
+// ---- RELATIONS MODULE ↔ FEATURE ↔ CAPABILITY ----
+
+model PmModuleFeature {
+  id       String  @id @default(uuid()) @db.Uuid
+  moduleId String  @db.Uuid
+  featureId String @db.Uuid
+  tenantId String? @db.Uuid
+
+  module  PmModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  feature PmFeature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, featureId])
+  @@index([moduleId])
+  @@index([featureId])
+  @@map("pm_module_features")
+}
+
+model PmFeatureCapability {
+  id           String  @id @default(uuid()) @db.Uuid
+  featureId    String  @db.Uuid
+  capabilityId String  @db.Uuid
+  required     Boolean @default(true)
+  tenantId     String? @db.Uuid
+
+  feature    PmFeature    @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  capability PmCapability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+
+  @@unique([featureId, capabilityId])
+  @@index([featureId])
+  @@index([capabilityId])
+  @@map("pm_feature_capabilities")
+}
+
+// ---- DEPENDENCY ----
+
+model PmDependency {
+  id           String                @id @default(uuid()) @db.Uuid
+  versionId    String                @db.Uuid
+  targetType   PmDependencyTargetType
+  targetPackId String?               @db.Uuid
+  targetCode   String                @db.VarChar(150)
+  versionRange String?               @db.VarChar(50)
+  type         PmDependencyType      @default(REQUIRED)
+  status       String?               @db.VarChar(50)
+  metadata     Json?
+  tenantId     String?               @db.Uuid
+
+  version    PmPackVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  targetPack PmPack?       @relation("pmDependencyTargetPack", fields: [targetPackId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([versionId, targetType, targetCode])
+  @@index([versionId])
+  @@index([targetPackId])
+  @@index([tenantId])
+  @@map("pm_dependencies")
+}
+
+// ---- RULES ----
+
+model PmRule {
+  id         String     @id @default(uuid()) @db.Uuid
+  versionId  String     @db.Uuid
+  code       String     @db.VarChar(100)
+  name       String     @db.VarChar(255)
+  type       PmRuleType @default(ACTIVATION)
+  description String?
+  conditions Json
+  effect     String     @default("ENABLE") @db.VarChar(50)
+  priority   Int        @default(100)
+  enabled    Boolean    @default(true)
+  moduleId   String?    @db.Uuid
+  tenantId   String?    @db.Uuid
+
+  version PmPackVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  module  PmModule?     @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([versionId, code])
+  @@index([versionId])
+  @@index([tenantId])
+  @@map("pm_rules")
+}
+
+// ---- VALIDATION ----
+
+model PmValidation {
+  id         String             @id @default(uuid()) @db.Uuid
+  versionId  String             @db.Uuid
+  status     PmValidationStatus @default(NOT_RUN)
+  checks     Json?
+  issues     Json?
+  durationMs Int?
+  tenantId   String?            @db.Uuid
+
+  version PmPackVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([versionId])
+  @@index([status])
+  @@index([tenantId])
+  @@map("pm_validations")
+}
+
+// ---- MANIFEST ----
+
+model PmManifest {
+  id          String           @id @default(uuid()) @db.Uuid
+  versionId   String           @db.Uuid
+  contract    String           @default("techzone.pack-manifest") @db.VarChar(100)
+  contractVersion String       @default("1.0") @db.VarChar(20)
+  status      PmManifestStatus @default(NOT_GENERATED)
+  content     Json
+  hash        String           @db.VarChar(128)
+  revision    Int              @default(1)
+  tenantId    String?          @db.Uuid
+
+  version PmPackVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([versionId, revision])
+  @@index([versionId])
+  @@index([tenantId])
+  @@map("pm_manifests")
+}
+
+// ---- SNAPSHOT ----
+
+model PmSnapshot {
+  id        String @id @default(uuid()) @db.Uuid
+  versionId String @db.Uuid
+  hash      String @db.VarChar(128)
+  content   Json
+  tenantId  String? @db.Uuid
+
+  version PmPackVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([versionId])
+  @@index([tenantId])
+  @@map("pm_snapshots")
+}
+
+// ---- AUDIT (PM) ----
+
+model PmAuditEvent {
+  id        String @id @default(uuid()) @db.Uuid
+  versionId String? @db.Uuid
+  packId    String? @db.Uuid
+  action    String @db.VarChar(100)
+  actor     String? @db.VarChar(150)
+  details   Json?
+  traceId   String? @db.VarChar(64)
+  tenantId  String? @db.Uuid
+
+  version PmPackVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([packId])
+  @@index([versionId])
+  @@index([createdAt])
+  @@map("pm_audit_events")
+}
+
+/**
+ * ==================================================================================================================
+ * PACK RUNTIME (PR-CDC-00 → PR-CDC-07)
+ * Run-time : chargement du manifest publié, résolution contextuelle,
+ * configuration effective, cache et diagnostics.
+ * ==================================================================================================================
+ */
+
+enum PrResolutionStatus {
+  NOT_RESOLVED
+  RESOLVING
+  RESOLVED
+  PARTIALLY_RESOLVED
+  BLOCKED
+  DEGRADED
+  ERROR
+}
+
+model PrRuntimeContext {
+  id          String  @id @default(uuid()) @db.Uuid
+  label       String  @db.VarChar(150)
+  tenantId    String? @db.Uuid
+  applicationId String? @db.Uuid
+  environment String  @default("PRODUCTION") @db.VarChar(50)
+  featureFlags Json?
+  metadata    Json?
+
+  resolutions PrRuntimeResolution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([applicationId])
+  @@map("pr_runtime_contexts")
+}
+
+model PrRuntimeResolution {
+  id                   String            @id @default(uuid()) @db.Uuid
+  tenantId             String?           @db.Uuid
+  applicationId        String?           @db.Uuid
+  packId               String?           @db.Uuid
+  packVersionId        String?           @db.Uuid
+  packCode             String?           @db.VarChar(100)
+  packVersion          String?           @db.VarChar(50)
+  sourceManifestHash   String?           @db.VarChar(128)
+  effectiveManifestHash String?          @db.VarChar(128)
+  status               PrResolutionStatus @default(NOT_RESOLVED)
+  contextId            String?           @db.Uuid
+  steps                Json?
+  issues               Json?
+  effectiveManifest    Json?
+  durationMs           Int?
+  traceId              String?           @db.VarChar(64)
+  startedAt            DateTime          @default(now())
+  completedAt          DateTime?
+  createdAt            DateTime          @default(now())
+
+  context PrRuntimeContext? @relation(fields: [contextId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([packCode, packVersion])
+  @@index([status])
+  @@index([traceId])
+  @@index([createdAt])
+  @@map("pr_runtime_resolutions")
+}
+
+model PrRuntimeCacheEntry {
+  id        String   @id @default(uuid()) @db.Uuid
+  cacheKey  String   @db.VarChar(300)
+  tenantId  String?  @db.Uuid
+  payload   Json
+  hash      String?  @db.VarChar(128)
+  hits      Int      @default(0)
+  misses    Int      @default(0)
+  ttlSeconds Int     @default(300)
+  expiresAt DateTime?
+  lastInvalidatedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cacheKey])
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("pr_runtime_cache")
+}
+
+model PrRuntimeDiagnostic {
+  id        String @id @default(uuid()) @db.Uuid
+  severity  String @db.VarChar(20)
+  category  String @db.VarChar(50)
+  component String @db.VarChar(50)
+  message   String @db.VarChar(500)
+  details   Json?
+  resolutionId String? @db.Uuid
+  traceId   String? @db.VarChar(64)
+  tenantId  String? @db.Uuid
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([severity])
+  @@index([resolutionId])
+  @@index([createdAt])
+  @@map("pr_runtime_diagnostics")
+}
+
+// =============================================================================
+// UI BUILDER (UI-BUILDER CDC V1)
+// =============================================================================
+
+enum UiPageType {
+  LIST
+  DETAIL
+  FORM
+  DASHBOARD
+  CUSTOM
+}
+
+enum UiPageLayout {
+  SIDEBAR
+  FULL_WIDTH
+  CENTERED
+}
+
+enum UiPageVisibility {
+  ALWAYS
+  TENANT_ADMIN_ONLY
+  HIDDEN
+}
+
+enum UiThemeStatus {
+  DRAFT
+  READY
+}
+
+/// Page d'interface construite par le UI Builder.
+/// Hybrid representation : colonnes requêtes (route/key/type/ordre) + JSON
+/// déclaratif pour l'arbre de composants (UI Definition), même pattern
+/// que BmEntity / PmManifest.
+model UiPage {
+  id                   String            @id @default(uuid()) @db.Uuid
+  applicationId        String            @db.Uuid
+  applicationVersionId String            @db.Uuid
+  key                  String            @db.VarChar(100)
+  route                String            @db.VarChar(200)
+  title                String            @db.VarChar(255)
+  description          String?
+  type                 UiPageType        @default(CUSTOM)
+  layout               UiPageLayout      @default(SIDEBAR)
+  visibility           UiPageVisibility  @default(ALWAYS)
+  order                Int               @default(0)
+  permissions          Json?
+  components           Json?
+  metadata             Json?
+  status               UiThemeStatus     @default(DRAFT)
+  tenantId             String?           @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, applicationVersionId, key])
+  @@index([applicationVersionId])
+  @@index([tenantId])
+  @@index([route])
+  @@map("ui_pages")
+}
+
+/// Design tokens du UI Builder (couleurs, typographie, spacing, radius,
+/// shadow, breakpoints) liés à une application version.
+model UiThemeSetting {
+  id                   String         @id @default(uuid()) @db.Uuid
+  applicationId        String         @db.Uuid
+  applicationVersionId String         @db.Uuid
+  tokens               Json
+  status               UiThemeStatus  @default(DRAFT)
+  revision             Int            @default(1)
+  tenantId             String?        @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicationVersionId])
+  @@index([tenantId])
+  @@map("ui_theme_settings")
+}
