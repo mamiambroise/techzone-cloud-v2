@@ -68,7 +68,7 @@ export class DashboardService {
         this.widget(actor, null, () => this.db.application.count({ where })),
       packs: () =>
         this.widget(actor, 'pack.read', () =>
-          this.db.pack.count({ where: { ...where, archivedAt: null } }),
+          this.db.pmPack.count({ where: { ...where, archivedAt: null } }),
         ),
       deployments: () =>
         this.widget(actor, null, () => this.db.deployment.count({ where })),
@@ -82,7 +82,7 @@ export class DashboardService {
           : { state: 'FORBIDDEN', data: null },
       recentPacks: () =>
         this.widget(actor, 'pack.read', async () => {
-          const packs = await this.db.pack.findMany({
+          const packs = await this.db.pmPack.findMany({
             where: { ...where, archivedAt: null },
             take: 5,
             orderBy: { updatedAt: 'desc' },
@@ -101,7 +101,7 @@ export class DashboardService {
                   status: true,
                   _count: {
                     select: {
-                      modules: { where: { ...where, archivedAt: null } },
+                      modules: { where },
                     },
                   },
                 },
@@ -200,8 +200,8 @@ export class DashboardService {
         }),
       packAlerts: () =>
         this.widget(actor, 'pack.read', async () => {
-          const rows = await this.db.packVersion.findMany({
-            where: { ...where, validationStatus: 'INVALID', archivedAt: null },
+          const rows = await this.db.pmPackVersion.findMany({
+            where: { ...where, validationStatus: 'INVALID' },
             take: 5,
             orderBy: { updatedAt: 'desc' },
             select: {
@@ -221,7 +221,7 @@ export class DashboardService {
         }),
       runtimeAlerts: () =>
         this.widget(actor, 'runtime.diagnostic.read', async () => {
-          const rows = await this.db.runtimeDiagnostic.findMany({
+          const rows = await this.db.prRuntimeDiagnostic.findMany({
             where: {
               ...where,
               severity: { in: ['ERROR', 'CRITICAL', 'WARNING'] },
@@ -231,7 +231,7 @@ export class DashboardService {
             select: {
               id: true,
               severity: true,
-              code: true,
+              message: true,
               resolutionId: true,
               createdAt: true,
             },
@@ -239,7 +239,7 @@ export class DashboardService {
           return rows.map((row) => ({
             id: row.id,
             severity: row.severity,
-            message: `Runtime : ${row.code}`,
+            message: `Runtime : ${row.message}`,
             timestamp: row.createdAt,
             targetRoute:
               '/runtime/diagnostics' +
@@ -290,7 +290,7 @@ export class DashboardService {
       ),
       this.widget(actor, 'pack.read', async () =>
         (
-          await this.db.pack.findMany({
+          await this.db.pmPack.findMany({
             where: { tenantId, name: contains, archivedAt: null },
             take: 5,
             select: { id: true, name: true },

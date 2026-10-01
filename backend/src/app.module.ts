@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PackManagerModule } from './modules/pack-manager/pack-manager.module';
-import { PackRuntimeModule } from './modules/pack-runtime/pack-runtime.module';
 import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
@@ -37,8 +35,6 @@ import { ConfigController } from './config/config.controller';
     ErpAdapterModule,
     DataRuntimeModule,
     AutomationModule,
-    PackManagerModule,
-    PackRuntimeModule,
     UiBuilderModule,
   ],
   controllers: [AppController, ConfigController],

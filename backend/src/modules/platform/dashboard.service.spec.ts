@@ -21,13 +21,13 @@ function database() {
   });
   return {
     application: rows(),
-    pack: rows(),
+    pmPack: rows(),
     deployment: rows(),
     environment: rows(),
     auditEvent: rows(),
     bmqQualityReport: rows(),
-    packVersion: rows(),
-    runtimeDiagnostic: rows(),
+    pmPackVersion: rows(),
+    prRuntimeDiagnostic: rows(),
   };
 }
 describe('Platform dashboard read boundary', () => {
@@ -43,9 +43,9 @@ describe('Platform dashboard read boundary', () => {
     const db = database(),
       r = await new DashboardService(db as any).getDashboard(actor('a'));
     expect(r.widgets.packs).toEqual({ state: 'FORBIDDEN', data: null });
-    expect(db.pack.findMany).not.toHaveBeenCalled();
-    expect(db.pack.count).not.toHaveBeenCalled();
-    expect(db.runtimeDiagnostic.findMany).not.toHaveBeenCalled();
+    expect(db.pmPack.findMany).not.toHaveBeenCalled();
+    expect(db.pmPack.count).not.toHaveBeenCalled();
+    expect(db.prRuntimeDiagnostic.findMany).not.toHaveBeenCalled();
   });
   it('isolates every projection by authenticated tenant and bounds lists', async () => {
     const db = database(),
@@ -66,7 +66,7 @@ describe('Platform dashboard read boundary', () => {
   it('preserves successful widgets when a module fails without leaking errors', async () => {
     const db = database();
     db.application.count.mockResolvedValue(7);
-    db.pack.count.mockRejectedValue(new Error('password=private'));
+    db.pmPack.count.mockRejectedValue(new Error('password=private'));
     const r = await new DashboardService(db as any).getDashboard(
       actor('a', ['*']),
     );
@@ -105,7 +105,7 @@ describe('Platform dashboard read boundary', () => {
   it('searches only authorized tenant resources, bounds input and hides secrets', async () => {
     const db = database();
     await new DashboardService(db as any).search(actor('b'), '  abc  ');
-    expect(db.pack.findMany).not.toHaveBeenCalled();
+    expect(db.pmPack.findMany).not.toHaveBeenCalled();
     expect(db.application.findMany.mock.calls[0][0]).toMatchObject({
       where: { tenantId: 'b', name: { contains: 'abc' } },
       take: 5,
