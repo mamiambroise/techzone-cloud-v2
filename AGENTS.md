@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## Working Branch
+- Use `mami` for all future tasks in this workspace.
+- Do not work or commit directly on `main`.
+- Before editing, verify the current branch and switch to `mami` if needed. Preserve any uncommitted work.
+
 ## Build Commands
 
 ### Root
