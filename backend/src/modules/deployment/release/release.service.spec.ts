@@ -1,3 +1,8 @@
+import {
+  createDeploymentFixture,
+  removeDeploymentFixture,
+  DeploymentFixture,
+} from '../deployment-test.fixture';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReleaseService } from './release.service';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -6,6 +11,7 @@ import { DeploymentException } from '../../../common/errors/deployment.exception
 describe('ReleaseService (DEP-CDC-02)', () => {
   let service: ReleaseService;
   let prisma: PrismaService;
+  let fixture: DeploymentFixture;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -14,6 +20,15 @@ describe('ReleaseService (DEP-CDC-02)', () => {
 
     service = module.get<ReleaseService>(ReleaseService);
     prisma = module.get<PrismaService>(PrismaService);
+    fixture = await createDeploymentFixture(prisma);
+  });
+
+  afterEach(async () => {
+    try {
+      await removeDeploymentFixture(prisma, fixture);
+    } finally {
+      await prisma.$disconnect();
+    }
   });
 
   it('should be defined', () => {
@@ -21,7 +36,9 @@ describe('ReleaseService (DEP-CDC-02)', () => {
   });
 
   it('should list all releases with relations', async () => {
-    const releases = await service.findAll();
+    const releases = await service.findAll({
+      applicationId: fixture.application.id,
+    });
     expect(Array.isArray(releases)).toBe(true);
     expect(releases.length).toBeGreaterThan(0);
     expect(releases[0]).toHaveProperty('code');
@@ -29,7 +46,9 @@ describe('ReleaseService (DEP-CDC-02)', () => {
   });
 
   it('should get a single release by ID', async () => {
-    const all = await service.findAll();
+    const all = await service.findAll({
+      applicationId: fixture.application.id,
+    });
     const release = await service.findOne(all[0].id);
     expect(release.id).toBe(all[0].id);
   });
@@ -49,7 +68,9 @@ describe('ReleaseService (DEP-CDC-02)', () => {
   });
 
   it('should reject duplicate code and version', async () => {
-    const all = await service.findAll();
+    const all = await service.findAll({
+      applicationId: fixture.application.id,
+    });
     const existing = all[0];
 
     await expect(
@@ -66,11 +87,12 @@ describe('ReleaseService (DEP-CDC-02)', () => {
   });
 
   it('should assemble a release in DRAFT status', async () => {
-    const apps = await prisma.application.findMany();
-    const appVersions = await prisma.applicationVersion.findMany();
-    const snapshots = await prisma.snapshot.findMany();
+    const apps = [fixture.application];
+    const appVersions = [fixture.version];
+    const snapshots = [fixture.snapshot];
 
     const created = await service.create({
+      tenantId: fixture.tenant.id,
       code: 'assembly-test-rel',
       version: `2.0.0-${Date.now()}`,
       applicationId: apps[0].id,
@@ -101,12 +123,19 @@ describe('ReleaseService (DEP-CDC-02)', () => {
   });
 
   it('should compare two releases and highlight diffs', async () => {
-    const all = await service.findAll();
-    if (all.length >= 2) {
-      const comparison = await service.compare(all[0].id, all[1].id);
-      expect(comparison).toHaveProperty('release1');
-      expect(comparison).toHaveProperty('release2');
-      expect(comparison).toHaveProperty('differences');
-    }
+    const second = await service.create({
+      code: fixture.release.code,
+      version: '2.0.0',
+      tenantId: fixture.tenant.id,
+      applicationId: fixture.application.id,
+      applicationVersionId: fixture.version.id,
+      snapshotId: fixture.snapshot.id,
+      configurationVersion: '2.0.0',
+      createdBy: 'isolated-test',
+    });
+    const comparison = await service.compare(fixture.release.id, second.id);
+    expect(comparison).toHaveProperty('release1');
+    expect(comparison).toHaveProperty('release2');
+    expect(comparison).toHaveProperty('differences');
   });
 });

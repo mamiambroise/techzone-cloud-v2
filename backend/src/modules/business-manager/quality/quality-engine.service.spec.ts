@@ -16,7 +16,10 @@ function createMockPrisma() {
       create: jest.fn(),
       update: jest.fn(),
     },
-    bmRelation: { count: async () => 0 },
+    bmRelation: { count: async () => 0, findMany: async () => [] },
+    bmVersionFeature: { findMany: async () => [] },
+    bmVersionCapability: { findMany: async () => [] },
+    configuration: { findMany: async () => [] },
     bmEntity: {
       findMany: jest.fn(),
     },

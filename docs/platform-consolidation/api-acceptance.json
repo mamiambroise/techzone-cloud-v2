@@ -1,0 +1,494 @@
+{
+  "pass": true,
+  "checks": [
+    {
+      "method": "POST",
+      "url": "/business-manager/applications",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/applications/efd7772d-a525-4bad-91df-e6c5ac20fd97/versions",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/environments",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/data-model/e6572276-c628-4fee-9003-cc1b0f4fdd71/entities",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/data-model/entities/ea213223-0204-4b4b-8a68-5fb7c16ea0e4/fields",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/contracts/versions/e6572276-c628-4fee-9003-cc1b0f4fdd71",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/contracts/contract/fc182cef-eb12-4b24-b9f6-ae38e67cc429/validate",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/validation/e6572276-c628-4fee-9003-cc1b0f4fdd71/run",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/packs",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "PATCH",
+      "url": "/pack-manager/packs/17607082-8296-4ffb-866b-6ba2c9543c67",
+      "status": 409,
+      "expected": [
+        409
+      ],
+      "pass": true
+    },
+    {
+      "method": "PATCH",
+      "url": "/pack-manager/packs/17607082-8296-4ffb-866b-6ba2c9543c67",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/packs/17607082-8296-4ffb-866b-6ba2c9543c67/versions",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/publish",
+      "status": 409,
+      "expected": [
+        409
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/modules",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/features",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/capabilities",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/features/2e02dae2-fa62-472b-8cba-f51c896049fd/capabilities",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/dependencies",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/rules",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/rules",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/modules",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/validate",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/manifest",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/publish",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/modules",
+      "status": 409,
+      "expected": [
+        409
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/runtime/resolve",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/runtime/resolutions/cc37f200-4549-4791-8fc3-13811103b1b5/effective-manifest",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/runtime/resolve",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/runtime/resolve",
+      "status": 400,
+      "expected": [
+        400
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/runtime/cache/invalidate",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "PATCH",
+      "url": "/business-manager/data-model/entities/ea213223-0204-4b4b-8a68-5fb7c16ea0e4",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/runtime/resolve",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/business-manager/validation/e6572276-c628-4fee-9003-cc1b0f4fdd71/run",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/runtime/resolve",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/pack-manager/packs/17607082-8296-4ffb-866b-6ba2c9543c67",
+      "status": 404,
+      "expected": [
+        404
+      ],
+      "pass": true
+    },
+    {
+      "method": "PATCH",
+      "url": "/pack-manager/packs/17607082-8296-4ffb-866b-6ba2c9543c67",
+      "status": 404,
+      "expected": [
+        404
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/publish",
+      "status": 404,
+      "expected": [
+        404
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/runtime/resolutions/cc37f200-4549-4791-8fc3-13811103b1b5",
+      "status": 404,
+      "expected": [
+        404
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/runtime/resolve",
+      "status": 404,
+      "expected": [
+        404
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/clone",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/pack-manager/versions/08d81495-7ce1-44d6-9ec2-fc88af9de37c/compare/b3283216-4397-413f-b0f2-8d56c7335fe2",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/packs",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/packs/16f52d1d-9636-4f70-92ef-ea167706ea2b/archive",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "POST",
+      "url": "/pack-manager/packs/16f52d1d-9636-4f70-92ef-ea167706ea2b/restore",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/pack-manager/dashboard",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/pack-manager/registry",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/runtime/dashboard",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/runtime/cache/status",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/runtime/cache/entries",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    },
+    {
+      "method": "GET",
+      "url": "/runtime/providers/health",
+      "status": 200,
+      "expected": [
+        200,
+        201
+      ],
+      "pass": true
+    }
+  ]
+}

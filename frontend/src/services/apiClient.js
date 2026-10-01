@@ -71,6 +71,7 @@ function createApiClient(baseURL) {
   });
 
   instance.interceptors.response.use(normalizeResponse, (error) => {
+    if (axios.isCancel(error)) return Promise.reject(error);
     const { response, config = {} } = error;
     const statusCode = response?.status;
 

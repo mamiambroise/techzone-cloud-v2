@@ -1,4 +1,5 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
+import { definitionRevision } from '../definition-revision';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';
 import { PlatformException } from '../../../common/errors/platform.exception';
@@ -66,6 +67,7 @@ export class QualityEngineService {
 
   async runValidation(applicationVersionId: string, dto: RunQualityValidationDto, tenantId: string | null) {
     await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    const inputHash = tenantId ? await definitionRevision(this.prisma, applicationVersionId, tenantId) : null;
 
     const campaign = await this.prisma.bmqValidationCampaign.create({
       data: {
@@ -185,7 +187,7 @@ export class QualityEngineService {
       where: { applicationVersionId, tenantId: tenantId ?? undefined },
     });
 
-    let contractPassed = contracts.length > 0;
+    let contractPassed = contracts.some(c => ['LOCKED','ACTIVE'].includes(c.status));
     if (!contractPassed) {
       issues.push({
         reportCode: campaign.code,
@@ -212,6 +214,7 @@ export class QualityEngineService {
 
     const report = await this.prisma.bmqQualityReport.create({
       data: {
+        inputHash,
         applicationId: (await this.prisma.applicationVersion.findUnique({
           where: { id: applicationVersionId },
           select: { applicationId: true },

@@ -14,6 +14,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import { ModernSpinner } from './components/Loaders.jsx';
 
+const PackManagerPage = lazy(() => import('./components/pack-manager/PackManagerPage.jsx'));
+const RuntimePage = lazy(() => import('./components/pack-runtime/RuntimePage.jsx'));
 const GeneralOverviewView = lazy(() => import('./components/GeneralOverviewView.jsx'));
 const ApplicationsCatalogView = lazy(() => import('./components/ApplicationsCatalogView.jsx'));
 const WorkspaceConfigView = lazy(() => import('./components/WorkspaceConfigView.jsx'));
@@ -133,6 +135,7 @@ function LegacyRedirect({ to }) {
   return <Navigate to={{ pathname, search: location.search, hash: anchor ? '#' + anchor : location.hash }} replace />;
 }
 const BMWorkspaceRoute = lazy(() => import('./components/business-manager/BMWorkspaceRoute.jsx'));
+function BMRuntimeRedirect() { const { applicationId, versionId } = useParams(); return <Navigate replace to={'/runtime/context'+(applicationId ? '?applicationId='+applicationId+'&businessVersionId='+versionId : '')}/>; }
 const UiBuilderOverview = lazy(() => import('./features/ui-builder/components/UiBuilderOverview.jsx'));
 const UiPagesManager = lazy(() => import('./features/ui-builder/components/UiPagesManager.jsx'));
 const UiVisualEditor = lazy(() => import('./features/ui-builder/components/UiVisualEditor.jsx'));
@@ -141,7 +144,7 @@ const UiComponentsCatalog = lazy(() => import('./features/ui-builder/components/
 const UiThemeBuilder = lazy(() => import('./features/ui-builder/components/UiThemeBuilder.jsx'));
 const UiNavigationPresentation = lazy(() => import('./features/ui-builder/components/UiNavigationPresentation.jsx'));
 const UiPreviewValidation = lazy(() => import('./features/ui-builder/components/UiPreviewValidation.jsx'));
-const routeComponents = { BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
+const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, BMWorkspaceRoute, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
 
 function App() {
   return (

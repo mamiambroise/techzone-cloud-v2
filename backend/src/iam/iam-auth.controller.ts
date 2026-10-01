@@ -16,6 +16,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SwitchTenantDto } from './dto/switch-tenant.dto';
 import { IamError } from './iam-error';
 import { TenantOptional } from './tenant-resource.decorator';
+import { CurrentPrincipal, type IamPrincipal } from './principal.decorator';
 import {
   COOKIE_ACCESS_TOKEN,
   COOKIE_OPTIONS,
@@ -130,9 +131,9 @@ export class IamAuthController {
   }
 
    @Get('me')
-  async me(@CurrentUser() ctx: IamAuthContext) {
+  async me(@CurrentUser() ctx: IamAuthContext, @CurrentPrincipal() principal: IamPrincipal) {
     const data = await this.authService.me(ctx);
-    return { success: true, message: 'OK', data };
+    return { success: true, message: 'OK', data: { ...data, user: { ...data.user, permissions:principal.permissions, roles:principal.roles, isSuperAdmin:principal.isSuperAdmin } } };
   }
 
   @Get('tenants')

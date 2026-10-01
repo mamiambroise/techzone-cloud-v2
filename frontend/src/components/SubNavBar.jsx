@@ -8,7 +8,7 @@ export default function SubNavBar() {
   const { user } = useAuth();
   const active = activeNavigation(pathname);
   const group = navigationGroups.find(g => g.id === active?.group);
-  if (!group || group.id === 'bm' || !canAccess(active, user)) return null;
+  if (!group || ['dashboard','registry','bm','packs','runtime'].includes(group.id) || !canAccess(active, user)) return null;
   const entries = groupEntries(group.id).filter(e => (e.component || e.redirectTo) && canAccess(e, user));
   const contextual = pageDefinitions.filter(e => e.group === group.id && !e.menu && (e.component || e.redirectTo) && !e.route.includes(':') && canAccess(e, user));
   return <div className="border-b border-slate-200 bg-white">

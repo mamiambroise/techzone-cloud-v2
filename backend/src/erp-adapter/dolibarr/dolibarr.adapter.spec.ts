@@ -262,6 +262,7 @@ describe('DolibarrAdapter', () => {
   describe('healthCheck', () => {
     it('devrait retourner NOT_CONFIGURED si apiKey est vide', async () => {
       const adapter = new DolibarrAdapter();
+      adapter.configure({ apiKey: '' });
       const result = await adapter.healthCheck();
       expect(result.status).toBe('NOT_CONFIGURED');
     });

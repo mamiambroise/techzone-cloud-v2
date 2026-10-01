@@ -11,6 +11,14 @@ import { createSlice } from '@reduxjs/toolkit';
 // L'utilisateur actif et le tenant actif proviennent exclusivement
 // d'AuthProvider / TenantProvider (IAM réel, cookies HttpOnly).
 
+function persistedSidebarCollapsed() {
+  try {
+    return JSON.parse(localStorage.getItem('techzone.nav.collapsed')) === true;
+  } catch {
+    return false;
+  }
+}
+
 const initialState = {
   activeTab: 'workspace',
   activeUser: null,
@@ -18,7 +26,7 @@ const initialState = {
   searchQuery: '',
   apiStatus: 'CONNECTING',
   activeModuleId: '01',
-  sidebarCollapsed: false,
+  sidebarCollapsed: persistedSidebarCollapsed(),
   providerMode: 'REAL',
   toasts: [],
   alerts: [],

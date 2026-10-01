@@ -1,0 +1,100 @@
+{
+  "checks": [
+    "REAL_KPI_AND_ACTIVITY",
+    "GLOBAL_SEARCH_REAL_RESULTS_KEYBOARD",
+    "TENANT_A_B_ISOLATION_EMPTY",
+    "SEARCH_TENANT_ISOLATION",
+    "REAL_TENANT_SWITCH_NO_STALE_WIDGETS",
+    "ACCORDION_AND_ACTIVE_CHILD",
+    "DIRECT_DEEP_LINK",
+    "COLLAPSED_PERSISTENCE_AND_FOCUS_TOOLTIP",
+    "QUICK_CREATE_PACK_EDITOR",
+    "MOBILE_DRAWER_FOCUS_ESCAPE_NAVIGATION",
+    "ERROR_RECOVERY_MODULE_NAVIGATION_REMAINS",
+    "SKELETON_PARTIAL_FAILURE_SELECTIVE_RETRY",
+    "ORDINARY_USER_HIDDEN_AND_DIRECT_403"
+  ],
+  "routes": [
+    "/business-manager",
+    "/ui/pages",
+    "/automation",
+    "/packs",
+    "/runtime",
+    "/data-runtime",
+    "/erp",
+    "/registry",
+    "/dashboard"
+  ],
+  "responsive": [
+    1920,
+    1440,
+    1280,
+    1024,
+    768,
+    390
+  ],
+  "errors": [],
+  "moduleResponses": [
+    {
+      "path": "/api/data-runtime/resources/Product",
+      "status": 503
+    },
+    {
+      "path": "/api/data-runtime/resources/Product",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/stats",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/products",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/invoices",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/orders",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/documents",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/clients",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/stats",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/orders",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/products",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/invoices",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/documents",
+      "status": 503
+    },
+    {
+      "path": "/api/erp/clients",
+      "status": 503
+    },
+    {
+      "path": "/api/platform/dashboard",
+      "status": 503
+    }
+  ],
+  "pass": true
+}

@@ -1,4 +1,6 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import { contractHash, publicJson } from '../../pack-manager/pack-contract';
+import { definitionRevision } from '../definition-revision';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';
 import { PlatformException } from '../../../common/errors/platform.exception';
@@ -8,6 +10,34 @@ import { CreateRuntimeManifestDto, CreateRuntimeBindingDto, UpdateRuntimeBinding
 @Injectable()
 export class RuntimeBridgeService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Read-only contract for Pack Runtime. Context always comes from tenant-owned resources. */
+  async applicationContext(applicationId: string, versionId: string, environmentCode: string, tenantId: string) {
+    if (!tenantId || !versionId) throw new BadRequestException('APPLICATION_VERSION_CONTEXT_REQUIRED');
+    const version = await this.prisma.applicationVersion.findFirst({ where: { id: versionId, applicationId, tenantId }, include: { application: true } });
+    if (!version || version.application.tenantId !== tenantId) throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
+    if (version.application.status !== 'ACTIVE') throw new ConflictException('APPLICATION_INACTIVE');
+    const environment = await this.prisma.environment.findFirst({ where: { code: environmentCode, tenantId, status: 'ACTIVE' } });
+    if (!environment) throw new NotFoundException('ENVIRONMENT_NOT_FOUND');
+    const [report, entities, features, menus, configuration] = await Promise.all([
+      this.prisma.bmqQualityReport.findFirst({ where: { applicationVersionId: versionId, tenantId }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.bmEntity.findMany({ where: { applicationVersionId: versionId, tenantId, status: { not: 'ARCHIVED' } }, include: { fields: true } }),
+      this.prisma.bmFeature.findMany({ where: { applicationVersionId: versionId, tenantId, status: { not: 'ARCHIVED' } }, include: { capabilities: true } }),
+      this.prisma.bmMenu.findMany({ where: { applicationVersionId: versionId, tenantId }, include: { items: true } }),
+      this.prisma.configuration.findMany({ where: { tenantId, status: 'ACTIVE', OR: [{ scope: 'TENANT', scopeId: tenantId }, { scope: 'APPLICATION', scopeId: applicationId }, { scope: 'APPLICATION_VERSION', scopeId: versionId }, { scope: 'ENVIRONMENT', scopeId: environment.id }] } }),
+    ]);
+    const order = ['TENANT','APPLICATION','APPLICATION_VERSION','ENVIRONMENT'];
+    const values: Record<string, unknown> = {};
+    for (const config of configuration.sort((a,b) => order.indexOf(a.scope)-order.indexOf(b.scope) || a.key.localeCompare(b.key))) {
+      // Secret typed/marked values are never part of the public application contract.
+      if (/secret|password|token|credential|key/i.test(config.key)) continue;
+      try { publicJson(config.value); values[config.key] = config.value ?? config.defaultValue; } catch { /* omit private values */ }
+    }
+    const definition = { application: { id: applicationId, code: version.application.code, name: version.application.name, version: version.version, versionId }, environment: { id: environment.id, code: environment.code }, dataModel: entities.map(e => ({ code: e.code, fields: e.fields.map(f => ({ code: f.code, type: f.type, required: f.required })) })), features: features.map(f => ({ code: f.code, capabilities: f.capabilities.map(c => c.code) })), navigation: menus.map(m => ({ code: m.code, items: m.items.map(i => ({ code: i.code, label: i.label, routePath: i.routePath, parentItemId: i.parentItemId })) })), configuration: values };
+    const revision = await definitionRevision(this.prisma,versionId,tenantId);
+    const ready = !!report?.completedAt && ['PASS','WARNING'].includes(report.gateResult ?? '') && !!revision && report.inputHash === revision;
+    return { ...definition, revision: contractHash(definition), readiness: ready ? 'READY' : 'NOT_READY', reasonCode: ready ? 'QUALITY_GATE_PASSED' : 'QUALITY_GATE_MISSING_FAILED_OR_OUTDATED' };
+  }
 
   private async ensureApplicationVersionExists(applicationVersionId: string, tenantId: string | null) {
     const version = await this.prisma.applicationVersion.findFirst({
