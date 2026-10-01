@@ -6,97 +6,10 @@ import {
   getEnvironmentHistory,
 } from '../services/api/platformEnvironmentsService.js';
 
-const initialEnvironments = [
-  {
-    id: 'env-dev',
-    code: 'DEVELOPMENT',
-    name: 'Environnement de Développement (DEV)',
-    type: 'DEVELOPMENT',
-    status: 'ACTIVE',
-    region: 'eu-west-3 (Paris)',
-    baseUrl: 'https://api.dev.techzone.internal',
-    configurationRef: 'cfg-scope-env-dev',
-    securityTier: 'LOW',
-    accessRule: 'Accès développeur autorisé sans restriction IAM.',
-    allowedRoles: ['PLATFORM_SUPER_ADMIN', 'TEAM4_DEVELOPER', 'QA_AUTOMATION_LEAD'],
-    deployedApps: [
-      { appId: 'app-core-api', appCode: 'CORE-API', versionId: 'ver-core-1.2.0-rc1', versionNumber: '1.2.0-rc1', deployedAt: '2026-08-25T14:00:00Z' },
-      { appId: 'app-identity-bridge', appCode: 'ID-BRIDGE', versionId: 'ver-id-2.1.0', versionNumber: '2.1.0', deployedAt: '2026-03-15T16:00:00Z' },
-      { appId: 'app-erp-connector', appCode: 'ERP-SYNC', versionId: 'ver-erp-1.5.0-draft', versionNumber: '1.5.0-draft', deployedAt: '2026-09-01T15:30:00Z' },
-      { appId: 'app-events-bus', appCode: 'EVT-BUS', versionId: 'ver-evt-1.0.0', versionNumber: '1.0.0', deployedAt: '2026-04-18T09:30:00Z' },
-    ],
-    history: [
-      { id: 'h1', action: 'DEPLOY', details: 'Déploiement de ver-erp-1.5.0-draft', timestamp: '2026-09-01T15:30:00Z', user: 'c.leroy@techzone.io' },
-      { id: 'h2', action: 'STATUS_CHANGE', details: 'Passage en ACTIVE suite à maintenance', timestamp: '2026-08-20T08:00:00Z', user: 'alex.admin@techzone.io' },
-    ],
-  },
-  {
-    id: 'env-test',
-    code: 'TEST',
-    name: 'Environnement de Test & QA (TEST)',
-    type: 'TEST',
-    status: 'ACTIVE',
-    region: 'eu-west-3 (Paris)',
-    baseUrl: 'https://api.test.techzone.internal',
-    configurationRef: 'cfg-scope-env-test',
-    securityTier: 'MEDIUM',
-    accessRule: 'Accès QA & automatisation de tests d’intégration.',
-    allowedRoles: ['PLATFORM_SUPER_ADMIN', 'QA_AUTOMATION_LEAD'],
-    deployedApps: [
-      { appId: 'app-core-api', appCode: 'CORE-API', versionId: 'ver-core-1.2.0-rc1', versionNumber: '1.2.0-rc1', deployedAt: '2026-08-26T09:00:00Z' },
-      { appId: 'app-identity-bridge', appCode: 'ID-BRIDGE', versionId: 'ver-id-2.1.0', versionNumber: '2.1.0', deployedAt: '2026-03-15T16:00:00Z' },
-      { appId: 'app-erp-connector', appCode: 'ERP-SYNC', versionId: 'ver-erp-1.4.2', versionNumber: '1.4.2', deployedAt: '2026-05-20T11:00:00Z' },
-      { appId: 'app-events-bus', appCode: 'EVT-BUS', versionId: 'ver-evt-1.0.0', versionNumber: '1.0.0', deployedAt: '2026-04-18T09:30:00Z' },
-    ],
-    history: [
-      { id: 'h3', action: 'DEPLOY', details: 'Déploiement de ver-core-1.2.0-rc1 pour suite de tests de non-régression', timestamp: '2026-08-26T09:00:00Z', user: 'n.blanc@techzone.io' },
-    ],
-  },
-  {
-    id: 'env-staging',
-    code: 'STAGING',
-    name: 'Pré-production / Staging Miroir',
-    type: 'STAGING',
-    status: 'ACTIVE',
-    region: 'eu-west-1 (Irlande)',
-    baseUrl: 'https://api.staging.techzone.cloud',
-    configurationRef: 'cfg-scope-env-staging',
-    securityTier: 'HIGH',
-    accessRule: 'Accès restreint. Validation finale avant bascule Production.',
-    allowedRoles: ['PLATFORM_SUPER_ADMIN'],
-    deployedApps: [
-      { appId: 'app-core-api', appCode: 'CORE-API', versionId: 'ver-core-1.1.0', versionNumber: '1.1.0', deployedAt: '2026-06-12T10:00:00Z' },
-      { appId: 'app-identity-bridge', appCode: 'ID-BRIDGE', versionId: 'ver-id-2.1.0', versionNumber: '2.1.0', deployedAt: '2026-03-15T16:00:00Z' },
-      { appId: 'app-erp-connector', appCode: 'ERP-SYNC', versionId: 'ver-erp-1.4.2', versionNumber: '1.4.2', deployedAt: '2026-05-20T11:00:00Z' },
-      { appId: 'app-events-bus', appCode: 'EVT-BUS', versionId: 'ver-evt-1.0.0', versionNumber: '1.0.0', deployedAt: '2026-04-18T09:30:00Z' },
-    ],
-    history: [
-      { id: 'h4', action: 'DEPLOY', details: 'Mise en staging de ver-core-1.1.0', timestamp: '2026-06-12T10:00:00Z', user: 'alex.admin@techzone.io' },
-    ],
-  },
-  {
-    id: 'env-prod',
-    code: 'PRODUCTION',
-    name: 'Production Haute Disponibilité (PROD)',
-    type: 'PRODUCTION',
-    status: 'ACTIVE',
-    region: 'eu-west-1 (Irlande multi-AZ)',
-    baseUrl: 'https://api.techzone.cloud',
-    configurationRef: 'cfg-scope-env-prod',
-    securityTier: 'CRITICAL',
-    accessRule: 'Accès fortement restreint. Double validation IAM et Snapshot obligatoire.',
-    allowedRoles: ['PLATFORM_SUPER_ADMIN'],
-    deployedApps: [
-      { appId: 'app-core-api', appCode: 'CORE-API', versionId: 'ver-core-1.1.0', versionNumber: '1.1.0', deployedAt: '2026-06-15T02:00:00Z' },
-      { appId: 'app-identity-bridge', appCode: 'ID-BRIDGE', versionId: 'ver-id-2.1.0', versionNumber: '2.1.0', deployedAt: '2026-03-20T04:00:00Z' },
-      { appId: 'app-erp-connector', appCode: 'ERP-SYNC', versionId: 'ver-erp-1.4.2', versionNumber: '1.4.2', deployedAt: '2026-05-22T03:00:00Z' },
-      { appId: 'app-events-bus', appCode: 'EVT-BUS', versionId: 'ver-evt-1.0.0', versionNumber: '1.0.0', deployedAt: '2026-04-20T02:00:00Z' },
-    ],
-    history: [
-      { id: 'h5', action: 'AUDIT', details: 'Audit de sécurité trimestriel validé sans vulnérabilité critique', timestamp: '2026-07-01T10:00:00Z', user: 's.germain@techzone.io' },
-    ],
-  },
-];
+// REAL DATA ONLY : les environnements affichés proviennent exclusivement
+// de l'API réelle (fetchEnvironmentsAsync → /business-manager/environments).
+// Aucun DEV/STAGING/PROD inventé côté client.
+const initialEnvironments = [];
 
 export const fetchEnvironmentsAsync = createAsyncThunk(
   'environments/fetchEnvironments',
@@ -146,7 +59,7 @@ const environmentsSlice = createSlice({
   name: 'environments',
   initialState: {
     environments: initialEnvironments,
-    selectedEnvId: 'env-prod',
+    selectedEnvId: null,
   },
   reducers: {
     setSelectedEnvId: (state, action) => {

@@ -7,62 +7,9 @@
  * that read Redux state continue to work during the migration phase.
  */
 import { createSlice } from '@reduxjs/toolkit';
-
-export const IAM_ROLES = {
-  ADMIN: {
-    id: 'admin',
-    name: 'Ranja Avo Efraim',
-    initials: 'RA',
-    email: 'ranja.avo@techzone.io',
-    role: 'Administrateur',
-    permissions: ['*'],
-    canWriteProd: true,
-  },
-  SUPER_ADMIN: {
-    id: 'super_admin',
-    name: 'Super Administrateur',
-    initials: 'SA',
-    email: 'superadmin@techzone.io',
-    role: 'Super Administrateur',
-    permissions: ['*'],
-    canWriteProd: true,
-  },
-  DEVELOPER: {
-    id: 'dev',
-    name: 'Alexandre D.',
-    initials: 'AD',
-    email: 'alexandre.d@techzone.io',
-    role: 'Éditeur Lead',
-    permissions: ['APP_READ', 'APP_WRITE', 'DEV_DEPLOY', 'CONFIG_DEV'],
-    canWriteProd: false,
-  },
-  QA: {
-    id: 'qa',
-    name: 'Jean Mbolo',
-    initials: 'JM',
-    email: 'jean.mbolo@techzone.io',
-    role: 'QA Automation Lead',
-    permissions: ['APP_READ', 'TEST_DEPLOY', 'VALIDATE_CONTRACT'],
-    canWriteProd: false,
-  },
-  AUDITOR: {
-    id: 'auditor',
-    name: 'Sophie Germain',
-    initials: 'SG',
-    email: 's.germain@techzone.io',
-    role: 'Auditeur Sécurité',
-    permissions: ['READ_ONLY', 'AUDIT_EXPORT'],
-    canWriteProd: false,
-  },
-};
-
-export const TENANTS = [
-  { id: 'all', name: 'Tous les Tenants (Vue Plateforme)', code: 'ALL' },
-  { id: 'tenant-enterprise', name: 'Techzone Cloud Enterprise', code: 'TZ-ENTERPRISE' },
-  { id: 'tenant-core-global', name: 'Techzone Global Core', code: 'TZ-GLOBAL' },
-  { id: 'tenant-retail-fr', name: 'Techzone Retail France', code: 'TZ-RET-FR' },
-  { id: 'tenant-logistics-de', name: 'Techzone Logistics DACH', code: 'TZ-LOG-DE' },
-];
+// REAL DATA ONLY : plus aucun profil/tenant de démonstration.
+// L'utilisateur actif et le tenant actif proviennent exclusivement
+// d'AuthProvider / TenantProvider (IAM réel, cookies HttpOnly).
 
 function persistedSidebarCollapsed() {
   try {
@@ -74,12 +21,10 @@ function persistedSidebarCollapsed() {
 
 const initialState = {
   activeTab: 'workspace',
-  activeUser: IAM_ROLES.ADMIN,
-  activeTenant: 'tenant-enterprise',
+  activeUser: null,
+  activeTenant: null,
   searchQuery: '',
-  platformHealth: 'HEALTHY',
   apiStatus: 'CONNECTING',
-  platformContractLocked: true,
   activeModuleId: '01',
   sidebarCollapsed: persistedSidebarCollapsed(),
   providerMode: 'REAL',
@@ -103,14 +48,8 @@ const platformSlice = createSlice({
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload;
     },
-    setPlatformHealth: (state, action) => {
-      state.platformHealth = action.payload;
-    },
     setApiStatus: (state, action) => {
       state.apiStatus = action.payload;
-    },
-    togglePlatformContractLock: (state) => {
-      state.platformContractLocked = !state.platformContractLocked;
     },
     setProviderMode: (state, action) => {
       state.providerMode = action.payload;
@@ -153,9 +92,7 @@ export const {
   setActiveUser,
   setActiveTenant,
   setSearchQuery,
-  setPlatformHealth,
   setApiStatus,
-  togglePlatformContractLock,
   setProviderMode,
   toggleSidebarCollapsed,
   setSidebarCollapsed,
