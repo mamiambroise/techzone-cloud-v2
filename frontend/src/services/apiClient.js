@@ -46,6 +46,7 @@ function buildNormalizedError(response, config, error) {
     message,
     traceId,
     details: data?.details,
+    url: config?.url || null,
   };
 
   if (type === 'UNAUTHORIZED') {
@@ -97,6 +98,7 @@ function createApiClient(baseURL) {
           message: error.message || 'Network error',
           traceId: null,
           details: null,
+          url: config?.url || null,
         };
         window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
         error.normalized = normalized;

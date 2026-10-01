@@ -12,6 +12,11 @@ export default function ApiErrorBanner() {
       const err = event.detail;
       if (!err) return;
 
+      // Les surfaces ERP rendent leur propre panneau dédupliqué par ressource
+      // (ErpErrorPanel) : éviter l'affichage en double de la même erreur.
+      const url = String(err.url || '');
+      if (url.startsWith('/erp/')) return;
+
       const isDuplicate = errors.some(
         (e) =>
           e.code === err.code &&

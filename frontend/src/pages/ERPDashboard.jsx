@@ -32,6 +32,7 @@ import {
   documentService,
 } from '../services/apiClient.js';
 import { DashboardSkeleton } from '../components/Loaders.jsx';
+import ErpErrorPanel from '../components/ErpErrorPanel.jsx';
 
 function Dashboard() {
   const [recentErps, setRecentErps] = useState([]);
@@ -108,35 +109,6 @@ function Dashboard() {
       <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-6 flex items-center gap-3">
         <ExclamationTriangleIcon className="w-6 h-6 text-red-500 dark:text-red-400" />
         <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
-      </div>
-    );
-  }
-
-  const failedWidgets = Object.entries(widgetErrors);
-
-  if (failedWidgets.length > 0) {
-    return (
-      <div className="space-y-4">
-        {failedWidgets.map(([key, err]) => {
-          const msg = err?.response?.data?.message || err?.message || 'Donnees indisponibles';
-          const traceId = err?.response?.data?.traceId || err?.traceId || null;
-          return (
-            <div key={key} className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-              <ExclamationTriangleIcon className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0" />
-              <div>
-                <p className="text-red-700 dark:text-red-300 font-medium text-sm">
-                  {key}: {msg}
-                </p>
-                {traceId && (
-                  <p className="text-xs text-red-400 dark:text-red-500 mt-0.5">TraceId: {traceId}</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        <p className="text-xs text-slate-400 dark:text-slate-500 px-2">
-          Les widgets fonctionnels affichent leurs donnees.
-        </p>
       </div>
     );
   }
@@ -348,6 +320,8 @@ function Dashboard() {
           Adapter {erpHealth?.mode ?? 'DOLIBARR'} {healthState === 'CONNECTED' ? 'connecté' : healthState === 'DEGRADED' ? 'dégradé' : healthState === 'UNAVAILABLE' ? 'indisponible' : healthState === 'NOT_CONFIGURED' ? 'non configuré' : 'inconnu'} · données réelles
         </span>
       </div>
+
+      <ErpErrorPanel errors={widgetErrors} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {cards.map((card) => {
