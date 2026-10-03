@@ -10,6 +10,11 @@ import {
 } from '@nestjs/common';
 import { WebhookDeliveryService } from './webhook-delivery.service';
 import { WebhookSignatureService } from './webhook-signature.service';
+import { RequirePermission } from '../../../iam/permission.decorator';
+import {
+  INTEGRATION_READ,
+  INTEGRATION_EXECUTE,
+} from '../../../iam/iam.constants';
 import { IntegrationException } from '../../../common/errors/integration-exception';
 import { IntegrationErrorCode } from '../../../common/errors/integration-error-code';
 import { SendWebhookDto } from './dto/create-webhook.dto';
@@ -25,6 +30,10 @@ export class InboundWebhookController {
 
   @Post(':code')
   @HttpCode(HttpStatus.OK)
+  // Réception machine-à-machine : l'appelant est un système externe identifié
+  // par le `code` du webhook et la signature HMAC, jamais par une session IAM.
+  // Aucune permission IAM n'est donc posée ici : en mettre une casserait les
+  // webhooks entrants. Les opérations opérateur ci-dessous en ont une.
   async receive(
     @Param('code') code: string,
     @Body() payload: Record<string, unknown>,
@@ -102,6 +111,7 @@ export class InboundWebhookController {
   }
 
   @Post(':code/outbound')
+  @RequirePermission(INTEGRATION_EXECUTE)
   async sendOutbound(
     @Param('code') code: string,
     @Body() dto: SendWebhookDto,
@@ -124,6 +134,7 @@ export class InboundWebhookController {
   }
 
   @Get(':code/deliveries')
+  @RequirePermission(INTEGRATION_READ)
   async getDeliveries(
     @Param('code') code: string,
     @Headers('x-delivery-status') status?: string,

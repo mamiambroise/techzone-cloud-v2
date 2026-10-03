@@ -52,6 +52,18 @@ export const PERMISSIONS = {
   RUNTIME_RESOLUTION_READ: 'runtime.resolution.read',
   ERP_READ: 'erp:read',
   ERP_WRITE: 'erp:write',
+  // Integration Hub / API & Intégrations.
+  // Le catalogue d'intégration (connecteurs, définitions d'API, webhooks,
+  // credentials, synchronisations) est une ressource de PLATEFORME : il ne
+  // porte pas de tenantId et son frontière de sécurité est donc la permission,
+  // pas le tenant. Les journaux d'intégration (IntegrationLog) sont, eux,
+  // tenant-scoped et filtrés côté service sur le principal.
+  INTEGRATION_READ: 'integration:read',
+  INTEGRATION_WRITE: 'integration:write',
+  INTEGRATION_EXECUTE: 'integration:execute',
+  INTEGRATION_CREDENTIAL_READ: 'integration:credential:read',
+  INTEGRATION_CREDENTIAL_WRITE: 'integration:credential:write',
+  INTEGRATION_DIAGNOSTIC_READ: 'integration:diagnostic:read',
   AUTOMATION_READ: 'automation:read',
   AUTOMATION_EXECUTE: 'automation:execute',
   DATA_RUNTIME_READ: 'data-runtime:read',
@@ -65,6 +77,12 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 export const ERP_READ = PERMISSIONS.ERP_READ;
 export const ERP_WRITE = PERMISSIONS.ERP_WRITE;
+export const INTEGRATION_READ = PERMISSIONS.INTEGRATION_READ;
+export const INTEGRATION_WRITE = PERMISSIONS.INTEGRATION_WRITE;
+export const INTEGRATION_EXECUTE = PERMISSIONS.INTEGRATION_EXECUTE;
+export const INTEGRATION_CREDENTIAL_READ = PERMISSIONS.INTEGRATION_CREDENTIAL_READ;
+export const INTEGRATION_CREDENTIAL_WRITE = PERMISSIONS.INTEGRATION_CREDENTIAL_WRITE;
+export const INTEGRATION_DIAGNOSTIC_READ = PERMISSIONS.INTEGRATION_DIAGNOSTIC_READ;
 export const AUTOMATION_READ = PERMISSIONS.AUTOMATION_READ;
 export const AUTOMATION_EXECUTE = PERMISSIONS.AUTOMATION_EXECUTE;
 export const DATA_RUNTIME_READ = PERMISSIONS.DATA_RUNTIME_READ;
@@ -81,6 +99,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.DATA_RUNTIME_READ,
     PERMISSIONS.DATA_RUNTIME_QUERY,
     PERMISSIONS.CONFIG_READ,
+    // Lecture seule du catalogue d'intégration : le rôle standard pouvait déjà
+    // consulter cette surface (elle était filtrée par `erp:read`). On conserve
+    // exactement cette visibilité, mais en lecture seule côté API : toute
+    // mutation exige désormais une permission d'écriture réservée à l'admin.
+    PERMISSIONS.INTEGRATION_READ,
   ],
 };
 

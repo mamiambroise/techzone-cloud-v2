@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Delete,
@@ -11,6 +11,11 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiManagerService } from './api-manager.service';
+import { RequirePermission } from '../../../iam/permission.decorator';
+import {
+  INTEGRATION_READ,
+  INTEGRATION_WRITE,
+} from '../../../iam/iam.constants';
 import {
   CreateApiDefinitionDto,
   UpdateApiDefinitionDto,
@@ -23,16 +28,19 @@ export class ApiManagerController {
   constructor(private readonly apiManagerService: ApiManagerService) {}
 
   @Post()
+  @RequirePermission(INTEGRATION_WRITE)
   async create(@Body() dto: CreateApiDefinitionDto) {
     return this.apiManagerService.create(dto);
   }
 
   @Post('versions')
+  @RequirePermission(INTEGRATION_WRITE)
   async createVersion(@Body() dto: CreateApiVersionDto) {
     return this.apiManagerService.createVersion(dto);
   }
 
   @Get()
+  @RequirePermission(INTEGRATION_READ)
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -48,11 +56,13 @@ export class ApiManagerController {
   }
 
   @Get(':id')
+  @RequirePermission(INTEGRATION_READ)
   async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.apiManagerService.findOne(id);
   }
 
   @Get('code/:apiCode/version/:version')
+  @RequirePermission(INTEGRATION_READ)
   async findByCodeAndVersion(
     @Param('apiCode') apiCode: string,
     @Param('version') version: string,
@@ -61,6 +71,7 @@ export class ApiManagerController {
   }
 
   @Patch(':id')
+  @RequirePermission(INTEGRATION_WRITE)
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateApiDefinitionDto,
@@ -69,6 +80,7 @@ export class ApiManagerController {
   }
 
   @Post(':id/transition')
+  @RequirePermission(INTEGRATION_WRITE)
   async transition(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body('status') status: ApiVersionLifecycleStatus,
@@ -78,6 +90,7 @@ export class ApiManagerController {
   }
 
   @Delete(':id')
+  @RequirePermission(INTEGRATION_WRITE)
   async remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.apiManagerService.remove(id);
   }
