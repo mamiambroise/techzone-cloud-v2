@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-03T03:14:27.363Z",
+  "credentialConfigured": true,
+  "tenantId": "8031055e-14af-4b43-979f-904e820306e9",
+  "encryptionKeyConfigured": true,
+  "requests": [
+    {
+      "endpoint": "/status",
+      "httpStatus": 200,
+      "durationMs": 1141,
+      "data": {
+        "version": "23.0.3",
+        "environment": "non-production"
+      }
+    },
+    {
+      "endpoint": "/users/info?includepermissions=1",
+      "httpStatus": 200,
+      "durationMs": 433,
+      "data": {
+        "id": "1",
+        "login": "superadmin",
+        "active": true,
+        "admin": true,
+        "entity": "0",
+        "rights": {
+          "user": {
+            "user": {
+              "lire": 1,
+              "creer": 1,
+              "password": 1,
+              "supprimer": 1,
+              "export": 1
+            },
+            "self": {
+              "creer": 1,
+              "password": 1
+            },
+            "user_advance": {},
+            "self_advance": {},
+            "group_advance": {}
+          },
+          "produit": {
+            "lire": 1,
+            "creer": 1,
+            "supprimer": 1,
+            "export": 1
+          },
+          "commande": {
+            "lire": 1,
+            "creer": 1,
+            "supprimer": 1,
+            "commande": {
+              "export": 1
+            }
+          },
+          "societe": {
+            "lire": 1,
+            "creer": 1,
+            "supprimer": 1,
+            "export": 1,
+            "thirdparty_paymentinformation": {
+              "write": 1
+            },
+            "client": {
+              "voir": 1
+            },
+            "contact": {
+              "lire": 1,
+              "creer": 1,
+              "supprimer": 1,
+              "export": 1
+            }
+          },
+          "export": {
+            "lire": 1,
+            "creer": 1
+          },
+          "import": {
+            "run": 1
+          },
+          "agenda": {
+            "myactions": {
+              "read": 1,
+              "create": 1,
+              "delete": 1
+            },
+            "allactions": {
+              "read": 1,
+              "create": 1,
+              "delete": 1
+            },
+            "export": 1
+          },
+          "api": {
+            "apikey": {
+              "generate": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/users?limit=100",
+      "httpStatus": 200,
+      "durationMs": 418,
+      "data": [
+        {
+          "id": "1",
+          "login": "superadmin",
+          "active": true,
+          "admin": true,
+          "entity": "0",
+          "rights": {
+            "user": {
+              "user": {},
+              "self": {},
+              "user_advance": {},
+              "self_advance": {},
+              "group_advance": {}
+            }
+          }
+        },
+        {
+          "id": "2",
+          "login": "techzone_api",
+          "active": true,
+          "admin": false,
+          "entity": "1",
+          "rights": {
+            "user": {
+              "user": {},
+              "self": {},
+              "user_advance": {},
+              "self_advance": {},
+              "group_advance": {}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/users/2?includepermissions=1",
+      "httpStatus": 200,
+      "durationMs": 498,
+      "data": {
+        "id": "2",
+        "login": "techzone_api",
+        "active": true,
+        "admin": false,
+        "entity": "1",
+        "rights": {
+          "user": {
+            "user": {},
+            "self": {},
+            "user_advance": {},
+            "self_advance": {},
+            "group_advance": {}
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/users/2/groups",
+      "httpStatus": 200,
+      "durationMs": 504,
+      "data": []
+    },
+    {
+      "endpoint": "/setup/modules",
+      "httpStatus": 200,
+      "durationMs": 433,
+      "data": [
+        "agenda",
+        "api",
+        "commande",
+        "export",
+        "fckeditor",
+        "import",
+        "product",
+        "societe",
+        "user"
+      ]
+    },
+    {
+      "endpoint": "/setup/modules/status/all?status=all",
+      "httpStatus": 200,
+      "durationMs": 493,
+      "data": {
+        "SOCIETE": {
+          "module": "modSociete",
+          "active": true
+        },
+        "PRODUCT": {
+          "module": "modProduct",
+          "active": true
+        },
+        "COMMANDE": {
+          "module": "modCommande",
+          "active": true
+        },
+        "FACTURE": {
+          "module": "modFacture",
+          "active": false
+        },
+        "STOCK": {
+          "module": "modStock",
+          "active": false
+        }
+      }
+    }
+  ]
+}

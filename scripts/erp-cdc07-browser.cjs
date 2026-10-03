@@ -23,7 +23,9 @@ const env = environment();
       await page.goto('http://localhost:3000' + route);
       await page.locator('#main-sidebar').waitFor();
       await page.waitForFunction(() => document.querySelector('main')?.innerText.length > 40);
-      await page.waitForTimeout(1200);
+      if (/^\/erp\/(clients|products|orders|invoices|stocks)$/.test(route)) {
+        await page.waitForFunction(() => document.querySelector('main')?.innerText.includes('Aucune donnee pour ce module') || document.querySelector('[aria-label="Erreurs ERP"]') || document.querySelector('main table'), undefined, { timeout: 25000 });
+      } else await page.waitForTimeout(1200);
       result.routes.push({ route, rendered: true, errorPanels: await page.getByRole('region', { name: 'Erreurs ERP' }).count(), globalErrorBanners: await page.locator('[role=alert]').count() });
     }
     const test = page.getByRole('button', { name: 'Tester la connexion', exact: true });

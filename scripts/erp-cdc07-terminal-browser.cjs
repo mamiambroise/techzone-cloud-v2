@@ -22,7 +22,8 @@ const resources = ['clients', 'products', 'orders', 'invoices', 'stocks'];
       const start = started.get(response.request()); if (!start) return;
       handlers.push((async () => {
         let body; try { body = await response.json(); } catch { return; }
-        completed.set(start.resource, { resource: start.resource, techzoneEndpoint: new URL(response.url()).pathname, httpStatus: response.status(), durationMs: Date.now() - start.time, code: body.code, traceId: body.traceId, upstreamStatus: body.details?.upstreamStatus });
+        const traceId = body.traceId || response.headers()['x-trace-id'];
+        completed.set(start.resource, { resource: start.resource, techzoneEndpoint: new URL(response.url()).pathname, httpStatus: response.status(), durationMs: Date.now() - start.time, countReturned: Array.isArray(body) ? body.length : null, code: body.code || null, traceId, correlationId: response.headers()['x-request-id'] || null });
       })());
     });
     await page.goto('http://localhost:3000/erp');
@@ -47,6 +48,7 @@ const resources = ['clients', 'products', 'orders', 'invoices', 'stocks'];
       evidence.responsive.push({ width, overflow: await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2) });
     }
     evidence.status = evidence.resources.every(row => row.traceId && row.httpStatus && row.dolibarrEndpoint && row.finalUiState !== 'LOADING') && evidence.errors.length === 0 ? 'PASS' : 'FAIL';
+    evidence.dataAccessStatus = evidence.resources.length === 5 && evidence.resources.every(row => ['LOADED', 'EMPTY'].includes(row.finalUiState)) ? 'PASS' : 'FAIL';
     if (evidence.status !== 'PASS') process.exitCode = 1;
   } catch (error) { evidence.status = 'FAIL'; evidence.failure = error.name; process.exitCode = 1; }
   finally { await browser.close(); fs.writeFileSync(root + '/.runtime/erp-terminal-evidence.json', JSON.stringify(evidence, null, 2)); console.log(JSON.stringify(evidence, null, 2)); }
