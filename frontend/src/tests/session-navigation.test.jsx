@@ -8,6 +8,7 @@ import { AuthProvider, AuthContext, useAuth } from '../auth/AuthProvider.jsx';
 import { TenantProvider, useTenant } from '../contexts/TenantProvider.jsx';
 import { normalizeTenants } from '../contexts/tenantNormalization.js';
 import ProtectedRoute from '../auth/ProtectedRoute.jsx';
+import RequireNavigationAccess from '../auth/RequireNavigationAccess.jsx';
 import ComingSoon from '../components/ComingSoon.jsx';
 import { iamAuthService } from '../services/authService.js';
 vi.mock('../services/authService.js', () => ({iamAuthService:{me:vi.fn(),refresh:vi.fn(),getTenants:vi.fn(),switchTenant:vi.fn()},getDeviceFingerprint:vi.fn()}));
@@ -56,8 +57,9 @@ describe('Tenant bootstrap',()=>{
  });
 });
 describe('Protected routes',()=>{
- const page=auth=><MemoryRouter initialEntries={['/iam/users']}><AuthContext.Provider value={auth}><Routes><Route path="/login" element={<p>Login destination</p>}/><Route element={<ProtectedRoute/>}><Route path="/iam/users" element={<p>Admin content</p>}/></Route></Routes></AuthContext.Provider></MemoryRouter>;
- it('redirects unauthenticated access',async()=>{render(page({user:null,authState:'UNAUTHENTICATED'}));await screen.findByText('Login destination');});
- it('denies an authenticated user without admin permission',()=>{render(page({user:{id:'u',isAdmin:false},authState:'AUTHENTICATED'}));expect(screen.getByText('Accès interdit')).toBeInTheDocument();expect(screen.queryByText('Admin content')).not.toBeInTheDocument();});
- it('renders a feature-specific ComingSoon without presenting it as implemented',()=>{render(<MemoryRouter><ComingSoon title="Formulaires" module="UI Builder" description="Construction visuelle des formulaires" plannedPhase={4}/></MemoryRouter>);expect(screen.getByRole('heading',{name:'Formulaires'})).toBeInTheDocument();expect(screen.getByText('Construction visuelle des formulaires')).toBeInTheDocument();});
-});
+  const page=auth=><MemoryRouter initialEntries={['/iam/users']}><AuthContext.Provider value={auth}><Routes><Route path="/login" element={<p>Login destination</p>}/><Route element={<ProtectedRoute/>}><Route path="/iam/users" element={<RequireNavigationAccess><p>Admin content</p></RequireNavigationAccess>}/></Route></Routes></AuthContext.Provider></MemoryRouter>;
+  it('redirects unauthenticated access',async()=>{render(page({user:null,authState:'UNAUTHENTICATED'}));await screen.findByText('Login destination');});
+  it('denies an authenticated user without admin permission',async()=>{render(page({user:{id:'u',isAdmin:false},authState:'AUTHENTICATED'}));expect(await screen.findByRole('heading',{name:'Accès refusé'})).toBeInTheDocument();expect(screen.getByText('Erreur 403')).toBeInTheDocument();expect(screen.queryByText('Admin content')).not.toBeInTheDocument();});
+  it('renders a feature-specific ComingSoon without presenting it as implemented',()=>{render(<MemoryRouter><ComingSoon title="Formulaires" module="UI Builder" description="Construction visuelle des formulaires" plannedPhase={4}/></MemoryRouter>);expect(screen.getByRole('heading',{name:'Formulaires'})).toBeInTheDocument();expect(screen.getByText('Construction visuelle des formulaires')).toBeInTheDocument();});
+  it('sends ComingSoon back to the concerned module instead of Business Manager',()=>{render(<MemoryRouter><ComingSoon title="Plans" module="Abonnements" description="Bientôt" backTo="/billing/plans" backLabel="Abonnements"/></MemoryRouter>);expect(screen.getByRole('link',{name:/Retour — Abonnements/})).toHaveAttribute('href','/billing/plans');});
+ });
