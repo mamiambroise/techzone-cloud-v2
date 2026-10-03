@@ -103,7 +103,12 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // consulter cette surface (elle était filtrée par `erp:read`). On conserve
     // exactement cette visibilité, mais en lecture seule côté API : toute
     // mutation exige désormais une permission d'écriture réservée à l'admin.
+    // `integration:diagnostic:read` est également accordé car l'onglet
+    // Diagnostics était visible pour ce rôle, et les journaux sont déjà bornés
+    // à son propre tenant. Les références de secrets (credential:*) restent
+    // réservées à l'admin.
     PERMISSIONS.INTEGRATION_READ,
+    PERMISSIONS.INTEGRATION_DIAGNOSTIC_READ,
   ],
 };
 

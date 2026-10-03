@@ -170,11 +170,15 @@ describe('Integration Hub — application effective par le guard global', () => 
   it('le rôle standard garde la lecture mais perd toute mutation', () => {
     const userPerms = ROLE_PERMISSIONS[ROLES.USER];
     expect(userPerms).toContain(PERMISSIONS.INTEGRATION_READ);
+    expect(userPerms).toContain(PERMISSIONS.INTEGRATION_DIAGNOSTIC_READ);
     expect(userPerms).not.toContain(PERMISSIONS.INTEGRATION_WRITE);
     expect(userPerms).not.toContain(PERMISSIONS.INTEGRATION_EXECUTE);
     expect(userPerms).not.toContain(PERMISSIONS.INTEGRATION_CREDENTIAL_READ);
     expect(userPerms).not.toContain(PERMISSIONS.INTEGRATION_CREDENTIAL_WRITE);
-    expect(userPerms).not.toContain(PERMISSIONS.INTEGRATION_DIAGNOSTIC_READ);
+  });
+
+  it('le rôle admin reçoit automatiquement toutes les permissions', () => {
+    expect(ROLE_PERMISSIONS[ROLES.ADMIN]).toEqual(expect.arrayContaining(Object.values(PERMISSIONS)));
   });
 
   it('une requête sans principal est refusée', async () => {
