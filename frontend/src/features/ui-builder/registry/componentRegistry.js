@@ -228,7 +228,7 @@ const components = [
       cancelLabel: { type: 'text', label: 'Libellé d’annulation', defaultValue: 'Annuler' },
     },
     bindingCapabilities: [],
-    supportedActions: ['CALL_API', 'TRIGGER_AUTOMATION', 'CLOSE_MODAL', 'SHOW_NOTIFICATION', 'NAVIGATE'],
+    supportedActions: ['CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD', 'TRIGGER_AUTOMATION', 'CLOSE_MODAL', 'SHOW_NOTIFICATION', 'NAVIGATE'],
   },
 
   // ---------------- DATA_DISPLAY ----------------
@@ -242,7 +242,7 @@ const components = [
       emptyMessage: { type: 'text', label: 'Message liste vide', defaultValue: 'Aucun enregistrement' },
     },
     bindingCapabilities: ['rows'],
-    supportedActions: ['NAVIGATE', 'REFRESH'],
+    supportedActions: ['NAVIGATE', 'REFRESH_DATA'],
   },
   {
     key: 'Badge', category: 'DATA_DISPLAY', label: 'Badge', icon: 'Tag',
@@ -346,7 +346,7 @@ const components = [
       ], defaultValue: 'md' },
     },
     bindingCapabilities: [],
-    supportedActions: ['NAVIGATE', 'REFRESH', 'SET_VARIABLE', 'SHOW_NOTIFICATION', 'OPEN_MODAL', 'CLOSE_MODAL', 'TRIGGER_AUTOMATION', 'CALL_API'],
+    supportedActions: ['NAVIGATE', 'REFRESH_DATA', 'SET_VARIABLE', 'SHOW_NOTIFICATION', 'OPEN_MODAL', 'OPEN_DRAWER', 'CLOSE_MODAL', 'TRIGGER_AUTOMATION', 'CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD'],
   },
 ];
 

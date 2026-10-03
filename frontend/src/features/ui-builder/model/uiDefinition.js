@@ -16,13 +16,16 @@ export const BINDING_KINDS = ['STATIC', 'ENTITY_FIELD', 'ENTITY_LIST', 'CONTEXT'
 export const CONTEXT_KEYS = ['currentUser', 'currentTenant', 'currentApplication'];
 export const ACTION_TYPES = [
   'NAVIGATE',
-  'REFRESH',
+  'REFRESH_DATA',
   'SET_VARIABLE',
   'SHOW_NOTIFICATION',
   'OPEN_MODAL',
+  'OPEN_DRAWER',
   'CLOSE_MODAL',
   'TRIGGER_AUTOMATION',
-  'CALL_API',
+  'CREATE_RECORD',
+  'UPDATE_RECORD',
+  'DELETE_RECORD',
 ];
 
 export const PAGE_TYPES = ['LIST', 'DETAIL', 'FORM', 'DASHBOARD', 'CUSTOM'];

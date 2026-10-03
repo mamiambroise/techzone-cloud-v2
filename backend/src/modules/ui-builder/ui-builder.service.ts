@@ -253,7 +253,7 @@ export class UiBuilderService {
   // =====================================================================
 
   async getUiDefinition(applicationVersionId: string, tenantId: string | null) {
-    await this.ensureVersion(applicationVersionId, tenantId);
+    const version = await this.ensureVersion(applicationVersionId, tenantId);
     const [pages, theme] = await Promise.all([
       this.listPages(applicationVersionId, tenantId),
       this.getTheme(applicationVersionId, tenantId).catch(() => null),
@@ -273,7 +273,8 @@ export class UiBuilderService {
       }));
 
     return {
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
+      projectId: applicationVersionId,
       applicationId: pages[0]?.applicationId ?? null,
       applicationVersionId,
       theme: theme?.tokens ?? null,
@@ -293,7 +294,14 @@ export class UiBuilderService {
         metadata: p.metadata ?? {},
         updatedAt: p.updatedAt,
       })),
-      metadata: { pageCount: pages.length },
+      dataSources: pages.flatMap((p) => Object.values(((p.components ?? {}) as { nodes?: Record<string, { bindings?: Record<string, { kind?: string; entity?: string }> }> }).nodes ?? {}))
+        .flatMap((node) => Object.values(node.bindings ?? {}))
+        .filter((binding) => binding.kind === 'ENTITY_FIELD' || binding.kind === 'ENTITY_LIST')
+        .map((binding) => ({ kind: 'DATA_RUNTIME', resource: binding.entity }))
+        .filter((source, index, sources) => source.resource && sources.findIndex((candidate) => candidate.resource === source.resource) === index),
+      requiredPermissions: [...new Set(pages.flatMap((p) => (Array.isArray(p.permissions) ? p.permissions : [])))].sort(),
+      capabilities: ['data-runtime:query', 'data-runtime:execute'],
+      metadata: { pageCount: pages.length, versionStatus: version.status, generatedAt: new Date().toISOString() },
     };
   }
 
@@ -407,10 +415,10 @@ export class UiBuilderService {
               issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `TRIGGER_AUTOMATION: workflowCode requis.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             }
           }
-          if (action.type === 'CALL_API') {
+          if (['CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD'].includes(action.type)) {
             const resource = (action.config as { resource?: unknown } | undefined)?.resource;
             if (typeof resource !== 'string' || !resource) {
-              issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `CALL_API: resource Data Runtime requise.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
+              issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `${action.type}: ressource Data Runtime requise.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             }
           }
         }
