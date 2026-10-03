@@ -39,6 +39,7 @@ describe('Route security — hiding a menu is never the only guard (RG-NAV-007, 
   const protectedRoutes = [
     '/packs/packs', '/runtime/context', '/erp/clients', '/data-runtime',
     '/iam/users', '/observability/logs', '/automation/workflows', '/settings/integrations',
+    '/ui', '/ui/pages', '/ui/builder/page-1', '/ui/forms', '/ui/components', '/ui/navigation', '/ui/themes', '/ui/preview',
   ];
 
   it('keeps a permission on every protected route definition', () => {
@@ -57,6 +58,8 @@ describe('Route security — hiding a menu is never the only guard (RG-NAV-007, 
       });
     expect(canAccess(resolveRoute('/automation/workflows'), operator)).toBe(true);
     expect(canAccess(resolveRoute('/data-runtime'), operator)).toBe(true);
+    expect(canAccess(resolveRoute('/ui/builder/page-1'), operator)).toBe(false);
+    expect(canAccess(resolveRoute('/ui/builder/page-1'), { permissions: ['ui-builder:read'] })).toBe(true);
   });
 
   it('denies an unauthorized child of an authorized module', () => {

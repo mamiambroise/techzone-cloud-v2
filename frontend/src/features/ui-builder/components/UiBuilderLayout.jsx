@@ -26,7 +26,7 @@ export const UIB_SUB_TABS = [
   { id: 'editor', label: 'Éditeur visuel', route: ROUTES.uiBuilder.replace(':pageId', 'editor') },
   { id: 'components', label: 'Composants', route: ROUTES.uiComponents },
   { id: 'forms', label: 'Formulaires', route: ROUTES.uiForms },
-  { id: 'navigation', label: 'Navigation', route: ROUTES.uiPages },
+  { id: 'navigation', label: 'Navigation', route: ROUTES.uiNavigation },
   { id: 'theme', label: 'Thème', route: ROUTES.uiThemes },
   { id: 'preview', label: 'Aperçu & Test', route: ROUTES.uiPreview },
 ];
@@ -137,8 +137,7 @@ export default function UiBuilderLayout({ subTab, children }) {
 
       <nav aria-label="Sections UI Builder" className="flex flex-wrap gap-1 border-b border-slate-200">
         {tabs.map((tab) => {
-          const isActive = tab.id === subTab
-            || (subTab === 'pages' && tab.id === 'navigation' && location.hash === '#navigation');
+          const isActive = tab.id === subTab;
           return (
             <Link
               key={tab.id}
