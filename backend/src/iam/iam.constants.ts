@@ -71,6 +71,28 @@ export const PERMISSIONS = {
   DATA_RUNTIME_EXECUTE: 'data-runtime:execute',
   IAM_ADMIN: 'iam:admin',
   CONFIG_READ: 'config:read',
+  // Subscription & Billing (CDC 15).
+  //
+  // Ces permissions autorisent un ACTEUR à agir sur la surface Billing.
+  // Elles ne sont PAS des entitlements : un entitlement répond « le Tenant a-t-il
+  // acheté ce droit commercial ? », une permission répond « cet utilisateur
+  // est-il autorisé à le faire ? » (CDC 5 / RG-BILL-002 / RG-BILL-004).
+  // Billing n'est donc jamais l'autorite IAM et aucun role Billing n'est cree
+  // ici : seules des permissions rejoignent le registre existant (CDC 81).
+  BILLING_READ: 'billing:read',
+  BILLING_MANAGE: 'billing:manage',
+  BILLING_PLAN_READ: 'billing:plan:read',
+  BILLING_PLAN_MANAGE: 'billing:plan:manage',
+  BILLING_SUBSCRIPTION_READ: 'billing:subscription:read',
+  BILLING_SUBSCRIPTION_MANAGE: 'billing:subscription:manage',
+  BILLING_INVOICE_READ: 'billing:invoice:read',
+  BILLING_INVOICE_MANAGE: 'billing:invoice:manage',
+  BILLING_PAYMENT_READ: 'billing:payment:read',
+  BILLING_PAYMENT_RECORD: 'billing:payment:record',
+  BILLING_PAYMENT_REFUND: 'billing:payment:refund',
+  BILLING_USAGE_READ: 'billing:usage:read',
+  BILLING_OVERRIDE_MANAGE: 'billing:override:manage',
+  BILLING_DIAGNOSTIC_READ: 'billing:diagnostic:read',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -90,6 +112,20 @@ export const DATA_RUNTIME_QUERY = PERMISSIONS.DATA_RUNTIME_QUERY;
 export const DATA_RUNTIME_EXECUTE = PERMISSIONS.DATA_RUNTIME_EXECUTE;
 export const IAM_ADMIN = PERMISSIONS.IAM_ADMIN;
 export const CONFIG_READ = PERMISSIONS.CONFIG_READ;
+export const BILLING_READ = PERMISSIONS.BILLING_READ;
+export const BILLING_MANAGE = PERMISSIONS.BILLING_MANAGE;
+export const BILLING_PLAN_READ = PERMISSIONS.BILLING_PLAN_READ;
+export const BILLING_PLAN_MANAGE = PERMISSIONS.BILLING_PLAN_MANAGE;
+export const BILLING_SUBSCRIPTION_READ = PERMISSIONS.BILLING_SUBSCRIPTION_READ;
+export const BILLING_SUBSCRIPTION_MANAGE = PERMISSIONS.BILLING_SUBSCRIPTION_MANAGE;
+export const BILLING_INVOICE_READ = PERMISSIONS.BILLING_INVOICE_READ;
+export const BILLING_INVOICE_MANAGE = PERMISSIONS.BILLING_INVOICE_MANAGE;
+export const BILLING_PAYMENT_READ = PERMISSIONS.BILLING_PAYMENT_READ;
+export const BILLING_PAYMENT_RECORD = PERMISSIONS.BILLING_PAYMENT_RECORD;
+export const BILLING_PAYMENT_REFUND = PERMISSIONS.BILLING_PAYMENT_REFUND;
+export const BILLING_USAGE_READ = PERMISSIONS.BILLING_USAGE_READ;
+export const BILLING_OVERRIDE_MANAGE = PERMISSIONS.BILLING_OVERRIDE_MANAGE;
+export const BILLING_DIAGNOSTIC_READ = PERMISSIONS.BILLING_DIAGNOSTIC_READ;
 
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   [ROLES.ADMIN]: Object.values(PERMISSIONS),
@@ -109,6 +145,18 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // réservées à l'admin.
     PERMISSIONS.INTEGRATION_READ,
     PERMISSIONS.INTEGRATION_DIAGNOSTIC_READ,
+    // Billing : consultation de son propre abonnement, de ses factures, de ses
+    // paiements et de sa consommation. Aucune permission d'écriture n'est
+    // accordée ici — `billing:manage`, `billing:payment:record`,
+    // `billing:override:manage` et `billing:plan:manage` restent réservées à
+    // l'admin (CDC 23 : valider un paiement manuel exige une permission
+    // explicite).
+    PERMISSIONS.BILLING_READ,
+    PERMISSIONS.BILLING_PLAN_READ,
+    PERMISSIONS.BILLING_SUBSCRIPTION_READ,
+    PERMISSIONS.BILLING_INVOICE_READ,
+    PERMISSIONS.BILLING_PAYMENT_READ,
+    PERMISSIONS.BILLING_USAGE_READ,
   ],
 };
 
