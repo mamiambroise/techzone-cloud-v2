@@ -38,6 +38,9 @@ import {
 import { DolibarrConfig, DEFAULT_DOLIBARR_CONFIG } from './dolibarr.config';
 import { DolibarrMapper, mapToDolibarrDate } from './dolibarr.mapper';
 import { DolibarrError } from './dolibarr.error';
+import { ErpError } from '../erp-error';
+import { validateDolibarrUrl, dolibarrAgents } from './dolibarr-destination';
+import { integrationRequestContext } from '../../common/integration-request-context';
 import { DolibarrClient, DolibarrProduct, DolibarrOrder, DolibarrUser, DolibarrVariant, DolibarrService, DolibarrStockMovement, DolibarrStockTransfer, DolibarrInventory, DolibarrStockAlert, DolibarrReturn, DolibarrPromotion, DolibarrPurchaseOrder, DolibarrCashRegister, DolibarrExpense, DolibarrReservation, DolibarrAgendaEvent, DolibarrProject, DolibarrQuote, DolibarrInvoice, DolibarrPayment, DolibarrWarehouse, DolibarrShipment, DolibarrDocument } from './dolibarr.dto';
 
 @Injectable()
@@ -47,14 +50,19 @@ export class DolibarrAdapter implements IErpAdapter {
   private config: DolibarrConfig;
 
   constructor() {
-    this.config = { ...DEFAULT_DOLIBARR_CONFIG };
+    this.config = { ...DEFAULT_DOLIBARR_CONFIG, baseUrl: '', apiKey: '' };
     this.http = this.createHttpClient();
-    this.logger.log(`DolibarrAdapter cree - URL: ${this.config.baseUrl}`);
+    this.logger.log('DolibarrAdapter configure');
   }
 
   private createHttpClient(): AxiosInstance {
+    const url = this.config.baseUrl ? validateDolibarrUrl(this.config.baseUrl) : null;
+    const base = this.config.baseUrl.replace(/\/+$/, '').replace(/\/api\/index\.php$/, '');
     const http = axios.create({
-      baseURL: `${this.config.baseUrl}/api/index.php`,
+      maxRedirects: 0, maxContentLength: 5 * 1024 * 1024, maxBodyLength: 5 * 1024 * 1024,
+      proxy: false,
+      ...(url ? dolibarrAgents(url) : {}),
+      baseURL: `${base}/api/index.php`,
       timeout: this.config.timeout,
       headers: {
         DOLAPIKEY: this.config.apiKey,
@@ -63,19 +71,47 @@ export class DolibarrAdapter implements IErpAdapter {
       },
     });
 
+    http.interceptors.request.use((request) => {
+      if (!this.config.baseUrl || !this.config.apiKey) throw ErpError.notConfigured();
+      if (/^[a-z]+:|^\/\/|(?:^|\/)\.{1,2}(?:\/|$)/i.test(request.url || '')) throw DolibarrError.BAD_REQUEST();
+      const tracked = request as typeof request & { __startedAt?: number; __deadline?: number; __traceId?: string };
+      if (!tracked.__startedAt) {
+        tracked.__startedAt = Date.now();
+        tracked.__deadline = tracked.__startedAt + 10000;
+        tracked.__traceId = integrationRequestContext.getStore()?.traceId;
+        // Absolute wall-clock budget includes DNS, connect, response and retries.
+        request.signal = AbortSignal.timeout(10000);
+      }
+      const remaining = tracked.__deadline! - Date.now();
+      if (remaining <= 0) throw DolibarrError.TIMEOUT();
+      request.timeout = Math.min(request.timeout || this.config.timeout, remaining);
+      return request;
+    });
     // Intercepteur de retry avec backoff exponentiel
     http.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        this.logUpstream(response.config, response.status);
+        return response;
+      },
       async (error: AxiosError) => {
+        if (error instanceof ErpError || error instanceof DolibarrError) throw error;
         const config = error.config as any;
         if (!config) throw this.handleError(error);
+        this.logUpstream(config, error.response?.status, error.code);
+        if (config.signal?.aborted || (config.__deadline && Date.now() >= config.__deadline)) throw DolibarrError.TIMEOUT();
 
         const status = error.response?.status || 0;
-        const retryable = status === 0 || status >= 500 || status === 408 || status === 429;
+        const safeRead = ['get', 'head'].includes(String(config.method || 'get').toLowerCase());
+        const retryable = safeRead && (status === 0 || [408, 429, 502, 503, 504].includes(status));
         config.__retryCount = config.__retryCount || 0;
         if (retryable && config.__retryCount < this.config.retryAttempts) {
           config.__retryCount += 1;
-          const delay = this.config.retryDelay * Math.pow(2, config.__retryCount - 1);
+          const retryAfter = error.response?.headers?.['retry-after'];
+          const requestedDelay = retryAfter == null ? 0 : /^\d+$/.test(String(retryAfter)) ? Number(retryAfter) * 1000 : Math.max(0, Date.parse(String(retryAfter)) - Date.now());
+          // A longer provider backoff is handed back to the caller, never shortened.
+          if (requestedDelay > 2000) throw this.handleError(error);
+          const delay = Math.max(requestedDelay || 0, Math.min(2000, this.config.retryDelay * Math.pow(2, config.__retryCount - 1)));
+          if (config.__deadline && Date.now() + delay >= config.__deadline) throw DolibarrError.TIMEOUT();
           this.logger.warn(`Retry ${config.__retryCount}/${this.config.retryAttempts} dans ${delay}ms`);
           await new Promise((r) => setTimeout(r, delay));
           return http.request(config);
@@ -88,6 +124,20 @@ export class DolibarrAdapter implements IErpAdapter {
     return http;
   }
 
+  private logUpstream(config: any, status?: number, code?: string) {
+    this.logger.log(JSON.stringify({ event: 'ERP_UPSTREAM_RESPONSE', traceId: config.__traceId,
+      endpoint: String(config.url || '').split('?')[0], httpStatus: status ?? null,
+      durationMs: Date.now() - (config.__startedAt || Date.now()), attempt: (config.__retryCount || 0) + 1,
+      ...(code ? { transportCode: code } : {}),
+    }));
+  }
+
+  private readList(data: unknown, key: string): any[] {
+    const list = Array.isArray(data) ? data : data && typeof data === 'object' ? (data as Record<string, unknown>)[key] : undefined;
+    if (!Array.isArray(list) || list.some(item => !item || typeof item !== 'object' || item.id == null)) throw DolibarrError.ERP_ERROR('Invalid ERP list response');
+    return list;
+  }
+
   // === CONFIGURATION ===
 
   /**
@@ -95,25 +145,28 @@ export class DolibarrAdapter implements IErpAdapter {
    */
   configure(config: Partial<DolibarrConfig>): void {
     this.config = { ...this.config, ...config };
+    this.config.timeout = Math.max(100, Math.min(10000, Number(this.config.timeout) || 10000));
+    this.config.retryAttempts = Math.max(0, Math.min(2, Number(this.config.retryAttempts) || 0));
+    this.config.retryDelay = Math.max(0, Math.min(2000, Number(this.config.retryDelay) || 0));
     this.http = this.createHttpClient();
-    this.logger.log(`DolibarrAdapter reconfigure - URL: ${this.config.baseUrl}`);
+    this.logger.log('DolibarrAdapter configure');
   }
 
   // === CLIENTS (ThirdParty) ===
 
-  async getClients(): Promise<ErpClient[]> {
+  async getClients(options: { page?: number; limit?: number } = {}): Promise<ErpClient[]> {
     this.logger.log('GET /thirdparties');
     const { data } = await this.http.get('/thirdparties', {
-      params: { entity: this.config.entity, limit: 100 },
+      params: { entity: this.config.entity, limit: options.limit ?? 100, page: options.page ?? 0 },
     });
-    const clients: DolibarrClient[] = Array.isArray(data) ? data : data.thirdparties || [];
+    const clients: DolibarrClient[] = this.readList(data, 'thirdparties');
     this.logger.log(`${clients.length} clients recus`);
     return clients.map(DolibarrMapper.mapFromDolibarrClient);
   }
 
   async getClientById(id: string): Promise<ErpClient> {
-    this.logger.log(`GET /thirdparties/${id}`);
-    const { data } = await this.http.get(`/thirdparties/${id}`);
+    this.logger.log(`GET /thirdparties/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/thirdparties/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrClient(data);
   }
 
@@ -125,25 +178,25 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async updateClient(id: string, data: Partial<ErpClient>): Promise<ErpClient> {
-    this.logger.log(`PUT /thirdparties/${id}`);
+    this.logger.log(`PUT /thirdparties/${encodeURIComponent(id)}`);
     const dolibarrData = DolibarrMapper.mapToDolibarrClient(data as ErpClient, this.config.entity);
-    await this.http.put(`/thirdparties/${id}`, dolibarrData);
+    await this.http.put(`/thirdparties/${encodeURIComponent(id)}`, dolibarrData);
     return this.getClientById(id);
   }
 
   async deleteClient(id: string): Promise<void> {
-    this.logger.log(`DELETE /thirdparties/${id}`);
-    await this.http.delete(`/thirdparties/${id}`);
+    this.logger.log(`DELETE /thirdparties/${encodeURIComponent(id)}`);
+    await this.http.delete(`/thirdparties/${encodeURIComponent(id)}`);
   }
 
   // === PRODUITS (Products) ===
 
   // === PRODUITS (Products) ===
 
-  async getProducts(): Promise<ErpProduct[]> {
+  async getProducts(options: { page?: number; limit?: number } = {}): Promise<ErpProduct[]> {
     this.logger.log('GET /products');
     const { data, headers } = await this.http.get('/products', {
-      params: { entity: this.config.entity, limit: 100 },
+      params: { entity: this.config.entity, limit: options.limit ?? 100, page: options.page ?? 0 },
     });
     const contentType = (headers['content-type'] as string) || '';
     if (!contentType.includes('application/json')) {
@@ -152,14 +205,14 @@ export class DolibarrAdapter implements IErpAdapter {
     if (typeof data === 'string') {
       throw DolibarrError.ERP_ERROR('Reponse invalide: JSON attendu, HTML recu');
     }
-    const products: DolibarrProduct[] = Array.isArray(data) ? data : data?.products || [];
+    const products: DolibarrProduct[] = this.readList(data, 'products');
     this.logger.log(`${products.length} produits recus`);
     return products.map(DolibarrMapper.mapFromDolibarrProduct);
   }
 
   async getProductById(id: string): Promise<ErpProduct> {
-    this.logger.log(`GET /products/${id}`);
-    const { data } = await this.http.get(`/products/${id}`);
+    this.logger.log(`GET /products/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/products/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrProduct(data);
   }
 
@@ -171,32 +224,32 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async updateProduct(id: string, data: Partial<ErpProduct>): Promise<ErpProduct> {
-    this.logger.log(`PUT /products/${id}`);
+    this.logger.log(`PUT /products/${encodeURIComponent(id)}`);
     const dolibarrData = DolibarrMapper.mapToDolibarrProduct(data as ErpProduct, this.config.entity);
-    await this.http.put(`/products/${id}`, dolibarrData);
+    await this.http.put(`/products/${encodeURIComponent(id)}`, dolibarrData);
     return this.getProductById(id);
   }
 
   async deleteProduct(id: string): Promise<void> {
-    this.logger.log(`DELETE /products/${id}`);
-    await this.http.delete(`/products/${id}`);
+    this.logger.log(`DELETE /products/${encodeURIComponent(id)}`);
+    await this.http.delete(`/products/${encodeURIComponent(id)}`);
   }
 
   // === COMMANDES (Orders) ===
 
-  async getOrders(): Promise<ErpOrder[]> {
+  async getOrders(options: { page?: number; limit?: number } = {}): Promise<ErpOrder[]> {
     this.logger.log('GET /orders');
     const { data } = await this.http.get('/orders', {
-      params: { entity: this.config.entity, limit: 100 },
+      params: { entity: this.config.entity, limit: options.limit ?? 100, page: options.page ?? 0 },
     });
-    const orders: DolibarrOrder[] = Array.isArray(data) ? data : data.orders || [];
+    const orders: DolibarrOrder[] = this.readList(data, 'orders');
     this.logger.log(`${orders.length} commandes recues`);
     return orders.map(DolibarrMapper.mapFromDolibarrOrder);
   }
 
   async getOrderById(id: string): Promise<ErpOrder> {
-    this.logger.log(`GET /orders/${id}`);
-    const { data } = await this.http.get(`/orders/${id}`);
+    this.logger.log(`GET /orders/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/orders/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrOrder(data);
   }
 
@@ -210,7 +263,7 @@ export class DolibarrAdapter implements IErpAdapter {
     });
     const id = String(created.id || created);
     for (const l of data.lines) {
-      await this.http.post(`/orders/${id}/lines`, {
+      await this.http.post(`/orders/${encodeURIComponent(id)}/lines`, {
         fk_product: Number(l.productId),
         qty: l.quantity,
         subprice: l.price || 0,
@@ -220,10 +273,10 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async updateOrder(id: string, data: Partial<ErpOrder>): Promise<ErpOrder> {
-    this.logger.log(`PUT /orders/${id}`);
+    this.logger.log(`PUT /orders/${encodeURIComponent(id)}`);
     if (data.clientId && data.lines) {
       for (const l of data.lines) {
-        await this.http.post(`/orders/${id}/lines`, {
+        await this.http.post(`/orders/${encodeURIComponent(id)}/lines`, {
           fk_product: Number(l.productId),
           qty: l.quantity,
           subprice: l.price || 0,
@@ -234,8 +287,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async deleteOrder(id: string): Promise<void> {
-    this.logger.log(`DELETE /orders/${id}`);
-    await this.http.delete(`/orders/${id}`);
+    this.logger.log(`DELETE /orders/${encodeURIComponent(id)}`);
+    await this.http.delete(`/orders/${encodeURIComponent(id)}`);
   }
 
   // === STOCK ===
@@ -256,24 +309,14 @@ export class DolibarrAdapter implements IErpAdapter {
 
   async healthCheck(): Promise<HealthCheckResult> {
     const timestamp = new Date().toISOString();
-    if (!this.config.apiKey) {
-      return { status: 'NOT_CONFIGURED', mode: 'DOLIBARR', timestamp };
-    }
+    if (!this.config.apiKey || !this.config.baseUrl) return { status: 'NOT_CONFIGURED', mode: 'DOLIBARR', timestamp };
     try {
-      this.logger.log('Health check Dolibarr');
-      await this.http.get('/status', { timeout: 5000 });
+      const response = await this.http.get('/status', { timeout: 5000 });
+      if (!response.data || typeof response.data !== 'object') throw DolibarrError.ERP_ERROR();
       return { status: 'CONNECTED', mode: 'DOLIBARR', timestamp };
     } catch (error) {
-      const err = error as AxiosError;
-      if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT' || err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
-        return { status: 'UNAVAILABLE', mode: 'DOLIBARR', timestamp };
-      }
-      if (err.response) {
-        if (err.response.status === 401 || err.response.status === 403) {
-          return { status: 'DEGRADED', mode: 'DOLIBARR', timestamp };
-        }
-      }
-      return { status: 'DEGRADED', mode: 'DOLIBARR', timestamp };
+      const normalized = error instanceof DolibarrError ? ErpError.fromDolibarr(error) : error instanceof ErpError ? error : ErpError.unavailable();
+      return { status: normalized.statusCode === 503 || normalized.statusCode === 504 ? 'UNAVAILABLE' : 'DEGRADED', mode: 'DOLIBARR', timestamp, code: normalized.code, message: normalized.message };
     }
   }
 
@@ -281,12 +324,16 @@ export class DolibarrAdapter implements IErpAdapter {
 
   async getStocks(): Promise<StockInfo[]> {
     this.logger.log('GET /products (tous les stocks)');
-    const products = await this.getProducts();
-    return products.map((p) => ({
-      productId: p.id,
-      currentStock: Number.isNaN(Number(p.stock || 0)) ? 0 : Number(p.stock || 0),
-      lastUpdated: new Date().toISOString(),
-    }));
+    const { data } = await this.http.get('/products', {
+      params: { entity: this.config.entity, limit: 100, includestockdata: 1 },
+    });
+    return this.readList(data, 'products').map(p => {
+      const quantity = p.stock_reel ?? p.stock;
+      if (quantity == null || quantity === '' || !Number.isFinite(Number(quantity))) {
+        throw new ErpError('Quantite de stock absente de la reponse Dolibarr.', 502, 'INTEGRATION_PAYLOAD_INVALID');
+      }
+      return { productId: String(p.id), currentStock: Number(quantity) };
+    });
   }
 
   // === FOURNISSEURS ===
@@ -313,8 +360,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async getSupplierById(id: string): Promise<ErpSupplier> {
-    this.logger.log(`GET /thirdparties/${id} (fournisseur)`);
-    const { data } = await this.http.get(`/thirdparties/${id}`);
+    this.logger.log(`GET /thirdparties/${encodeURIComponent(id)} (fournisseur)`);
+    const { data } = await this.http.get(`/thirdparties/${encodeURIComponent(id)}`);
     return {
       id: String(data.id),
       ref: data.code_fournisseur || `FRS-${data.id}`,
@@ -341,8 +388,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async updateSupplier(id: string, data: Partial<ErpSupplier>): Promise<ErpSupplier> {
-    this.logger.log(`PUT /thirdparties/${id} (fournisseur)`);
-    await this.http.put(`/thirdparties/${id}`, {
+    this.logger.log(`PUT /thirdparties/${encodeURIComponent(id)} (fournisseur)`);
+    await this.http.put(`/thirdparties/${encodeURIComponent(id)}`, {
       name: data.nom,
       email: data.email,
       phone: data.telephone,
@@ -353,34 +400,11 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async deleteSupplier(id: string): Promise<void> {
-    this.logger.log(`DELETE /thirdparties/${id}`);
-    await this.http.delete(`/thirdparties/${id}`);
+    this.logger.log(`DELETE /thirdparties/${encodeURIComponent(id)}`);
+    await this.http.delete(`/thirdparties/${encodeURIComponent(id)}`);
   }
 
   // === DEVIS / FACTURES / PAIEMENTS / ENTREPOTS / EXPEDITIONS / DOCUMENTS (in-memory) ===
-
-  private fallbackQuotes: ErpQuote[] = [];
-  private fallbackInvoices: ErpInvoice[] = [];
-  private fallbackPayments: ErpPayment[] = [];
-  private fallbackWarehouses: ErpWarehouse[] = [];
-  private fallbackShipments: ErpShipment[] = [];
-  private fallbackDocuments: ErpDocument[] = [];
-
-  private fallbackVariants: ErpProductVariant[] = [];
-  private fallbackServices: ErpService[] = [];
-  private fallbackMovements: StockMovement[] = [];
-  private fallbackTransfers: StockTransfer[] = [];
-  private fallbackInventories: Inventory[] = [];
-  private fallbackAlerts: StockAlert[] = [];
-  private fallbackReturns: ErpReturn[] = [];
-  private fallbackPromotions: Promotion[] = [];
-  private fallbackPurchases: PurchaseOrder[] = [];
-  private fallbackRegisters: ErpCashRegister[] = [];
-  private fallbackExpenses: ErpExpense[] = [];
-  private fallbackReservations: ErpReservation[] = [];
-  private fallbackAgenda: ErpAgendaEvent[] = [];
-  private fallbackProjects: ErpProject[] = [];
-  private docCounter = 1000;
 
   // === DEVIS (Proposals - reels) ===
 
@@ -395,8 +419,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async getQuoteById(id: string): Promise<ErpQuote> {
-    this.logger.log(`GET /proposals/${id}`);
-    const { data } = await this.http.get(`/proposals/${id}`);
+    this.logger.log(`GET /proposals/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/proposals/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrQuote(data);
   }
 
@@ -409,45 +433,45 @@ export class DolibarrAdapter implements IErpAdapter {
     const { data: created } = await this.http.post('/proposals', body);
     const id = String(created.id || created);
     for (const l of data.lines) {
-      await this.http.post(`/proposals/${id}/line`, DolibarrMapper.mapToDolibarrQuoteLine(l));
+      await this.http.post(`/proposals/${encodeURIComponent(id)}/line`, DolibarrMapper.mapToDolibarrQuoteLine(l));
     }
     if (data.status && data.status.toUpperCase() === 'VALIDE') {
-      await this.http.post(`/proposals/${id}/validate`, { notrigger: 0 });
+      await this.http.post(`/proposals/${encodeURIComponent(id)}/validate`, { notrigger: 0 });
     }
     return this.getQuoteById(id);
   }
 
   async updateQuote(id: string, data: Partial<ErpQuote>): Promise<ErpQuote> {
-    this.logger.log(`PUT /proposals/${id}`);
+    this.logger.log(`PUT /proposals/${encodeURIComponent(id)}`);
     if (data.validUntil) {
-      await this.http.put(`/proposals/${id}`, { date_limite: mapToDolibarrDate(data.validUntil) });
+      await this.http.put(`/proposals/${encodeURIComponent(id)}`, { date_limite: mapToDolibarrDate(data.validUntil) });
     }
     if (data.status && data.status.toUpperCase() === 'VALIDE') {
-      await this.http.post(`/proposals/${id}/validate`, { notrigger: 0 });
+      await this.http.post(`/proposals/${encodeURIComponent(id)}/validate`, { notrigger: 0 });
     }
     return this.getQuoteById(id);
   }
 
   async deleteQuote(id: string): Promise<void> {
-    this.logger.log(`DELETE /proposals/${id}`);
-    await this.http.delete(`/proposals/${id}`);
+    this.logger.log(`DELETE /proposals/${encodeURIComponent(id)}`);
+    await this.http.delete(`/proposals/${encodeURIComponent(id)}`);
   }
 
   // === FACTURES (Invoices - reelles) ===
 
-  async getInvoices(): Promise<ErpInvoice[]> {
+  async getInvoices(options: { page?: number; limit?: number } = {}): Promise<ErpInvoice[]> {
     this.logger.log('GET /invoices');
     const { data } = await this.http.get('/invoices', {
-      params: { entity: this.config.entity, limit: 100 },
+      params: { entity: this.config.entity, limit: options.limit ?? 100, page: options.page ?? 0 },
     });
-    const invoices: DolibarrInvoice[] = Array.isArray(data) ? data : data.invoices || [];
+    const invoices: DolibarrInvoice[] = this.readList(data, 'invoices');
     this.logger.log(`${invoices.length} factures recues`);
     return invoices.map(DolibarrMapper.mapFromDolibarrInvoice);
   }
 
   async getInvoiceById(id: string): Promise<ErpInvoice> {
-    this.logger.log(`GET /invoices/${id}`);
-    const { data } = await this.http.get(`/invoices/${id}`);
+    this.logger.log(`GET /invoices/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/invoices/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrInvoice(data);
   }
 
@@ -460,25 +484,25 @@ export class DolibarrAdapter implements IErpAdapter {
     const { data: created } = await this.http.post('/invoices', body);
     const id = String(created.id || created);
     for (const l of data.lines) {
-      await this.http.post(`/invoices/${id}/lines`, DolibarrMapper.mapToDolibarrInvoiceLine(l));
+      await this.http.post(`/invoices/${encodeURIComponent(id)}/lines`, DolibarrMapper.mapToDolibarrInvoiceLine(l));
     }
     if (data.status && data.status.toUpperCase() === 'VALIDE') {
-      await this.http.post(`/invoices/${id}/validate`, { notrigger: 0 });
+      await this.http.post(`/invoices/${encodeURIComponent(id)}/validate`, { notrigger: 0 });
     }
     return this.getInvoiceById(id);
   }
 
   async updateInvoice(id: string, data: Partial<ErpInvoice>): Promise<ErpInvoice> {
-    this.logger.log(`PUT /invoices/${id}`);
+    this.logger.log(`PUT /invoices/${encodeURIComponent(id)}`);
     if (data.dueDate) {
-      await this.http.put(`/invoices/${id}`, { due_date: mapToDolibarrDate(data.dueDate) });
+      await this.http.put(`/invoices/${encodeURIComponent(id)}`, { due_date: mapToDolibarrDate(data.dueDate) });
     }
     return this.getInvoiceById(id);
   }
 
   async deleteInvoice(id: string): Promise<void> {
-    this.logger.log(`DELETE /invoices/${id}`);
-    await this.http.delete(`/invoices/${id}`);
+    this.logger.log(`DELETE /invoices/${encodeURIComponent(id)}`);
+    await this.http.delete(`/invoices/${encodeURIComponent(id)}`);
   }
 
   // === PAIEMENTS (Payments - reels, API REST en lecture seule) ===
@@ -494,8 +518,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async getPaymentById(id: string): Promise<ErpPayment> {
-    this.logger.log(`GET /paiements/${id}`);
-    const { data } = await this.http.get(`/paiements/${id}`);
+    this.logger.log(`GET /paiements/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/paiements/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrPayment(data);
   }
 
@@ -518,8 +542,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async getWarehouseById(id: string): Promise<ErpWarehouse> {
-    this.logger.log(`GET /warehouses/${id}`);
-    const { data } = await this.http.get(`/warehouses/${id}`);
+    this.logger.log(`GET /warehouses/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/warehouses/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrWarehouse(data);
   }
 
@@ -531,8 +555,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async updateWarehouse(id: string, data: Partial<ErpWarehouse>): Promise<ErpWarehouse> {
-    this.logger.log(`PUT /warehouses/${id}`);
-    await this.http.put(`/warehouses/${id}`, {
+    this.logger.log(`PUT /warehouses/${encodeURIComponent(id)}`);
+    await this.http.put(`/warehouses/${encodeURIComponent(id)}`, {
       label: data.nom,
       description: data.adresse,
       address: data.adresse,
@@ -542,8 +566,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async deleteWarehouse(id: string): Promise<void> {
-    this.logger.log(`DELETE /warehouses/${id}`);
-    await this.http.delete(`/warehouses/${id}`);
+    this.logger.log(`DELETE /warehouses/${encodeURIComponent(id)}`);
+    await this.http.delete(`/warehouses/${encodeURIComponent(id)}`);
   }
 
   // === EXPEDITIONS (Shipments - reelles) ===
@@ -559,8 +583,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async getShipmentById(id: string): Promise<ErpShipment> {
-    this.logger.log(`GET /shipments/${id}`);
-    const { data } = await this.http.get(`/shipments/${id}`);
+    this.logger.log(`GET /shipments/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/shipments/${encodeURIComponent(id)}`);
     return DolibarrMapper.mapFromDolibarrShipment(data);
   }
 
@@ -575,8 +599,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async updateShipment(id: string, data: Partial<ErpShipment>): Promise<ErpShipment> {
-    this.logger.log(`PUT /shipments/${id}`);
-    await this.http.put(`/shipments/${id}`, {
+    this.logger.log(`PUT /shipments/${encodeURIComponent(id)}`);
+    await this.http.put(`/shipments/${encodeURIComponent(id)}`, {
       ref_int: data.orderId,
       tracking_number: data.trackingNumber,
     });
@@ -604,9 +628,7 @@ export class DolibarrAdapter implements IErpAdapter {
       let items: { id: string; ref: string }[] = [];
       try {
         items = await src.getter();
-      } catch {
-        items = [];
-      }
+      } catch (error) { throw error; }
       for (const item of items.slice(0, 10)) {
         try {
           const { data } = await this.http.get('/documents', {
@@ -617,9 +639,7 @@ export class DolibarrAdapter implements IErpAdapter {
             if (f.type !== 'file') continue;
             docs.push(DolibarrMapper.mapFromDolibarrDocument({ ...f, id: undefined }, src.part));
           }
-        } catch {
-          // aucun document pour cet objet -> on ignore
-        }
+        } catch (error) { throw error; }
       }
     }
     this.documentsCache = { at: Date.now(), data: docs };
@@ -630,7 +650,7 @@ export class DolibarrAdapter implements IErpAdapter {
   async getDocumentById(id: string): Promise<ErpDocument> {
     const docs = await this.getDocuments();
     const d = docs.find((x) => x.id === id);
-    if (!d) throw DolibarrError.NOT_FOUND(`Document "${id}" non trouve`);
+    if (!d) throw DolibarrError.NOT_FOUND(`Document "${encodeURIComponent(id)}" non trouve`);
     return { ...d };
   }
 
@@ -672,7 +692,7 @@ export class DolibarrAdapter implements IErpAdapter {
   async deleteDocument(id: string): Promise<void> {
     const docs = await this.getDocuments();
     const d = docs.find((x) => x.id === id);
-    if (!d) throw DolibarrError.NOT_FOUND(`Document "${id}" non trouve`);
+    if (!d) throw DolibarrError.NOT_FOUND(`Document "${encodeURIComponent(id)}" non trouve`);
     const modulepart = String(d.type).toLowerCase();
     await this.http.delete('/documents', {
       params: { modulepart, original_file: d.ref },
@@ -690,32 +710,15 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const variants: DolibarrVariant[] = Array.isArray(data) ? data : data.attributes || [];
       return variants.map(DolibarrMapper.mapFromDolibarrVariant);
-    } catch {
-      return [...this.fallbackVariants];
-    }
+    } catch (error) { throw error; }
   }
-  async getProductVariantsByProduct(productId: string): Promise<ErpProductVariant[]> {
-    return this.fallbackVariants.filter((v) => v.productId === productId).map((v) => ({ ...v }));
-  }
+  async getProductVariantsByProduct(productId: string): Promise<ErpProductVariant[]> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
   async createProductVariant(data: {
     productId: string; ref?: string; attribute: string; value: string;
     price?: number; stock?: number; barcode?: string;
-  }): Promise<ErpProductVariant> {
-    const v: ErpProductVariant = { ...data, id: `var-${Date.now()}-${this.docCounter++}` } as ErpProductVariant;
-    this.fallbackVariants.push(v);
-    return { ...v };
-  }
-  async updateProductVariant(id: string, data: Partial<ErpProductVariant>): Promise<ErpProductVariant> {
-    const i = this.fallbackVariants.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Variante "${id}" non trouvee`);
-    this.fallbackVariants[i] = { ...this.fallbackVariants[i], ...data };
-    return { ...this.fallbackVariants[i] };
-  }
-  async deleteProductVariant(id: string): Promise<void> {
-    const i = this.fallbackVariants.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Variante "${id}" non trouvee`);
-    this.fallbackVariants.splice(i, 1);
-  }
+  }): Promise<ErpProductVariant> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async updateProductVariant(id: string, data: Partial<ErpProductVariant>): Promise<ErpProductVariant> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async deleteProductVariant(id: string): Promise<void> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getServices(): Promise<ErpService[]> {
     this.logger.log('GET /products (services)');
@@ -725,20 +728,14 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const services: DolibarrService[] = Array.isArray(data) ? data : data.products || [];
       return services.map(DolibarrMapper.mapFromDolibarrService);
-    } catch {
-      return [...this.fallbackServices];
-    }
+    } catch (error) { throw error; }
   }
   async getServiceById(id: string): Promise<ErpService> {
-    this.logger.log(`GET /products/${id} (service)`);
+    this.logger.log(`GET /products/${encodeURIComponent(id)} (service)`);
     try {
-      const { data } = await this.http.get(`/products/${id}`);
+      const { data } = await this.http.get(`/products/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrService(data);
-    } catch {
-      const s = this.fallbackServices.find((x) => x.id === id);
-      if (!s) throw DolibarrError.NOT_FOUND(`Service "${id}" non trouve`);
-      return { ...s };
-    }
+    } catch (error) { throw error; }
   }
   async createService(data: { label: string; price: number; duration?: number; description?: string }): Promise<ErpService> {
     this.logger.log('POST /products (service)');
@@ -746,23 +743,10 @@ export class DolibarrAdapter implements IErpAdapter {
       const dolibarrData = DolibarrMapper.mapToDolibarrService(data, this.config.entity);
       const { data: created } = await this.http.post('/products', dolibarrData);
       return DolibarrMapper.mapFromDolibarrService({ ...dolibarrData, id: created.id || created });
-    } catch {
-      const sv: ErpService = { ...data, id: `srv-${Date.now()}-${this.docCounter++}`, ref: `SRV-${Date.now()}` } as ErpService;
-      this.fallbackServices.push(sv);
-      return { ...sv };
-    }
+    } catch (error) { throw error; }
   }
-  async updateService(id: string, data: Partial<ErpService>): Promise<ErpService> {
-    const i = this.fallbackServices.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Service "${id}" non trouve`);
-    this.fallbackServices[i] = { ...this.fallbackServices[i], ...data };
-    return { ...this.fallbackServices[i] };
-  }
-  async deleteService(id: string): Promise<void> {
-    const i = this.fallbackServices.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Service "${id}" non trouve`);
-    this.fallbackServices.splice(i, 1);
-  }
+  async updateService(id: string, data: Partial<ErpService>): Promise<ErpService> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async deleteService(id: string): Promise<void> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getStockMovements(): Promise<StockMovement[]> {
     this.logger.log('GET /stockmovements');
@@ -772,9 +756,7 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const movements: DolibarrStockMovement[] = Array.isArray(data) ? data : data.movements || [];
       return movements.map(DolibarrMapper.mapFromDolibarrStockMovement);
-    } catch {
-      return [...this.fallbackMovements];
-    }
+    } catch (error) { throw error; }
   }
   async createStockMovement(data: {
     productId: string; type: StockMovement['type']; quantity: number; reason: string;
@@ -810,9 +792,7 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const transfers: DolibarrStockTransfer[] = Array.isArray(data) ? data : data.transferts || [];
       return transfers.map(DolibarrMapper.mapFromDolibarrStockTransfer);
-    } catch {
-      return [...this.fallbackTransfers];
-    }
+    } catch (error) { throw error; }
   }
   async createStockTransfer(data: {
     productId: string; quantity: number; fromWarehouseId: string; toWarehouseId: string;
@@ -822,21 +802,9 @@ export class DolibarrAdapter implements IErpAdapter {
       const dolibarrData = DolibarrMapper.mapToDolibarrStockTransfer(data, this.config.entity);
       const { data: created } = await this.http.post('/stock/transferts', dolibarrData);
       return DolibarrMapper.mapFromDolibarrStockTransfer({ ...dolibarrData, id: created.id || created });
-    } catch {
-      const t: StockTransfer = {
-        ...data, id: `tr-${Date.now()}-${this.docCounter++}`,
-        ref: `TRF-${Date.now()}`, status: 'EN_TRANSIT', date: new Date().toISOString(),
-      };
-      this.fallbackTransfers.push(t);
-      return { ...t };
-    }
+    } catch (error) { throw error; }
   }
-  async updateStockTransfer(id: string, data: Partial<StockTransfer>): Promise<StockTransfer> {
-    const i = this.fallbackTransfers.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Transfert "${id}" non trouve`);
-    this.fallbackTransfers[i] = { ...this.fallbackTransfers[i], ...data };
-    return { ...this.fallbackTransfers[i] };
-  }
+  async updateStockTransfer(id: string, data: Partial<StockTransfer>): Promise<StockTransfer> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getInventories(): Promise<Inventory[]> {
     this.logger.log('GET /inventories (inventaires)');
@@ -846,20 +814,14 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const inventories: DolibarrInventory[] = Array.isArray(data) ? data : data.inventories || [];
       return inventories.map(DolibarrMapper.mapFromDolibarrInventory);
-    } catch {
-      return [...this.fallbackInventories];
-    }
+    } catch (error) { throw error; }
   }
   async getInventoryById(id: string): Promise<Inventory> {
-    this.logger.log(`GET /inventories/${id}`);
+    this.logger.log(`GET /inventories/${encodeURIComponent(id)}`);
     try {
-      const { data } = await this.http.get(`/inventories/${id}`);
+      const { data } = await this.http.get(`/inventories/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrInventory(data);
-    } catch {
-      const inv = this.fallbackInventories.find((x) => x.id === id);
-      if (!inv) throw DolibarrError.NOT_FOUND(`Inventaire "${id}" non trouve`);
-      return { ...inv };
-    }
+    } catch (error) { throw error; }
   }
   async createInventory(data: { label: string; type: Inventory['type'] }): Promise<Inventory> {
     this.logger.log('POST /inventories');
@@ -867,30 +829,12 @@ export class DolibarrAdapter implements IErpAdapter {
       const dolibarrData = DolibarrMapper.mapToDolibarrInventory(data, this.config.entity);
       const { data: created } = await this.http.post('/inventories', dolibarrData);
       return DolibarrMapper.mapFromDolibarrInventory({ ...dolibarrData, id: created.id || created });
-    } catch {
-      const inv: Inventory = {
-        ...data, id: `inv-${Date.now()}-${this.docCounter++}`,
-        ref: `INV-${Date.now()}`, status: 'EN_COURS', items: [], date: new Date().toISOString(),
-      };
-      this.fallbackInventories.push(inv);
-      return { ...inv };
-    }
+    } catch (error) { throw error; }
   }
-  async updateInventory(id: string, data: Partial<Inventory>): Promise<Inventory> {
-    const i = this.fallbackInventories.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Inventaire "${id}" non trouve`);
-    this.fallbackInventories[i] = { ...this.fallbackInventories[i], ...data };
-    return { ...this.fallbackInventories[i] };
-  }
+  async updateInventory(id: string, data: Partial<Inventory>): Promise<Inventory> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
-  async getStockAlerts(): Promise<StockAlert[]> { return [...this.fallbackAlerts]; }
-  async createStockAlert(data: { productId: string; level: StockAlert['level']; current: number; threshold: number }): Promise<StockAlert> {
-    const a: StockAlert = {
-      ...data, id: `alert-${Date.now()}-${this.docCounter++}`, date: new Date().toISOString(),
-    };
-    this.fallbackAlerts.push(a);
-    return { ...a };
-  }
+  async getStockAlerts(): Promise<StockAlert[]> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async createStockAlert(data: { productId: string; level: StockAlert['level']; current: number; threshold: number }): Promise<StockAlert> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getReturns(): Promise<ErpReturn[]> {
     this.logger.log('GET /powererp/returns (retours)');
@@ -900,20 +844,14 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const returns: DolibarrReturn[] = Array.isArray(data) ? data : data.returns || [];
       return returns.map((r) => DolibarrMapper.mapFromDolibarrReturn(r));
-    } catch {
-      return [...this.fallbackReturns];
-    }
+    } catch (error) { throw error; }
   }
   async getReturnById(id: string): Promise<ErpReturn> {
-    this.logger.log(`GET /returns/${id}`);
+    this.logger.log(`GET /returns/${encodeURIComponent(id)}`);
     try {
-      const { data } = await this.http.get(`/returns/${id}`);
+      const { data } = await this.http.get(`/returns/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrReturn(data);
-    } catch {
-      const r = this.fallbackReturns.find((x) => x.id === id);
-      if (!r) throw DolibarrError.NOT_FOUND(`Retour "${id}" non trouve`);
-      return { ...r };
-    }
+    } catch (error) { throw error; }
   }
   async createReturn(data: { orderId: string; clientId: string; reason: string; type: ErpReturn['type']; lines: ErpReturn['lines'] }): Promise<ErpReturn> {
     this.logger.log('POST /powererp/returns (retour)');
@@ -921,21 +859,9 @@ export class DolibarrAdapter implements IErpAdapter {
       const dolibarrData = DolibarrMapper.mapToDolibarrReturn(data, this.config.entity);
       const { data: created } = await this.http.post('/powererp/returns', dolibarrData);
       return DolibarrMapper.mapFromDolibarrReturn({ ...dolibarrData, id: created.id || created }, data.lines);
-    } catch {
-      const r: ErpReturn = {
-        ...data, id: `return-${Date.now()}-${this.docCounter++}`,
-        ref: `RET-${Date.now()}`, status: 'EN_COURS', createdAt: new Date().toISOString(),
-      };
-      this.fallbackReturns.push(r);
-      return { ...r };
-    }
+    } catch (error) { throw error; }
   }
-  async updateReturn(id: string, data: Partial<ErpReturn>): Promise<ErpReturn> {
-    const i = this.fallbackReturns.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Retour "${id}" non trouve`);
-    this.fallbackReturns[i] = { ...this.fallbackReturns[i], ...data };
-    return { ...this.fallbackReturns[i] };
-  }
+  async updateReturn(id: string, data: Partial<ErpReturn>): Promise<ErpReturn> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getPromotions(): Promise<Promotion[]> {
     this.logger.log('GET /promotions');
@@ -945,20 +871,14 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const promos: DolibarrPromotion[] = Array.isArray(data) ? data : data.promotions || [];
       return promos.map(DolibarrMapper.mapFromDolibarrPromotion);
-    } catch {
-      return [...this.fallbackPromotions];
-    }
+    } catch (error) { throw error; }
   }
   async getPromotionById(id: string): Promise<Promotion> {
-    this.logger.log(`GET /promotions/${id}`);
+    this.logger.log(`GET /promotions/${encodeURIComponent(id)}`);
     try {
-      const { data } = await this.http.get(`/promotions/${id}`);
+      const { data } = await this.http.get(`/promotions/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrPromotion(data);
-    } catch {
-      const p = this.fallbackPromotions.find((x) => x.id === id);
-      if (!p) throw DolibarrError.NOT_FOUND(`Promotion "${id}" non trouvee`);
-      return { ...p };
-    }
+    } catch (error) { throw error; }
   }
   async createPromotion(data: { label: string; type: Promotion['type']; value: number; appliesTo: string; startDate: string; endDate: string }): Promise<Promotion> {
     this.logger.log('POST /promotions');
@@ -966,26 +886,10 @@ export class DolibarrAdapter implements IErpAdapter {
       const dolibarrData = DolibarrMapper.mapToDolibarrPromotion(data, this.config.entity);
       const { data: created } = await this.http.post('/promotions', dolibarrData);
       return DolibarrMapper.mapFromDolibarrPromotion({ ...dolibarrData, id: created.id || created });
-    } catch {
-      const p: Promotion = {
-        ...data, id: `promo-${Date.now()}-${this.docCounter++}`,
-        ref: `PROM-${Date.now()}`, status: 'ACTIVE',
-      };
-      this.fallbackPromotions.push(p);
-      return { ...p };
-    }
+    } catch (error) { throw error; }
   }
-  async updatePromotion(id: string, data: Partial<Promotion>): Promise<Promotion> {
-    const i = this.fallbackPromotions.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Promotion "${id}" non trouvee`);
-    this.fallbackPromotions[i] = { ...this.fallbackPromotions[i], ...data };
-    return { ...this.fallbackPromotions[i] };
-  }
-  async deletePromotion(id: string): Promise<void> {
-    const i = this.fallbackPromotions.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Promotion "${id}" non trouvee`);
-    this.fallbackPromotions.splice(i, 1);
-  }
+  async updatePromotion(id: string, data: Partial<Promotion>): Promise<Promotion> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async deletePromotion(id: string): Promise<void> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getPurchaseOrders(): Promise<PurchaseOrder[]> {
     this.logger.log('GET /supplierorders (achats)');
@@ -993,22 +897,16 @@ export class DolibarrAdapter implements IErpAdapter {
       const { data } = await this.http.get('/supplierorders', {
         params: { entity: this.config.entity, limit: 100 },
       });
-      const orders: DolibarrPurchaseOrder[] = Array.isArray(data) ? data : data.orders || [];
+      const orders: DolibarrPurchaseOrder[] = this.readList(data, 'orders');
       return orders.map(DolibarrMapper.mapFromDolibarrPurchaseOrder);
-    } catch {
-      return [...this.fallbackPurchases];
-    }
+    } catch (error) { throw error; }
   }
   async getPurchaseOrderById(id: string): Promise<PurchaseOrder> {
-    this.logger.log(`GET /supplierorders/${id}`);
+    this.logger.log(`GET /supplierorders/${encodeURIComponent(id)}`);
     try {
-      const { data } = await this.http.get(`/supplierorders/${id}`);
+      const { data } = await this.http.get(`/supplierorders/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrPurchaseOrder(data);
-    } catch {
-      const po = this.fallbackPurchases.find((x) => x.id === id);
-      if (!po) throw DolibarrError.NOT_FOUND(`Achat "${id}" non trouve`);
-      return { ...po };
-    }
+    } catch (error) { throw error; }
   }
   async createPurchaseOrder(data: { supplierId: string; lines: PurchaseOrderLine[] }): Promise<PurchaseOrder> {
     this.logger.log('POST /supplierorders (achat)');
@@ -1021,29 +919,16 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const id = String(created.id || created);
       for (const l of data.lines) {
-        await this.http.post(`/supplierorders/${id}/lines`, {
+        await this.http.post(`/supplierorders/${encodeURIComponent(id)}/lines`, {
           fk_product: Number(l.productId),
           qty: l.quantity,
           subprice: l.price || 0,
         });
       }
       return this.getPurchaseOrderById(id);
-    } catch {
-      const total = data.lines.reduce((s, l) => s + l.price * l.quantity, 0);
-      const po: PurchaseOrder = {
-        ...data, id: `po-${Date.now()}-${this.docCounter++}`,
-        ref: `ACH-${Date.now()}`, total, status: 'EN_ATTENTE', createdAt: new Date().toISOString(),
-      };
-      this.fallbackPurchases.push(po);
-      return { ...po };
-    }
+    } catch (error) { throw error; }
   }
-  async updatePurchaseOrder(id: string, data: Partial<PurchaseOrder>): Promise<PurchaseOrder> {
-    const i = this.fallbackPurchases.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Achat "${id}" non trouve`);
-    this.fallbackPurchases[i] = { ...this.fallbackPurchases[i], ...data };
-    return { ...this.fallbackPurchases[i] };
-  }
+  async updatePurchaseOrder(id: string, data: Partial<PurchaseOrder>): Promise<PurchaseOrder> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getCashRegisters(): Promise<ErpCashRegister[]> {
     this.logger.log('GET /pos/registers (caisses)');
@@ -1051,20 +936,14 @@ export class DolibarrAdapter implements IErpAdapter {
       const { data } = await this.http.get('/pos/registers', { params: { entity: this.config.entity, limit: 100 } });
       const registers: DolibarrCashRegister[] = Array.isArray(data) ? data : data.registers || [];
       return registers.map(DolibarrMapper.mapFromDolibarrCashRegister);
-    } catch {
-      return [...this.fallbackRegisters];
-    }
+    } catch (error) { throw error; }
   }
   async getCashRegisterById(id: string): Promise<ErpCashRegister> {
-    this.logger.log(`GET /pos/registers/${id}`);
+    this.logger.log(`GET /pos/registers/${encodeURIComponent(id)}`);
     try {
-      const { data } = await this.http.get(`/pos/registers/${id}`);
+      const { data } = await this.http.get(`/pos/registers/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrCashRegister(data);
-    } catch {
-      const r = this.fallbackRegisters.find((x) => x.id === id);
-      if (!r) throw DolibarrError.NOT_FOUND(`Caisse "${id}" non trouvee`);
-      return { ...r };
-    }
+    } catch (error) { throw error; }
   }
   async createCashRegister(data: { label: string; openingCash: number }): Promise<ErpCashRegister> {
     this.logger.log('POST /pos/registers (caisse)');
@@ -1072,62 +951,19 @@ export class DolibarrAdapter implements IErpAdapter {
       const body = { ...DolibarrMapper.mapToDolibarrCashRegister(data, this.config.entity), status: 1 };
       const { data: created } = await this.http.post('/pos/registers', body);
       return DolibarrMapper.mapFromDolibarrCashRegister({ ...body, id: created.id || created });
-    } catch {
-      const r: ErpCashRegister = {
-        ...data, id: `reg-${Date.now()}-${this.docCounter++}`,
-        ref: `CAISSE-${Date.now()}`, status: 'OUVERT', openedAt: new Date().toISOString(),
-      };
-      this.fallbackRegisters.push(r);
-      return { ...r };
-    }
+    } catch (error) { throw error; }
   }
-  async updateCashRegister(id: string, data: Partial<ErpCashRegister>): Promise<ErpCashRegister> {
-    const i = this.fallbackRegisters.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Caisse "${id}" non trouvee`);
-    this.fallbackRegisters[i] = { ...this.fallbackRegisters[i], ...data };
-    return { ...this.fallbackRegisters[i] };
-  }
+  async updateCashRegister(id: string, data: Partial<ErpCashRegister>): Promise<ErpCashRegister> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
-  async getExpenses(): Promise<ErpExpense[]> { return [...this.fallbackExpenses]; }
-  async getExpenseById(id: string): Promise<ErpExpense> {
-    const e = this.fallbackExpenses.find((x) => x.id === id);
-    if (!e) throw DolibarrError.NOT_FOUND(`Depense "${id}" non trouvee`);
-    return { ...e };
-  }
-  async createExpense(data: { label: string; amount: number; category: string; supplierId?: string }): Promise<ErpExpense> {
-    const e: ErpExpense = {
-      ...data, id: `exp-${Date.now()}-${this.docCounter++}`,
-      ref: `DEP-${Date.now()}`, date: new Date().toISOString(),
-    };
-    this.fallbackExpenses.push(e);
-    return { ...e };
-  }
-  async deleteExpense(id: string): Promise<void> {
-    const i = this.fallbackExpenses.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Depense "${id}" non trouvee`);
-    this.fallbackExpenses.splice(i, 1);
-  }
+  async getExpenses(): Promise<ErpExpense[]> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async getExpenseById(id: string): Promise<ErpExpense> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async createExpense(data: { label: string; amount: number; category: string; supplierId?: string }): Promise<ErpExpense> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async deleteExpense(id: string): Promise<void> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
-  async getReservations(): Promise<ErpReservation[]> { return [...this.fallbackReservations]; }
-  async getReservationById(id: string): Promise<ErpReservation> {
-    const r = this.fallbackReservations.find((x) => x.id === id);
-    if (!r) throw DolibarrError.NOT_FOUND(`Reservation "${id}" non trouvee`);
-    return { ...r };
-  }
-  async createReservation(data: { clientId: string; productIds?: string[]; startAt: string; endAt: string }): Promise<ErpReservation> {
-    const r: ErpReservation = {
-      ...data, productIds: data.productIds || [], id: `reso-${Date.now()}-${this.docCounter++}`,
-      ref: `RES-${Date.now()}`, status: 'EN_ATTENTE',
-    };
-    this.fallbackReservations.push(r);
-    return { ...r };
-  }
-  async updateReservation(id: string, data: Partial<ErpReservation>): Promise<ErpReservation> {
-    const i = this.fallbackReservations.findIndex((x) => x.id === id);
-    if (i === -1) throw DolibarrError.NOT_FOUND(`Reservation "${id}" non trouvee`);
-    this.fallbackReservations[i] = { ...this.fallbackReservations[i], ...data };
-    return { ...this.fallbackReservations[i] };
-  }
+  async getReservations(): Promise<ErpReservation[]> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async getReservationById(id: string): Promise<ErpReservation> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async createReservation(data: { clientId: string; productIds?: string[]; startAt: string; endAt: string }): Promise<ErpReservation> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
+  async updateReservation(id: string, data: Partial<ErpReservation>): Promise<ErpReservation> { throw new ErpError('Cette operation ERP n?est pas implementee par le connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   async getAgenda(): Promise<ErpAgendaEvent[]> {
     this.logger.log('GET /agendaevents');
@@ -1137,9 +973,7 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const events: DolibarrAgendaEvent[] = Array.isArray(data) ? data : data.events || [];
       return events.map(DolibarrMapper.mapFromDolibarrAgendaEvent);
-    } catch {
-      return [...this.fallbackAgenda];
-    }
+    } catch (error) { throw error; }
   }
   async createAgendaEvent(data: { title: string; startAt: string; endAt: string; type: string; relatedTo?: string }): Promise<ErpAgendaEvent> {
     this.logger.log('POST /agendaevents');
@@ -1147,51 +981,34 @@ export class DolibarrAdapter implements IErpAdapter {
       const body = DolibarrMapper.mapToDolibarrAgendaEvent(data, this.config.entity);
       const { data: created } = await this.http.post('/agendaevents', body);
       return DolibarrMapper.mapFromDolibarrAgendaEvent({ ...body, id: created.id || created });
-    } catch {
-      const ev: ErpAgendaEvent = { ...data, id: `ev-${Date.now()}-${this.docCounter++}` };
-      this.fallbackAgenda.push(ev);
-      return { ...ev };
-    }
+    } catch (error) { throw error; }
   }
 
   async updateAgendaEvent(id: string, data: Partial<{ title: string; startAt: string; endAt: string; type: string; relatedTo?: string }>): Promise<ErpAgendaEvent> {
-    this.logger.log(`PUT /agendaevents/${id}`);
+    this.logger.log(`PUT /agendaevents/${encodeURIComponent(id)}`);
     try {
       const body: Partial<DolibarrAgendaEvent> = {};
       if (data.title !== undefined) body.label = data.title;
       if (data.startAt !== undefined) body.datep = mapToDolibarrDate(data.startAt);
       if (data.endAt !== undefined) body.datef = mapToDolibarrDate(data.endAt);
       if (data.type !== undefined) body.type_code = data.type;
-      await this.http.put(`/agendaevents/${id}`, body);
+      await this.http.put(`/agendaevents/${encodeURIComponent(id)}`, body);
       return this.getAgendaEventById(id);
-    } catch {
-      const i = this.fallbackAgenda.findIndex((x) => x.id === id);
-      if (i === -1) throw DolibarrError.NOT_FOUND(`Evenement d agenda "${id}" non trouve`);
-      this.fallbackAgenda[i] = { ...this.fallbackAgenda[i], ...data } as ErpAgendaEvent;
-      return { ...this.fallbackAgenda[i] };
-    }
+    } catch (error) { throw error; }
   }
 
   async deleteAgendaEvent(id: string): Promise<void> {
-    this.logger.log(`DELETE /agendaevents/${id}`);
+    this.logger.log(`DELETE /agendaevents/${encodeURIComponent(id)}`);
     try {
-      await this.http.delete(`/agendaevents/${id}`);
-    } catch {
-      const i = this.fallbackAgenda.findIndex((x) => x.id === id);
-      if (i === -1) throw DolibarrError.NOT_FOUND(`Evenement d agenda "${id}" non trouve`);
-      this.fallbackAgenda.splice(i, 1);
-    }
+      await this.http.delete(`/agendaevents/${encodeURIComponent(id)}`);
+    } catch (error) { throw error; }
   }
 
   private async getAgendaEventById(id: string): Promise<ErpAgendaEvent> {
     try {
-      const { data } = await this.http.get(`/agendaevents/${id}`);
+      const { data } = await this.http.get(`/agendaevents/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrAgendaEvent(data);
-    } catch {
-      const ev = this.fallbackAgenda.find((x) => x.id === id);
-      if (!ev) throw DolibarrError.NOT_FOUND(`Evenement d agenda "${id}" non trouve`);
-      return { ...ev };
-    }
+    } catch (error) { throw error; }
   }
 
   async getProjects(): Promise<ErpProject[]> {
@@ -1202,20 +1019,14 @@ export class DolibarrAdapter implements IErpAdapter {
       });
       const projects: DolibarrProject[] = Array.isArray(data) ? data : data.projects || [];
       return projects.map(DolibarrMapper.mapFromDolibarrProject);
-    } catch {
-      return [...this.fallbackProjects];
-    }
+    } catch (error) { throw error; }
   }
   async getProjectById(id: string): Promise<ErpProject> {
-    this.logger.log(`GET /projects/${id}`);
+    this.logger.log(`GET /projects/${encodeURIComponent(id)}`);
     try {
-      const { data } = await this.http.get(`/projects/${id}`);
+      const { data } = await this.http.get(`/projects/${encodeURIComponent(id)}`);
       return DolibarrMapper.mapFromDolibarrProject(data);
-    } catch {
-      const p = this.fallbackProjects.find((x) => x.id === id);
-      if (!p) throw DolibarrError.NOT_FOUND(`Projet "${id}" non trouve`);
-      return { ...p };
-    }
+    } catch (error) { throw error; }
   }
   async createProject(data: { label: string; clientId?: string; status?: string; startDate?: string }): Promise<ErpProject> {
     this.logger.log('POST /projects');
@@ -1223,83 +1034,23 @@ export class DolibarrAdapter implements IErpAdapter {
       const body = DolibarrMapper.mapToDolibarrProject(data, this.config.entity);
       const { data: created } = await this.http.post('/projects', body);
       return this.getProjectById(String(created.id || created));
-    } catch {
-      const p: ErpProject = {
-        ...data, id: `proj-${Date.now()}-${this.docCounter++}`,
-        ref: `PROJ-${Date.now()}`, status: data.status || 'EN_COURS',
-        startDate: data.startDate || new Date().toISOString().slice(0, 10),
-      };
-      this.fallbackProjects.push(p);
-      return { ...p };
-    }
+    } catch (error) { throw error; }
   }
   async updateProject(id: string, data: Partial<ErpProject>): Promise<ErpProject> {
-    this.logger.log(`PUT /projects/${id}`);
+    this.logger.log(`PUT /projects/${encodeURIComponent(id)}`);
     try {
       const body: Record<string, any> = {};
       if (data.label) body.title = data.label;
       if (data.startDate) body.date_start = mapToDolibarrDate(data.startDate);
       if (data.status) body.fk_statut = data.status === 'TERMINE' ? 2 : 1;
-      await this.http.put(`/projects/${id}`, body);
+      await this.http.put(`/projects/${encodeURIComponent(id)}`, body);
       return this.getProjectById(id);
-    } catch {
-      const i = this.fallbackProjects.findIndex((x) => x.id === id);
-      if (i === -1) throw DolibarrError.NOT_FOUND(`Projet "${id}" non trouve`);
-      this.fallbackProjects[i] = { ...this.fallbackProjects[i], ...data };
-      return { ...this.fallbackProjects[i] };
-    }
+    } catch (error) { throw error; }
   }
 
   // === STATISTIQUES (degraded) ===
 
-  async getStats(): Promise<ErpStats> {
-    const empty = <T>(): Promise<T[]> => Promise.resolve([]);
-    const [products, clients, orders, suppliers, quotes, invoices, payments, warehouses, shipments, purchases] =
-      await Promise.all([
-        this.getProducts().catch(empty<ErpProduct>),
-        this.getClients().catch(empty<ErpClient>),
-        this.getOrders().catch(empty<ErpOrder>),
-        this.getSuppliers().catch(empty<ErpSupplier>),
-        this.getQuotes().catch(empty<ErpQuote>),
-        this.getInvoices().catch(empty<ErpInvoice>),
-        this.getPayments().catch(empty<ErpPayment>),
-        this.getWarehouses().catch(empty<ErpWarehouse>),
-        this.getShipments().catch(empty<ErpShipment>),
-        this.getPurchaseOrders().catch(empty<PurchaseOrder>),
-      ]);
-    const stockTotal = products.reduce((s, p) => s + (p.stock || 0), 0);
-    const valeurStock = products.reduce((s, p) => s + (p.stock || 0) * (p.price || 0), 0);
-    const totalVentes = orders.reduce((s, o) => s + (o.total || 0), 0);
-    const totalFacture = invoices.reduce((s, i) => s + (i.total || 0), 0);
-    const totalPaye = invoices.filter((i) => Number(i.paid) === 1).reduce((s, i) => s + (i.total || 0), 0);
-    const totalRecu = payments.reduce((s, p) => s + (p.amount || 0), 0);
-    const enLivraison = shipments.filter((s) => s.status === 'EXPEDIEE' || s.status === 'PREPARATION').length;
-    return {
-      clients: { total: clients.length, actifs: clients.length },
-      products: { total: products.length, stockTotal, valeurStock },
-      orders: { total: orders.length, enCours: orders.filter((o) => o.status === 'VALIDATED' || o.status === 'PROCESSING').length, totalVentes },
-      suppliers: { total: suppliers.length },
-      quotes: { total: quotes.length, enAttente: quotes.filter((q) => q.status === 'BROUILLON' || q.status === 'EN_ATTENTE').length },
-      invoices: { total: invoices.length, totalFacture, totalPaye, enRetard: 0 },
-      payments: { total: payments.length, totalRecu },
-      warehouses: { total: warehouses.length },
-      shipments: { total: shipments.length, enLivraison },
-      variants: { total: this.fallbackVariants.length },
-      services: { total: (await this.getServices().catch(() => [])).length },
-      movements: { total: (await this.getStockMovements().catch(() => [])).length },
-      transfers: { total: this.fallbackTransfers.length },
-      inventory: { total: this.fallbackInventories.length },
-      alerts: { total: this.fallbackAlerts.length, actives: this.fallbackAlerts.filter((a) => a.level === 'CRITICAL').length },
-      returns: { total: this.fallbackReturns.length },
-      promotions: { total: this.fallbackPromotions.length, actives: this.fallbackPromotions.filter((p) => p.status === 'ACTIVE').length },
-      purchases: { total: purchases.length, enAttente: purchases.filter((p) => p.status === 'EN_ATTENTE').length },
-      registers: { total: this.fallbackRegisters.length, ouverts: this.fallbackRegisters.filter((r) => r.status === 'OUVERT').length },
-      expenses: { total: this.fallbackExpenses.length, totalDepenses: this.fallbackExpenses.reduce((s, e) => s + e.amount, 0) },
-      reservations: { total: this.fallbackReservations.length, actives: this.fallbackReservations.filter((r) => r.status !== 'ANNULEE').length },
-      agenda: { total: (await this.getAgenda().catch(() => [])).length },
-      projects: { total: (await this.getProjects().catch(() => [])).length },
-    };
-  }
+  async getStats(): Promise<ErpStats> { throw new ErpError('Les totaux ERP exhaustifs ne sont pas disponibles via ce connecteur.', 501, 'CAPABILITY_UNAVAILABLE'); }
 
   // === UTILISATEURS (Users) ===
 
@@ -1323,8 +1074,8 @@ export class DolibarrAdapter implements IErpAdapter {
   }
 
   async getUserById(id: string): Promise<ErpUser | undefined> {
-    this.logger.log(`GET /users/${id}`);
-    const { data } = await this.http.get(`/users/${id}`);
+    this.logger.log(`GET /users/${encodeURIComponent(id)}`);
+    const { data } = await this.http.get(`/users/${encodeURIComponent(id)}`);
     return {
       id: String(data.id),
       login: data.login || '',
@@ -1364,6 +1115,6 @@ export class DolibarrAdapter implements IErpAdapter {
     if (error.response) {
       return DolibarrMapper.mapDolibarrError(error.response.status, error.response.data);
     }
-    return DolibarrError.CONNECTION_ERROR(error.message);
+    return DolibarrError.CONNECTION_ERROR();
   }
 }

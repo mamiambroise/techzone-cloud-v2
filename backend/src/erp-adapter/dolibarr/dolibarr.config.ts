@@ -12,6 +12,6 @@ export const DEFAULT_DOLIBARR_CONFIG: DolibarrConfig = {
   apiKey: process.env.DOLIBARR_API_KEY || '',
   entity: Number(process.env.DOLIBARR_ENTITY) || 1,
   timeout: Number(process.env.DOLIBARR_TIMEOUT) || 10000,
-  retryAttempts: Number(process.env.DOLIBARR_RETRY_ATTEMPTS) || 3,
+  retryAttempts: Math.max(0, Math.min(2, Number(process.env.DOLIBARR_RETRY_ATTEMPTS ?? 1))),
   retryDelay: Number(process.env.DOLIBARR_RETRY_DELAY) || 1000,
 };

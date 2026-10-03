@@ -1,3 +1,4 @@
+import { IntegrationErrorCode as Code } from '../common/errors/integration-error-code';
 // ERP Error Contract v1
 // Canonical structured error for the ERP Adapter Platform.
 // Reuses existing IamError / DolibarrError field names where possible.
@@ -73,34 +74,20 @@ export class ErpError extends Error {
   }
 
   static fromDolibarr(err: { code?: string; message?: string; httpStatus?: number; details?: unknown }, traceId?: string): ErpError {
-    const code = String(err?.code || '').toUpperCase();
-    const message = err?.message || 'Erreur ERP';
-    const status = err?.httpStatus ?? 500;
-
-    // Connection / timeout / unreachable → ERP_UNAVAILABLE
-    if (
-      code === 'CONNECTION_ERROR' ||
-      code === 'TIMEOUT' ||
-      code === 'ERP_ERROR' ||
-      code === 'RATE_LIMIT' ||
-      status === 502 ||
-      status === 503 ||
-      status === 504
-    ) {
-      return ErpError.unavailable(message, { erpCode: 'DOLIBARR', originalCode: code }, traceId);
-    }
-    if (code === 'AUTH_ERROR' || status === 401) {
-      return new ErpError(message, 401, 'UNAUTHENTICATED', { erpCode: 'DOLIBARR', originalCode: code }, traceId);
-    }
-    if (code === 'NOT_FOUND' || status === 404) {
-      return new ErpError(message, 404, 'NOT_FOUND', { erpCode: 'DOLIBARR', originalCode: code }, traceId);
-    }
-    if (code === 'BAD_REQUEST' || status === 400) {
-      return new ErpError(message, 400, 'BAD_REQUEST', { erpCode: 'DOLIBARR', originalCode: code }, traceId);
-    }
-    if (status === 403 || status === 409) {
-      return new ErpError(message, status, code || 'FORBIDDEN', { erpCode: 'DOLIBARR', originalCode: code }, traceId);
-    }
-    return new ErpError(message, status, code || 'ERP_ERROR', { erpCode: 'DOLIBARR', originalCode: code }, traceId);
+    // Do not propagate untrusted provider messages, credentials or IAM statuses.
+    const status = err.httpStatus;
+    let mapped: [number, string, string];
+    if (err.code === 'AUTH_ERROR' || status === 401) mapped = [502, Code.INTEGRATION_AUTH_FAILED, 'Authentification Dolibarr refusee. Verifiez la cle API.'];
+    else if (status === 403) mapped = [502, Code.ERP_PERMISSION_DENIED, 'Dolibarr refuse cette operation. Verifiez les permissions ERP.'];
+    else if (err.code === 'TIMEOUT' || status === 408 || status === 504) mapped = [504, Code.INTEGRATION_TIMEOUT, 'Le delai de reponse Dolibarr est depasse.'];
+    else if (err.code === 'RATE_LIMIT' || status === 429) mapped = [429, Code.INTEGRATION_RATE_LIMITED, 'La limite de requetes Dolibarr est atteinte. Reessayez plus tard.'];
+    else if (err.code === 'CONNECTION_ERROR' || status === 503) mapped = [503, Code.INTEGRATION_PROVIDER_UNAVAILABLE, 'Dolibarr est inaccessible.'];
+    else if (status === 404) mapped = [404, Code.ERP_RESOURCE_NOT_FOUND, 'Ressource Dolibarr introuvable.'];
+    else if (status === 409) mapped = [409, Code.ERP_CONFLICT, 'Conflit avec les donnees ERP.'];
+    else if (status === 400 || status === 422) mapped = [422, Code.INTEGRATION_PAYLOAD_INVALID, 'Les donnees sont refusees par Dolibarr.'];
+    else mapped = [502, Code.ERP_OPERATION_FAILED, 'Operation Dolibarr en echec.'];
+    // httpStatus can be synthesized by transport errors; only request logs carry
+    // the actual upstream HTTP response status.
+    return new ErpError(mapped[2], mapped[0], mapped[1], undefined, traceId);
   }
 }

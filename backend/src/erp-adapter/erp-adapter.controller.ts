@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { ErpAdapterService } from './erp-adapter.service';
+import { ListErpDto } from './dto/list-erp.dto';
 import { IErpAdapter } from './interfaces/erp-adapter.interface';
 import { ErpRegistryService } from '../erp-registry/erp-registry.service';
 import { Public } from '../iam/decorators/public.decorator';
@@ -71,10 +72,10 @@ export class ErpAdapterController {
   @Get('clients')
   @ApiOperation({ summary: 'Lister les clients depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des clients' })
-  async getClients(@CurrentUser() principal: IamAuthContext) {
+  async getClients(@CurrentUser() principal: IamAuthContext, @Query() query: ListErpDto) {
     const adapter = await this.resolveErpFromTenant(principal);
     this.logger.log(`GET /erp/clients [tenant=${principal.tenantId}]`);
-    return adapter.getClients();
+    return adapter.getClients(query);
   }
 
   @Permissions(ERP_READ)
@@ -129,10 +130,10 @@ export class ErpAdapterController {
   @Get('products')
   @ApiOperation({ summary: 'Lister les produits depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des produits' })
-  async getProducts(@CurrentUser() principal: IamAuthContext) {
+  async getProducts(@CurrentUser() principal: IamAuthContext, @Query() query: ListErpDto) {
     const adapter = await this.resolveErpFromTenant(principal);
     this.logger.log(`GET /erp/products [tenant=${principal.tenantId}]`);
-    return adapter.getProducts();
+    return adapter.getProducts(query);
   }
 
   @Permissions(ERP_READ)
@@ -186,10 +187,10 @@ export class ErpAdapterController {
   @Get('orders')
   @ApiOperation({ summary: 'Lister les commandes depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des commandes' })
-  async getOrders(@CurrentUser() principal: IamAuthContext) {
+  async getOrders(@CurrentUser() principal: IamAuthContext, @Query() query: ListErpDto) {
     const adapter = await this.resolveErpFromTenant(principal);
     this.logger.log(`GET /erp/orders [tenant=${principal.tenantId}]`);
-    return adapter.getOrders();
+    return adapter.getOrders(query);
   }
 
   @Permissions(ERP_READ)
@@ -395,10 +396,10 @@ export class ErpAdapterController {
   @Get('invoices')
   @ApiOperation({ summary: 'Lister les factures depuis l\'ERP du tenant' })
   @ApiResponse({ status: 200, description: 'Liste des factures' })
-  async getInvoices(@CurrentUser() principal: IamAuthContext) {
+  async getInvoices(@CurrentUser() principal: IamAuthContext, @Query() query: ListErpDto) {
     const adapter = await this.resolveErpFromTenant(principal);
     this.logger.log(`GET /erp/invoices [tenant=${principal.tenantId}]`);
-    return adapter.getInvoices();
+    return adapter.getInvoices(query);
   }
 
   @Permissions(ERP_READ)
@@ -1274,7 +1275,8 @@ export class ErpAdapterController {
     this.logger.log('GET /erp/health (public platform)');
     const adapters = this.adapterService.getAvailableAdapters();
     return {
-      status: 'CONNECTED',
+      status: 'REGISTERED',
+      scope: 'PLATFORM',
       adapters,
       timestamp: new Date().toISOString(),
     };
@@ -1290,9 +1292,12 @@ export class ErpAdapterController {
   @ApiOperation({ summary: 'Sante de l ERP actif du tenant (authentifie)' })
   @ApiResponse({ status: 200, description: 'Etat de sante du ERP du tenant' })
   @ApiResponse({ status: 403, description: 'Permission insuffisante' })
-  async tenantHealthCheck(@CurrentUser() principal: IamAuthContext) {
-    const adapter = await this.resolveErpFromTenant(principal);
-    return adapter.healthCheck();
+  async tenantHealthCheck(@CurrentUser() principal: IamAuthContext, @Query('connectorId') connectorId?: string) {
+    if (!principal.tenantId) throw new ForbiddenException('TENANT_REQUIRED');
+    const adapter = await this.adapterService.resolveAdapterForTenant(principal.tenantId, connectorId);
+    const result = await adapter.healthCheck();
+    await this.erpRegistry.recordCheck(connectorId, result.status, { tenantId: principal.tenantId, actorId: principal.userId });
+    return result;
   }
 }
 
