@@ -119,6 +119,7 @@ export const ROUTES = {
   "billing-webhooks": "/billing/webhooks",
   "billing-access-rules": "/billing/access-rules",
   "billing-features": "/billing/features",
+  "billing-admin": "/billing/admin",
   "iam-contexts": "/iam/contexts",
   "iam-identity-links": "/iam/identity-links",
   "iam-identity-groups": "/iam/identity-groups",

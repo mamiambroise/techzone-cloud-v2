@@ -52,6 +52,7 @@ const ERPEdit = lazy(() => import('./pages/ERPEdit.jsx'));
 const ErpModule = lazy(() => import('./pages/ErpModule.jsx'));
 const ERPDashboard = lazy(() => import('./pages/ERPDashboard.jsx'));
 const ErpResourcesNav = lazy(() => import('./pages/ErpResourcesNav.jsx'));
+const ErpSynchronizations = lazy(() => import('./pages/ErpSynchronizations.jsx'));
 
 const IamUsersPage = lazy(() => import('./pages/iam/UsersPage.jsx'));
 const SessionsPage = lazy(() => import('./pages/iam/SessionsPage.jsx'));
@@ -76,6 +77,15 @@ const AutomationRules = lazy(() => import('./pages/AutomationRules.jsx'));
 const AutomationTriggers = lazy(() => import('./pages/AutomationTriggers.jsx'));
 const AutomationWorkflows = lazy(() => import('./pages/AutomationWorkflows.jsx'));
 const ComingSoon = lazy(() => import('./components/ComingSoon.jsx'));
+const BillingOverviewPage = lazy(() => import('./features/billing/BillingOverviewPage.jsx'));
+const BillingPlansPage = lazy(() => import('./features/billing/BillingPlansPage.jsx'));
+const BillingSubscriptionsPage = lazy(() => import('./features/billing/BillingSubscriptionsPage.jsx'));
+const BillingEntitlementsPage = lazy(() => import('./features/billing/BillingEntitlementsPage.jsx'));
+const BillingUsagePage = lazy(() => import('./features/billing/BillingUsagePage.jsx'));
+const BillingInvoicesPage = lazy(() => import('./features/billing/BillingInvoicesPage.jsx'));
+const BillingPaymentsPage = lazy(() => import('./features/billing/BillingPaymentsPage.jsx'));
+const BillingAdminPage = lazy(() => import('./features/billing/BillingAdminPage.jsx'));
+const BillingWebhooksPage = lazy(() => import('./features/billing/BillingWebhooksPage.jsx'));
 
 function CockpitRoute() {
   const { openModal } = useModal();
@@ -146,7 +156,7 @@ const UiComponentsCatalog = lazy(() => import('./features/ui-builder/components/
 const UiThemeBuilder = lazy(() => import('./features/ui-builder/components/UiThemeBuilder.jsx'));
 const UiNavigationPresentation = lazy(() => import('./features/ui-builder/components/UiNavigationPresentation.jsx'));
 const UiPreviewValidation = lazy(() => import('./features/ui-builder/components/UiPreviewValidation.jsx'));
-const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, ErpResourcesNav, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
+const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, ErpResourcesNav, ErpSynchronizations, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon, BillingOverviewPage, BillingPlansPage, BillingSubscriptionsPage, BillingEntitlementsPage, BillingUsagePage, BillingInvoicesPage, BillingPaymentsPage, BillingAdminPage, BillingWebhooksPage };
 
 function App() {
   return (

@@ -217,16 +217,20 @@ describe('Module availability (RG-NAV-017, RG-NAV-018)', () => {
   });
 
   it('uses the module home as ComingSoon back-link when that home is implemented', () => {
-    [['erp', '/erp'], ['automation', '/automation'], ['data', '/data-runtime'], ['ui', '/ui']].forEach(
-      ([id, route]) => {
-        expect(groupDestination(id)).toBe(route);
-        expect(resolveRoute(route).implemented).toBe(true);
-      },
-    );
+    [
+      ['erp', '/erp'],
+      ['automation', '/automation'],
+      ['data', '/data-runtime'],
+      ['ui', '/ui'],
+      ['billing', '/billing/overview'],
+    ].forEach(([id, route]) => {
+      expect(groupDestination(id)).toBe(route);
+      expect(resolveRoute(route).implemented).toBe(true);
+    });
   });
 
   it('falls back to the dashboard for fully planned modules', () => {
-    ['billing', 'admin'].forEach(id => {
+    ['admin'].forEach(id => {
       expect(resolveRoute(groupDestination(id))?.implemented).toBe(false);
       expect(resolveRoute(ROUTES.dashboard).implemented).toBe(true);
     });

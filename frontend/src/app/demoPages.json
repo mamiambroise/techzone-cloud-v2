@@ -40,51 +40,6 @@
     "label": "Admin / UsersAdminPage"
   },
   {
-    "id": "billing-accessrulespage",
-    "file": "../features/iam-demo/pages/billing/AccessRulesPage.jsx",
-    "label": "billing / AccessRulesPage"
-  },
-  {
-    "id": "billing-entitlementspage",
-    "file": "../features/iam-demo/pages/billing/EntitlementsPage.jsx",
-    "label": "billing / EntitlementsPage"
-  },
-  {
-    "id": "billing-featurespage",
-    "file": "../features/iam-demo/pages/billing/FeaturesPage.jsx",
-    "label": "billing / FeaturesPage"
-  },
-  {
-    "id": "billing-invoicespage",
-    "file": "../features/iam-demo/pages/billing/InvoicesPage.jsx",
-    "label": "billing / InvoicesPage"
-  },
-  {
-    "id": "billing-overviewpage",
-    "file": "../features/iam-demo/pages/billing/OverviewPage.jsx",
-    "label": "billing / OverviewPage"
-  },
-  {
-    "id": "billing-paymentspage",
-    "file": "../features/iam-demo/pages/billing/PaymentsPage.jsx",
-    "label": "billing / PaymentsPage"
-  },
-  {
-    "id": "billing-planspage",
-    "file": "../features/iam-demo/pages/billing/PlansPage.jsx",
-    "label": "billing / PlansPage"
-  },
-  {
-    "id": "billing-subscriptionspage",
-    "file": "../features/iam-demo/pages/billing/SubscriptionsPage.jsx",
-    "label": "billing / SubscriptionsPage"
-  },
-  {
-    "id": "billing-webhookspage",
-    "file": "../features/iam-demo/pages/billing/WebhooksPage.jsx",
-    "label": "billing / WebhooksPage"
-  },
-  {
     "id": "contexts-contextspage",
     "file": "../features/iam-demo/pages/Contexts/ContextsPage.jsx",
     "label": "Contexts / ContextsPage"
