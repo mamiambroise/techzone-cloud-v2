@@ -414,58 +414,107 @@ export const iamObservabilityService = {
   },
 };
 
-export const iamBillingService = {
-  plans: (params) => authApi.get('/billing/plans', { params }),
-  plan: (id) => authApi.get(`/billing/plans/${id}`),
-  createPlan: (body) => authApi.post('/billing/plans', body),
-  updatePlan: (id, body) => authApi.patch(`/billing/plans/${id}`, body),
-  activatePlan: (id) => authApi.post(`/billing/plans/${id}/activate`),
-  deprecatePlan: (id) => authApi.post(`/billing/plans/${id}/deprecate`),
-  archivePlan: (id) => authApi.post(`/billing/plans/${id}/archive`),
-  newPlanVersion: (id, body) => authApi.post(`/billing/plans/${id}/new-version`, body),
-  addPlanEntitlement: (id, body) => authApi.post(`/billing/plans/${id}/entitlements`, body),
-  removePlanEntitlement: (planId, entitlementId) => authApi.delete(`/billing/plans/${planId}/entitlements/${entitlementId}`),
+/**
+ * Billing CDC 15 V2 — moteur `/api/billing/*`.
+ *
+ * L'ancien `iamBillingService` (/api/iam/billing) est retire : il exposait un
+ * contrat IAM pour une logique metier Billing, ne commencait aucun tenant et
+ * calculait en flottant. Deux surfaces distinctes :
+ *  - `billingService`      : tenant courant (lecture + ecriture strictement scopee) ;
+ *  - `billingAdminService` : administration plateforme cross-tenant.
+ */
+export const billingService = {
+  context: () => api.get('/billing/context'),
+  health: () => api.get('/billing/health'),
 
-  subscriptions: (params) => authApi.get('/billing/subscriptions', { params }),
-  subscription: (id) => authApi.get(`/billing/subscriptions/${id}`),
-  createSubscription: (body) => authApi.post('/billing/subscriptions', body),
-  activateSubscription: (id) => authApi.post(`/billing/subscriptions/${id}/activate`),
-  changeSubscriptionPlan: (id, body) => authApi.post(`/billing/subscriptions/${id}/change-plan`, body),
-  suspendSubscription: (id, body) => authApi.post(`/billing/subscriptions/${id}/suspend`, body),
-  resumeSubscription: (id) => authApi.post(`/billing/subscriptions/${id}/resume`),
-  cancelSubscription: (id, body) => authApi.post(`/billing/subscriptions/${id}/cancel`, body),
-  renewSubscription: (id) => authApi.post(`/billing/subscriptions/${id}/renew`),
+  plans: (params) => api.get('/billing/catalog/plans', { params }),
+  plan: (id) => api.get(`/billing/catalog/plans/${id}`),
+  prices: (params) => api.get('/billing/catalog/prices', { params }),
+  intervals: () => api.get('/billing/catalog/intervals'),
+  providers: () => api.get('/billing/providers'),
 
-  invoices: (params) => authApi.get('/billing/invoices', { params }),
-  invoice: (id) => authApi.get(`/billing/invoices/${id}`),
-  generateInvoice: (body) => authApi.post('/billing/invoices', body),
-  issueInvoice: (id) => authApi.post(`/billing/invoices/${id}/issue`),
-  applyPaymentToInvoice: (id, body) => authApi.post(`/billing/invoices/${id}/payments`, body),
-  markInvoiceOverdue: (id) => authApi.post(`/billing/invoices/${id}/mark-overdue`),
-  voidInvoice: (id, body) => authApi.post(`/billing/invoices/${id}/void`, body),
+  entitlements: (params) => api.get('/billing/entitlements', { params }),
+  entitlement: (key) => api.get(`/billing/entitlements/${key}`),
+  entitlementLimit: (key) => api.get(`/billing/entitlements/limits/${key}`),
 
-  payments: (params) => authApi.get('/billing/payments', { params }),
-  payment: (id) => authApi.get(`/billing/payments/${id}`),
-  paymentsForInvoice: (invoiceId, params) => authApi.get(`/billing/payments/invoice/${invoiceId}`, { params }),
-  initiatePayment: (body) => authApi.post('/billing/payments', body),
-  markPaymentProcessing: (id) => authApi.post(`/billing/payments/${id}/processing`),
-  markPaymentSucceeded: (id, body) => authApi.post(`/billing/payments/${id}/succeed`, body),
-  markPaymentFailed: (id, body) => authApi.post(`/billing/payments/${id}/fail`, body),
-  refundPayment: (id, body) => authApi.post(`/billing/payments/${id}/refund`, body),
+  subscription: () => api.get('/billing/subscription'),
+  subscribe: (body) => api.post('/billing/subscription', body),
+  activateSubscription: (body) => api.post('/billing/subscription/activate', body),
+  changePlan: (body) => api.post('/billing/subscription/change-plan', body),
+  cancelSubscription: (body) => api.post('/billing/subscription/cancel', body),
+  reactivateSubscription: (body) => api.post('/billing/subscription/reactivate', body),
+  upsertOverride: (body) => api.post('/billing/subscription/overrides', body),
 
-  entitlements: (subscriptionId) => authApi.get(`/billing/entitlements/${subscriptionId}`),
-  entitlement: (subscriptionId, featureCode) => authApi.get(`/billing/entitlements/${subscriptionId}/${featureCode}`),
-  createEntitlementOverride: (subscriptionId, featureCode, body) => authApi.post(`/billing/entitlements/${subscriptionId}/${featureCode}/override`, body),
-  removeEntitlementOverride: (subscriptionId, featureCode) => authApi.delete(`/billing/entitlements/${subscriptionId}/${featureCode}/override`),
-  entitlementQuota: (subscriptionId, featureCode) => authApi.get(`/billing/entitlements/${subscriptionId}/${featureCode}/quota`),
-  consumeEntitlementQuota: (subscriptionId, featureCode, body) => authApi.post(`/billing/entitlements/${subscriptionId}/${featureCode}/quota/consume`, body),
+  billingAccount: () => api.get('/billing/billing-account'),
+  saveBillingAccount: (body) => api.post('/billing/billing-account', body),
 
-  features: (params) => authApi.get('/billing/features', { params }),
-  feature: (code) => authApi.get(`/billing/features/${code}`),
-  createFeature: (body) => authApi.post('/billing/features', body),
-  updateFeature: (code, body) => authApi.patch(`/billing/features/${code}`, body),
-  deprecateFeature: (code) => authApi.post(`/billing/features/${code}/deprecate`),
-  checkAccess: (body) => authApi.post('/billing/access/decide', body),
+  invoices: (params) => api.get('/billing/invoices', { params }),
+  invoice: (id) => api.get(`/billing/invoices/${id}`),
+
+  payments: () => api.get('/billing/payments'),
+  recordManualPayment: (body) => api.post('/billing/payments/manual', body),
+  validatePayment: (id, body) => api.post(`/billing/payments/${id}/validate`, body),
+  refundPayment: (id, body) => api.post(`/billing/payments/${id}/refund`, body),
+
+  usage: () => api.get('/billing/usage'),
+  usageEvents: (params) => api.get('/billing/usage/events', { params }),
+};
+
+export const billingAdminService = {
+  products: (params) => api.get('/billing/catalog/products', { params }),
+  createProduct: (body) => api.post('/billing/catalog/products', body),
+  features: (params) => api.get('/billing/catalog/features', { params }),
+  createFeature: (body) => api.post('/billing/catalog/features', body),
+  createPlan: (body) => api.post('/billing/catalog/plans', body),
+  setPlanStatus: (id, body) => api.post(`/billing/catalog/plans/${id}/status`, body),
+  setPlanEntitlement: (id, body) => api.post(`/billing/catalog/plans/${id}/entitlements`, body),
+  createPrice: (body) => api.post('/billing/catalog/prices', body),
+  deactivatePrice: (id) => api.post(`/billing/catalog/prices/${id}/deactivate`),
+
+  subscriptions: (params) => api.get('/billing/admin/subscriptions', { params }),
+  invoices: (params) => api.get('/billing/admin/invoices', { params }),
+  invoice: (id) => api.get(`/billing/admin/invoices/${id}`),
+  generateInvoice: (body) => api.post('/billing/admin/invoices/generate', body),
+  issueInvoice: (id, body) => api.post(`/billing/admin/invoices/${id}/issue`, body),
+  markInvoiceOverdue: (id) => api.post(`/billing/admin/invoices/${id}/overdue`),
+  voidInvoice: (id, body) => api.post(`/billing/admin/invoices/${id}/void`, body),
+  adjustInvoice: (id, body) => api.post(`/billing/admin/invoices/${id}/adjustments`, body),
+
+  payments: (params) => api.get('/billing/admin/payments', { params }),
+  recordPayment: (body) => api.post('/billing/admin/payments/manual', body),
+  failPayment: (id, body) => api.post(`/billing/admin/payments/${id}/fail`, body),
+  refundPayment: (id, body) => api.post(`/billing/admin/payments/${id}/refund`, body),
+
+  usageEvents: (params) => api.get('/billing/admin/usage/events', { params }),
+  diagnostics: (params) => api.get('/billing/admin/diagnostics', { params }),
+  webhooks: (params) => api.get('/billing/admin/webhooks', { params }),
+  health: () => api.get('/billing/admin/health'),
+  runSweeps: () => api.post('/billing/admin/sweeps'),
 };
 
 export const erpUserService = { getAll: (config) => api.get('/erp/users', config) };
+
+export const syncService = {
+  list: (params) => api.get('/integrations/synchronizations', { params }),
+  getOne: (id) => api.get(`/integrations/synchronizations/${id}`),
+  create: (data) => api.post('/integrations/synchronizations', data),
+  update: (id, data) => api.patch(`/integrations/synchronizations/${id}`, data),
+  remove: (id) => api.delete(`/integrations/synchronizations/${id}`),
+  run: (id) => api.post(`/integrations/synchronizations/${id}/run`),
+  resume: (id) => api.post(`/integrations/synchronizations/${id}/resume`),
+  pause: (id) => api.post(`/integrations/synchronizations/${id}/pause`),
+  cancel: (id) => api.post(`/integrations/synchronizations/${id}/cancel`),
+  checkpoint: (id) => api.get(`/integrations/synchronizations/${id}/checkpoint`),
+};
+
+export const connectorService = {
+  list: (params) => api.get('/integrations/connectors', { params }),
+  getOne: (id) => api.get(`/integrations/connectors/${id}`),
+  create: (data) => api.post('/integrations/connectors', data),
+  update: (id, data) => api.patch(`/integrations/connectors/${id}`, data),
+  validate: (id, data) => api.post(`/integrations/connectors/${id}/validate`, data),
+  health: (id) => api.post(`/integrations/connectors/${id}/health`),
+  activate: (id) => api.post(`/integrations/connectors/${id}/activate`),
+  disable: (id) => api.post(`/integrations/connectors/${id}/disable`),
+  archive: (id) => api.post(`/integrations/connectors/${id}/archive`),
+};

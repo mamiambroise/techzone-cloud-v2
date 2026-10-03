@@ -30,9 +30,13 @@ import { IamConfigService } from './iam-config.service';
 import { IamContextService } from './iam-context.service';
 import { IamContextController } from './iam-context.controller';
 import { IamHealthController } from './iam-health.controller';
-import { IamBillingController } from './iam-billing.controller';
-import { IamBillingService } from './iam-billing.service';
 import { IamAdminGuard } from './iam-admin-guard';
+
+// CDC 15 V2 : le moteur Billing vit dans `modules/billing` (routes
+// `/api/billing/*`). `IamBillingController`/`IamBillingService` ne sont plus
+// enregistres : leur implementation echouait a l'execution (statuts
+// inexistants, montants en flottant, pas de scope tenant). Billing n'est pas
+// une fonction IAM (CDC 81), il ne doit donc pas vivre dans le module IAM.
 
 @Module({
   imports: [PrismaModule, MailModule],
@@ -51,7 +55,6 @@ import { IamAdminGuard } from './iam-admin-guard';
     IamConfigController,
     IamContextController,
     IamHealthController,
-    IamBillingController,
   ],
   providers: [
     IamAuthService,
@@ -64,7 +67,6 @@ import { IamAdminGuard } from './iam-admin-guard';
     IamObservabilityService,
     IamConfigService,
     IamContextService,
-    IamBillingService,
     IamJwtGuard,
     IamAdminGuard,
     IamPermissionGuard,

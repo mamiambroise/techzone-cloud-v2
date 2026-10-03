@@ -34,13 +34,16 @@ export const UI_BINDING_KINDS = ['STATIC', 'ENTITY_FIELD', 'ENTITY_LIST', 'CONTE
 /** UI Action types allowlist (CDC §8) — fail-closed. */
 export const UI_ACTION_TYPES = [
   'NAVIGATE',
-  'REFRESH',
+  'REFRESH_DATA',
   'SET_VARIABLE',
   'SHOW_NOTIFICATION',
   'OPEN_MODAL',
+  'OPEN_DRAWER',
   'CLOSE_MODAL',
   'TRIGGER_AUTOMATION',
-  'CALL_API',
+  'CREATE_RECORD',
+  'UPDATE_RECORD',
+  'DELETE_RECORD',
 ] as const;
 
 export type UiBindingKind = (typeof UI_BINDING_KINDS)[number];

@@ -1,9 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '../../../generated/prisma/client';
 import { SearchLogsDto, DiagnosisCategory, TimelineResult, IntegrationMetrics, TimelineEntry } from './dto/search-logs.dto';
 import { getDiagnosisCategories } from './dto/search-logs.dto';
 import { IntegrationLog } from '../../../generated/prisma/client';
+
+/**
+ * Périmètre tenant pour la lecture des journaux d'intégration.
+ * Renseigné depuis le principal IAM par le contrôleur, jamais depuis la requête.
+ */
+export type IntegrationLogScope = {
+  tenantId?: string | null;
+  isSuperAdmin?: boolean;
+};
 
 const SECRET_PATTERNS: RegExp[] = [
   /"password"\s*:\s*"[^"]*"/gi,
@@ -37,12 +46,49 @@ const SECRET_KEYS = new Set([
 export class DiagnosticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async searchLogs(dto: SearchLogsDto) {
+  /**
+   * Filtre tenant des journaux d'intégration.
+   *
+   * Les journaux (`IntegrationLog`) portent un `tenantId` : c'est la seule
+   * surface Integration Hub réellement tenant-scoped. Le tenant Callant ne doit
+   * donc jamais venir d'un query param. Règles :
+   * - super admin sans tenant : le filtre demandé est honoré (ou aucun filtre) ;
+   * - sinon le tenant du principal est imposé ;
+   * - une demande explicite d'un autre tenant est refusée.
+   */
+  private resolveTenantFilter(
+    requested: string | undefined,
+    scope: IntegrationLogScope,
+  ): string | undefined {
+    if (scope.isSuperAdmin && !scope.tenantId) {
+      return requested;
+    }
+
+    const own = scope.tenantId;
+    if (!own) {
+      throw new ForbiddenException('Tenant context required to read integration logs');
+    }
+
+    if (requested && requested !== own) {
+      throw new ForbiddenException(
+        'Access denied: integration logs belong to a different tenant',
+      );
+    }
+
+    return own;
+  }
+
+  async searchLogs(dto: SearchLogsDto, scope: IntegrationLogScope = {}) {
     const page = Math.max(1, dto.page ?? 1);
     const limit = Math.max(1, Math.min(dto.limit ?? 50, 200));
     const skip = (page - 1) * limit;
 
     const where: Prisma.IntegrationLogWhereInput = {};
+
+    const tenantFilter = this.resolveTenantFilter(dto.tenantId, scope);
+    if (tenantFilter) {
+      where.tenantId = tenantFilter;
+    }
 
     if (dto.traceId) {
       where.traceId = { contains: dto.traceId };
@@ -66,10 +112,6 @@ export class DiagnosticsService {
 
     if (dto.operation) {
       where.operation = { contains: dto.operation };
-    }
-
-    if (dto.tenantId) {
-      where.tenantId = dto.tenantId;
     }
 
     if (dto.startDate || dto.endDate) {
@@ -103,14 +145,19 @@ export class DiagnosticsService {
     };
   }
 
-  async getMetrics(): Promise<IntegrationMetrics> {
+  async getMetrics(scope: IntegrationLogScope = {}): Promise<IntegrationMetrics> {
+    const tenantFilter = this.resolveTenantFilter(undefined, scope);
+    const tenantWhere: Prisma.IntegrationLogWhereInput = tenantFilter
+      ? { tenantId: tenantFilter }
+      : {};
+
     const [total, succeeded, failed, timeoutLogs, retryingLogs, rateLimitedLogs, webhookFailures, syncFailures] = await Promise.all([
-      this.prisma.integrationLog.count(),
-      this.prisma.integrationLog.count({ where: { status: 'SUCCEEDED' } }),
-      this.prisma.integrationLog.count({ where: { status: 'FAILED' } }),
-      this.prisma.integrationLog.count({ where: { errorCode: 'INTEGRATION_TIMEOUT' } }),
-      this.prisma.integrationLog.count({ where: { status: 'RETRYING' } }),
-      this.prisma.integrationLog.count({ where: { errorCode: 'INTEGRATION_RATE_LIMITED' } }),
+      this.prisma.integrationLog.count({ where: tenantWhere }),
+      this.prisma.integrationLog.count({ where: { ...tenantWhere, status: 'SUCCEEDED' } }),
+      this.prisma.integrationLog.count({ where: { ...tenantWhere, status: 'FAILED' } }),
+      this.prisma.integrationLog.count({ where: { ...tenantWhere, errorCode: 'INTEGRATION_TIMEOUT' } }),
+      this.prisma.integrationLog.count({ where: { ...tenantWhere, status: 'RETRYING' } }),
+      this.prisma.integrationLog.count({ where: { ...tenantWhere, errorCode: 'INTEGRATION_RATE_LIMITED' } }),
       this.prisma.webhookDelivery.count({
         where: { status: { in: ['FAILED', 'CANCELLED'] } },
       }),
@@ -124,7 +171,7 @@ export class DiagnosticsService {
 
     const avgLatencyResult = await this.prisma.integrationLog.aggregate({
       _avg: { duration: true },
-      where: { duration: { not: null } },
+      where: { ...tenantWhere, duration: { not: null } },
     });
 
     const diagnosisBreakdown = await this.buildDiagnosisBreakdown();
@@ -143,9 +190,16 @@ export class DiagnosticsService {
     };
   }
 
-  async getTimeline(traceId: string): Promise<TimelineResult> {
+  async getTimeline(
+    traceId: string,
+    scope: IntegrationLogScope = {},
+  ): Promise<TimelineResult> {
+    const tenantFilter = this.resolveTenantFilter(undefined, scope);
     const logs = await this.prisma.integrationLog.findMany({
-      where: { traceId: { contains: traceId } },
+      where: {
+        traceId: { contains: traceId },
+        ...(tenantFilter ? { tenantId: tenantFilter } : {}),
+      },
       orderBy: { startedAt: 'asc' },
     });
 

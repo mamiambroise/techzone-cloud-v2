@@ -23,12 +23,22 @@ import type {
   UpdateUiPageDto,
   UpsertUiThemeDto,
 } from './dto/ui-page.dto';
+import { UI_ACTION_TYPES } from './dto/ui-page.dto';
+
+const RENDERABLE_COMPONENTS = new Set([
+  'Container', 'Section', 'Card', 'Grid', 'Stack', 'Heading', 'Text',
+  'Input', 'Textarea', 'Select', 'Checkbox', 'DatePicker', 'FormField',
+  'Form', 'DataTable', 'Badge', 'Alert', 'Image', 'Link', 'Tabs', 'Spinner', 'Button',
+]);
+const ACTION_TYPES = new Set<string>(UI_ACTION_TYPES);
 
 /** Statuts de version éditables via le UI Builder (CDC §10). */
 const EDITABLE_VERSION_STATUSES = new Set(['DRAFT', 'CONFIGURING', 'VALIDATING']);
 
 /** Context bindings supportés (allowlist, CDC §6). */
 const CONTEXT_KEYS = new Set(['currentUser', 'currentTenant', 'currentApplication']);
+
+type OverviewProgression = { status: 'TODO' | 'IN_PROGRESS' | 'READY'; detail: string };
 
 @Injectable()
 export class UiBuilderService {
@@ -245,7 +255,7 @@ export class UiBuilderService {
   // =====================================================================
 
   async getUiDefinition(applicationVersionId: string, tenantId: string | null) {
-    await this.ensureVersion(applicationVersionId, tenantId);
+    const version = await this.ensureVersion(applicationVersionId, tenantId);
     const [pages, theme] = await Promise.all([
       this.listPages(applicationVersionId, tenantId),
       this.getTheme(applicationVersionId, tenantId).catch(() => null),
@@ -265,7 +275,8 @@ export class UiBuilderService {
       }));
 
     return {
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
+      projectId: applicationVersionId,
       applicationId: pages[0]?.applicationId ?? null,
       applicationVersionId,
       theme: theme?.tokens ?? null,
@@ -285,7 +296,14 @@ export class UiBuilderService {
         metadata: p.metadata ?? {},
         updatedAt: p.updatedAt,
       })),
-      metadata: { pageCount: pages.length },
+      dataSources: pages.flatMap((p) => Object.values(((p.components ?? {}) as { nodes?: Record<string, { bindings?: Record<string, { kind?: string; entity?: string }> }> }).nodes ?? {}))
+        .flatMap((node) => Object.values(node.bindings ?? {}))
+        .filter((binding) => binding.kind === 'ENTITY_FIELD' || binding.kind === 'ENTITY_LIST')
+        .map((binding) => ({ kind: 'DATA_RUNTIME', resource: binding.entity }))
+        .filter((source, index, sources) => source.resource && sources.findIndex((candidate) => candidate.resource === source.resource) === index),
+      requiredPermissions: [...new Set(pages.flatMap((p) => (Array.isArray(p.permissions) ? p.permissions : [])))].sort(),
+      capabilities: ['data-runtime:query', 'data-runtime:execute'],
+      metadata: { pageCount: pages.length, versionStatus: version.status, generatedAt: new Date().toISOString() },
     };
   }
 
@@ -293,7 +311,7 @@ export class UiBuilderService {
   // VALIDATION ENGINE (CDC §11)
   // =====================================================================
 
-  async validate(applicationVersionId: string, tenantId: string | null) {
+  async validate(applicationVersionId: string, tenantId: string | null, userId?: string) {
     await this.ensureVersion(applicationVersionId, tenantId);
 
     const [pages, entities] = await Promise.all([
@@ -350,6 +368,9 @@ export class UiBuilderService {
           issues.push({ level: 'ERROR', code: 'COMPONENT_TYPE_MISSING', message: `Composant sans type.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
           continue;
         }
+        if (!RENDERABLE_COMPONENTS.has(node.type)) {
+          issues.push({ level: 'ERROR', code: 'COMPONENT_UNKNOWN', message: `Composant non pris en charge par le renderer : "${node.type}".`, pageId: page.id, pageKey: page.key, componentId: nodeId });
+        }
         // Bindings
         for (const [prop, binding] of Object.entries(node.bindings ?? {})) {
           const b = binding as { kind?: string; entity?: string; field?: string; context?: string; variable?: string };
@@ -380,6 +401,10 @@ export class UiBuilderService {
             issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `Action sans type.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             continue;
           }
+          if (!ACTION_TYPES.has(action.type)) {
+            issues.push({ level: 'ERROR', code: 'ACTION_UNKNOWN', message: `Action non prise en charge : "${action.type}".`, pageId: page.id, pageKey: page.key, componentId: nodeId });
+            continue;
+          }
           if (action.type === 'NAVIGATE') {
             const route = (action.config as { route?: unknown } | undefined)?.route;
             if (typeof route !== 'string' || !route.startsWith('/') || route.includes('javascript:')) {
@@ -392,10 +417,10 @@ export class UiBuilderService {
               issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `TRIGGER_AUTOMATION: workflowCode requis.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             }
           }
-          if (action.type === 'CALL_API') {
+          if (['CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD'].includes(action.type)) {
             const resource = (action.config as { resource?: unknown } | undefined)?.resource;
             if (typeof resource !== 'string' || !resource) {
-              issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `CALL_API: resource Data Runtime requise.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
+              issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `${action.type}: ressource Data Runtime requise.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             }
           }
         }
@@ -410,7 +435,7 @@ export class UiBuilderService {
 
     const errors = issues.filter((i) => i.level === 'ERROR').length;
     const warnings = issues.filter((i) => i.level === 'WARNING').length;
-    return {
+    const result = {
       applicationVersionId,
       status: errors > 0 ? 'INVALID' : warnings > 0 ? 'VALID_WITH_WARNINGS' : 'VALID',
       counts: { errors, warnings, infos: issues.length - errors - warnings },
@@ -418,6 +443,14 @@ export class UiBuilderService {
       checkedAt: new Date().toISOString(),
       pageIds: pages.map((p) => p.id),
     };
+    if (userId) {
+      await this.audit(tenantId, userId, 'ui.definition.validated', 'ApplicationVersion', applicationVersionId, {
+        status: result.status,
+        errors,
+        warnings,
+      });
+    }
+    return result;
   }
 
   // =====================================================================
@@ -498,6 +531,15 @@ export class UiBuilderService {
 
   // =====================================================================
   // OVERVIEW (données réelles uniquement)
+  //
+  // Alimente le dashboard UI Builder (mission) : KPI, progression, pages
+  // récentes, validation. Aucun compteur ni pourcentage fabriqué : chaque
+  // valeur est dérivée des lignes lues (UiPage / UiThemeSetting / validation).
+  //
+  // « UiProject » : le contrat CDC V1 n'a pas de table séparée — le projet UI
+  // est la définition assemblée par ApplicationVersion (pages + thème). Il est
+  // donc résolu en lecture seule ici ; aucune écriture ni duplication à chaque
+  // chargement.
   // =====================================================================
 
   async getOverview(applicationVersionId: string, tenantId: string | null) {
@@ -511,10 +553,41 @@ export class UiBuilderService {
       this.validate(applicationVersionId, tenantId),
     ]);
 
-    const componentCount = pages.reduce((acc, p) => {
-      const nodes = ((p.components ?? {}) as { nodes?: Record<string, unknown> }).nodes ?? {};
-      return acc + Object.keys(nodes).length;
-    }, 0);
+    const trees = pages.map((page) => {
+      const tree = (page.components ?? { root: 'root', nodes: {} }) as {
+        root?: string;
+        nodes?: Record<string, { bindings?: Record<string, unknown> }>;
+      };
+      return { page, nodes: tree.nodes ?? {} };
+    });
+
+    const componentCount = trees.reduce((acc, { nodes }) => acc + Object.keys(nodes).length, 0);
+    const bindingCount = trees.reduce(
+      (acc, { nodes }) => acc + Object.values(nodes).reduce((sum, node) => sum + Object.keys(node.bindings ?? {}).length, 0),
+      0,
+    );
+    const filledPages = trees.filter(({ nodes }) => Object.keys(nodes).length > 1).length;
+    const navigationItems = pages.filter((page) => page.visibility !== 'HIDDEN').length;
+
+    const themeTokens = (theme?.tokens ?? null) as Record<string, unknown> | null;
+    const breakpoints = (themeTokens?.breakpoints ?? null) as { tablet?: unknown; mobile?: unknown } | null;
+    const responsiveConfigured = Boolean(breakpoints?.tablet && breakpoints?.mobile);
+
+    const lastSavedAt = [
+      ...pages.map((page) => page.updatedAt.getTime()),
+      ...(theme ? [theme.updatedAt.getTime()] : []),
+    ].reduce<number | null>((latest, candidate) => (latest === null || candidate > latest ? candidate : latest), null);
+
+    const counts = {
+      pages: pages.length,
+      components: componentCount,
+      forms: pages.filter((page) => page.type === 'FORM').length,
+      bindings: bindingCount,
+      navigationItems,
+      hiddenPages: pages.length - navigationItems,
+      errors: validation.counts.errors,
+      warnings: validation.counts.warnings,
+    };
 
     return {
       application: application
@@ -526,22 +599,114 @@ export class UiBuilderService {
         status: version.status,
         editable: EDITABLE_VERSION_STATUSES.has(version.status),
       },
-      counts: {
-        pages: pages.length,
-        components: componentCount,
-        forms: pages.filter((p) => p.type === 'FORM').length,
+      uiProject: {
+        applicationVersionId,
+        source: 'UI_PAGES_AND_THEME',
+        resolved: true,
+        pageCount: pages.length,
+        hasTheme: Boolean(theme),
+        themeRevision: theme?.revision ?? null,
+        generatedAt: new Date().toISOString(),
       },
+      counts,
       themeConfigured: Boolean(theme),
+      lastSavedAt: lastSavedAt === null ? null : new Date(lastSavedAt).toISOString(),
+      progression: this.buildProgression({
+        pageCount: pages.length,
+        filledPages,
+        bindingCount,
+        navigationItems,
+        themeConfigured: Boolean(theme),
+        responsiveConfigured,
+        validationStatus: validation.status as string,
+        errors: validation.counts.errors,
+        warnings: validation.counts.warnings,
+      }),
       validation: {
         status: validation.status,
         counts: validation.counts,
+        checkedAt: validation.checkedAt,
+        issues: validation.issues.slice(0, 50),
+        truncated: validation.issues.length > 50,
       },
-      lastPages: pages
+      lastPages: trees
         .slice()
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .sort((a, b) => b.page.updatedAt.getTime() - a.page.updatedAt.getTime())
         .slice(0, 5)
-        .map((p) => ({ id: p.id, key: p.key, title: p.title, updatedAt: p.updatedAt })),
+        .map(({ page, nodes }) => ({
+          id: page.id,
+          key: page.key,
+          title: page.title,
+          type: page.type,
+          status: page.status,
+          route: page.route,
+          visibility: page.visibility,
+          updatedAt: page.updatedAt,
+          components: Object.keys(nodes).length,
+          bindings: Object.values(nodes).reduce((sum, node) => sum + Object.keys(node.bindings ?? {}).length, 0),
+        })),
     };
+  }
+
+  /**
+   * Progression de la conception : états dérivés des données réelles
+   * (TODO / IN_PROGRESS / READY). Aucun pourcentage arbitraire.
+   */
+  private buildProgression(input: {
+    pageCount: number;
+    filledPages: number;
+    bindingCount: number;
+    navigationItems: number;
+    themeConfigured: boolean;
+    responsiveConfigured: boolean;
+    validationStatus: string;
+    errors: number;
+    warnings: number;
+  }) {
+    const pages: OverviewProgression = input.pageCount === 0
+      ? { status: 'TODO', detail: 'Aucune page' }
+      : input.filledPages === input.pageCount
+        ? { status: 'READY', detail: `${input.pageCount} page(s) renseignée(s)` }
+        : { status: 'IN_PROGRESS', detail: `${input.filledPages}/${input.pageCount} page(s) avec composants` };
+
+    const bindings: OverviewProgression = input.bindingCount === 0
+      ? { status: 'TODO', detail: 'Aucun binding Data Runtime' }
+      : input.errors > 0
+        ? { status: 'IN_PROGRESS', detail: `${input.bindingCount} binding(s), erreurs à corriger` }
+        : { status: 'READY', detail: `${input.bindingCount} binding(s)` };
+
+    const navigation: OverviewProgression = input.pageCount === 0
+      ? { status: 'TODO', detail: 'Aucune entrée de navigation' }
+      : input.navigationItems >= 2
+        ? { status: 'READY', detail: `${input.navigationItems} entrée(s) visible(s)` }
+        : { status: 'IN_PROGRESS', detail: `${input.navigationItems} entrée(s) visible(s)` };
+
+    const theme: OverviewProgression = input.themeConfigured
+      ? { status: 'READY', detail: 'Design tokens enregistrés' }
+      : { status: 'TODO', detail: 'Aucun thème enregistré' };
+
+    const responsive: OverviewProgression = input.responsiveConfigured
+      ? { status: 'READY', detail: 'Breakpoints tablette et mobile définis' }
+      : input.themeConfigured
+        ? { status: 'IN_PROGRESS', detail: 'Breakpoints manquants' }
+        : { status: 'TODO', detail: 'Dépend des design tokens' };
+
+    const validation: OverviewProgression = input.errors > 0
+      ? { status: 'IN_PROGRESS', detail: `${input.errors} erreur(s) bloquante(s)` }
+      : input.warnings > 0
+        ? { status: 'IN_PROGRESS', detail: `${input.warnings} avertissement(s)` }
+        : input.pageCount === 0
+          ? { status: 'TODO', detail: 'Rien à valider' }
+          : { status: 'READY', detail: 'Aucun problème détecté' };
+
+    return [
+      { id: 'pages', label: 'Pages', ...pages },
+      { id: 'bindings', label: 'Bindings', ...bindings },
+      { id: 'navigation', label: 'Navigation', ...navigation },
+      { id: 'theme', label: 'Thème', ...theme },
+      { id: 'responsive', label: 'Responsive', ...responsive },
+      { id: 'validation', label: 'Validation', ...validation, checkedStatus: input.validationStatus },
+    ];
   }
 
   // =====================================================================

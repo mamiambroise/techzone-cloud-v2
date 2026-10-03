@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { ClipboardList, Plus, ArrowRight } from 'lucide-react';
 
-import { addComponent, fetchPages, selectPage } from '../store/uiBuilderSlice.js';
+import { fetchPages, generateFormFromEntity, saveCurrentPage, selectPage } from '../store/uiBuilderSlice.js';
 import UiBuilderLayout from './UiBuilderLayout.jsx';
 import { BmCard, BmBadge, BmEmptyState, BmErrorState, BmLoading, BmSelect } from '../../../components/business-manager/bm/ui.jsx';
 import { ROUTES } from '../../../app/routes.js';
@@ -26,6 +26,8 @@ function FormsBody() {
   const dispatch = useDispatch();
   const { pages, pagesStatus, businessContext, applicationVersionId } = useSelector((state) => state.uiBuilder);
   const [selectedEntity, setSelectedEntity] = useState('');
+  const [selectedPageId, setSelectedPageId] = useState('');
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     if (applicationVersionId) dispatch(fetchPages(applicationVersionId));
@@ -35,13 +37,18 @@ function FormsBody() {
   const entities = businessContext?.entities || [];
   const entity = entities.find((e) => e.code === selectedEntity);
 
-  const addFormForEntity = () => {
-    if (!entity) return;
+  const addFormForEntity = async () => {
+    if (!entity || !selectedPageId) return;
     // Compose un Form + FormField par champ requis du Business Entity,
     // directement dans la page FORM courante (ou la première page FORM).
-    dispatch(addComponent({ type: 'Form' }));
-    for (const field of (entity.fields || []).filter((f) => f.required).slice(0, 8)) {
-      dispatch(addComponent({ type: 'FormField', props: { label: field.label || field.code, required: true } }));
+    setSaveMessage('');
+    dispatch(selectPage(selectedPageId));
+    dispatch(generateFormFromEntity({ entity: entity.code, fields: entity.fields || [] }));
+    try {
+      await dispatch(saveCurrentPage()).unwrap();
+      setSaveMessage(`Formulaire enregistré : ${(entity.fields || []).length} champ(s) liés à ${entity.name}.`);
+    } catch {
+      setSaveMessage('Composition créée, mais la sauvegarde a échoué. Réessayez depuis l’éditeur.');
     }
   };
 
@@ -71,15 +78,24 @@ function FormsBody() {
                 options={[{ value: '', label: '— Choisir une entité —' }, ...entities.map((e) => ({ value: e.code, label: `${e.name} (${e.fields.length} champ(s))` }))]}
               />
             </div>
+            <div className="min-w-0 flex-1">
+              <BmSelect
+                label="Page FORM cible"
+                value={selectedPageId}
+                onChange={(event) => setSelectedPageId(event.target.value)}
+                options={[{ value: '', label: '— Choisir une page —' }, ...formPages.map((page) => ({ value: page.id, label: `${page.title} (${page.route})` }))]}
+              />
+            </div>
             <button
               onClick={addFormForEntity}
-              disabled={!entity}
+              disabled={!entity || !selectedPageId}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-colors duration-150 hover:bg-blue-700 disabled:bg-blue-300"
             >
               <Plus className="h-3.5 w-3.5" /> Composer dans l’éditeur
             </button>
           </div>
         )}
+        {saveMessage && <p role="status" className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700">{saveMessage}</p>}
         {entity && (
           <div className="mt-4 flex flex-wrap gap-1.5">
             {(entity.fields || []).map((field) => (

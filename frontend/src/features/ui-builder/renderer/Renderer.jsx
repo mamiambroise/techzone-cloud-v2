@@ -9,7 +9,8 @@
  * Le preview passe un resolver alimenté par le business-context BM ; le
  * runtime branchera le même renderer sur Data Runtime.
  */
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { executeRuntime, queryRuntime } from '../services/uiBuilderService.js';
 import {
   Box, PanelTop, Square, Grid3X3, Columns3, Heading1, Type, TextCursorInput,
   AlignLeft, ChevronDownSquare, CheckSquare, Calendar, Braces, ClipboardList,
@@ -41,6 +42,56 @@ const TONE_CLASSES = {
 
 function pad(value) {
   return SPACING[value] ?? SPACING.md;
+}
+
+function entityFor(node, prop = 'value') {
+  const binding = node?.bindings?.[prop];
+  return binding?.kind === 'ENTITY_FIELD' || binding?.kind === 'ENTITY_LIST' ? binding.entity : null;
+}
+
+function RuntimeTable({ node, props, ctx }) {
+  const resource = entityFor(node, 'rows');
+  const [state, setState] = useState({ rows: [], loading: Boolean(resource), error: null });
+  useEffect(() => {
+    let active = true;
+    if (!resource) { setState({ rows: [], loading: false, error: null }); return undefined; }
+    queryRuntime(resource, { pageSize: Math.min(Number(props.pageSize) || 20, 100) })
+      .then((result) => active && setState({ rows: result.data || result.items || [], loading: false, error: null }))
+      .catch(() => active && setState({ rows: [], loading: false, error: 'Lecture Data Runtime impossible.' }));
+    return () => { active = false; };
+  }, [resource, props.pageSize, ctx.dataRevision]);
+  const rows = resource ? state.rows : ctx.resolveBinding(node, 'rows', null);
+  const columns = Array.isArray(rows) && rows.length ? Object.keys(rows[0]) : [];
+  return <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    {props.title && <div className="border-b border-slate-100 px-4 py-2.5 text-sm font-bold text-slate-900">{props.title}</div>}
+    <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-slate-100 bg-slate-50/70">{columns.map((column) => <th key={column} className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{column}</th>)}</tr></thead><tbody>
+      {state.loading && <tr><td colSpan="1" className="px-4 py-6 text-center text-xs text-slate-400">Chargement des données…</td></tr>}
+      {!state.loading && Array.isArray(rows) && rows.slice(0, Math.min(Number(props.pageSize) || 20, 100)).map((row, index) => <tr key={row.id || index} className="border-b border-slate-50 last:border-0">{columns.map((column) => <td key={column} className="px-4 py-2 text-slate-700">{String(row[column] ?? '')}</td>)}</tr>)}
+      {!state.loading && (!Array.isArray(rows) || rows.length === 0) && <tr><td colSpan={Math.max(columns.length, 1)} className="px-4 py-6 text-center text-xs text-slate-400">{state.error || props.emptyMessage || 'Aucun enregistrement'}</td></tr>}
+    </tbody></table></div></div>;
+}
+
+function RuntimeForm({ node, props, childNodes, ctx }) {
+  const [message, setMessage] = useState(null);
+  const resource = entityFor(childNodes.find((child) => entityFor(child)), 'value');
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!resource) return setMessage({ error: 'Aucun binding ENTITY_FIELD ne définit la ressource.' });
+    if (ctx.mode === 'preview') return setMessage({ error: 'Aperçu protégé : les mutations sont désactivées.' });
+    const input = {};
+    for (const child of childNodes) {
+      const binding = child.bindings?.value;
+      if (binding?.kind === 'ENTITY_FIELD' && binding.field) input[binding.field] = new FormData(event.currentTarget).get(child.id);
+    }
+    const result = await executeRuntime({ resource, operation: 'CREATE', input, idempotencyKey: `ui-${node.id}-${Date.now()}` });
+    setMessage(result.success ? { success: 'Enregistrement créé.' } : { error: result.errorMessage || 'Création refusée.' });
+    if (result.success) ctx.refreshData();
+  };
+  return <form className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad('md') }} onSubmit={submit}>
+    {props.title && <h3 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h3>}<div className="flex flex-col" style={{ gap: pad('md') }}>{childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}</div>
+    <div className="mt-4 flex items-center gap-2"><button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white">{props.submitLabel || 'Enregistrer'}</button><button type="reset" className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">{props.cancelLabel || 'Annuler'}</button></div>
+    {message && <p role="status" className={`mt-2 text-xs ${message.error ? 'text-rose-600' : 'text-emerald-600'}`}>{message.error || message.success}</p>}
+  </form>;
 }
 
 /** Rendu d'un composant selon son type (registry-driven). */
@@ -111,6 +162,7 @@ function renderNode(node, ctx) {
         <label className="flex flex-col gap-1">
           {props.label && <span className="text-xs font-medium text-slate-600">{props.label}</span>}
           <input
+            name={node.id}
             type={['text', 'email', 'number', 'tel', 'url'].includes(props.inputType) ? props.inputType : 'text'}
             placeholder={props.placeholder || ''}
             required={Boolean(props.required)}
@@ -168,7 +220,8 @@ function renderNode(node, ctx) {
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">{props.label || schema?.label || 'Champ métier'}</span>
           <input
-            type="text"
+            name={node.id}
+            type={['text', 'email', 'number', 'date'].includes(props.inputType) ? props.inputType : 'text'}
             placeholder={props.placeholder || ''}
             required={Boolean(props.required ?? schema?.required)}
             disabled={Boolean(props.readonly ?? schema?.readonly)}
@@ -180,48 +233,10 @@ function renderNode(node, ctx) {
     }
 
     case 'Form':
-      return (
-        <form className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad('md') }} onSubmit={(event) => event.preventDefault()}>
-          {props.title && <h3 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h3>}
-          <div className="flex flex-col" style={{ gap: pad('md') }}>
-            {childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            <button type="button" className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors duration-150">{props.submitLabel || 'Enregistrer'}</button>
-            <button type="button" className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors duration-150">{props.cancelLabel || 'Annuler'}</button>
-          </div>
-          <FormActionsHint node={node} />
-        </form>
-      );
+      return <RuntimeForm node={node} props={props} childNodes={childNodes} ctx={ctx} />;
 
     case 'DataTable': {
-      const rows = ctx.resolveBinding(node, 'rows', null);
-      const columns = Array.isArray(rows) && rows.length > 0 ? Object.keys(rows[0]) : [];
-      return (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {props.title && <div className="border-b border-slate-100 px-4 py-2.5 text-sm font-bold text-slate-900">{props.title}</div>}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/70">
-                  {columns.map((column) => <th key={column} className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{column}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {Array.isArray(rows) && rows.slice(0, Math.min(Number(props.pageSize) || 20, 100)).map((row, index) => (
-                  <tr key={index} className="border-b border-slate-50 last:border-0">
-                    {columns.map((column) => <td key={column} className="px-4 py-2 text-slate-700">{String(row[column] ?? '')}</td>)}
-                  </tr>
-                ))}
-                {(!Array.isArray(rows) || rows.length === 0) && (
-                  <tr><td colSpan={Math.max(columns.length, 1)} className="px-4 py-6 text-center text-xs text-slate-400">{props.emptyMessage || 'Aucun enregistrement'}</td></tr>
-                )}
-              </tbody>
-            </table>
-            <FormActionsHint node={node} />
-          </div>
-        </div>
-        );
+      return <RuntimeTable node={node} props={props} ctx={ctx} />;
     }
 
     case 'Badge': {
@@ -328,13 +343,16 @@ function RendererNode({ node, ctx }) {
  * resolveBinding(node, prop, fallback) : résolution structurée injectée.
  */
 export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview' }) {
+  const [dataRevision, setDataRevision] = useState(0);
   const ctx = useMemo(() => ({
     nodes: tree?.nodes || {},
     businessContext,
     mode,
     resolveBinding: resolveBinding || (() => null),
     fieldSchemas: new Map(),
-  }), [tree, resolveBinding, businessContext, mode]);
+    dataRevision,
+    refreshData: () => setDataRevision((value) => value + 1),
+  }), [tree, resolveBinding, businessContext, mode, dataRevision]);
 
   const rootNode = ctx.nodes[tree?.root];
   if (!rootNode) {
