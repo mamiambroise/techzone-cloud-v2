@@ -309,7 +309,7 @@ export class UiBuilderService {
   // VALIDATION ENGINE (CDC §11)
   // =====================================================================
 
-  async validate(applicationVersionId: string, tenantId: string | null) {
+  async validate(applicationVersionId: string, tenantId: string | null, userId?: string) {
     await this.ensureVersion(applicationVersionId, tenantId);
 
     const [pages, entities] = await Promise.all([
@@ -433,7 +433,7 @@ export class UiBuilderService {
 
     const errors = issues.filter((i) => i.level === 'ERROR').length;
     const warnings = issues.filter((i) => i.level === 'WARNING').length;
-    return {
+    const result = {
       applicationVersionId,
       status: errors > 0 ? 'INVALID' : warnings > 0 ? 'VALID_WITH_WARNINGS' : 'VALID',
       counts: { errors, warnings, infos: issues.length - errors - warnings },
@@ -441,6 +441,14 @@ export class UiBuilderService {
       checkedAt: new Date().toISOString(),
       pageIds: pages.map((p) => p.id),
     };
+    if (userId) {
+      await this.audit(tenantId, userId, 'ui.definition.validated', 'ApplicationVersion', applicationVersionId, {
+        status: result.status,
+        errors,
+        warnings,
+      });
+    }
+    return result;
   }
 
   // =====================================================================

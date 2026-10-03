@@ -131,7 +131,7 @@ export class UiBuilderController {
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @CurrentPrincipal() principal: IamPrincipal,
   ) {
-    return this.uiBuilderService.validate(applicationVersionId, principal.tenantId);
+    return this.uiBuilderService.validate(applicationVersionId, principal.tenantId, principal.userId);
   }
 
   // ---------- Theme ----------
