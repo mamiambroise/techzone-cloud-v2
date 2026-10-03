@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-03T03:00:12.423Z",
+  "kind": "REAL_BROWSER_AND_REAL_DOLIBARR",
+  "resources": [
+    {
+      "resource": "clients",
+      "techzoneEndpoint": "/api/erp/clients",
+      "httpStatus": 502,
+      "durationMs": 866,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "397db738-1208-4e67-8f9c-d83aa5852f16",
+      "upstreamStatus": 403,
+      "finalUiState": "FORBIDDEN",
+      "dolibarrEndpoint": "/api/index.php/thirdparties",
+      "upstreamDurationMs": 492,
+      "transportCode": "ERR_BAD_REQUEST"
+    },
+    {
+      "resource": "products",
+      "techzoneEndpoint": "/api/erp/products",
+      "httpStatus": 502,
+      "durationMs": 1316,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "df130aa6-5d06-4d7a-afdf-160da9b4dabe",
+      "upstreamStatus": 403,
+      "finalUiState": "FORBIDDEN",
+      "dolibarrEndpoint": "/api/index.php/products",
+      "upstreamDurationMs": 824,
+      "transportCode": "ERR_BAD_REQUEST"
+    },
+    {
+      "resource": "orders",
+      "techzoneEndpoint": "/api/erp/orders",
+      "httpStatus": 502,
+      "durationMs": 909,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "d1d92b73-9d65-47d4-892d-f20fa8a8dd8d",
+      "upstreamStatus": 403,
+      "finalUiState": "FORBIDDEN",
+      "dolibarrEndpoint": "/api/index.php/orders",
+      "upstreamDurationMs": 486,
+      "transportCode": "ERR_BAD_REQUEST"
+    },
+    {
+      "resource": "invoices",
+      "techzoneEndpoint": "/api/erp/invoices",
+      "httpStatus": 502,
+      "durationMs": 1014,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "1b0154cf-0186-4cd0-ba5e-9e4af43464a7",
+      "upstreamStatus": 403,
+      "finalUiState": "FORBIDDEN",
+      "dolibarrEndpoint": "/api/index.php/invoices",
+      "upstreamDurationMs": 819,
+      "transportCode": "ERR_BAD_REQUEST"
+    },
+    {
+      "resource": "stocks",
+      "techzoneEndpoint": "/api/erp/stocks",
+      "httpStatus": 502,
+      "durationMs": 1065,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "05a5c46a-4a22-44fe-bdde-b838dd2b986d",
+      "upstreamStatus": 403,
+      "finalUiState": "FORBIDDEN",
+      "dolibarrEndpoint": "/api/index.php/products",
+      "upstreamDurationMs": 865,
+      "transportCode": "ERR_BAD_REQUEST"
+    }
+  ],
+  "cancelled": [
+    {
+      "resource": "clients",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "products",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "orders",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "invoices",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "stocks",
+      "reason": "net::ERR_ABORTED"
+    }
+  ],
+  "errors": [],
+  "responsive": [
+    {
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "overflow": false
+    }
+  ],
+  "status": "PASS"
+}
