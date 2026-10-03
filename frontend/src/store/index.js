@@ -49,4 +49,14 @@ export const store = configureStore({
   reducer: rootReducer,
 });
 
+/**
+ * Magasin isolé construit avec le même reducer racine.
+ * Utilisé par les tests pour exercer le comportement d'invalidation tenant
+ * sans dépendre du magasin global du navigateur.
+ */
+export const createAppStore = (preloadedState) =>
+  configureStore({ reducer: rootReducer, preloadedState });
+
+export { rootReducer, appReducer };
+
 export default store;
