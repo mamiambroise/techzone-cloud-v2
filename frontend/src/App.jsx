@@ -1,10 +1,11 @@
 import TenantBoundary from './components/TenantBoundary.jsx';
-import { routeDefinitions, redirects, navigationGroups } from './app/navigationConfig.js';
+import { routeDefinitions, redirects, navigationGroups, groupDestination, resolveRoute } from './app/navigationConfig.js';
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import TechzoneLayout from './layouts/TechzoneLayout.jsx';
 import RouteToTabSync from './app/RouteToTabSync.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import RequireNavigationAccess from './auth/RequireNavigationAccess.jsx';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSelectedAppId, fetchApplicationsAsync } from './store/applicationsSlice.js';
 import { ROUTES } from './app/routes.js';
@@ -50,6 +51,7 @@ const ERPCreate = lazy(() => import('./pages/ERPCreate.jsx'));
 const ERPEdit = lazy(() => import('./pages/ERPEdit.jsx'));
 const ErpModule = lazy(() => import('./pages/ErpModule.jsx'));
 const ERPDashboard = lazy(() => import('./pages/ERPDashboard.jsx'));
+const ErpResourcesNav = lazy(() => import('./pages/ErpResourcesNav.jsx'));
 
 const IamUsersPage = lazy(() => import('./pages/iam/UsersPage.jsx'));
 const SessionsPage = lazy(() => import('./pages/iam/SessionsPage.jsx'));
@@ -144,7 +146,7 @@ const UiComponentsCatalog = lazy(() => import('./features/ui-builder/components/
 const UiThemeBuilder = lazy(() => import('./features/ui-builder/components/UiThemeBuilder.jsx'));
 const UiNavigationPresentation = lazy(() => import('./features/ui-builder/components/UiNavigationPresentation.jsx'));
 const UiPreviewValidation = lazy(() => import('./features/ui-builder/components/UiPreviewValidation.jsx'));
-const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
+const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, ErpResourcesNav, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon };
 
 function App() {
   return (
@@ -160,8 +162,12 @@ function App() {
                 {routeDefinitions.map(({ route, component, pageId, moduleKeyOverride, label, group, phase, implemented, description }) => {
                   const Component = routeComponents[component];
                   const module = navigationGroups.find(g => g.id === group)?.label;
-                  const content = <Component pageId={pageId} moduleKeyOverride={moduleKeyOverride} title={label} module={module} plannedPhase={phase} description={description || `L’espace « ${label} » du module ${module} n’est pas encore disponible. Ses outils seront intégrés lors d’une prochaine phase.`} />;
-                  return <Route key={route} path={route} element={implemented ? <TenantBoundary>{content}</TenantBoundary> : content} />;
+                  const home = groupDestination(group);
+                  const homeIsReal = Boolean(home) && resolveRoute(home)?.implemented === true;
+                  const backTo = homeIsReal ? home : ROUTES.dashboard;
+                  const backLabel = homeIsReal ? (module ?? 'Accueil') : 'Accueil';
+                  const content = <Component pageId={pageId} moduleKeyOverride={moduleKeyOverride} title={label} module={module} backTo={backTo} backLabel={backLabel} plannedPhase={phase} description={description || `L’espace « ${label} » du module ${module} n’est pas encore disponible. Ses outils seront intégrés lors d’une prochaine phase.`} />;
+                  return <Route key={route} path={route} element={<RequireNavigationAccess>{implemented ? <TenantBoundary>{content}</TenantBoundary> : content}</RequireNavigationAccess>} />;
                 })}
                 {redirects.map(({ from, to }) => <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
 

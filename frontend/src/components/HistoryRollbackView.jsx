@@ -23,6 +23,8 @@ export default function HistoryRollbackView() {
     applications.find((a) => a.id === 'app-0003') ||
     applications[0];
 
+  const currentAppName = currentApp?.name ?? 'la plateforme';
+
   const [historyItems, setHistoryItems] = useState([
     {
       id: 'snap-1',
@@ -77,7 +79,7 @@ export default function HistoryRollbackView() {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Registre immuable des versions et instantanés système pour {currentApp.name}.
+              Registre immuable des versions et instantanés système pour {currentAppName}.
             </p>
           </div>
         </div>
