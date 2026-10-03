@@ -168,7 +168,7 @@ function renderNode(node, ctx) {
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">{props.label || schema?.label || 'Champ métier'}</span>
           <input
-            type="text"
+            type={['text', 'email', 'number', 'date'].includes(props.inputType) ? props.inputType : 'text'}
             placeholder={props.placeholder || ''}
             required={Boolean(props.required ?? schema?.required)}
             disabled={Boolean(props.readonly ?? schema?.readonly)}

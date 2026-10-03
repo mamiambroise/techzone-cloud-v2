@@ -210,6 +210,10 @@ const components = [
       placeholder: { type: 'text', label: 'Placeholder' },
       required: { type: 'boolean', label: 'Requis', defaultValue: false },
       readonly: { type: 'boolean', label: 'Lecture seule', defaultValue: false },
+      inputType: { type: 'select', label: 'Type de saisie', options: [
+        { value: 'text', label: 'Texte' }, { value: 'email', label: 'E-mail' },
+        { value: 'number', label: 'Nombre' }, { value: 'date', label: 'Date' },
+      ], defaultValue: 'text' },
     },
     bindingCapabilities: ['value'],
     supportedActions: [],

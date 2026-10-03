@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import reducer, {
   setContext, selectPage, selectComponent, addComponent, moveComponent,
-  updateComponentProps, updateComponentBinding, updateComponentActions,
+  updateComponentProps, updateComponentBinding, updateComponentActions, generateFormFromEntity,
   deleteComponent, updatePageSettings, undo, redo,
 } from './uiBuilderSlice.js';
 import { createDefaultTree } from '../model/uiDefinition.js';
@@ -120,6 +120,18 @@ describe('uiBuilderSlice — opérations canvas', () => {
     const before = JSON.stringify(state.tree);
     state = reducer(state, deleteComponent('root'));
     expect(JSON.stringify(state.tree)).toBe(before);
+  });
+
+  it('génère un formulaire lié aux champs Business Manager sans modèle dupliqué', () => {
+    state = reducer(state, generateFormFromEntity({ entity: 'product', fields: [
+      { code: 'name', label: 'Nom', required: true, type: 'STRING' },
+      { code: 'price', label: 'Prix', type: 'DECIMAL' },
+    ] }));
+    const form = state.tree.nodes[state.selectedComponentId];
+    expect(form.type).toBe('Form');
+    expect(form.children).toHaveLength(2);
+    expect(state.tree.nodes[form.children[1]].bindings.value).toEqual({ kind: 'ENTITY_FIELD', entity: 'product', field: 'price' });
+    expect(state.tree.nodes[form.children[1]].props.inputType).toBe('number');
   });
 });
 

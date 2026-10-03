@@ -13,7 +13,7 @@ pas une deuxième source de vérité pour les entités métier.
 | Canvas / tree / inspector | Persisté dans JSON `components` | DnD HTML5, tree, inspector schema-driven | `UiPage.components` | PATCH page | slice | `UiVisualEditor.jsx` | KEEP | REAL |
 | Component Registry | Validation fail-closed des types rendables | Catalogue unique et renderer commun | — | — | registry | registry + renderer | IMPROVE | REAL |
 | Bindings BM | Vérifie entity/field dans BM | Resolver structuré, aucun mock de lignes | `BmEntity`/`BmField` réutilisés | business-context | backend/frontend | `getBusinessContext`, `validate` | KEEP | REAL |
-| Forms / DataTable | Stockés comme composants | Form builder et DataTable renderer | composants JSON | PATCH page | slice/registry | registry | COMPLETE | PARTIAL: submit réel Data Runtime v2 non implémenté |
+| Forms / DataTable | Stockés comme composants | Générateur de formulaire lié aux champs BM et DataTable renderer | composants JSON | PATCH page | slice/registry | registry | COMPLETE | PARTIAL: submit réel Data Runtime v2 non implémenté |
 | Actions | Allowlist v1 et validation de routes/configs | Inspector actions | composants JSON | PATCH page | service | DTO + validation | IMPROVE | PARTIAL: Automation/Data Runtime seulement référencés, pas exécutés par le preview |
 | Navigation | Ordre, icône, visibilité dans définition | Écran Navigation | `UiPage` | reorder/PATCH | slice | `UiNavigationPresentation.jsx` | KEEP | REAL |
 | Theme / responsive | thème persistant, version verrouillée | builder thème + trois devices | `UiThemeSetting` | GET/PUT theme | service | `UiThemeBuilder.jsx` | KEEP | REAL |
