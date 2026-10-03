@@ -1,13 +1,14 @@
 {
-  "date": "2026-10-03T03:14:27.363Z",
+  "date": "2026-10-03T03:31:31.307Z",
   "credentialConfigured": true,
   "tenantId": "8031055e-14af-4b43-979f-904e820306e9",
   "encryptionKeyConfigured": true,
   "requests": [
     {
       "endpoint": "/status",
+      "credentialRole": "CONNECTOR",
       "httpStatus": 200,
-      "durationMs": 1141,
+      "durationMs": 973,
       "data": {
         "version": "23.0.3",
         "environment": "non-production"
@@ -15,14 +16,15 @@
     },
     {
       "endpoint": "/users/info?includepermissions=1",
+      "credentialRole": "CONNECTOR",
       "httpStatus": 200,
-      "durationMs": 433,
+      "durationMs": 431,
       "data": {
-        "id": "1",
-        "login": "superadmin",
+        "id": "2",
+        "login": "techzone_api",
         "active": true,
-        "admin": true,
-        "entity": "0",
+        "admin": false,
+        "entity": "1",
         "rights": {
           "user": {
             "user": {
@@ -102,8 +104,9 @@
     },
     {
       "endpoint": "/users?limit=100",
+      "credentialRole": "CONNECTOR",
       "httpStatus": 200,
-      "durationMs": 418,
+      "durationMs": 439,
       "data": [
         {
           "id": "1",
@@ -141,8 +144,9 @@
     },
     {
       "endpoint": "/users/2?includepermissions=1",
+      "credentialRole": "CONNECTOR",
       "httpStatus": 200,
-      "durationMs": 498,
+      "durationMs": 433,
       "data": {
         "id": "2",
         "login": "techzone_api",
@@ -151,25 +155,93 @@
         "entity": "1",
         "rights": {
           "user": {
-            "user": {},
-            "self": {},
+            "user": {
+              "lire": 1,
+              "creer": 1,
+              "password": 1,
+              "supprimer": 1,
+              "export": 1
+            },
+            "self": {
+              "creer": 1,
+              "password": 1
+            },
             "user_advance": {},
             "self_advance": {},
             "group_advance": {}
+          },
+          "produit": {
+            "lire": 1,
+            "creer": 1,
+            "supprimer": 1,
+            "export": 1
+          },
+          "commande": {
+            "lire": 1,
+            "creer": 1,
+            "supprimer": 1,
+            "commande": {
+              "export": 1
+            }
+          },
+          "societe": {
+            "lire": 1,
+            "creer": 1,
+            "supprimer": 1,
+            "export": 1,
+            "thirdparty_paymentinformation": {
+              "write": 1
+            },
+            "client": {
+              "voir": 1
+            },
+            "contact": {
+              "lire": 1,
+              "creer": 1,
+              "supprimer": 1,
+              "export": 1
+            }
+          },
+          "export": {
+            "lire": 1,
+            "creer": 1
+          },
+          "import": {
+            "run": 1
+          },
+          "agenda": {
+            "myactions": {
+              "read": 1,
+              "create": 1,
+              "delete": 1
+            },
+            "allactions": {
+              "read": 1,
+              "create": 1,
+              "delete": 1
+            },
+            "export": 1
+          },
+          "api": {
+            "apikey": {
+              "generate": 1
+            }
           }
         }
       }
     },
     {
       "endpoint": "/users/2/groups",
+      "credentialRole": "CONNECTOR",
       "httpStatus": 200,
-      "durationMs": 504,
+      "durationMs": 490,
       "data": []
     },
     {
       "endpoint": "/setup/modules",
+      "credentialRole": "ADMIN_AUDIT_ONLY",
       "httpStatus": 200,
-      "durationMs": 433,
+      "durationMs": 511,
       "data": [
         "agenda",
         "api",
@@ -184,8 +256,9 @@
     },
     {
       "endpoint": "/setup/modules/status/all?status=all",
+      "credentialRole": "ADMIN_AUDIT_ONLY",
       "httpStatus": 200,
-      "durationMs": 493,
+      "durationMs": 547,
       "data": {
         "SOCIETE": {
           "module": "modSociete",

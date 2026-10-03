@@ -9,7 +9,9 @@ const safeUser = user => ({ id: user.id, login: user.login, active: String(user.
   for (const endpoint of ['/status', '/users/info?includepermissions=1', '/users?limit=100', '/users/2?includepermissions=1', '/users/2/groups', '/setup/modules', '/setup/modules/status/all?status=all']) {
     const started = Date.now();
     try {
-      const response = await fetch(base + endpoint, { headers: { DOLAPIKEY: env.DOLIBARR_API_KEY }, signal: AbortSignal.timeout(15000) });
+      const administrativeRead = endpoint.startsWith('/setup/');
+      const credential = administrativeRead ? env.DOLIBARR_ADMIN_AUDIT_API_KEY || env.DOLIBARR_API_KEY : env.DOLIBARR_API_KEY;
+      const response = await fetch(base + endpoint, { headers: { DOLAPIKEY: credential }, signal: AbortSignal.timeout(15000) });
       const body = await response.json();
       let data;
       if (response.ok) {
@@ -20,7 +22,7 @@ const safeUser = user => ({ id: user.id, login: user.login, active: String(user.
         else if (endpoint === '/setup/modules') data = body;
         else data = Object.fromEntries(['SOCIETE', 'PRODUCT', 'COMMANDE', 'FACTURE', 'STOCK'].map(key => [key, { module: body[key]?.modName, active: String(body[key]?.active) === '1' }]));
       }
-      evidence.requests.push({ endpoint, httpStatus: response.status, durationMs: Date.now() - started, data });
+      evidence.requests.push({ endpoint, credentialRole: administrativeRead && env.DOLIBARR_ADMIN_AUDIT_API_KEY ? 'ADMIN_AUDIT_ONLY' : 'CONNECTOR', httpStatus: response.status, durationMs: Date.now() - started, data });
     } catch (error) { evidence.requests.push({ endpoint, error: error.name, durationMs: Date.now() - started }); }
   }
   fs.writeFileSync(root + '/.runtime/dolibarr-access-audit.json', JSON.stringify(evidence, null, 2));
