@@ -33,7 +33,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const err = exception as StructuredError;
 
     const dbCode = (exception as any)?.code || (exception as any)?.cause?.code;
-    if (['P1001', 'P1002', 'P1017', 'ECONNREFUSED', 'ETIMEDOUT', '57P01'].includes(dbCode)) {
+    if ((exception as any)?.isAxiosError && ['ECONNREFUSED', 'ECONNRESET', 'ECONNABORTED', 'ENOTFOUND', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH', 'EAI_AGAIN', 'ERR_NETWORK'].includes(dbCode)) {
+      const timeout = ['ETIMEDOUT', 'ECONNABORTED'].includes(dbCode);
+      status = timeout ? 504 : 503;
+      code = timeout ? 'INTEGRATION_TIMEOUT' : 'INTEGRATION_PROVIDER_UNAVAILABLE';
+      message = timeout ? 'Le delai de reponse du fournisseur est depasse.' : 'Le fournisseur est inaccessible.';
+    } else if (['P1001', 'P1002', 'P1017', 'ECONNREFUSED', 'ETIMEDOUT', '57P01'].includes(dbCode)) {
       status = 503;
       code = 'DATABASE_UNAVAILABLE';
       message = 'La base de données est indisponible.';
@@ -41,8 +46,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = exception.getStatus();
       const exResponse = exception.getResponse();
       message = typeof exResponse === 'string' ? exResponse : (exResponse as any).message || message;
-      code = (exResponse as any)?.code || (status === 403 ? 'FORBIDDEN' : status === 401 ? 'UNAUTHENTICATED' : status === 400 ? 'VALIDATION_ERROR' : code);
-      details = (exResponse as any)?.details;
+      code = (exResponse as any)?.code || (exResponse as any)?.error?.code || (status === 403 ? 'FORBIDDEN' : status === 401 ? 'UNAUTHENTICATED' : status === 400 ? 'VALIDATION_ERROR' : code);
+      details = (exResponse as any)?.details ?? (exResponse as any)?.error?.details;
     } else if (exception && typeof exception === 'object' && 'statusCode' in exception && 'code' in exception) {
       status = err.statusCode!;
       message = err.message || message;
