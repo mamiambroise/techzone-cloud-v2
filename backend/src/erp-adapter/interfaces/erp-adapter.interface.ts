@@ -34,13 +34,15 @@ export interface ErpOrder {
 export interface StockInfo {
   productId: string;
   currentStock: number;
-  lastUpdated: string;
+  lastUpdated?: string;
 }
 
 export interface HealthCheckResult {
   status: 'CONNECTED' | 'DEGRADED' | 'UNAVAILABLE' | 'NOT_CONFIGURED';
   mode: string;
   timestamp: string;
+  code?: string;
+  message?: string;
 }
 
 // === ENTITES ERP COMPLETES (cahier des charges - Partie IV) ===
@@ -326,21 +328,21 @@ export interface ErpStats {
 // Interface principale pour tous les adaptateurs ERP
 export interface IErpAdapter {
   // Clients
-  getClients(): Promise<ErpClient[]>;
+  getClients(options?: { page?: number; limit?: number }): Promise<ErpClient[]>;
   getClientById(id: string): Promise<ErpClient>;
   createClient(data: Omit<ErpClient, 'id'>): Promise<ErpClient>;
   updateClient(id: string, data: Partial<ErpClient>): Promise<ErpClient>;
   deleteClient(id: string): Promise<void>;
 
   // Produits
-  getProducts(): Promise<ErpProduct[]>;
+  getProducts(options?: { page?: number; limit?: number }): Promise<ErpProduct[]>;
   getProductById(id: string): Promise<ErpProduct>;
   createProduct(data: Omit<ErpProduct, 'id'>): Promise<ErpProduct>;
   updateProduct(id: string, data: Partial<ErpProduct>): Promise<ErpProduct>;
   deleteProduct(id: string): Promise<void>;
 
   // Commandes
-  getOrders(): Promise<ErpOrder[]>;
+  getOrders(options?: { page?: number; limit?: number }): Promise<ErpOrder[]>;
   getOrderById(id: string): Promise<ErpOrder>;
   createOrder(data: { clientId: string; lines: ErpOrderLine[] }): Promise<ErpOrder>;
   updateOrder(id: string, data: Partial<ErpOrder>): Promise<ErpOrder>;
@@ -366,7 +368,7 @@ export interface IErpAdapter {
   deleteQuote(id: string): Promise<void>;
 
   // Factures
-  getInvoices(): Promise<ErpInvoice[]>;
+  getInvoices(options?: { page?: number; limit?: number }): Promise<ErpInvoice[]>;
   getInvoiceById(id: string): Promise<ErpInvoice>;
   createInvoice(data: { clientId: string; lines: InvoiceLine[]; status?: string; dueDate?: string }): Promise<ErpInvoice>;
   updateInvoice(id: string, data: Partial<ErpInvoice>): Promise<ErpInvoice>;

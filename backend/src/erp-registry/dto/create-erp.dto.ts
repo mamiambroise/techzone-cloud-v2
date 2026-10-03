@@ -1,7 +1,17 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, IsInt, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateErpDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
+  apiKey?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  entity?: number;
   @ApiProperty({ description: 'Code unique de l\'ERP', example: 'SAP_B1' })
   @IsString()
   @IsNotEmpty()

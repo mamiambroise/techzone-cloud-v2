@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-03T03:15:22.723Z",
+  "kind": "REAL_BROWSER_AND_REAL_DOLIBARR",
+  "resources": [
+    {
+      "resource": "clients",
+      "techzoneEndpoint": "/api/erp/clients",
+      "httpStatus": 200,
+      "durationMs": 869,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "e863c388-c398-463b-b5c2-8149be8e3e85",
+      "correlationId": "e863c388-c398-463b-b5c2-8149be8e3e85",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/thirdparties",
+      "upstreamStatus": 404,
+      "upstreamDurationMs": 514
+    },
+    {
+      "resource": "products",
+      "techzoneEndpoint": "/api/erp/products",
+      "httpStatus": 200,
+      "durationMs": 2195,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "6d607476-a34e-425d-9572-c508402a8275",
+      "correlationId": "6d607476-a34e-425d-9572-c508402a8275",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/products",
+      "upstreamStatus": 200,
+      "upstreamDurationMs": 1897
+    },
+    {
+      "resource": "orders",
+      "techzoneEndpoint": "/api/erp/orders",
+      "httpStatus": 200,
+      "durationMs": 2196,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "69055d74-72fc-4ff2-9a68-e6d4508524ae",
+      "correlationId": "69055d74-72fc-4ff2-9a68-e6d4508524ae",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/orders",
+      "upstreamStatus": 200,
+      "upstreamDurationMs": 1809
+    },
+    {
+      "resource": "invoices",
+      "techzoneEndpoint": "/api/erp/invoices",
+      "httpStatus": 502,
+      "durationMs": 1036,
+      "countReturned": null,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "d29a8bc9-dbd8-430b-8471-27dbd256afd9",
+      "correlationId": "d29a8bc9-dbd8-430b-8471-27dbd256afd9",
+      "finalUiState": "FORBIDDEN",
+      "dolibarrEndpoint": "/api/index.php/invoices",
+      "upstreamStatus": 403,
+      "upstreamDurationMs": 831,
+      "transportCode": "ERR_BAD_REQUEST"
+    },
+    {
+      "resource": "stocks",
+      "techzoneEndpoint": "/api/erp/stocks",
+      "httpStatus": 200,
+      "durationMs": 4263,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "09fb0f52-26a1-4d0b-a431-ee0cc6ffd10a",
+      "correlationId": "09fb0f52-26a1-4d0b-a431-ee0cc6ffd10a",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/products",
+      "upstreamStatus": 200,
+      "upstreamDurationMs": 3885
+    }
+  ],
+  "cancelled": [
+    {
+      "resource": "clients",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "products",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "orders",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "invoices",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "stocks",
+      "reason": "net::ERR_ABORTED"
+    }
+  ],
+  "errors": [],
+  "responsive": [
+    {
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "overflow": false
+    }
+  ],
+  "status": "PASS",
+  "dataAccessStatus": "FAIL"
+}

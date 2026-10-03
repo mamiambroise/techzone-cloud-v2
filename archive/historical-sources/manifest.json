@@ -1,0 +1,61 @@
+[
+  {
+    "name": "business-manager-develop",
+    "commit": "4007b49dfc0635980c0ce4a52c902ee5daf96c99",
+    "prefix": null,
+    "files": 266,
+    "excluded": [],
+    "excludedConfiguration": []
+  },
+  {
+    "name": "business-manager-mami",
+    "commit": "91865b404245e11ca98293776b2ca7e936052270",
+    "prefix": null,
+    "files": 267,
+    "excluded": [],
+    "excludedConfiguration": []
+  },
+  {
+    "name": "business-manager-main",
+    "commit": "0e7df3f7d1f321bb16ff68a288ea6e6c3d215041",
+    "prefix": null,
+    "files": 259,
+    "excluded": [],
+    "excludedConfiguration": []
+  },
+  {
+    "name": "business-manager-front-end",
+    "commit": "998083e53f1ca3692f9943f77bd44e611b1a2eeb",
+    "prefix": null,
+    "files": 2,
+    "excluded": [],
+    "excludedConfiguration": []
+  },
+  {
+    "name": "erp-full",
+    "commit": "fc6fd2a5dcdbe4104a38ddfe7c8acb17a9c36bfc",
+    "prefix": "new erp-adapter-platform",
+    "files": 192,
+    "excluded": [
+      "new erp-adapter-platform/.agents/skills/prisma-composer/SKILL.md",
+      "new erp-adapter-platform/.claude/skills/prisma-composer/SKILL.md",
+      "new erp-adapter-platform/.cursor/skills/prisma-composer/SKILL.md",
+      "new erp-adapter-platform/.devin/skills/prisma-composer/SKILL.md"
+    ],
+    "excludedConfiguration": [
+      "new erp-adapter-platform/backend/.env.example",
+      "new erp-adapter-platform/backend/.env.production.example",
+      "new erp-adapter-platform/docker-compose.yml"
+    ]
+  },
+  {
+    "name": "back-erp",
+    "commit": "fd9febec1a913795f7c474b95f1dbddbe8b29f80",
+    "prefix": "new erp-adapter-platform",
+    "files": 74,
+    "excluded": [],
+    "excludedConfiguration": [
+      "new erp-adapter-platform/docker-compose.yml"
+    ]
+  }
+]

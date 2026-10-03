@@ -20,8 +20,11 @@ import {
 
 export default function PlatformContractView() {
   const dispatch = useDispatch();
-  const platformContractLocked = useSelector((state) => state.platform.platformContractLocked);
   const activeUser = useSelector((state) => state.platform.activeUser);
+
+  // État réel du verrou : le backend fait foi (contrats statut LOCKED).
+  const contracts = useSelector((state) => state.contracts.contracts);
+  const platformContractLocked = contracts.some((contract) => contract.status === 'LOCKED') || contracts.length === 0;
 
   const [simulatedError, setSimulatedError] = useState(null);
 

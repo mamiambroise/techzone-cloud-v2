@@ -57,7 +57,7 @@ describe('ErpAdapterService', () => {
 
   it('devrait pouvoir reconfigurer Dolibarr', () => {
     expect(() =>
-      service.configureDolibarr({ baseUrl: 'http://localhost/dolibarr', entity: 1 }),
+      service.configureDolibarr({ baseUrl: 'https://erp.example.com', entity: 1 }),
     ).not.toThrow();
   });
 
@@ -107,7 +107,7 @@ describe('ErpAdapterService', () => {
       await expect(service.resolveAdapterForTenant('tenant-x')).rejects.toThrow(ErpError);
     });
 
-    it('devrait mettre en cache l adaptateur pour un tenant', async () => {
+    it('devrait revalider la configuration du tenant a chaque resolution', async () => {
       const mockRegistry = {
         tenantId: 'tenant-cache',
         code: 'DOLI-CACHE',
@@ -121,8 +121,8 @@ describe('ErpAdapterService', () => {
       const adapter1 = await service.resolveAdapterForTenant('tenant-cache');
       const adapter2 = await service.resolveAdapterForTenant('tenant-cache');
 
-      expect(adapter1).toBe(adapter2);
-      expect(erpRegistryService.getActiveForTenant).toHaveBeenCalledTimes(1);
+      expect(adapter1).not.toBe(adapter2);
+      expect(erpRegistryService.getActiveForTenant).toHaveBeenCalledTimes(2);
     });
 
     it('devrait isoler les tenants avec des instances distinctes', async () => {

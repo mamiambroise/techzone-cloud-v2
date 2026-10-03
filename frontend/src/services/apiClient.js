@@ -56,7 +56,7 @@ function buildNormalizedError(response, config, error) {
     window.dispatchEvent(new CustomEvent('tenant:required', { detail: normalized }));
   }
 
-  window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
+  if (config?.errorHandling !== 'local') window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
   return normalized;
 }
 
@@ -98,7 +98,7 @@ function createApiClient(baseURL) {
           traceId: null,
           details: null,
         };
-        window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
+        if (config?.errorHandling !== 'local') window.dispatchEvent(new CustomEvent('api:error', { detail: normalized }));
         error.normalized = normalized;
         return Promise.reject(error);
       }
@@ -146,7 +146,7 @@ export const iamTokenStore = {
 };
 
 export const erpRegistryService = {
-  getAll: () => api.get('/erp-registry'),
+  getAll: (config) => api.get('/erp-registry', config),
   getOne: (id) => api.get(`/erp-registry/${id}`),
   getByCode: (code) => api.get(`/erp-registry/code/${code}`),
   create: (data) => api.post('/erp-registry', data),
@@ -155,7 +155,7 @@ export const erpRegistryService = {
 };
 
 export const clientService = {
-  getAll: () => api.get('/erp/clients'),
+  getAll: (config) => api.get('/erp/clients', config),
   getOne: (id) => api.get(`/erp/clients/${id}`),
   create: (data) => api.post('/erp/clients', data),
   update: (id, data) => api.put(`/erp/clients/${id}`, data),
@@ -163,7 +163,7 @@ export const clientService = {
 };
 
 export const productService = {
-  getAll: () => api.get('/erp/products'),
+  getAll: (config) => api.get('/erp/products', config),
   getOne: (id) => api.get(`/erp/products/${id}`),
   create: (data) => api.post('/erp/products', data),
   update: (id, data) => api.put(`/erp/products/${id}`, data),
@@ -171,7 +171,7 @@ export const productService = {
 };
 
 export const orderService = {
-  getAll: () => api.get('/erp/orders'),
+  getAll: (config) => api.get('/erp/orders', config),
   getOne: (id) => api.get(`/erp/orders/${id}`),
   create: (data) => api.post('/erp/orders', data),
   update: (id, data) => api.put(`/erp/orders/${id}`, data),
@@ -179,7 +179,7 @@ export const orderService = {
 };
 
 export const supplierService = {
-  getAll: () => api.get('/erp/suppliers'),
+  getAll: (config) => api.get('/erp/suppliers', config),
   getOne: (id) => api.get(`/erp/suppliers/${id}`),
   create: (data) => api.post('/erp/suppliers', data),
   update: (id, data) => api.put(`/erp/suppliers/${id}`, data),
@@ -187,7 +187,7 @@ export const supplierService = {
 };
 
 export const quoteService = {
-  getAll: () => api.get('/erp/quotes'),
+  getAll: (config) => api.get('/erp/quotes', config),
   getOne: (id) => api.get(`/erp/quotes/${id}`),
   create: (data) => api.post('/erp/quotes', data),
   update: (id, data) => api.put(`/erp/quotes/${id}`, data),
@@ -195,7 +195,7 @@ export const quoteService = {
 };
 
 export const invoiceService = {
-  getAll: () => api.get('/erp/invoices'),
+  getAll: (config) => api.get('/erp/invoices', config),
   getOne: (id) => api.get(`/erp/invoices/${id}`),
   create: (data) => api.post('/erp/invoices', data),
   update: (id, data) => api.put(`/erp/invoices/${id}`, data),
@@ -203,13 +203,13 @@ export const invoiceService = {
 };
 
 export const paymentService = {
-  getAll: () => api.get('/erp/payments'),
+  getAll: (config) => api.get('/erp/payments', config),
   getOne: (id) => api.get(`/erp/payments/${id}`),
   create: (data) => api.post('/erp/payments', data),
 };
 
 export const warehouseService = {
-  getAll: () => api.get('/erp/warehouses'),
+  getAll: (config) => api.get('/erp/warehouses', config),
   getOne: (id) => api.get(`/erp/warehouses/${id}`),
   create: (data) => api.post('/erp/warehouses', data),
   update: (id, data) => api.put(`/erp/warehouses/${id}`, data),
@@ -217,26 +217,26 @@ export const warehouseService = {
 };
 
 export const shipmentService = {
-  getAll: () => api.get('/erp/shipments'),
+  getAll: (config) => api.get('/erp/shipments', config),
   getOne: (id) => api.get(`/erp/shipments/${id}`),
   create: (data) => api.post('/erp/shipments', data),
   update: (id, data) => api.put(`/erp/shipments/${id}`, data),
 };
 
 export const documentService = {
-  getAll: () => api.get('/erp/documents'),
+  getAll: (config) => api.get('/erp/documents', config),
   getOne: (id) => api.get(`/erp/documents/${id}`),
   create: (data) => api.post('/erp/documents', data),
   delete: (id) => api.delete(`/erp/documents/${id}`),
 };
 
 export const stockMovementService = {
-  getAll: () => api.get('/erp/stock-movements'),
+  getAll: (config) => api.get('/erp/stock-movements', config),
   create: (data) => api.post('/erp/stock-movements', data),
 };
 
 export const purchaseService = {
-  getAll: () => api.get('/erp/purchases'),
+  getAll: (config) => api.get('/erp/purchases', config),
   getOne: (id) => api.get(`/erp/purchases/${id}`),
   create: (data) => api.post('/erp/purchases', data),
   update: (id, data) => api.put(`/erp/purchases/${id}`, data),
@@ -250,7 +250,7 @@ export const productVariantService = {
 };
 
 export const serviceService = {
-  getAll: () => api.get('/erp/services'),
+  getAll: (config) => api.get('/erp/services', config),
   getOne: (id) => api.get(`/erp/services/${id}`),
   create: (data) => api.post('/erp/services', data),
   update: (id, data) => api.put(`/erp/services/${id}`, data),
@@ -258,32 +258,32 @@ export const serviceService = {
 };
 
 export const stockTransferService = {
-  getAll: () => api.get('/erp/stock-transfers'),
+  getAll: (config) => api.get('/erp/stock-transfers', config),
   create: (data) => api.post('/erp/stock-transfers', data),
   update: (id, data) => api.put(`/erp/stock-transfers/${id}`, data),
 };
 
 export const inventoryService = {
-  getAll: () => api.get('/erp/inventories'),
+  getAll: (config) => api.get('/erp/inventories', config),
   getOne: (id) => api.get(`/erp/inventories/${id}`),
   create: (data) => api.post('/erp/inventories', data),
   update: (id, data) => api.put(`/erp/inventories/${id}`, data),
 };
 
 export const stockAlertService = {
-  getAll: () => api.get('/erp/stock-alerts'),
+  getAll: (config) => api.get('/erp/stock-alerts', config),
   create: (data) => api.post('/erp/stock-alerts', data),
 };
 
 export const returnService = {
-  getAll: () => api.get('/erp/returns'),
+  getAll: (config) => api.get('/erp/returns', config),
   getOne: (id) => api.get(`/erp/returns/${id}`),
   create: (data) => api.post('/erp/returns', data),
   update: (id, data) => api.put(`/erp/returns/${id}`, data),
 };
 
 export const promotionService = {
-  getAll: () => api.get('/erp/promotions'),
+  getAll: (config) => api.get('/erp/promotions', config),
   getOne: (id) => api.get(`/erp/promotions/${id}`),
   create: (data) => api.post('/erp/promotions', data),
   update: (id, data) => api.put(`/erp/promotions/${id}`, data),
@@ -291,35 +291,35 @@ export const promotionService = {
 };
 
 export const cashRegisterService = {
-  getAll: () => api.get('/erp/cash-registers'),
+  getAll: (config) => api.get('/erp/cash-registers', config),
   getOne: (id) => api.get(`/erp/cash-registers/${id}`),
   create: (data) => api.post('/erp/cash-registers', data),
   update: (id, data) => api.put(`/erp/cash-registers/${id}`, data),
 };
 
 export const expenseService = {
-  getAll: () => api.get('/erp/expenses'),
+  getAll: (config) => api.get('/erp/expenses', config),
   getOne: (id) => api.get(`/erp/expenses/${id}`),
   create: (data) => api.post('/erp/expenses', data),
   delete: (id) => api.delete(`/erp/expenses/${id}`),
 };
 
 export const reservationService = {
-  getAll: () => api.get('/erp/reservations'),
+  getAll: (config) => api.get('/erp/reservations', config),
   getOne: (id) => api.get(`/erp/reservations/${id}`),
   create: (data) => api.post('/erp/reservations', data),
   update: (id, data) => api.put(`/erp/reservations/${id}`, data),
 };
 
 export const projectService = {
-  getAll: () => api.get('/erp/projects'),
+  getAll: (config) => api.get('/erp/projects', config),
   getOne: (id) => api.get(`/erp/projects/${id}`),
   create: (data) => api.post('/erp/projects', data),
   update: (id, data) => api.put(`/erp/projects/${id}`, data),
 };
 
 export const agendaService = {
-  getAll: () => api.get('/erp/agenda'),
+  getAll: (config) => api.get('/erp/agenda', config),
   create: (data) => api.post('/erp/agenda', data),
   update: (id, data) => api.put(`/erp/agenda/${id}`, data),
   delete: (id) => api.delete(`/erp/agenda/${id}`),
@@ -468,4 +468,4 @@ export const iamBillingService = {
   checkAccess: (body) => authApi.post('/billing/access/decide', body),
 };
 
-export const erpUserService = { getAll: () => api.get('/erp/users') };
+export const erpUserService = { getAll: (config) => api.get('/erp/users', config) };

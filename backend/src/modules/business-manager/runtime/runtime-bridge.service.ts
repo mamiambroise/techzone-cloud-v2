@@ -34,8 +34,20 @@ export class RuntimeBridgeService {
       try { publicJson(config.value); values[config.key] = config.value ?? config.defaultValue; } catch { /* omit private values */ }
     }
     const definition = { application: { id: applicationId, code: version.application.code, name: version.application.name, version: version.version, versionId }, environment: { id: environment.id, code: environment.code }, dataModel: entities.map(e => ({ code: e.code, fields: e.fields.map(f => ({ code: f.code, type: f.type, required: f.required })) })), features: features.map(f => ({ code: f.code, capabilities: f.capabilities.map(c => c.code) })), navigation: menus.map(m => ({ code: m.code, items: m.items.map(i => ({ code: i.code, label: i.label, routePath: i.routePath, parentItemId: i.parentItemId })) })), configuration: values };
-    const revision = await definitionRevision(this.prisma,versionId,tenantId);
-    const ready = !!report?.completedAt && ['PASS','WARNING'].includes(report.gateResult ?? '') && !!revision && report.inputHash === revision;
+    // Fail-closed: report sans référence à la révision de définition ≠ preuve de fraîcheur.
+    let revision: string | null = null;
+    try {
+      revision = await definitionRevision(this.prisma as PrismaService, versionId, tenantId);
+    } catch {
+      revision = null;
+    }
+    const reportRevision = (report as unknown as { inputHash?: unknown } | null)?.inputHash;
+    const ready =
+      !!report?.completedAt &&
+      ['PASS', 'WARNING'].includes(report.gateResult ?? '') &&
+      !!revision &&
+      typeof reportRevision === 'string' &&
+      reportRevision === revision;
     return { ...definition, revision: contractHash(definition), readiness: ready ? 'READY' : 'NOT_READY', reasonCode: ready ? 'QUALITY_GATE_PASSED' : 'QUALITY_GATE_MISSING_FAILED_OR_OUTDATED' };
   }
 

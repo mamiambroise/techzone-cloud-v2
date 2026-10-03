@@ -4,9 +4,13 @@ import { CreateErpDto } from './dto/create-erp.dto';
 import { UpdateErpDto } from './dto/update-erp.dto';
 import { ERPRegistry } from '../generated/prisma/client';
 import { ErpError } from '../erp-adapter/erp-error';
+import { encryptErpKey } from './erp-credentials';
+import { validateDolibarrUrl } from '../erp-adapter/dolibarr/dolibarr-destination';
+import { randomUUID } from 'node:crypto';
 
 export interface TenantContext {
   tenantId?: string;
+  actorId?: string;
 }
 
 @Injectable()
@@ -29,6 +33,7 @@ export class ErpRegistryService {
 
   async create(dto: CreateErpDto, ctx?: TenantContext): Promise<ERPRegistry> {
     const tenantId = this.requireTenant(ctx);
+    validateDolibarrUrl(dto.url);
     this.logger.log(`Creation ERP: ${dto.code} [tenant=${tenantId}]`);
 
     const existing = await this.prisma.eRPRegistry.findUnique({
@@ -46,11 +51,14 @@ export class ErpRegistryService {
       type: dto.type,
       url: dto.url,
     };
-    if (dto.environment) {
-      data.capabilities = { environment: dto.environment };
-    }
+    data.capabilities = { environment: dto.environment || 'development', entity: dto.entity || 1,
+      ...(dto.apiKey?.trim() ? { encryptedApiKey: encryptErpKey(dto.apiKey.trim(), tenantId) } : {}) };
 
-    const erp = await this.prisma.eRPRegistry.create({ data });
+    const erp = await this.prisma.$transaction(async tx => {
+      const created = await tx.eRPRegistry.create({ data });
+      await tx.auditEvent.create({ data: { tenantId, actorId: ctx?.actorId, traceId: randomUUID(), action: 'ERP_CONNECTOR_CREATED', targetType: 'ERP_CONNECTOR', targetId: created.id, result: 'SUCCESS' } });
+      return created;
+    });
     this.logger.log(`ERP cree: ${erp.id}`);
     return erp;
   }
@@ -102,18 +110,27 @@ export class ErpRegistryService {
   async update(id: string, dto: UpdateErpDto, ctx?: TenantContext): Promise<ERPRegistry> {
     const tenantId = this.requireTenant(ctx);
     this.logger.log(`Mise a jour ERP: ${id} [tenant=${tenantId}]`);
-    await this.getOne(id, ctx);
+    const existing = await this.getOne(id, ctx);
+    if (dto.url !== undefined) validateDolibarrUrl(dto.url);
 
     const data: any = {};
     if (dto.nom !== undefined) data.nom = dto.nom;
     if (dto.type !== undefined) data.type = dto.type;
     if (dto.url !== undefined) data.url = dto.url;
-    if (dto.status !== undefined) data.status = dto.status;
-    if (dto.environment !== undefined) data.capabilities = { environment: dto.environment };
+    if (dto.status !== undefined) data.status = dto.status.toUpperCase();
+    const capabilities = { ...((existing.capabilities || {}) as Record<string, any>) };
+    if (dto.environment !== undefined) capabilities.environment = dto.environment;
+    if (dto.entity !== undefined) capabilities.entity = dto.entity;
+    if (dto.apiKey?.trim()) {
+      capabilities.encryptedApiKey = encryptErpKey(dto.apiKey.trim(), tenantId);
+      delete capabilities.apiKey;
+    }
+    data.capabilities = capabilities;
 
-    const erp = await this.prisma.eRPRegistry.update({
-      where: { id },
-      data,
+    const erp = await this.prisma.$transaction(async tx => {
+      const updated = await tx.eRPRegistry.update({ where: { id, tenantId }, data });
+      await tx.auditEvent.create({ data: { tenantId, actorId: ctx?.actorId, traceId: randomUUID(), action: dto.apiKey?.trim() ? 'ERP_CREDENTIAL_CHANGED' : 'ERP_CONNECTOR_CONFIGURED', targetType: 'ERP_CONNECTOR', targetId: id, result: 'SUCCESS', metadata: { status: updated.status } } });
+      return updated;
     });
     this.logger.log(`ERP mis a jour: ${erp.id}`);
     return erp;
@@ -123,8 +140,9 @@ export class ErpRegistryService {
     const tenantId = this.requireTenant(ctx);
     this.logger.log(`Suppression ERP: ${id} [tenant=${tenantId}]`);
     await this.getOne(id, ctx);
-    await this.prisma.eRPRegistry.delete({
-      where: { id },
+    await this.prisma.$transaction(async tx => {
+      await tx.eRPRegistry.delete({ where: { id, tenantId } });
+      await tx.auditEvent.create({ data: { tenantId, actorId: ctx?.actorId, traceId: randomUUID(), action: 'ERP_CONNECTOR_DELETED', targetType: 'ERP_CONNECTOR', targetId: id, result: 'SUCCESS' } });
     });
     this.logger.log(`ERP supprime: ${id}`);
   }
@@ -133,7 +151,8 @@ export class ErpRegistryService {
     const tenantId = this.requireTenant(ctx);
     this.logger.log(`Resolution ERP actif [tenant=${tenantId}]`);
     const erp = await this.prisma.eRPRegistry.findFirst({
-      where: { tenantId, status: 'ACTIVE' },
+      where: { tenantId, status: { in: ['ACTIVE', 'active'] } },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
     });
     if (!erp) {
       throw new ErpError(
@@ -144,5 +163,15 @@ export class ErpRegistryService {
       );
     }
     return erp;
+  }
+
+  async recordCheck(id: string | undefined, status: string, ctx: TenantContext) {
+    const registry = id ? await this.getOne(id, ctx) : await this.getActiveForTenant(ctx);
+    await this.prisma.auditEvent.create({ data: { tenantId: this.requireTenant(ctx), actorId: ctx.actorId, traceId: randomUUID(), action: 'ERP_CONNECTOR_TESTED', targetType: 'ERP_CONNECTOR', targetId: registry.id, result: status } });
+  }
+
+  async history(id: string, ctx: TenantContext) {
+    await this.getOne(id, ctx);
+    return this.prisma.auditEvent.findMany({ where: { tenantId: this.requireTenant(ctx), targetType: 'ERP_CONNECTOR', targetId: id }, take: 50, orderBy: { createdAt: 'desc' }, select: { id: true, action: true, result: true, traceId: true, createdAt: true } });
   }
 }

@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { applicationPath } from '../app/routes.js';
 import { routeForTab } from '../app/navigationConfig.js';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { setSelectedAppId } from '../store/applicationsSlice.js';
+import { setSelectedAppId, fetchApplicationsAsync } from '../store/applicationsSlice.js';
 import { setActiveTab, addToast } from '../store/platformSlice.js';
 import {
   Search,
@@ -49,6 +49,11 @@ export default function ApplicationsCatalogView({ onOpenNewApp }) {
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [showNewAppMenu, setShowNewAppMenu] = useState(false);
+
+  // REAL DATA ONLY : charge le catalogue réel au montage.
+  useEffect(() => {
+    dispatch(fetchApplicationsAsync());
+  }, [dispatch]);
 
   // Status counts for quick pills matching Screenshot 2
   const counts = {

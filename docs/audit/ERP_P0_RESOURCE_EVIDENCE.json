@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-03T03:32:04.621Z",
+  "kind": "REAL_BROWSER_AND_REAL_DOLIBARR",
+  "resources": [
+    {
+      "resource": "clients",
+      "techzoneEndpoint": "/api/erp/clients",
+      "httpStatus": 200,
+      "durationMs": 606,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "11c1bbc9-fdb7-4438-9803-ff44552d2acc",
+      "correlationId": "11c1bbc9-fdb7-4438-9803-ff44552d2acc",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/thirdparties",
+      "upstreamStatus": 404,
+      "upstreamDurationMs": 466,
+      "capability": "societe.lire",
+      "capabilityState": "VERIFIED"
+    },
+    {
+      "resource": "products",
+      "techzoneEndpoint": "/api/erp/products",
+      "httpStatus": 200,
+      "durationMs": 940,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "8be6c5c2-ae26-4205-9f5d-e15a07949194",
+      "correlationId": "8be6c5c2-ae26-4205-9f5d-e15a07949194",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/products",
+      "upstreamStatus": 200,
+      "upstreamDurationMs": 806,
+      "capability": "produit.lire",
+      "capabilityState": "VERIFIED"
+    },
+    {
+      "resource": "orders",
+      "techzoneEndpoint": "/api/erp/orders",
+      "httpStatus": 200,
+      "durationMs": 984,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "d7d4d455-928e-40b9-80ad-ece364cbc351",
+      "correlationId": "d7d4d455-928e-40b9-80ad-ece364cbc351",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/orders",
+      "upstreamStatus": 200,
+      "upstreamDurationMs": 831,
+      "capability": "commande.lire",
+      "capabilityState": "VERIFIED"
+    },
+    {
+      "resource": "invoices",
+      "techzoneEndpoint": "/api/erp/invoices",
+      "httpStatus": 502,
+      "durationMs": 1000,
+      "countReturned": null,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "bd51b6f9-b8f5-4875-8189-3079073e4506",
+      "correlationId": "bd51b6f9-b8f5-4875-8189-3079073e4506",
+      "finalUiState": "FORBIDDEN",
+      "dolibarrEndpoint": "/api/index.php/invoices",
+      "upstreamStatus": 403,
+      "upstreamDurationMs": 832,
+      "transportCode": "ERR_BAD_REQUEST",
+      "capability": "facture.lire",
+      "capabilityState": "FAILED"
+    },
+    {
+      "resource": "stocks",
+      "techzoneEndpoint": "/api/erp/stocks",
+      "httpStatus": 200,
+      "durationMs": 999,
+      "countReturned": 0,
+      "code": null,
+      "traceId": "8477ff5a-c23c-4cc2-b8a6-ba5657cc87e4",
+      "correlationId": "8477ff5a-c23c-4cc2-b8a6-ba5657cc87e4",
+      "finalUiState": "EMPTY",
+      "dolibarrEndpoint": "/api/index.php/products",
+      "upstreamStatus": 200,
+      "upstreamDurationMs": 831,
+      "capability": "produit.lire + stock.lire",
+      "capabilityState": "FAILED"
+    }
+  ],
+  "cancelled": [
+    {
+      "resource": "clients",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "products",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "orders",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "invoices",
+      "reason": "net::ERR_ABORTED"
+    },
+    {
+      "resource": "stocks",
+      "reason": "net::ERR_ABORTED"
+    }
+  ],
+  "errors": [],
+  "responsive": [
+    {
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "overflow": false
+    }
+  ],
+  "stockChecks": [
+    {
+      "resource": "stock-movements",
+      "techzoneEndpoint": "/api/erp/stock-movements",
+      "dolibarrEndpoint": "/api/index.php/stockmovements",
+      "httpStatus": 502,
+      "upstreamStatus": 403,
+      "durationMs": 937,
+      "countReturned": null,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "1039e4a8-38b8-4e79-934f-1a0b31239250",
+      "correlationId": "1039e4a8-38b8-4e79-934f-1a0b31239250",
+      "capability": "stock.lire",
+      "capabilityState": "FAILED"
+    },
+    {
+      "resource": "warehouses",
+      "techzoneEndpoint": "/api/erp/warehouses",
+      "dolibarrEndpoint": "/api/index.php/warehouses",
+      "httpStatus": 502,
+      "upstreamStatus": 403,
+      "durationMs": 917,
+      "countReturned": null,
+      "code": "ERP_PERMISSION_DENIED",
+      "traceId": "0b73ba01-3f93-44f7-96e8-98a8ad599751",
+      "correlationId": "0b73ba01-3f93-44f7-96e8-98a8ad599751",
+      "capability": "stock.lire",
+      "capabilityState": "FAILED"
+    }
+  ],
+  "status": "PASS",
+  "dataAccessStatus": "FAIL",
+  "connectorIdentity": {
+    "login": "techzone_api",
+    "id": "2",
+    "tenantId": "8031055e-14af-4b43-979f-904e820306e9",
+    "connectorId": "cb3e3316-ee4e-4b7c-96d9-45192b6a13d8",
+    "credentialStorage": "IGNORED_TENANT_BOUND_ENV",
+    "authentication": "OK"
+  },
+  "p0": "NOT_DONE"
+}

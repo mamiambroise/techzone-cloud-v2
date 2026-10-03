@@ -174,6 +174,7 @@ describe('DolibarrAdapter', () => {
   beforeEach(() => {
     mockInstance = {
       interceptors: {
+        request: { use: jest.fn() },
         response: {
           use: jest.fn(),
         },
@@ -269,8 +270,8 @@ describe('DolibarrAdapter', () => {
 
     it('devrait retourner CONNECTED si la requete reussit', async () => {
       const adapter = new DolibarrAdapter();
-      adapter.configure({ apiKey: 'test-key' });
-      mockInstance.get.mockResolvedValue({ status: 200 });
+      adapter.configure({ baseUrl: 'https://erp.example.com', apiKey: 'test-key' });
+      mockInstance.get.mockResolvedValue({ status: 200, data: { success: true } });
 
       const result = await adapter.healthCheck();
       expect(result.status).toBe('CONNECTED');
@@ -278,7 +279,7 @@ describe('DolibarrAdapter', () => {
 
     it('devrait retourner UNAVAILABLE si connexion refusee', async () => {
       const adapter = new DolibarrAdapter();
-      adapter.configure({ apiKey: 'test-key' });
+      adapter.configure({ baseUrl: 'https://erp.example.com', apiKey: 'test-key' });
       const error: any = new Error('connect ECONNREFUSED');
       error.code = 'ECONNREFUSED';
       mockInstance.get.mockRejectedValue(error);

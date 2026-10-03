@@ -7,6 +7,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { integrationRequestContext } from './common/integration-request-context';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,7 +20,7 @@ async function bootstrap() {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['sec-fetch-site'] === 'cross-site') {
       return res.status(403).json({ message: 'Cross-site request refused', traceId });
     }
-    next();
+    integrationRequestContext.run({ traceId }, next);
   });
 
   app.use(cookieParser());

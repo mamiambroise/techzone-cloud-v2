@@ -6,12 +6,12 @@ import { ErpError } from './erp-error';
 import { ErpRegistryService } from '../erp-registry/erp-registry.service';
 import { ERPRegistry } from '../generated/prisma/client';
 import { DolibarrConfig, DEFAULT_DOLIBARR_CONFIG } from './dolibarr/dolibarr.config';
+import { resolveErpKey } from '../erp-registry/erp-credentials';
 
 @Injectable()
 export class ErpAdapterService {
   private readonly logger = new Logger(ErpAdapterService.name);
   private adapters: Map<string, IErpAdapter> = new Map();
-  private tenantAdapters: Map<string, IErpAdapter> = new Map();
 
   constructor(
     private readonly mockAdapter: MockAdapter,
@@ -42,18 +42,16 @@ export class ErpAdapterService {
 
   /**
    * Resolve a tenant-isolated adapter from the ERP registry.
-   * Creates and caches a new adapter instance per tenant so that
+   * Revalidates the registry on every resolution so disabled/changed credentials take effect.
+   * Creates a new adapter instance per tenant so that
    * each tenant gets its own adapter + HTTP client + URL.
    */
-  async resolveAdapterForTenant(tenantId: string): Promise<IErpAdapter> {
-    const cached = this.tenantAdapters.get(tenantId);
-    if (cached) {
-      return cached;
-    }
-
-    const registry = await this.erpRegistryService.getActiveForTenant({ tenantId });
+  async resolveAdapterForTenant(tenantId: string, connectorId?: string): Promise<IErpAdapter> {
+    if (!tenantId) throw ErpError.tenantRequired();
+    const registry = connectorId ? await this.erpRegistryService.getOne(connectorId, { tenantId }) : await this.erpRegistryService.getActiveForTenant({ tenantId });
+    if (registry.tenantId !== tenantId) throw ErpError.notConfigured();
+    if (registry.status?.toUpperCase() !== 'ACTIVE') throw new ErpError('La connexion ERP est désactivée.', 409, 'CONNECTOR_DISABLED');
     const adapter = this.createAdapterFromRegistry(registry);
-    this.tenantAdapters.set(tenantId, adapter);
     this.logger.log(`Adapter resolu pour tenant ${tenantId} - type: ${registry.type}`);
     return adapter;
   }
@@ -64,11 +62,11 @@ export class ErpAdapterService {
     if (type === 'DOLIBARR') {
       const adapter = new DolibarrAdapter();
       const capabilities = (registry.capabilities as Record<string, any>) || {};
-      const dbApiKey = String(capabilities.apiKey || '').trim();
-      const envApiKey = process.env.DOLIBARR_API_KEY || DEFAULT_DOLIBARR_CONFIG.apiKey || '';
+      const apiKey = resolveErpKey(capabilities, registry.tenantId);
+      if (!registry.url?.trim() || !apiKey) throw ErpError.notConfigured('URL ou clé API Dolibarr manquante.');
       const config: Partial<DolibarrConfig> = {
-        baseUrl: (registry.url || '').trim() || process.env.DOLIBARR_URL || DEFAULT_DOLIBARR_CONFIG.baseUrl,
-        apiKey: dbApiKey || envApiKey,
+        baseUrl: registry.url.trim(),
+        apiKey,
         entity: Number(capabilities.entity || process.env.DOLIBARR_ENTITY || DEFAULT_DOLIBARR_CONFIG.entity || 1),
       };
       adapter.configure(config);
@@ -76,6 +74,9 @@ export class ErpAdapterService {
     }
 
     if (type === 'MOCK') {
+      if (process.env.NODE_ENV !== 'test' && !(process.env.NODE_ENV !== 'production' && process.env.ERP_DEMO_MODE === 'true')) {
+        throw ErpError.notConfigured('Le mode démonstration ERP n’est pas activé.');
+      }
       return this.mockAdapter;
     }
 
