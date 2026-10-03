@@ -6,12 +6,17 @@ describe('Dolibarr real transport timeout and retry policy', () => {
   let server: Server;
   let baseUrl: string;
   let calls: number;
-  let mode: 'pending' | 'forbidden' | 'unavailable' | 'stock' | 'missing-stock';
+  let mode: 'pending' | 'forbidden' | 'unavailable' | 'stock' | 'missing-stock' | 'empty-clients' | 'missing-route';
   const previous = process.env.DOLIBARR_ALLOWED_PRIVATE_ORIGINS;
   beforeAll(async () => {
     server = createServer((_req, res) => {
       calls++;
       if (mode === 'pending') return;
+      if (mode === 'empty-clients' || mode === 'missing-route') {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 404, message: mode === 'empty-clients' ? 'Not Found: No third parties found' : 'Not Found: Route does not exist' } }));
+        return;
+      }
       if (mode === 'stock' || mode === 'missing-stock') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify([{ id: 42, ...(mode === 'stock' ? { stock_reel: 0 } : {}) }]));
@@ -45,6 +50,14 @@ describe('Dolibarr real transport timeout and retry policy', () => {
     mode = 'forbidden';
     await expect(adapter().getOrders()).rejects.toMatchObject({ code: 'FORBIDDEN', httpStatus: 403 });
     expect(calls).toBe(1);
+  });
+  it('recognizes the actual Dolibarr empty thirdparty collection response', async () => {
+    mode = 'empty-clients';
+    await expect(adapter().getClients()).resolves.toEqual([]);
+  });
+  it('does not translate a missing route into an empty collection', async () => {
+    mode = 'missing-route';
+    await expect(adapter().getClients()).rejects.toMatchObject({ httpStatus: 404 });
   });
   it('preserves a real zero stock without manufacturing a timestamp', async () => {
     mode = 'stock';

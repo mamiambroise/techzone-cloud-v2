@@ -156,9 +156,16 @@ export class DolibarrAdapter implements IErpAdapter {
 
   async getClients(options: { page?: number; limit?: number } = {}): Promise<ErpClient[]> {
     this.logger.log('GET /thirdparties');
-    const { data } = await this.http.get('/thirdparties', {
+    const { data, status } = await this.http.get('/thirdparties', {
       params: { entity: this.config.entity, limit: options.limit ?? 100, page: options.page ?? 0 },
+      validateStatus: status => (status >= 200 && status < 300) || status === 404,
     });
+    // Dolibarr 23 returns this specific 404 for a genuinely empty collection.
+    // Other 404 responses (including a missing route) remain errors.
+    if (status === 404) {
+      if (data?.error?.code === 404 && data.error.message === 'Not Found: No third parties found') return [];
+      throw DolibarrError.fromHttpError(status, data);
+    }
     const clients: DolibarrClient[] = this.readList(data, 'thirdparties');
     this.logger.log(`${clients.length} clients recus`);
     return clients.map(DolibarrMapper.mapFromDolibarrClient);
