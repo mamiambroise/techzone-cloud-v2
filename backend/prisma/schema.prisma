@@ -101,6 +101,7 @@ model ApplicationVersion {
   tenantId      String?                  @db.Uuid
 
   releases Release[]
+  packVersions PackVersion[]
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -3899,6 +3900,7 @@ model PackVersion {
   id               String           @id @default(uuid()) @db.Uuid
   tenantId         String @db.Uuid
   packId           String           @db.Uuid
+  applicationVersionId String?      @db.Uuid
   versionNumber    String
   label            String?
   description      String?
@@ -3922,6 +3924,7 @@ model PackVersion {
   archivedAt       DateTime?        @db.Timestamptz(6)
   rowVersion       Int              @default(1)
   pack             Pack             @relation(fields: [packId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  applicationVersion ApplicationVersion? @relation(fields: [applicationVersionId], references: [id], onDelete: Restrict)
   modules          PackModule[]
   features         PackFeature[]
   dependencies     PackDependency[]
@@ -3933,6 +3936,7 @@ model PackVersion {
   @@unique([id, tenantId])
   @@unique([tenantId, packId, versionNumber])
   @@index([tenantId, status])
+  @@index([applicationVersionId])
   @@map("pm_pack_versions")
 }
 

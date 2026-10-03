@@ -9,6 +9,7 @@ import {
 import { Prisma, PackVersion } from '../../generated/prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { UiBuilderService } from '../ui-builder/ui-builder.service';
 
 import type { IamPrincipal as Actor } from '../../iam/principal.decorator';
 type Input = Record<string, unknown>;
@@ -29,7 +30,7 @@ function invalidRuleField(expression: unknown): boolean {
 
 @Injectable()
 export class PackManagerService {
-  constructor(private readonly db: PrismaService) {}
+  constructor(private readonly db: PrismaService, private readonly uiBuilder?: UiBuilderService) {}
 
   private inTransaction = false;
   private transaction<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>, _options?: unknown): Promise<T> {
@@ -49,7 +50,7 @@ export class PackManagerService {
     }
     try {
       return await this.db.$transaction(async tx => {
-        const service = new PackManagerService(tx as unknown as PrismaService);
+        const service = new PackManagerService(tx as unknown as PrismaService, this.uiBuilder);
         service.inTransaction = true;
         const result = await (service as any)[method](...args);
         await service.audit(tx,actor,'PACK_MANAGER',result?.id ?? String(args[0]),'pack.'+method);
@@ -303,12 +304,15 @@ export class PackManagerService {
     if (pack.archivedAt) throw new ConflictException('PACK_ARCHIVED');
     if (input.sourceVersionId) { const source = await this.version(String(input.sourceVersionId), actor); if (source.packId !== packId) throw new BadRequestException('SOURCE_VERSION_PACK_MISMATCH'); }
     const versionNumber = this.text(input, 'versionNumber', true)!;
+    const applicationVersionId = this.text(input, 'applicationVersionId', true)!;
+    await this.applicationVersion(applicationVersionId, actor);
     if (!valid(versionNumber))
       throw new BadRequestException('PACK_VERSION_SEMVER_INVALID');
     return this.db.packVersion.create({
       data: {
         tenantId: this.tenant(actor),
         packId,
+        applicationVersionId,
         versionNumber,
         label: this.text(input, 'label'),
         description: this.text(input, 'description'),
@@ -318,6 +322,14 @@ export class PackManagerService {
         createdBy: actor.userId,
       },
     });
+  }
+
+  private async applicationVersion(id: string, actor: Actor) {
+    const version = await this.db.applicationVersion.findFirst({
+      where: { id, tenantId: this.tenant(actor) }, include: { application: true },
+    });
+    if (!version || version.application.tenantId !== this.tenant(actor)) throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
+    return version;
   }
 
   async updateVersion(id: string, input: Input, actor: Actor) {
@@ -586,7 +598,8 @@ export class PackManagerService {
           severity: 'ERROR',
           message: 'Rule expression or effect is invalid',
         });
-    issues.push(...await this.publicationDependencies(this.definition(version), actor));
+    const snapshotContent = await this.definitionWithUi(version, actor, issues);
+    issues.push(...await this.publicationDependencies(snapshotContent, actor));
     for (const rule of version.rules.filter((r: any) => !r.archivedAt && r.enabled)) {
       try { validateExpression(rule.expression); } catch { issues.push({ code: 'RULE_INVALID', path: rule.id, severity: 'ERROR', message: 'Expression invalide' }); }
       const resources = rule.targetType === 'MODULE' ? version.modules : version.features;
@@ -597,7 +610,6 @@ export class PackManagerService {
     const status = issues.some((item) => item.severity === 'ERROR')
       ? 'INVALID'
       : 'VALID';
-    const snapshotContent = this.definition(version);
     const snapshotHash = hash(snapshotContent);
     return this.transaction(async (tx) => {
       const validation = await tx.packValidation.create({
@@ -711,6 +723,32 @@ export class PackManagerService {
     };
   }
 
+  /** The UI artifact is read once during validation and embedded in PackSnapshot.
+   * Published runtime never reaches back into mutable UiPage/UiThemeSetting rows. */
+  private async definitionWithUi(version: any, actor: Actor, issues: Array<{ code: string; path: string; severity: string; message: string }>) {
+    const definition: any = this.definition(version);
+    if (!version.applicationVersionId) {
+      issues.push({ code: 'LEGACY_PACK_SOURCE_UNAVAILABLE', path: 'applicationVersionId', severity: 'ERROR', message: 'Pack version historique sans ApplicationVersion explicite.' });
+      return definition;
+    }
+    if (!this.uiBuilder) {
+      issues.push({ code: 'UI_BUILDER_UNAVAILABLE', path: 'ui', severity: 'ERROR', message: 'Le service UI Builder est indisponible.' });
+      return definition;
+    }
+    try {
+      const validation = await this.uiBuilder.validate(version.applicationVersionId, this.tenant(actor), actor.userId);
+      if (validation.status === 'INVALID') {
+        issues.push({ code: 'UI_DEFINITION_INVALID', path: 'ui', severity: 'ERROR', message: 'La UI Definition contient des erreurs bloquantes.' });
+        return definition;
+      }
+      const ui = await this.uiBuilder.getUiDefinition(version.applicationVersionId, this.tenant(actor));
+      definition.ui = { schemaVersion: ui.schemaVersion, applicationVersionId: version.applicationVersionId, definition: ui, uiDefinitionHash: hash(ui) };
+    } catch {
+      issues.push({ code: 'APPLICATION_VERSION_NOT_FOUND', path: 'applicationVersionId', severity: 'ERROR', message: 'ApplicationVersion inaccessible pour ce tenant.' });
+    }
+    return definition;
+  }
+
   async generateManifest(id: string, actor: Actor) {
     const version: any = await this.version(id, actor, true);
     if (
@@ -767,7 +805,9 @@ export class PackManagerService {
           throw new ConflictException('PACK_VERSION_PUBLICATION_BLOCKED');
         if (hash(version.snapshot.content) !== version.snapshotHash || version.manifest.manifestHash !== version.manifestHash || hash(version.manifest.content) !== version.manifestHash)
           throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
-        const currentDefinition = this.definition(await this.version(id, actor, true));
+        const publicationIssues: Array<{ code: string; path: string; severity: string; message: string }> = [];
+        const currentDefinition = await this.definitionWithUi(await this.version(id, actor, true), actor, publicationIssues);
+        if (publicationIssues.length) throw new ConflictException('PACK_VALIDATION_OUTDATED');
         if (hash(currentDefinition) !== version.snapshotHash) throw new ConflictException('PACK_VALIDATION_OUTDATED');
         const dependencies = await this.publicationDependencies(currentDefinition,actor);
         if (dependencies.length) throw new ConflictException('PACK_DEPENDENCIES_CHANGED');
@@ -895,7 +935,7 @@ export class PackManagerService {
 
   async cloneVersion(id: string, input: Input, actor: Actor) {
     const source: any = await this.version(id, actor, true);
-    const target = await this.createVersion(source.packId, { ...input, sourceVersionId: id }, actor);
+    const target = await this.createVersion(source.packId, { ...input, sourceVersionId: id, applicationVersionId: input.applicationVersionId ?? source.applicationVersionId }, actor);
     const ids = new Map<string, string>();
     for (const m of source.modules.filter((m: any) => !m.archivedAt)) {
       const copy = await this.addModule(target.id, m, actor); ids.set(m.id, copy.id);

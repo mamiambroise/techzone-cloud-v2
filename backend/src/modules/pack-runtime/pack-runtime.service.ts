@@ -38,6 +38,17 @@ export class PackRuntimeService {
       const definition = source.definition as RecordValue;
       publicJson(definition);
       const issues = await this.packs.publicationDependencies(definition,actor);
+      const ui = definition.ui as RecordValue | undefined;
+      if (!ui?.definition) {
+        issues.push({ code: 'UI_DEFINITION_MISSING', severity: 'ERROR', message: 'Le manifest publié ne contient pas de snapshot UI.', path: 'ui' });
+      } else if (ui.schemaVersion !== '1.1' || ui.definition.schemaVersion !== '1.1') {
+        issues.push({ code: 'UNSUPPORTED_UI_SCHEMA', severity: 'ERROR', message: 'Version de schéma UI non supportée.', path: 'ui.schemaVersion' });
+      } else {
+        const allowed = new Set(['Container','Section','Card','Grid','Stack','Heading','Text','Input','Textarea','Select','Checkbox','DatePicker','FormField','Form','DataTable','Badge','Alert','Image','Link','Tabs','Spinner','Button']);
+        for (const page of ui.definition.pages ?? []) for (const [componentId, component] of Object.entries((page as RecordValue).components?.nodes ?? {})) {
+          if (!allowed.has((component as RecordValue).type as string)) issues.push({ code: 'UNKNOWN_COMPONENT', severity: 'ERROR', message: `Composant UI non supporté: ${(component as RecordValue).type}`, path: `ui.pages.${(page as RecordValue).key}.${componentId}` });
+        }
+      }
       if (business.readiness !== 'READY') issues.push({ code: business.reasonCode, severity: 'ERROR', message: 'Valider la version Business Manager avant la résolution.', path: 'businessVersionId' });
       const modules = definition.modules.map((m: RecordValue) => ({ ...m, state: m.enabled ? 'ACTIVE' : 'INACTIVE', reasonCode: m.enabled ? 'DECLARED_ENABLED' : 'DECLARED_DISABLED' }));
       const features = definition.features.map((f: RecordValue) => ({ ...f, state: f.enabled && f.defaultEnabled !== false ? 'ACTIVE' : 'INACTIVE', reasonCode: f.enabled ? 'DECLARED_ENABLED' : 'DECLARED_DISABLED' }));
@@ -67,7 +78,7 @@ export class PackRuntimeService {
       issues.push(...dependencyIssues(finalDefinition, publications).filter(i => !issues.some(existing => existing.code === i.code && existing.path === i.path)));
       const executable = issues.length === 0 && !resources.some(r => r.state === 'BLOCKED');
       const status = executable ? 'RESOLVED' : 'BLOCKED';
-      const effective = { contract: 'techzone.effective-runtime-manifest', contractVersion: '1.0.0', source: { packCode, packVersion, manifestHash: source.hash, packManifestId: source.id }, scope: { tenantId, applicationId, businessVersionId, environment }, status, executable, modules, features, capabilities: [...provided].sort(), dependencies: definition.dependencies, ruleDecisions: decisions, businessConfiguration: business, configuration: business.configuration };
+      const effective = { contract: 'techzone.effective-runtime-manifest', contractVersion: '1.0.0', source: { packCode, packVersion, manifestHash: source.hash, packManifestId: source.id }, scope: { tenantId, applicationId, businessVersionId, environment }, status, executable, modules, features, capabilities: [...provided].sort(), dependencies: definition.dependencies, ui, ruleDecisions: decisions, businessConfiguration: business, configuration: business.configuration };
       const functionalHash = contractHash(effective);
       const stages = [ ['manifest.load', { manifestId: source.id }], ['manifest.validate', { hash: source.hash }], ['context.resolve', { revision: business.revision }], ['module_feature.resolve', { modules: modules.length, features: features.length }], ['capability_dependency.resolve', { issues }], ['rules.evaluate', { decisions }], ['effective_manifest.build', { functionalHash, executable }] ] as const;
       const result = await this.db.$transaction(async tx => {
