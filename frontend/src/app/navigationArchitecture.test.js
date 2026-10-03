@@ -141,7 +141,8 @@ describe('Active route and parent route (RG-NAV-019, RG-NAV-020)', () => {
     ['/data-runtime/history', 'data-runtime-history'],
     ['/ui', 'ui'],
     ['/ui/pages', 'uiPages'],
-    ['/ui/builder/page-7', 'uiBuilder'],
+    ['/ui/builder/page-7', 'uiEditor'],
+    ['/ui/pages/page-7', 'uiEditor'],
     ['/automation', 'automation'],
     ['/automation/workflows', 'automationWorkflows'],
     ['/automation/executions', 'automationExecutions'],
@@ -250,5 +251,33 @@ describe('IAM filtering of the navigation', () => {
     effectiveNavigation({ permissions: ['erp:read'] }, { tenantId: 't1' }).forEach(group => {
       expect(group.entries.length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe('Destinations réelles de la sidebar (UI Builder)', () => {
+  // Une entrée de menu est une destination cliquable : elle ne doit jamais être
+  // un motif de route containing un paramètre non résolu (« /ui/builder/:pageId »),
+  // qui produirait une URL littérale non partageable dans la barre d'adresse.
+  it('expose les 8 destinations UI Builder sans paramètre de route', () => {
+    const destinations = groupEntries('ui').map((entry) => entry.route);
+    expect(destinations).toEqual([
+      '/ui',
+      '/ui/pages',
+      '/ui/builder/editor',
+      '/ui/components',
+      '/ui/forms',
+      '/ui/navigation',
+      '/ui/themes',
+      '/ui/preview',
+    ]);
+    destinations.forEach((route) => expect(route).not.toMatch(/:\w/));
+  });
+
+  it('conserve le deep link par page hors menu, protégé par la même permission', () => {
+    const deepLink = pageDefinitions.find((entry) => entry.id === 'uiBuilder');
+    expect(deepLink.route).toBe('/ui/builder/:pageId');
+    expect(deepLink.menu).toBe(false);
+    expect(deepLink.permission).toBe('ui-builder:read');
+    expect(resolveRoute('/ui/builder/page-7').permission).toBe('ui-builder:read');
   });
 });
