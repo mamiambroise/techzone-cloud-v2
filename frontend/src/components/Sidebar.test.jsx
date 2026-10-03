@@ -58,6 +58,19 @@ describe('Sections (RG-NAV-025)', () => {
 });
 
 describe('Accordion (RG-NAV-021)', () => {
+  it('renders the eight real UI Builder destinations for a principal with ui-builder:read', () => {
+    principal = { displayName: 'UI builder reader', permissions: ['ui-builder:read'], isAdmin: false };
+    renderSidebar('/ui');
+    expect(group('UI Builder')).toHaveAttribute('aria-expanded', 'true');
+    const labels = within(submenuOf('ui')).getAllByRole('link').map((link) => link.textContent);
+    expect(labels).toEqual(['Vue d’ensemble', 'Pages', 'Éditeur visuel', 'Composants', 'Formulaires', 'Navigation', 'Thème', 'Aperçu & Test']);
+  });
+
+  it('does not render UI Builder without ui-builder:read', () => {
+    principal = { displayName: 'Operator', permissions: ['automation:read'], isAdmin: false };
+    renderSidebar('/dashboard');
+    expect(screen.queryByRole('button', { name: 'UI Builder' })).toBeNull();
+  });
   it('expands a module on click and collapses it on a second click', () => {
     renderSidebar('/dashboard');
     const packs = group('Pack Manager');

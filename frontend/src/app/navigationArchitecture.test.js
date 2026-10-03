@@ -48,7 +48,7 @@ describe('Global architecture (CDC §50)', () => {
 describe('Stable ordering per module (RG-NAV-025)', () => {
   it.each([
     ['bm', ['Vue d’ensemble', 'Applications', 'Modèles de données', 'Fonctionnalités', 'Navigation', 'Configuration', 'Validation']],
-    ['ui', ['Vue d’ensemble', 'Pages', 'Formulaires', 'Composants', 'Thème', 'Aperçu & Test', 'Navigation']],
+    ['ui', ['Vue d’ensemble', 'Pages', 'Éditeur visuel', 'Composants', 'Formulaires', 'Navigation', 'Thème', 'Aperçu & Test']],
     ['automation', ['Vue d’ensemble', 'Workflows', 'Déclencheurs', 'Actions', 'Planifications', 'Exécutions', 'Modèles', 'Diagnostics', 'Règles', 'Formules']],
     ['packs', ['Vue d’ensemble', 'Packs', 'Versions', 'Modules', 'Fonctionnalités', 'Capacités', 'Dépendances', 'Règles', 'Validation & Manifest', 'Publication']],
     ['runtime', ['Vue d’ensemble', 'Contextes', 'Manifest', 'Résolution', 'Configuration effective', 'Cache', 'Diagnostics']],
@@ -141,7 +141,7 @@ describe('Active route and parent route (RG-NAV-019, RG-NAV-020)', () => {
     ['/data-runtime/history', 'data-runtime-history'],
     ['/ui', 'ui'],
     ['/ui/pages', 'uiPages'],
-    ['/ui/builder/page-7', 'uiPages'],
+    ['/ui/builder/page-7', 'uiBuilder'],
     ['/automation', 'automation'],
     ['/automation/workflows', 'automationWorkflows'],
     ['/automation/executions', 'automationExecutions'],
