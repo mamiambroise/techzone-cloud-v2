@@ -691,7 +691,6 @@ function LeafPreview({ node, resolveBinding }) {
           <span className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400">{props.placeholder || '—'}</span>
         </label>
       );
-    case 'FormField': // bindings affichés
     default:
       return (
         <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
