@@ -290,6 +290,24 @@ describe('UiBuilderService — VALIDATION ENGINE', () => {
     expect(codes).toContain('FIELD_UNKNOWN');
   });
 
+  it('refuse les composants et actions absents du contrat v1', async () => {
+    prisma.uiPage.findMany.mockResolvedValue([
+      {
+        id: 'p-1', key: 'safe', route: '/safe',
+        components: { root: 'root', nodes: {
+          root: { id: 'root', type: 'ArbitraryReact', actions: [{ type: 'EVAL', config: {} }], children: [] },
+        } },
+      },
+    ]);
+    prisma.bmEntity.findMany.mockResolvedValue([]);
+
+    const result = await service.validate(VERSION_ID, TENANT_A);
+    expect(result.status).toBe('INVALID');
+    expect(result.issues.map((issue: { code: string }) => issue.code)).toEqual(
+      expect.arrayContaining(['COMPONENT_UNKNOWN', 'ACTION_UNKNOWN']),
+    );
+  });
+
   it('isole la validation par tenant (findMany filtre tenantId)', async () => {
     prisma.uiPage.findMany.mockResolvedValue([]);
     prisma.bmEntity.findMany.mockResolvedValue([]);

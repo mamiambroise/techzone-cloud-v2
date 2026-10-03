@@ -23,6 +23,14 @@ import type {
   UpdateUiPageDto,
   UpsertUiThemeDto,
 } from './dto/ui-page.dto';
+import { UI_ACTION_TYPES } from './dto/ui-page.dto';
+
+const RENDERABLE_COMPONENTS = new Set([
+  'Container', 'Section', 'Card', 'Grid', 'Stack', 'Heading', 'Text',
+  'Input', 'Textarea', 'Select', 'Checkbox', 'DatePicker', 'FormField',
+  'Form', 'DataTable', 'Badge', 'Alert', 'Image', 'Link', 'Tabs', 'Spinner', 'Button',
+]);
+const ACTION_TYPES = new Set<string>(UI_ACTION_TYPES);
 
 /** Statuts de version éditables via le UI Builder (CDC §10). */
 const EDITABLE_VERSION_STATUSES = new Set(['DRAFT', 'CONFIGURING', 'VALIDATING']);
@@ -350,6 +358,9 @@ export class UiBuilderService {
           issues.push({ level: 'ERROR', code: 'COMPONENT_TYPE_MISSING', message: `Composant sans type.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
           continue;
         }
+        if (!RENDERABLE_COMPONENTS.has(node.type)) {
+          issues.push({ level: 'ERROR', code: 'COMPONENT_UNKNOWN', message: `Composant non pris en charge par le renderer : "${node.type}".`, pageId: page.id, pageKey: page.key, componentId: nodeId });
+        }
         // Bindings
         for (const [prop, binding] of Object.entries(node.bindings ?? {})) {
           const b = binding as { kind?: string; entity?: string; field?: string; context?: string; variable?: string };
@@ -378,6 +389,10 @@ export class UiBuilderService {
         for (const action of node.actions ?? []) {
           if (!action?.type) {
             issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `Action sans type.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
+            continue;
+          }
+          if (!ACTION_TYPES.has(action.type)) {
+            issues.push({ level: 'ERROR', code: 'ACTION_UNKNOWN', message: `Action non prise en charge : "${action.type}".`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             continue;
           }
           if (action.type === 'NAVIGATE') {

@@ -71,6 +71,11 @@ export const PERMISSIONS = {
   DATA_RUNTIME_EXECUTE: 'data-runtime:execute',
   IAM_ADMIN: 'iam:admin',
   CONFIG_READ: 'config:read',
+  // UI Builder: page composition remains tenant-scoped and is protected by
+  // explicit capabilities. A UI definition is not a public application API.
+  UI_BUILDER_READ: 'ui-builder:read',
+  UI_BUILDER_WRITE: 'ui-builder:write',
+  UI_BUILDER_VALIDATE: 'ui-builder:validate',
   // Subscription & Billing (CDC 15).
   //
   // Ces permissions autorisent un ACTEUR à agir sur la surface Billing.
@@ -112,6 +117,9 @@ export const DATA_RUNTIME_QUERY = PERMISSIONS.DATA_RUNTIME_QUERY;
 export const DATA_RUNTIME_EXECUTE = PERMISSIONS.DATA_RUNTIME_EXECUTE;
 export const IAM_ADMIN = PERMISSIONS.IAM_ADMIN;
 export const CONFIG_READ = PERMISSIONS.CONFIG_READ;
+export const UI_BUILDER_READ = PERMISSIONS.UI_BUILDER_READ;
+export const UI_BUILDER_WRITE = PERMISSIONS.UI_BUILDER_WRITE;
+export const UI_BUILDER_VALIDATE = PERMISSIONS.UI_BUILDER_VALIDATE;
 export const BILLING_READ = PERMISSIONS.BILLING_READ;
 export const BILLING_MANAGE = PERMISSIONS.BILLING_MANAGE;
 export const BILLING_PLAN_READ = PERMISSIONS.BILLING_PLAN_READ;
@@ -135,6 +143,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.DATA_RUNTIME_READ,
     PERMISSIONS.DATA_RUNTIME_QUERY,
     PERMISSIONS.CONFIG_READ,
+    PERMISSIONS.UI_BUILDER_READ,
     // Lecture seule du catalogue d'intégration : le rôle standard pouvait déjà
     // consulter cette surface (elle était filtrée par `erp:read`). On conserve
     // exactement cette visibilité, mais en lecture seule côté API : toute

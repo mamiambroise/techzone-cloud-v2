@@ -44,6 +44,8 @@ import type { IamPrincipal } from '../../iam/principal.decorator';
 import { TenantGuard } from '../../iam/tenant.guard';
 import { TenantResource } from '../../iam/tenant-resource.decorator';
 import { BmTenantGuard } from '../business-manager/bm-tenant.guard';
+import { RequirePermission } from '../../iam/permission.decorator';
+import { UI_BUILDER_READ, UI_BUILDER_VALIDATE, UI_BUILDER_WRITE } from '../../iam/iam.constants';
 
 const UUID = new ParseUUIDPipe({ version: '4' });
 
@@ -56,6 +58,7 @@ export class UiBuilderController {
   // ---------- Overview ----------
 
   @Get('overview/:applicationVersionId')
+  @RequirePermission(UI_BUILDER_READ)
   getOverview(
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @CurrentPrincipal() principal: IamPrincipal,
@@ -66,6 +69,7 @@ export class UiBuilderController {
   // ---------- Pages ----------
 
   @Get('pages/:applicationVersionId')
+  @RequirePermission(UI_BUILDER_READ)
   listPages(
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @CurrentPrincipal() principal: IamPrincipal,
@@ -74,11 +78,13 @@ export class UiBuilderController {
   }
 
   @Post('pages')
+  @RequirePermission(UI_BUILDER_WRITE)
   createPage(@Body() dto: CreateUiPageDto, @CurrentPrincipal() principal: IamPrincipal) {
     return this.uiBuilderService.createPage(dto, principal.tenantId, principal.userId);
   }
 
   @Patch('pages/:pageId')
+  @RequirePermission(UI_BUILDER_WRITE)
   updatePage(
     @Param('pageId', UUID) pageId: string,
     @Body() dto: UpdateUiPageDto,
@@ -88,6 +94,7 @@ export class UiBuilderController {
   }
 
   @Delete('pages/:pageId')
+  @RequirePermission(UI_BUILDER_WRITE)
   deletePage(
     @Param('pageId', UUID) pageId: string,
     @CurrentPrincipal() principal: IamPrincipal,
@@ -96,6 +103,7 @@ export class UiBuilderController {
   }
 
   @Post('pages/:applicationVersionId/reorder')
+  @RequirePermission(UI_BUILDER_WRITE)
   reorderPages(
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @Body() dto: ReorderUiPagesDto,
@@ -107,6 +115,7 @@ export class UiBuilderController {
   // ---------- UI Definition ----------
 
   @Get('uidefinition/:applicationVersionId')
+  @RequirePermission(UI_BUILDER_READ)
   getUiDefinition(
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @CurrentPrincipal() principal: IamPrincipal,
@@ -117,6 +126,7 @@ export class UiBuilderController {
   // ---------- Validation ----------
 
   @Post('validate/:applicationVersionId')
+  @RequirePermission(UI_BUILDER_VALIDATE)
   validate(
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @CurrentPrincipal() principal: IamPrincipal,
@@ -127,6 +137,7 @@ export class UiBuilderController {
   // ---------- Theme ----------
 
   @Get('theme/:applicationVersionId')
+  @RequirePermission(UI_BUILDER_READ)
   getTheme(
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @CurrentPrincipal() principal: IamPrincipal,
@@ -135,6 +146,7 @@ export class UiBuilderController {
   }
 
   @Put('theme')
+  @RequirePermission(UI_BUILDER_WRITE)
   upsertTheme(@Body() dto: UpsertUiThemeDto, @CurrentPrincipal() principal: IamPrincipal) {
     return this.uiBuilderService.upsertTheme(dto, principal.tenantId, principal.userId);
   }
@@ -142,6 +154,7 @@ export class UiBuilderController {
   // ---------- Business context (bindings BM) ----------
 
   @Get('business-context/:applicationVersionId')
+  @RequirePermission(UI_BUILDER_READ)
   async getBusinessContext(
     @Param('applicationVersionId', UUID) applicationVersionId: string,
     @CurrentPrincipal() principal: IamPrincipal,
