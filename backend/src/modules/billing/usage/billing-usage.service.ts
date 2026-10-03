@@ -11,7 +11,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { BillingErrorCode } from '../common/billing-error-code';
 import { billingError } from '../common/billing.exception';
 import { BillingAuditService } from '../common/billing-audit.service';
-import { atUtcMidnight, addDays, addMonths } from '../common/billing-period';
+import { addDays, addMonths, startOfUtcDay } from '../common/billing-period';
 import { EntitlementResolverService } from '../entitlements/entitlement-resolver.service';
 
 /**
@@ -403,11 +403,11 @@ export class BillingUsageService {
     }
     if (period === MeterPeriod.MONTH) {
       const start = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), 1));
-      return { start, end: atUtcMidnight(addMonths(start, 1)) };
+      return { start, end: startOfUtcDay(addMonths(start, 1)) };
     }
     if (period === MeterPeriod.DAY) {
-      const start = atUtcMidnight(at);
-      return { start, end: atUtcMidnight(addDays(start, 1)) };
+      const start = startOfUtcDay(at);
+      return { start, end: startOfUtcDay(addDays(start, 1)) };
     }
     if (period === MeterPeriod.YEAR) {
       const start = new Date(Date.UTC(at.getUTCFullYear(), 0, 1));

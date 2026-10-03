@@ -9,7 +9,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { BillingAuditService } from '../common/billing-audit.service';
 import { addGraceDays, nextPeriod, resolvePeriod } from '../common/billing-period';
 import { BillingErrorCode } from '../common/billing-error-code';
-import { billingError } from '../common/billing.exception';
+import { billingError, BillingException } from '../common/billing.exception';
 import { EntitlementResolverService } from '../entitlements/entitlement-resolver.service';
 import { BillingInvoiceService } from '../invoice/billing-invoice.service';
 import { BillingSubscriptionService } from '../subscription/billing-subscription.service';
@@ -409,12 +409,16 @@ export class BillingLifecycleService {
       );
       return invoice;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      // Une facture existante pour la periode n'est pas une erreur de sweep.
-      if (message.includes('deja existe')) {
+      // Une facture deja presente pour la periode n'est pas une erreur de sweep :
+      // on s'appuie sur le CODE metier, et seulement en secours sur le texte.
+      if (
+        (error instanceof BillingException && error.code === BillingErrorCode.INVOICE_INVALID_STATE) ||
+        this.describeError(error).includes('deja existe')
+      ) {
         this.logger.debug(`Facture deja presente pour ${subscriptionId} : rien a regenerer.`);
         return null;
       }
+      const message = this.describeError(error);
       await this.diagnostics.record({
         stage: BillingStage.INVOICE_GENERATION,
         status: BillingDiagnosticStatus.CRITICAL,
@@ -429,5 +433,26 @@ export class BillingLifecycleService {
         message,
       );
     }
+  }
+
+  /**
+   * Message d'erreur lisible quelle que soit la forme levee : `HttpException`
+   * porte un objet de reponse, une erreur metier porte une chaine. Sans cela,
+   * un diagnostic finit lui-meme par contenir `[object Object]`.
+   */
+  private describeError(error: unknown): string {
+    if (typeof error === 'string') return error;
+    if (error instanceof Error) {
+      const raw: unknown = error.message;
+      if (typeof raw === 'string') return raw;
+      const response = (error as { getResponse?: () => unknown }).getResponse?.();
+      if (response && typeof response === 'object') {
+        const nested = (response as { message?: unknown }).message;
+        if (typeof nested === 'string') return nested;
+        return JSON.stringify(response);
+      }
+      return String(raw);
+    }
+    return String(error);
   }
 }

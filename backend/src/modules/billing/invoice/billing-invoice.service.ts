@@ -564,10 +564,10 @@ export class BillingInvoiceService {
           `La ligne « ${line.description} » est en ${lineCurrency} alors que la facture est en ${currency}. Aucune conversion implicite n existe (RG-BILL-007).`,
         );
       }
-      // quantity est un nombre : on le met a l'echelle centieme AVANT la
-      // multiplication pour que le resultat reste entier.
-      const quantityMinor = Math.round(quantity * 100);
-      subtotal = subtotal.add(Money.ofMinorUnits(unit * quantityMinor, currency));
+      // Le prix unitaire est exprime en unites mineures ; la quantite peut etre
+      // decimale. `Money.multiply` fait la multiplication puis l arrondi une
+      // seule fois : aucun centime n est gagne ni perdu en chemin.
+      subtotal = subtotal.add(Money.ofMinorUnits(unit, currency).multiply(quantity));
     }
 
     return {
@@ -581,8 +581,7 @@ export class BillingInvoiceService {
   private lineData(line: InvoiceLineInput, currency: CurrencyCode) {
     const unit = parseAmountToMinorUnits(line.unitPrice, currency);
     const quantity = Number(String(line.quantity));
-    const quantityMinor = Math.round(quantity * 100);
-    const lineSubtotal = Money.ofMinorUnits(unit * quantityMinor, currency);
+    const lineSubtotal = Money.ofMinorUnits(unit, currency).multiply(quantity);
     return {
       priceId: line.priceId ?? null,
       description: line.description,

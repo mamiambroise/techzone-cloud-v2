@@ -14,7 +14,11 @@ export interface BillingPeriod {
   end: Date;
 }
 
-function atUtcMidnight(date: Date): Date {
+/**
+ * Debut de jour UTC (UTC + 00:00). Le calcul Billing raisonne en jour UTC :
+ * aucune heure locale ne doit faire varier une echeance.
+ */
+function startOfUtcDay(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
@@ -65,8 +69,10 @@ export function monthsForInterval(interval: BillingInterval, intervalCount = 1):
 }
 
 /**
- * Prochaine periode de facturation. `CUSTOM` n'est pas deviné : l'appelant doit
- * fournir explicitement une durée en jours (CDC 9/11 — ne pas inventer).
+ * Prochaine periode de facturation, en anniversaire de souscription : la
+ * periode suit le jour d_activation (un abonnement actif le 17 reste facture le
+ * 17), et non le debut du mois civil. `CUSTOM` n'est pas devine : l'appelant
+ * doit fournir explicitement une duree en jours (CDC 9/11 — ne pas inventer).
  */
 export function nextPeriod(
   from: Date,
@@ -74,10 +80,10 @@ export function nextPeriod(
   intervalCount = 1,
   customDays?: number,
 ): BillingPeriod {
-  const start = atUtcMidnight(from);
+  const start = startOfUtcDay(from);
   const months = monthsForInterval(interval, intervalCount);
   if (months !== null) {
-    return { start, end: atUtcMidnight(addMonths(start, months)) };
+    return { start, end: startOfUtcDay(addMonths(start, months)) };
   }
   const days = customDays;
   if (!days || !Number.isFinite(days) || days <= 0) {
@@ -85,7 +91,7 @@ export function nextPeriod(
       'BillingInterval.CUSTOM exige une duree explicite (customDays) : aucune duree n est inventee.',
     );
   }
-  return { start, end: atUtcMidnight(addDays(start, days)) };
+  return { start, end: startOfUtcDay(addDays(start, days)) };
 }
 
 /**
@@ -109,7 +115,7 @@ export function addGraceDays(from: Date, days: number): Date {
 }
 
 export function daysBetween(from: Date, to: Date): number {
-  return Math.floor((atUtcMidnight(to).getTime() - atUtcMidnight(from).getTime()) / 86_400_000);
+  return Math.floor((startOfUtcDay(to).getTime() - startOfUtcDay(from).getTime()) / 86_400_000);
 }
 
-export { addDays, addMonths, addYears, atUtcMidnight };
+export { addDays, addMonths, addYears, startOfUtcDay };
