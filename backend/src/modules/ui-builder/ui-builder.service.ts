@@ -38,6 +38,8 @@ const EDITABLE_VERSION_STATUSES = new Set(['DRAFT', 'CONFIGURING', 'VALIDATING']
 /** Context bindings supportés (allowlist, CDC §6). */
 const CONTEXT_KEYS = new Set(['currentUser', 'currentTenant', 'currentApplication']);
 
+type OverviewProgression = { status: 'TODO' | 'IN_PROGRESS' | 'READY'; detail: string };
+
 @Injectable()
 export class UiBuilderService {
   private readonly logger = new Logger(UiBuilderService.name);
@@ -529,6 +531,15 @@ export class UiBuilderService {
 
   // =====================================================================
   // OVERVIEW (données réelles uniquement)
+  //
+  // Alimente le dashboard UI Builder (mission) : KPI, progression, pages
+  // récentes, validation. Aucun compteur ni pourcentage fabriqué : chaque
+  // valeur est dérivée des lignes lues (UiPage / UiThemeSetting / validation).
+  //
+  // « UiProject » : le contrat CDC V1 n'a pas de table séparée — le projet UI
+  // est la définition assemblée par ApplicationVersion (pages + thème). Il est
+  // donc résolu en lecture seule ici ; aucune écriture ni duplication à chaque
+  // chargement.
   // =====================================================================
 
   async getOverview(applicationVersionId: string, tenantId: string | null) {
@@ -542,10 +553,41 @@ export class UiBuilderService {
       this.validate(applicationVersionId, tenantId),
     ]);
 
-    const componentCount = pages.reduce((acc, p) => {
-      const nodes = ((p.components ?? {}) as { nodes?: Record<string, unknown> }).nodes ?? {};
-      return acc + Object.keys(nodes).length;
-    }, 0);
+    const trees = pages.map((page) => {
+      const tree = (page.components ?? { root: 'root', nodes: {} }) as {
+        root?: string;
+        nodes?: Record<string, { bindings?: Record<string, unknown> }>;
+      };
+      return { page, nodes: tree.nodes ?? {} };
+    });
+
+    const componentCount = trees.reduce((acc, { nodes }) => acc + Object.keys(nodes).length, 0);
+    const bindingCount = trees.reduce(
+      (acc, { nodes }) => acc + Object.values(nodes).reduce((sum, node) => sum + Object.keys(node.bindings ?? {}).length, 0),
+      0,
+    );
+    const filledPages = trees.filter(({ nodes }) => Object.keys(nodes).length > 1).length;
+    const navigationItems = pages.filter((page) => page.visibility !== 'HIDDEN').length;
+
+    const themeTokens = (theme?.tokens ?? null) as Record<string, unknown> | null;
+    const breakpoints = (themeTokens?.breakpoints ?? null) as { tablet?: unknown; mobile?: unknown } | null;
+    const responsiveConfigured = Boolean(breakpoints?.tablet && breakpoints?.mobile);
+
+    const lastSavedAt = [
+      ...pages.map((page) => page.updatedAt.getTime()),
+      ...(theme ? [theme.updatedAt.getTime()] : []),
+    ].reduce<number | null>((latest, candidate) => (latest === null || candidate > latest ? candidate : latest), null);
+
+    const counts = {
+      pages: pages.length,
+      components: componentCount,
+      forms: pages.filter((page) => page.type === 'FORM').length,
+      bindings: bindingCount,
+      navigationItems,
+      hiddenPages: pages.length - navigationItems,
+      errors: validation.counts.errors,
+      warnings: validation.counts.warnings,
+    };
 
     return {
       application: application
@@ -557,22 +599,114 @@ export class UiBuilderService {
         status: version.status,
         editable: EDITABLE_VERSION_STATUSES.has(version.status),
       },
-      counts: {
-        pages: pages.length,
-        components: componentCount,
-        forms: pages.filter((p) => p.type === 'FORM').length,
+      uiProject: {
+        applicationVersionId,
+        source: 'UI_PAGES_AND_THEME',
+        resolved: true,
+        pageCount: pages.length,
+        hasTheme: Boolean(theme),
+        themeRevision: theme?.revision ?? null,
+        generatedAt: new Date().toISOString(),
       },
+      counts,
       themeConfigured: Boolean(theme),
+      lastSavedAt: lastSavedAt === null ? null : new Date(lastSavedAt).toISOString(),
+      progression: this.buildProgression({
+        pageCount: pages.length,
+        filledPages,
+        bindingCount,
+        navigationItems,
+        themeConfigured: Boolean(theme),
+        responsiveConfigured,
+        validationStatus: validation.status as string,
+        errors: validation.counts.errors,
+        warnings: validation.counts.warnings,
+      }),
       validation: {
         status: validation.status,
         counts: validation.counts,
+        checkedAt: validation.checkedAt,
+        issues: validation.issues.slice(0, 50),
+        truncated: validation.issues.length > 50,
       },
-      lastPages: pages
+      lastPages: trees
         .slice()
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .sort((a, b) => b.page.updatedAt.getTime() - a.page.updatedAt.getTime())
         .slice(0, 5)
-        .map((p) => ({ id: p.id, key: p.key, title: p.title, updatedAt: p.updatedAt })),
+        .map(({ page, nodes }) => ({
+          id: page.id,
+          key: page.key,
+          title: page.title,
+          type: page.type,
+          status: page.status,
+          route: page.route,
+          visibility: page.visibility,
+          updatedAt: page.updatedAt,
+          components: Object.keys(nodes).length,
+          bindings: Object.values(nodes).reduce((sum, node) => sum + Object.keys(node.bindings ?? {}).length, 0),
+        })),
     };
+  }
+
+  /**
+   * Progression de la conception : états dérivés des données réelles
+   * (TODO / IN_PROGRESS / READY). Aucun pourcentage arbitraire.
+   */
+  private buildProgression(input: {
+    pageCount: number;
+    filledPages: number;
+    bindingCount: number;
+    navigationItems: number;
+    themeConfigured: boolean;
+    responsiveConfigured: boolean;
+    validationStatus: string;
+    errors: number;
+    warnings: number;
+  }) {
+    const pages: OverviewProgression = input.pageCount === 0
+      ? { status: 'TODO', detail: 'Aucune page' }
+      : input.filledPages === input.pageCount
+        ? { status: 'READY', detail: `${input.pageCount} page(s) renseignée(s)` }
+        : { status: 'IN_PROGRESS', detail: `${input.filledPages}/${input.pageCount} page(s) avec composants` };
+
+    const bindings: OverviewProgression = input.bindingCount === 0
+      ? { status: 'TODO', detail: 'Aucun binding Data Runtime' }
+      : input.errors > 0
+        ? { status: 'IN_PROGRESS', detail: `${input.bindingCount} binding(s), erreurs à corriger` }
+        : { status: 'READY', detail: `${input.bindingCount} binding(s)` };
+
+    const navigation: OverviewProgression = input.pageCount === 0
+      ? { status: 'TODO', detail: 'Aucune entrée de navigation' }
+      : input.navigationItems >= 2
+        ? { status: 'READY', detail: `${input.navigationItems} entrée(s) visible(s)` }
+        : { status: 'IN_PROGRESS', detail: `${input.navigationItems} entrée(s) visible(s)` };
+
+    const theme: OverviewProgression = input.themeConfigured
+      ? { status: 'READY', detail: 'Design tokens enregistrés' }
+      : { status: 'TODO', detail: 'Aucun thème enregistré' };
+
+    const responsive: OverviewProgression = input.responsiveConfigured
+      ? { status: 'READY', detail: 'Breakpoints tablette et mobile définis' }
+      : input.themeConfigured
+        ? { status: 'IN_PROGRESS', detail: 'Breakpoints manquants' }
+        : { status: 'TODO', detail: 'Dépend des design tokens' };
+
+    const validation: OverviewProgression = input.errors > 0
+      ? { status: 'IN_PROGRESS', detail: `${input.errors} erreur(s) bloquante(s)` }
+      : input.warnings > 0
+        ? { status: 'IN_PROGRESS', detail: `${input.warnings} avertissement(s)` }
+        : input.pageCount === 0
+          ? { status: 'TODO', detail: 'Rien à valider' }
+          : { status: 'READY', detail: 'Aucun problème détecté' };
+
+    return [
+      { id: 'pages', label: 'Pages', ...pages },
+      { id: 'bindings', label: 'Bindings', ...bindings },
+      { id: 'navigation', label: 'Navigation', ...navigation },
+      { id: 'theme', label: 'Thème', ...theme },
+      { id: 'responsive', label: 'Responsive', ...responsive },
+      { id: 'validation', label: 'Validation', ...validation, checkedStatus: input.validationStatus },
+    ];
   }
 
   // =====================================================================

@@ -96,6 +96,7 @@ export function BmKpiCard({ label, value, hint, icon, tone = 'blue', loading = f
     green: 'bg-emerald-50 text-emerald-600',
     amber: 'bg-amber-50 text-amber-600',
     violet: 'bg-violet-50 text-violet-600',
+    rose: 'bg-rose-50 text-rose-600',
   };
   return (
     <div className="bm-hover-lift flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
