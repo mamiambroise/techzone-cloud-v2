@@ -230,31 +230,46 @@ tenant unique), le 3 octobre 2026.
 Toutes les actions du tableau §7 sont implémentées. Aucun écart résiduel sur les
 cinq sections, l'ordre des groupes, les active states, le filtrage IAM et le 403.
 
-### 8.2 Trois écarts détectés en recette et corrigés
+### 8.2 Écarts détectés en recette et corrigés
 
 | # | Constat | Cause | Correction |
 | --- | --- | --- | --- |
 | P1 | `/history` affichait une page blanche (`TypeError: Cannot read properties of undefined (reading 'name')`) | `HistoryRollbackView` déréférence `currentApp.name` sans garde ; le bug préexistait mais la route était `menu:false`, donc non atteignable | Garde `currentApp?.name ?? 'la plateforme'` ; `/history` reste navigable comme exigé par A5 |
 | P2 | `/billing/plans` renvoyait vers une autre page `ComingSoon` | `groupDestination('billing')` et `groupDestination('admin')` pointent sur des vues d'ensemble elles-mêmes planifiées | Le lien de retour n'est retenu que si la destination est `implemented === true`, sinon repli sur `/dashboard` (règle testée) |
 | P3 | La page 403 proposait `/registry`, page elle-même `ComingSoon` | `ForbiddenPage` listait tous les homes joignables sans filtrer la disponibilité | Les destinations proposées sont filtrées sur `implemented === true`, avec repli sur « Tableau de bord » |
+| P4 | `/environments` affichait une page blanche (`reading 'code'`) | `EnvironmentsView` : `currentEnv` vaut `undefined` quand la liste d'environnements est vide, puis `currentEnv.code` est déréférencé. Bug **préexistant et déjà atteignable depuis la sidebar en HEAD** | État vide explicite rendu avant le retour principal (aucun hook après `currentEnv`, donc retour anticipé sûr) |
+| P5 | `/environments` plantait ensuite sur `reading 'map'` | `currentEnv.allowedRoles` n'est pas toujours présent dans la charge utile ; c'est le seul tableau non gardé (`history` et `deployedApps` l'étaient déjà) | `allowedRoles ?? []` avec message explicite quand la liste est vide |
+
+> P4 et P5 ne sont pas des régressions de la mission : ils existaient en HEAD sur une
+> destination de premier niveau. Ils sont corrigés ici parce qu'une page blanche sur
+> une entrée principale de la sidebar n'est pas conforme à l'exigence de robustesse
+> du CDC, et parce que le correctif est purement défensif (aucun changement de
+> comportement quand les données sont présentes).
 
 ### 8.3 Vérifications Manuelement confirmées
 
 - Ordre sidebar : ACCUEIL, CONSTRUCTION (Business Manager, UI Builder, Automatisation),
   DONNÉES & INTÉGRATIONS (Données, ERP / Dolibarr, API & Intégrations), PLATEFORME
-  (Environnements, Déploiements, Abonnements, Administration).
+  (Registry, Environnements, Déploiements, Abonnements, Administration).
+- Profil standard : les groupes IAM et Observabilité sont absents de la sidebar, et
+  leurs URL directes sont refusées en 403. 55 liens, aucune exception.
 - Active state contextuel : `/erp/clients` → surligne « Ressources » ; `/erp/ressources`,
-  `/automation/schedules`, `/data-runtime/sources` surlignent leur entrée ; `/history`
-  surligne « Historique ».
+  `/automation/schedules`, `/data-runtime/sources`, `/data-runtime/history`,
+  `/integrations/connectors` surlignent leur entrée ; `/history` surligne « Historique » ;
+  `/erps` (page contextuelle hors menu) ne surligne rien, ce qui est attendu.
 - Redirect `/data` → `/data-runtime`.
 - 403 dans le shell : `/iam/users` et `/packs/packs` refusés avec « Accès refusé ».
 - Recherche sidebar : « synchron » trouve `Synchronisations` ; « zzz » affiche « Aucun résultat. ».
 - Collapsed : 288 px → 80 px, libellé `Réduire le menu` ↔ `Agrandir le menu`, 9 groupes conservés.
 - Mobile 390 px : bouton « Ouvrir le menu », tiroir 288 px, 55 liens.
 - Deep link Pack Manager `?pack=` : route reconnue puis refusée par le garde IAM (permission absente).
+- Parcours sans crash sur toutes les destinations de menu : `/dashboard`, `/deployment`,
+  `/history`, `/business-manager/*`, `/ui*`, `/automation*`, `/data-runtime*`, `/erp*`,
+  `/erps`, `/settings/erp`, `/settings/integrations`, `/integrations/*`, `/registry`,
+  `/environments`, `/billing/*`, `/admin`.
 - Aucun nouveau warning oxlint : parité avec la base (108 `no-useless-spread` dans
-  `navigationConfig.js` avant et après ; les 8 avertissements de `HistoryRollbackView`
-  sont des imports inutilisés préexistants).
+  `navigationConfig.js` avant et après ; les avertissements de `HistoryRollbackView`
+  et `EnvironmentsView` sont des imports inutilisés préexistants).
 
 ### 8.4 Volumétrie
 
