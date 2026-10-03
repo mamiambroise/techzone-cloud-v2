@@ -15,6 +15,8 @@ import { CurrentPrincipal } from '../../../iam/principal.decorator';
 import type { IamPrincipal } from '../../../iam/principal.decorator';
 import { TenantResource } from '../../../iam/tenant-resource.decorator';
 import { TenantGuard } from '../../../iam/tenant.guard';
+import { RequirePermission } from '../../../iam/permission.decorator';
+import { BM_READ, BM_WRITE } from '../../../iam/iam.constants';
 
 import {
   CreateMenuDto,
@@ -29,6 +31,7 @@ import {
 export class NavigationController {
   constructor(private readonly navigationService: NavigationService) {}
 
+  @RequirePermission(BM_READ)
   @Get(':versionId/menus')
   findAllMenus(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -37,6 +40,7 @@ export class NavigationController {
     return this.navigationService.findAllMenus(versionId, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Post(':versionId/menus')
   createMenu(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -46,6 +50,7 @@ export class NavigationController {
     return this.navigationService.createMenu(versionId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get('menus/:menuId')
   findOneMenu(
     @Param('menuId', new ParseUUIDPipe()) menuId: string,
@@ -54,6 +59,7 @@ export class NavigationController {
     return this.navigationService.findOneMenu(menuId, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Patch('menus/:menuId')
   updateMenu(
     @Param('menuId', new ParseUUIDPipe()) menuId: string,
@@ -63,6 +69,7 @@ export class NavigationController {
     return this.navigationService.updateMenu(menuId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get('menus/:menuId/template')
   getMenuTemplate(
     @Param('menuId', new ParseUUIDPipe()) menuId: string,
@@ -71,6 +78,7 @@ export class NavigationController {
     return this.navigationService.getMenuTemplate(menuId, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Post('menus/:menuId/items')
   createMenuItem(
     @Param('menuId', new ParseUUIDPipe()) menuId: string,
@@ -80,6 +88,7 @@ export class NavigationController {
     return this.navigationService.createMenuItem(menuId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Patch('items/:itemId')
   updateMenuItem(
     @Param('itemId', new ParseUUIDPipe()) itemId: string,
@@ -89,6 +98,7 @@ export class NavigationController {
     return this.navigationService.updateMenuItem(itemId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get('items/:itemId')
   findMenuItem(
     @Param('itemId', new ParseUUIDPipe()) itemId: string,
@@ -97,6 +107,7 @@ export class NavigationController {
     return this.navigationService.findMenuItem(itemId, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Post('menus/:menuId/resolve')
   resolveNavigation(
     @Param('menuId', new ParseUUIDPipe()) menuId: string,

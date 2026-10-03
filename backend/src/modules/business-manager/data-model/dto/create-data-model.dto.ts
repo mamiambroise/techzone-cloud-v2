@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { IsOptional, IsString, IsEnum, IsBoolean, IsInt, IsUUID, MaxLength, IsArray, IsObject } from 'class-validator';
-import { BmEntityStatus, BmDataScope, BmDataClassification, BmDataTypeCode } from '../../../../generated/prisma/enums';
+import { BmEntityStatus, BmDataScope, BmDataClassification, BmDataTypeCode, BmRelationType } from '../../../../generated/prisma/enums';
 
 export class CreateEntityDto {
   @IsString()
@@ -105,6 +105,15 @@ export class CreateRelationDto {
 
   @IsString()
   targetEntityId: string;
+
+  /**
+   * Cardinalité de la relation. Absente, la relation est un ONE_TO_MANY
+   * (défaut du modèle). Les autres valeurs existent déjà dans le schéma
+   * (`BmRelationType`) et doivent rester atteignables depuis l'UI.
+   */
+  @IsOptional()
+  @IsEnum(BmRelationType)
+  relationType?: BmRelationType;
 
   @IsOptional()
   @IsString()

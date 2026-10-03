@@ -37,7 +37,7 @@ describe('DataModelService (TENANT-ISOLATION)', () => {
 
   describe('createEntity', () => {
     it('should create entity with tenantId filter', async () => {
-      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1', applicationId: 'app-1' });
+      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1', applicationId: 'app-1', status: 'DRAFT' });
       prisma.bmEntity.findFirst.mockResolvedValue(null);
       prisma.applicationVersion.findUnique.mockResolvedValue({ applicationId: 'app-1' });
       prisma.bmEntity.create.mockResolvedValue({ id: 'e-1', code: 'user', name: 'User' });
@@ -48,9 +48,11 @@ describe('DataModelService (TENANT-ISOLATION)', () => {
         'tenant-123',
       );
 
-      expect(prisma.applicationVersion.findFirst).toHaveBeenCalledWith({
-        where: { id: 'av-1', tenantId: 'tenant-123' },
-      });
+      expect(prisma.applicationVersion.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'av-1', tenantId: 'tenant-123' },
+        }),
+      );
       expect(prisma.bmEntity.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           applicationId: 'app-1',
@@ -70,7 +72,7 @@ describe('DataModelService (TENANT-ISOLATION)', () => {
     });
 
     it('should create entity with undefined tenantId when tenantId is null', async () => {
-      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1', applicationId: 'app-1' });
+      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1', applicationId: 'app-1', status: 'DRAFT' });
       prisma.bmEntity.findFirst.mockResolvedValue(null);
       prisma.applicationVersion.findUnique.mockResolvedValue({ applicationId: 'app-1' });
       prisma.bmEntity.create.mockResolvedValue({ id: 'e-1', code: 'user', name: 'User' });
@@ -89,7 +91,7 @@ describe('DataModelService (TENANT-ISOLATION)', () => {
     });
 
     it('should throw PlatformException when entity code already exists', async () => {
-      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1', applicationId: 'app-1' });
+      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1', applicationId: 'app-1', status: 'DRAFT' });
       prisma.bmEntity.findFirst.mockResolvedValue({ id: 'existing', code: 'user' });
 
       await expect(
@@ -103,6 +105,59 @@ describe('DataModelService (TENANT-ISOLATION)', () => {
       await expect(
         service.createEntity('av-1', { code: 'USER', name: 'User' } as any, 'tenant-123'),
       ).rejects.toThrow(PlatformException);
+    });
+  });
+
+  describe('VERSION-IMMUTABILITY', () => {
+    it.each(['ACTIVE', 'SUPERSEDED', 'DEPRECATED', 'ARCHIVED'])(
+      'should refuse writing the business definition of a %s version',
+      async (status) => {
+        prisma.applicationVersion.findFirst.mockResolvedValue({
+          id: 'av-1',
+          applicationId: 'app-1',
+          status,
+          version: '1.0.0',
+        });
+
+        await expect(
+          service.createEntity('av-1', { code: 'USER', name: 'User' } as any, 'tenant-123'),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmEntity.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should refuse creating a relation on an immutable version', async () => {
+      prisma.applicationVersion.findFirst.mockResolvedValue({
+        id: 'av-1',
+        applicationId: 'app-1',
+        status: 'ACTIVE',
+        version: '1.0.0',
+      });
+
+      await expect(
+        service.createRelation(
+          'av-1',
+          { code: 'order_customer', sourceEntityId: 'e1', targetEntityId: 'e2' } as any,
+          'tenant-123',
+        ),
+      ).rejects.toThrow(PlatformException);
+    });
+
+    it('should allow writes while the version is still CONFIGURING', async () => {
+      prisma.applicationVersion.findFirst.mockResolvedValue({
+        id: 'av-1',
+        applicationId: 'app-1',
+        status: 'CONFIGURING',
+        version: '1.0.0',
+      });
+      prisma.bmEntity.findFirst.mockResolvedValue(null);
+      prisma.applicationVersion.findUnique.mockResolvedValue({ applicationId: 'app-1' });
+      prisma.bmEntity.create.mockResolvedValue({ id: 'e-1', code: 'user', name: 'User' });
+
+      await service.createEntity('av-1', { code: 'USER', name: 'User' } as any, 'tenant-123');
+
+      expect(prisma.bmEntity.create).toHaveBeenCalled();
     });
   });
 

@@ -16,6 +16,8 @@ import { CurrentPrincipal } from '../../../iam/principal.decorator';
 import type { IamPrincipal } from '../../../iam/principal.decorator';
 import { TenantResource } from '../../../iam/tenant-resource.decorator';
 import { TenantGuard } from '../../../iam/tenant.guard';
+import { RequirePermission } from '../../../iam/permission.decorator';
+import { BM_READ, BM_WRITE } from '../../../iam/iam.constants';
 
 import {
   CreateEntityDto,
@@ -37,6 +39,7 @@ export class DataModelController {
 
   // === Entities ===
 
+  @RequirePermission(BM_READ)
   @Get(':versionId/entities')
   findAllEntities(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -45,6 +48,7 @@ export class DataModelController {
     return this.dataModelService.findAllEntities(versionId, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Post(':versionId/entities')
   createEntity(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -54,6 +58,7 @@ export class DataModelController {
     return this.dataModelService.createEntity(versionId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get('entities/:entityId')
   findOneEntity(
     @Param('entityId', new ParseUUIDPipe()) entityId: string,
@@ -62,6 +67,7 @@ export class DataModelController {
     return this.dataModelService.findOneEntity(entityId, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Patch('entities/:entityId')
   updateEntity(
     @Param('entityId', new ParseUUIDPipe()) entityId: string,
@@ -71,6 +77,7 @@ export class DataModelController {
     return this.dataModelService.updateEntity(entityId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Post('entities/:entityId/archive')
   archiveEntity(
     @Param('entityId', new ParseUUIDPipe()) entityId: string,
@@ -79,6 +86,7 @@ export class DataModelController {
     return this.dataModelService.archiveEntity(entityId, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get(':versionId/schema')
   getSchema(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -87,6 +95,7 @@ export class DataModelController {
     return this.dataModelService.getEntitySchema(versionId, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get(':versionId/dependencies')
   getDependencyGraph(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -97,6 +106,7 @@ export class DataModelController {
 
   // === Fields ===
 
+  @RequirePermission(BM_WRITE)
   @Post('entities/:entityId/fields')
   createField(
     @Param('entityId', new ParseUUIDPipe()) entityId: string,
@@ -106,6 +116,7 @@ export class DataModelController {
     return this.dataModelService.createField(entityId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get('entities/:entityId/fields')
   findFieldsByEntity(
     @Param('entityId', new ParseUUIDPipe()) entityId: string,
@@ -114,6 +125,7 @@ export class DataModelController {
     return this.dataModelService.findFieldsByEntity(entityId, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Patch('fields/:fieldId')
   updateField(
     @Param('fieldId', new ParseUUIDPipe()) fieldId: string,
@@ -123,6 +135,7 @@ export class DataModelController {
     return this.dataModelService.updateField(fieldId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Delete('fields/:fieldId')
   deleteField(
     @Param('fieldId', new ParseUUIDPipe()) fieldId: string,
@@ -133,6 +146,7 @@ export class DataModelController {
 
   // === Relations ===
 
+  @RequirePermission(BM_WRITE)
   @Post(':versionId/relations')
   createRelation(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -142,6 +156,7 @@ export class DataModelController {
     return this.dataModelService.createRelation(versionId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get(':versionId/relations')
   findRelationsByVersion(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -152,6 +167,7 @@ export class DataModelController {
 
   // === Constraints ===
 
+  @RequirePermission(BM_WRITE)
   @Post('entities/:entityId/constraints')
   createConstraint(
     @Param('entityId', new ParseUUIDPipe()) entityId: string,
@@ -163,6 +179,7 @@ export class DataModelController {
 
   // === Indexes ===
 
+  @RequirePermission(BM_WRITE)
   @Post('entities/:entityId/indexes')
   createIndex(
     @Param('entityId', new ParseUUIDPipe()) entityId: string,
@@ -174,6 +191,7 @@ export class DataModelController {
 
   // === Validations ===
 
+  @RequirePermission(BM_WRITE)
   @Post('field-validations')
   createFieldValidation(
     @Body() dto: CreateFieldValidationDto,
@@ -184,6 +202,7 @@ export class DataModelController {
 
   // === Computed Fields ===
 
+  @RequirePermission(BM_WRITE)
   @Post(':versionId/entities/:entityId/computed-fields')
   createComputedField(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,

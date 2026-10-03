@@ -76,6 +76,16 @@ export const PERMISSIONS = {
   UI_BUILDER_READ: 'ui-builder:read',
   UI_BUILDER_WRITE: 'ui-builder:write',
   UI_BUILDER_VALIDATE: 'ui-builder:validate',
+  // Business Manager: définition métier d'une application (entités, champs,
+  // relations, fonctionnalités, navigation, configuration). Ces permissions
+  // protègent la CONSTRUCTION de la définition. Elles sont distinctes des
+  // permissions MÉTIER déclarées par le BM pour l'application modélisée
+  // (product.create, order.confirm, ...) : une visibilité UI n'est jamais une
+  // autorisation, le backend reste l'autorité de sécurité.
+  BM_READ: 'bm:read',
+  BM_WRITE: 'bm:write',
+  BM_VALIDATE: 'bm:validate',
+  BM_PUBLISH: 'bm:publish',
   // Subscription & Billing (CDC 15).
   //
   // Ces permissions autorisent un ACTEUR à agir sur la surface Billing.
@@ -120,6 +130,10 @@ export const CONFIG_READ = PERMISSIONS.CONFIG_READ;
 export const UI_BUILDER_READ = PERMISSIONS.UI_BUILDER_READ;
 export const UI_BUILDER_WRITE = PERMISSIONS.UI_BUILDER_WRITE;
 export const UI_BUILDER_VALIDATE = PERMISSIONS.UI_BUILDER_VALIDATE;
+export const BM_READ = PERMISSIONS.BM_READ;
+export const BM_WRITE = PERMISSIONS.BM_WRITE;
+export const BM_VALIDATE = PERMISSIONS.BM_VALIDATE;
+export const BM_PUBLISH = PERMISSIONS.BM_PUBLISH;
 export const BILLING_READ = PERMISSIONS.BILLING_READ;
 export const BILLING_MANAGE = PERMISSIONS.BILLING_MANAGE;
 export const BILLING_PLAN_READ = PERMISSIONS.BILLING_PLAN_READ;
@@ -144,6 +158,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.DATA_RUNTIME_QUERY,
     PERMISSIONS.CONFIG_READ,
     PERMISSIONS.UI_BUILDER_READ,
+    // Business Manager : consultation de la définition métier (entités, champs,
+    // fonctionnalités, navigation). Les écritures (`bm:write`), la validation
+    // (`bm:validate`) et la publication (`bm:publish`) restent réservées à
+    // l'admin, comme pour l'UI Builder.
+    PERMISSIONS.BM_READ,
     // Lecture seule du catalogue d'intégration : le rôle standard pouvait déjà
     // consulter cette surface (elle était filtrée par `erp:read`). On conserve
     // exactement cette visibilité, mais en lecture seule côté API : toute
