@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   PlusIcon,
@@ -11,6 +11,8 @@ import {
   InboxIcon,
   ArrowPathRoundedSquareIcon,
 } from '@heroicons/react/24/outline';
+import ErpErrorPanel from '../erp/ErpErrorPanel.jsx';
+import { useTenant } from '../contexts/TenantProvider.jsx';
 import { MODULES_BY_KEY } from '../erp/modulesConfig.js';
 import { productService } from '../services/apiClient.js';
 import { TableSkeleton } from '../components/Loaders.jsx';
@@ -95,11 +97,14 @@ function StatusBadge({ value }) {
   return <span className="text-slate-700 dark:text-slate-200">{value}</span>;
 }
 
-function ErpModule({ moduleKeyOverride }) {
+function ErpModuleContent({ moduleKeyOverride }) {
   const { moduleKey: routeModuleKey } = useParams();
   const moduleKey = moduleKeyOverride || routeModuleKey;
   const mod = MODULES_BY_KEY[moduleKey];
 
+  const [page, setPage] = useState(0);
+  const requestRef = useRef(null);
+  const paginated = ['clients','products','orders','invoices'].includes(moduleKey);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -111,27 +116,34 @@ function ErpModule({ moduleKeyOverride }) {
   const [query, setQuery] = useState('');
 
   const load = () => {
+    requestRef.current?.abort();
+    const controller = new AbortController(); requestRef.current = controller;
+    setRows([]);
     setLoading(true);
     setError(null);
     setEmpty(false);
     mod.service
-      .getAll()
+      .getAll({ signal: controller.signal, errorHandling: 'local', params: paginated ? { page, limit: 25 } : undefined })
       .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : [];
+        if (controller.signal.aborted) return;
+        if (!Array.isArray(res.data)) throw { code: 'INTEGRATION_PAYLOAD_INVALID', message: 'Reponse ERP invalide.' };
+        const data = res.data;
         setRows(data);
         setEmpty(data.length === 0);
       })
       .catch((err) => {
-        setError(err.response?.data?.message || err.message || 'Erreur de chargement');
+        if (controller.signal.aborted) return;
+        setError(err);
         setEmpty(false);
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
   };
 
   useEffect(() => {
     if (!mod) return;
     load();
-  }, [mod]);
+    return () => requestRef.current?.abort();
+  }, [mod, page]);
 
   const Icon = mod?.icon;
 
@@ -219,7 +231,7 @@ function ErpModule({ moduleKeyOverride }) {
 
         <div className="relative mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Total</p>
+            <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Elements recus</p>
             <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{error ? '—' : rows.length}</p>
           </div>
           <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3 hidden sm:block">
@@ -227,7 +239,7 @@ function ErpModule({ moduleKeyOverride }) {
             <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">-</p>
           </div>
           <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">En base</p>
+            <p className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Sur cette page</p>
             <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{error ? '—' : rows.length}</p>
           </div>
         </div>
@@ -249,13 +261,11 @@ function ErpModule({ moduleKeyOverride }) {
         </div>
       )}
 
+      {paginated && <nav aria-label="Pagination ERP" className="flex items-center gap-4 text-sm"><button disabled={loading || page === 0} onClick={() => setPage(value => value - 1)} className="rounded-lg border px-3 py-2 disabled:opacity-50">Precedent</button><span>Page {page + 1} ? 25 elements maximum</span><button disabled={loading || !!error || rows.length < 25} onClick={() => setPage(value => value + 1)} className="rounded-lg border px-3 py-2 disabled:opacity-50">Suivant</button></nav>}
       {loading ? (
         <TableSkeleton rows={8} />
       ) : error ? (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-2xl p-6 flex items-center gap-3">
-          <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
-          <p className="text-red-600 font-medium">{error}</p>
-        </div>
+        <ErpErrorPanel errors={[{ resource: moduleKey, label: mod.title, error }]} onRetry={load} />
       ) : empty ? (
         <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 rounded-2xl p-8 flex flex-col items-center gap-3">
           <InboxIcon className="w-12 h-12 text-amber-400" />
@@ -616,4 +626,8 @@ function CreateModal({ mod, onClose, onCreated, editing = null }) {
   );
 }
 
-export default ErpModule;
+export default function ErpModule(props) {
+  const { activeTenant } = useTenant();
+  const { moduleKey } = useParams();
+  return <ErpModuleContent key={activeTenant?.id + ':' + (props.moduleKeyOverride || moduleKey)} {...props} />;
+}
