@@ -115,6 +115,26 @@ frontend production builds passed. See Git history for any final rerun updates.
 
 ## Safety and decision
 
+## Integration verification
+
+Technical commits `b537c12f`, `dbb5814f`, `cc2eb453` were fast-forwarded into
+`mami`. The complete preexisting unstaged diff hash and porcelain status were
+identical before/after integration; unrelated missing assets, legacy files and
+user source edits were not staged, restored or discarded.
+
+Post-integration Prisma validate/generate and Nest build passed. Data Runtime
+rerun: 5 suites, 47 tests passed. Both temporary databases report exactly two
+migrations and schema up to date; committed SQL checksums still match. A leftover
+empty historical Pack migration directory in the main checkout initially appeared
+as a third pending migration. Its exact path and emptiness were verified before
+removing only that empty directory. No file/data was lost; status then passed.
+
+Latest real recipe: 23 PASS, one explicitly PARTIAL Pack publication check.
+The historical-row preservation check was rerun after integration: all 3,210
+source rows in all 132 tables remain unchanged in adoption.
+
+## Database safety
+
 `techzonecloud_local = UNCHANGED` by this mission: no command connected to or
 mutated it, and no PH6 fixture was sent there. This is a command-scope guarantee,
 not a fresh live scan of the forbidden original database. Only the two disposable
