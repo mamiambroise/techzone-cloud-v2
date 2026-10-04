@@ -218,6 +218,9 @@ export class DataAccessManager {
     if (descriptor) {
       return this.getProvider(descriptor.provider);
     }
+    // BM records are dynamic; the version/entity pair is resolved by the
+    // provider against the authenticated tenant rather than registered at boot.
+    if (resource.startsWith('bm:')) return this.getProvider('BM_RECORDS');
     throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: Aucun provider disponible pour la ressource "${resource}"`);
   }
 }
