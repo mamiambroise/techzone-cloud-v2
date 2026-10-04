@@ -57,5 +57,5 @@ export function queryRuntime(resource, query = {}) {
 }
 
 export function executeRuntime(request) {
-  return api.post('/data-runtime/execute', request).then(unwrap);
+  return api.post('/data-runtime/execute', request, { preserveEnvelope: true }).then(unwrap);
 }

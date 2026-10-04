@@ -11,7 +11,7 @@ export function refreshSession() {
 
 function normalizeResponse(response) {
   const body = response.data;
-  if (body && typeof body === 'object' && 'success' in body && 'data' in body) {
+  if (!response.config?.preserveEnvelope && body && typeof body === 'object' && 'success' in body && 'data' in body) {
     response.data = body.data;
   }
   return response;

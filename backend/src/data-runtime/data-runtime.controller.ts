@@ -63,12 +63,12 @@ export class DataRuntimeController {
     @Req() req: Request,
     @CurrentUser() principal: IamAuthContext,
     @Body() query: QueryContractDto,
-    @Body('ctx') ctx?: RuntimeContextDto,
   ) {
     this.logger.log(`POST /data-runtime/query resource=${query.resource}`);
-    const context = ctx || this.buildContext(query.resource, principal, req);
+    const context = this.buildContext(query.resource, principal, req);
     return this.queryEngine.execute(query, context);
   }
+  @Get('resources/:resource/:id')
   @Permissions(DATA_RUNTIME_READ)
   @ApiOperation({ summary: 'Obtenir un element canonique' })
   async getResource(
@@ -157,9 +157,8 @@ export class DataRuntimeController {
     @Req() req: Request,
     @CurrentUser() principal: IamAuthContext,
     @Param('bindingId') bindingId: string,
-    @Body('ctx') ctx?: RuntimeContextDto,
   ) {
-    const context = ctx || this.buildContext('default', principal, req);
+    const context = this.buildContext('default', principal, req);
     return this.bindingService.resolve(bindingId, context);
   }
 

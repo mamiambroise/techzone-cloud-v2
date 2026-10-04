@@ -17,6 +17,7 @@ import {
 import { MAX_PAGE_SIZE } from '../interfaces/query.contract';
 
 export interface DataProvider {
+  authorize?(resource: string, operation: string, ctx: RuntimeContext): Promise<void>;
   get(resource: string, id: string, ctx: RuntimeContext): Promise<any>;
   list(resource: string, ctx: RuntimeContext, options?: ListOptions): Promise<any>;
   count(resource: string, ctx: RuntimeContext, filter?: any): Promise<number>;
@@ -60,6 +61,11 @@ export class DataAccessManager {
     return provider;
   }
 
+  async authorize(resource: string, operation: string, ctx: RuntimeContext): Promise<void> {
+    this.validateContext(ctx);
+    await this.resolveProvider(resource).authorize?.(resource, operation, ctx);
+  }
+
   async get(resource: string, id: string, ctx: RuntimeContext, providerName?: string): Promise<any> {
     this.logger.debug(`GET ${resource}/${id} [tenant=${ctx.tenantId}]`);
     this.validateContext(ctx);
@@ -88,6 +94,8 @@ export class DataAccessManager {
   }
 
   async metadata(resource: string, ctx: RuntimeContext): Promise<ResourceDescriptor> {
+    this.validateContext(ctx);
+    if (resource.startsWith('bm:')) return this.getProvider('BM_RECORDS').metadata(resource, ctx);
     const descriptor = this.resources.get(resource);
     if (!descriptor) {
       throw new NotFoundException(`Ressource "${resource}" non trouvee dans le registre`);

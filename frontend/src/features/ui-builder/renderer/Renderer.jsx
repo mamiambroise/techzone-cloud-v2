@@ -11,6 +11,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { executeRuntime, queryRuntime } from '../services/uiBuilderService.js';
+import { runtimeResource, fieldSchema, serializeFields, recordRows } from './runtimeBinding.js';
 import {
   Box, PanelTop, Square, Grid3X3, Columns3, Heading1, Type, TextCursorInput,
   AlignLeft, ChevronDownSquare, CheckSquare, Calendar, Braces, ClipboardList,
@@ -50,13 +51,13 @@ function entityFor(node, prop = 'value') {
 }
 
 function RuntimeTable({ node, props, ctx }) {
-  const resource = entityFor(node, 'rows');
+  const resource = runtimeResource(entityFor(node, 'rows'), ctx.businessContext);
   const [state, setState] = useState({ rows: [], loading: Boolean(resource), error: null });
   useEffect(() => {
     let active = true;
     if (!resource) { setState({ rows: [], loading: false, error: null }); return undefined; }
     queryRuntime(resource, { pageSize: Math.min(Number(props.pageSize) || 20, 100) })
-      .then((result) => active && setState({ rows: result.data || result.items || [], loading: false, error: null }))
+      .then((result) => active && setState({ rows: recordRows(result), loading: false, error: null }))
       .catch(() => active && setState({ rows: [], loading: false, error: 'Lecture Data Runtime impossible.' }));
     return () => { active = false; };
   }, [resource, props.pageSize, ctx.dataRevision]);
@@ -73,21 +74,27 @@ function RuntimeTable({ node, props, ctx }) {
 
 function RuntimeForm({ node, props, childNodes, ctx }) {
   const [message, setMessage] = useState(null);
-  const resource = entityFor(childNodes.find((child) => entityFor(child)), 'value');
+  const [submitting, setSubmitting] = useState(false);
+  const fields = [];
+  const visit = (child) => { fields.push(child); (child.children || []).map(id => ctx.nodes[id]).filter(Boolean).forEach(visit); };
+  childNodes.forEach(visit);
+  const resource = runtimeResource(entityFor(fields.find((child) => entityFor(child)), 'value'), ctx.businessContext);
   const submit = async (event) => {
     event.preventDefault();
     if (!resource) return setMessage({ error: 'Aucun binding ENTITY_FIELD ne définit la ressource.' });
     if (ctx.mode === 'preview') return setMessage({ error: 'Aperçu protégé : les mutations sont désactivées.' });
-    const input = {};
-    for (const child of childNodes) {
-      const binding = child.bindings?.value;
-      if (binding?.kind === 'ENTITY_FIELD' && binding.field) input[binding.field] = new FormData(event.currentTarget).get(child.id);
-    }
+    if (submitting) return;
+    if (fields.some(child => entityFor(child) && runtimeResource(entityFor(child), ctx.businessContext) !== resource)) return setMessage({ error: 'Les champs doivent appartenir à une seule ressource.' });
+    const input = serializeFields(fields, event.currentTarget, ctx.businessContext);
+    setSubmitting(true);
+    try {
     const result = await executeRuntime({ resource, operation: 'CREATE', input, idempotencyKey: `ui-${node.id}-${Date.now()}` });
     setMessage(result.success ? { success: 'Enregistrement créé.' } : { error: result.errorMessage || 'Création refusée.' });
     if (result.success) ctx.refreshData();
+    } catch { setMessage({ error: 'Création impossible. Réessayez après vérification de la connexion.' }); }
+    finally { setSubmitting(false); }
   };
-  return <form className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad('md') }} onSubmit={submit}>
+  return <form aria-busy={submitting} className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad('md') }} onSubmit={submit}>
     {props.title && <h3 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h3>}<div className="flex flex-col" style={{ gap: pad('md') }}>{childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}</div>
     <div className="mt-4 flex items-center gap-2"><button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white">{props.submitLabel || 'Enregistrer'}</button><button type="reset" className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">{props.cancelLabel || 'Annuler'}</button></div>
     {message && <p role="status" className={`mt-2 text-xs ${message.error ? 'text-rose-600' : 'text-emerald-600'}`}>{message.error || message.success}</p>}
@@ -176,7 +183,7 @@ function renderNode(node, ctx) {
       return (
         <label className="flex flex-col gap-1">
           {props.label && <span className="text-xs font-medium text-slate-600">{props.label}</span>}
-          <textarea
+          <textarea name={node.id}
             rows={Math.min(Number(props.rows) || 3, 12)}
             placeholder={props.placeholder || ''}
             className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
@@ -189,7 +196,7 @@ function renderNode(node, ctx) {
       return (
         <label className="flex flex-col gap-1">
           {props.label && <span className="text-xs font-medium text-slate-600">{props.label}</span>}
-          <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50">
+          <select name={node.id} className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50">
             {props.placeholder && <option value="">{props.placeholder}</option>}
             {options.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
@@ -200,7 +207,7 @@ function renderNode(node, ctx) {
     case 'Checkbox':
       return (
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" defaultChecked={Boolean(props.checked)} className="h-4 w-4 rounded border-slate-300" />
+          <input name={node.id} type="checkbox" defaultChecked={Boolean(props.checked)} className="h-4 w-4 rounded border-slate-300" />
           {props.label}
         </label>
       );
@@ -209,19 +216,21 @@ function renderNode(node, ctx) {
       return (
         <label className="flex flex-col gap-1">
           {props.label && <span className="text-xs font-medium text-slate-600">{props.label}</span>}
-          <input type="date" className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />
+          <input name={node.id} type="date" className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />
         </label>
       );
 
     case 'FormField': {
-      const value = ctx.resolveBinding(node, 'value', props.label);
-      const schema = ctx.fieldSchemas.get(node.id);
+      const schema = fieldSchema(node, ctx.businessContext);
+      const value = schema?.defaultValue ?? '';
+      const inputType = schema?.type === 'BOOLEAN' ? 'checkbox' : ['INTEGER', 'DECIMAL'].includes(schema?.type) ? 'number' : schema?.type === 'EMAIL' ? 'email' : ['DATE', 'DATETIME'].includes(schema?.type) ? 'date' : props.inputType;
       return (
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-slate-600">{props.label || schema?.label || 'Champ métier'}</span>
           <input
             name={node.id}
-            type={['text', 'email', 'number', 'date'].includes(props.inputType) ? props.inputType : 'text'}
+            type={['text', 'email', 'number', 'date', 'checkbox'].includes(inputType) ? inputType : 'text'}
+            defaultChecked={inputType === 'checkbox' ? value === true || value === 'true' : undefined}
             placeholder={props.placeholder || ''}
             required={Boolean(props.required ?? schema?.required)}
             disabled={Boolean(props.readonly ?? schema?.readonly)}
