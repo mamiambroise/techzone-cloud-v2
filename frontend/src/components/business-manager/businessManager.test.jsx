@@ -72,6 +72,42 @@ describe('BMOverview', () => {
     await screen.findByText('UI Application');
     expect(screen.getByText('ui_app')).toBeInTheDocument();
   });
+
+  it('renders repeated activity on the same resource without duplicate React keys', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const apiClient = await import('../../services/apiClient.js');
+    apiClient.api.get.mockImplementation((url) => {
+      if (url === '/business-manager/dashboard') {
+        return Promise.resolve({
+          data: {
+            status: 'HEALTHY', kpis: {},
+            applications: { total: 1, active: 1, archived: 0 },
+            versions: { total: 1, active: 0, ready: 0, draft: 1 },
+            environments: { total: 0 }, contracts: { total: 0, active: 0 },
+            snapshots: { total: 0, valid: 0, invalid: 0 }, alerts: [],
+          },
+        });
+      }
+      if (url === '/business-manager/activity') {
+        return Promise.resolve({
+          data: [
+            { resource: 'CONFIGURATION', resourceId: 'cfg-1', action: 'UPDATED', actor: null, timestamp: '2026-09-28T23:45:06.408Z' },
+            { resource: 'CONFIGURATION', resourceId: 'cfg-1', action: 'CREATED', actor: null, timestamp: '2026-09-28T23:45:06.394Z' },
+          ],
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    render(<MemoryRouter><BMOverview /></MemoryRouter>);
+    await screen.findByText('Activité récente');
+    await waitFor(() => expect(screen.getByText('2 événement(s)')).toBeInTheDocument());
+    const duplicateKeyErrors = errorSpy.mock.calls.filter(
+      ([first]) => typeof first === 'string' && first.includes('same key'),
+    );
+    expect(duplicateKeyErrors).toHaveLength(0);
+    errorSpy.mockRestore();
+  });
 });
 
 describe('BMApplicationsRoute', () => {
