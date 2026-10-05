@@ -27,6 +27,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import type { IamAuthContext } from './decorators/current-user.decorator';
 import { IamContextService } from './iam-context.service';
+import { IamAuthorizationService } from './iam-authorization.service';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 
@@ -46,6 +47,7 @@ export class IamAuthService {
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
     private readonly contextService: IamContextService,
+    private readonly authorization: IamAuthorizationService,
   ) {}
 
   // ================= Helpers =================
@@ -578,6 +580,12 @@ export class IamAuthService {
       data: { tenantId, lastActivityAt: new Date() },
     });
 
+    // Le tenant actif change : les permissions précédentes ne doivent pas
+    // survivre. On invalide avant d'émettre le nouveau couple de jetons, sinon
+    // le premier requête après le switch pourrait réutiliser l'autorisation du
+    // tenant précédent pendant la durée du cache.
+    this.authorization.invalidate(ctx.userId);
+
     const newTokens = await this.issueTokenPair(ctx.sessionId);
 
     return {
@@ -761,8 +769,17 @@ async buildAccessToken(session: {
       where: { id: session.userId },
       select: { isAdmin: true },
     });
-    const roles = this.deriveRoles(user);
-    const permissions = this.resolvePermissionsFromRoles(roles);
+
+    // Phase 8 : les claims du JWT restent une photographie informative. Le
+    // guard ne s'y fie jamais — il ré résout depuis la base à chaque requête,
+    // ce qui évite toute fenêtre d'autorisation après une révocation. Les
+    // claims restent néanmoins alignés pour que `/auth/me` et les outils
+    // hors-ligne ne mentent pas.
+    const effective = await this.authorization.resolve(
+      { id: session.userId, isAdmin: user?.isAdmin },
+      session.tenantId,
+    );
+    const fallbackRoles = this.deriveRoles(user);
 
     return signAccessToken({
       type: 'access',
@@ -771,11 +788,16 @@ async buildAccessToken(session: {
       tenantId: session.tenantId,
       organizationId: session.organizationId,
       authenticationLevel: session.authenticationLevel,
-      roles,
-      permissions,
+      roles: effective.roles.length > 0 ? effective.roles : fallbackRoles,
+      permissions: effective.permissions,
     });
   }
 
+  /**
+   * Rôle de repli historique, utilisé uniquement quand le RBAC n'a rien
+   * résolu (aucun tenant actif). Ce n'est pas une source d'autorisation :
+   * `IamAuthorizationService` est l'unique décideur.
+   */
   private deriveRoles(user: { isAdmin?: boolean } | null): string[] {
     const roles: string[] = [];
     if (user?.isAdmin) {
@@ -784,20 +806,6 @@ async buildAccessToken(session: {
       roles.push(ROLES.USER);
     }
     return roles;
-  }
-
-  private resolvePermissionsFromRoles(roles: string[]): string[] {
-    if (!roles || roles.length === 0) {
-      return [];
-    }
-    const perms = new Set<string>();
-    for (const role of roles) {
-      const rolePerms = ROLE_PERMISSIONS[role];
-      if (rolePerms) {
-        rolePerms.forEach((p) => perms.add(p));
-      }
-    }
-    return Array.from(perms);
   }
 
   private async issueTokenPair(sessionId: string) {

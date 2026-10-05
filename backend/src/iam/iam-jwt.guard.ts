@@ -9,7 +9,7 @@ import { IamError } from './iam-error';
 import { IS_PUBLIC_KEY } from './iam.constants';
 import { verifyAccessToken } from './jwt.util';
 import { IamAuthService } from './iam-auth.service';
-import { ROLE_PERMISSIONS, ROLES } from './iam.constants';
+import { IamAuthorizationService } from './iam-authorization.service';
 import { IamLogger } from './iam.logger';
 
 @Injectable()
@@ -18,6 +18,7 @@ export class IamJwtGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
     private readonly authService: IamAuthService,
+    private readonly authorization: IamAuthorizationService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -67,7 +68,10 @@ export class IamJwtGuard implements CanActivate {
     }
 
     const roles = this.deriveRoles(user);
-    const permissions = this.resolvePermissionsFromRoles(roles);
+    const effective = await this.authorization.resolve(
+      { id: user.id, isAdmin: user.isAdmin },
+      session.tenantId,
+    );
 
     const principal = {
       userId: decoded.userId,
@@ -75,9 +79,16 @@ export class IamJwtGuard implements CanActivate {
        tenantId: session.tenantId ?? null,
       organizationId: session.organizationId ?? decoded.organizationId ?? null,
       authenticationLevel: decoded.authenticationLevel ?? null,
-      roles,
-      permissions,
-      isSuperAdmin: user.isAdmin ?? false,
+      // Phase 8 : les permissions effectives proviennent du RBAC tenant
+      // (membership ACTIVE → affectations → rôle → role_permission →
+      // permission). Les claims du JWT ne sont jamais utilisés comme
+      // autorité : un JWT valide mais périmé ne peut pas conserver des
+      // droits révoqués, et un changement de tenant les recalcule puisque
+      // la résolution est indexée sur `session.tenantId`.
+      roles: effective.roles.length > 0 ? effective.roles : roles,
+      permissions: effective.permissions,
+      isSuperAdmin: effective.isSuperAdmin,
+      tenantRoleCodes: effective.tenantRoleCodes,
     };
     request.iamAuth = principal;
     request.iamPrincipal = principal;
@@ -86,27 +97,17 @@ export class IamJwtGuard implements CanActivate {
     return true;
   }
 
+  /**
+   * Rôle de repli historique, conservé uniquement pour les claims JWT et les
+   * contextes sans tenant. L'autorisation effective ne l'utilise plus.
+   */
   private deriveRoles(user: { isAdmin?: boolean }): string[] {
     const roles: string[] = [];
     if (user.isAdmin) {
-      roles.push(ROLES.ADMIN);
+      roles.push('admin');
     } else {
-      roles.push(ROLES.USER);
+      roles.push('user');
     }
     return roles;
-  }
-
-  private resolvePermissionsFromRoles(roles: string[]): string[] {
-    if (!roles || roles.length === 0) {
-      return [];
-    }
-    const perms = new Set<string>();
-    for (const role of roles) {
-      const rolePerms = ROLE_PERMISSIONS[role];
-      if (rolePerms) {
-        rolePerms.forEach((p) => perms.add(p));
-      }
-    }
-    return Array.from(perms);
   }
 }

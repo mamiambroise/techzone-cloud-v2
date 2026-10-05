@@ -15,6 +15,12 @@ export interface IamPrincipal {
   roles: string[];
   permissions: string[];
   isSuperAdmin: boolean;
+  /**
+   * Phase 8 : codes des rôles tenant effectivement résolus. `roles` est
+   * conservé pour compatibilité et peut contenir le rôle de repli historique
+   * quand aucun rôle tenant n'est affecté.
+   */
+  tenantRoleCodes?: string[];
 }
 
 export const CurrentPrincipal = createParamDecorator(

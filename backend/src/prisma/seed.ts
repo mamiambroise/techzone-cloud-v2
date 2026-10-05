@@ -19,20 +19,12 @@ import {
   DeploymentGateResult,
   DeploymentHistoryAction,
 } from '../generated/prisma/enums';
-import { PrismaClient } from '../generated/prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import type { PrismaClient } from '../generated/prisma/client';
+import { createSeedPrismaClient } from './seed-client';
+import { seedBusinessManagerDemo } from './bm-demo-seed';
+import { seedIamRbac } from './iam-rbac-seed';
 
-const prisma = new PrismaClient({
-  adapter: new PrismaPg(
-    {
-      connectionString:
-        process.env.DATABASE_URL ||
-        'postgresql://postgres:postgres@localhost:5432/techzone',
-    },
-    // Same schema resolution as PrismaService (business_manager by default).
-    { schema: new URL(process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/techzone').searchParams.get('schema') || 'business_manager' },
-  ),
-});
+const prisma: PrismaClient = createSeedPrismaClient();
 
 async function main() {
   console.log('🌱 Starting PostgreSQL seed...');
@@ -646,6 +638,33 @@ async function main() {
 
   console.log(
     'Platform Foundation & API Integration & Deployment seed completed',
+  );
+
+  // ============================================================
+  // BUSINESS MANAGER — 2 entreprises de démonstration, 10 applications
+  // ============================================================
+
+  console.log('\n🏗 Business Manager : seed des entreprises de démonstration');
+  const bmSummary = await seedBusinessManagerDemo(prisma);
+  console.log(
+    `Business Manager seed completed: ${bmSummary.tenants} tenants, ${bmSummary.applications} applications, ` +
+      `${bmSummary.entities} entités, ${bmSummary.fields} champs, ${bmSummary.relations} relations, ` +
+      `${bmSummary.capabilities} permissions métier, ${bmSummary.configurations} configurations, ` +
+      `${bmSummary.contracts} contrats`,
+  );
+
+  // ============================================================
+  // IAM / RBAC — catalogue des permissions et rôles système
+  // ============================================================
+
+  console.log('\n🔐 IAM/RBAC : catalogue des permissions et rôles système');
+  const iamSummary = await seedIamRbac(prisma, {
+    logger: (message) => console.log(`  ${message}`),
+  });
+  console.log(
+    `IAM/RBAC seed completed: ${iamSummary.permissions} permissions, ` +
+      `${iamSummary.roles} rôles, ${iamSummary.rolePermissions} grants, ` +
+      `${iamSummary.assignments} affectations (${iamSummary.createdAssignments} créées)`,
   );
 }
 

@@ -16,11 +16,18 @@ import {
 
 type MockRequest = {
   iamAuth: any;
+  iamPrincipal?: any;
   params: Record<string, string>;
   headers: Record<string, string>;
   method: string;
   url: string;
 };
+
+// `TenantGuard` rÃ©sout l'identifiant sur une colonne PostgreSQL `uuid` :
+// les tenants et identifiants de test doivent donc Ãªtre des UUID valides.
+const TENANT_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const TENANT_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const RESOURCE = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 function buildContext(principal: any, permissions?: string[], params: Record<string, string> = {}) {
   const reflector = {
@@ -49,10 +56,10 @@ function buildContext(principal: any, permissions?: string[], params: Record<str
   return { reflector, context, request };
 }
 
-describe('IAM Admin Security — Cross-Tenant Isolation', () => {
+describe('IAM Admin Security â€” Cross-Tenant Isolation', () => {
   it('Tenant A resource is denied to Tenant B user (resource ownership guard)', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: 'tenant-A' }),
+      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_A }),
     };
     const mockPrisma = { application: mockModel } as any;
 
@@ -66,9 +73,9 @@ describe('IAM Admin Security — Cross-Tenant Isolation', () => {
 
     const guard = new TenantGuard(reflector, mockPrisma);
     const request: MockRequest = {
-      iamAuth: { userId: 'u2', tenantId: 'tenant-B', roles: [ROLES.USER], permissions: [PERMISSIONS.ERP_READ] },
-      iamPrincipal: { userId: 'u2', tenantId: 'tenant-B' },
-      params: { id: 'res-1' },
+      iamAuth: { userId: 'u2', tenantId: TENANT_B, roles: [ROLES.USER], permissions: [PERMISSIONS.ERP_READ] },
+      iamPrincipal: { userId: 'u2', tenantId: TENANT_B },
+      params: { id: RESOURCE },
       headers: {},
       method: 'GET',
       url: '/test',
@@ -85,7 +92,7 @@ describe('IAM Admin Security — Cross-Tenant Isolation', () => {
 
   it('Tenant A resource is accessible to Tenant A user (resource ownership guard)', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: 'tenant-A' }),
+      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_A }),
     };
     const mockPrisma = { application: mockModel } as any;
 
@@ -99,9 +106,9 @@ describe('IAM Admin Security — Cross-Tenant Isolation', () => {
 
     const guard = new TenantGuard(reflector, mockPrisma);
     const request: MockRequest = {
-      iamAuth: { userId: 'u1', tenantId: 'tenant-A', roles: [ROLES.ADMIN], permissions: [IAM_ADMIN] },
-      iamPrincipal: { userId: 'u1', tenantId: 'tenant-A' },
-      params: { id: 'res-1' },
+      iamAuth: { userId: 'u1', tenantId: TENANT_A, roles: [ROLES.ADMIN], permissions: [IAM_ADMIN] },
+      iamPrincipal: { userId: 'u1', tenantId: TENANT_A },
+      params: { id: RESOURCE },
       headers: {},
       method: 'GET',
       url: '/test',

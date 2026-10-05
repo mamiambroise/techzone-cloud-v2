@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
@@ -13,6 +14,7 @@ import { IamPrincipal } from './principal.decorator';
 import { IamLogger } from './iam.logger';
 import { TENANT_RESOURCE_KEY, TENANT_OPTIONAL_KEY, TenantResourceConfig } from './tenant-resource.decorator';
 import { IS_PUBLIC_KEY } from './iam.constants';
+import { isUuid } from './uuid';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
@@ -91,6 +93,16 @@ export class TenantGuard implements CanActivate {
       return null;
     }
 
+    // Un identifiant malformé est une requête invalide, pas une panne. Les
+    // guards s'exécutent AVANT les pipes de paramètre : sans cette validation,
+    // `GET /applications/pas-un-uuid` atteindrait Prisma et remonterait en 500
+    // au lieu du 400 rendu par `ParseUUIDPipe` sur les routes qui en déclarent un.
+    if (!isUuid(resourceId)) {
+      throw new BadRequestException(
+        `Identifiant de ressource invalide pour ${config.idParam ?? 'id'}`,
+      );
+    }
+
     const table = config.table;
     const idColumn = config.idColumn ?? 'id';
     const tenantColumn = config.tenantColumn ?? 'tenantId';
@@ -116,8 +128,12 @@ export class TenantGuard implements CanActivate {
         ? String(tenantValue)
         : null;
     } catch (err) {
+      // L'identifiant est désormais validé : ce qui reste ici est une panne
+      // réelle (schéma, connexion, modèle absent). On la remonte en 500 en
+      // conservant la cause, au lieu d'un 500 muet inexploitable.
       throw new InternalServerErrorException(
         `Failed to resolve tenant for resource ${table}`,
+        { cause: err },
       );
     }
   }

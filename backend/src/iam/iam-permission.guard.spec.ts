@@ -1,11 +1,17 @@
 import { jest } from '@jest/globals';
 import { Reflector } from '@nestjs/core';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { IamPermissionGuard } from './iam-permission.guard';
 import { TenantGuard } from './tenant.guard';
 import { TENANT_RESOURCE_KEY, TENANT_OPTIONAL_KEY } from './tenant-resource.decorator';
 
 describe('IAM guard contracts', () => {
+  // `TenantResource` résout l'identifiant via Prisma sur une colonne `uuid` :
+  // les identifiants de test doivent donc être des UUID valides.
+  const TENANT_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const TENANT_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const RESOURCE = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
   const ctx = (principal: any, params = {}) => ({
     getHandler: () => ({}), getClass: () => ({}),
     switchToHttp: () => ({ getRequest: () => ({ iamPrincipal: principal, params, headers: {}, method: 'GET', url: '/test' }) }),
@@ -20,7 +26,7 @@ describe('IAM guard contracts', () => {
 
   it('refuses a resource tenant different from the authenticated principal', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: 'b' }),
+      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_B }),
     };
     const mockPrisma = {
       application: mockModel,
@@ -33,18 +39,33 @@ describe('IAM guard contracts', () => {
     const guard = new TenantGuard(reflector, mockPrisma);
 
     await expect(
-      guard.canActivate(ctx({ tenantId: 'a' }, { id: 'res-1' })),
+      guard.canActivate(ctx({ tenantId: TENANT_A }, { id: RESOURCE })),
     ).rejects.toBeInstanceOf(ForbiddenException);
 
     expect(mockModel.findUnique).toHaveBeenCalledWith({
-      where: { id: 'res-1' },
+      where: { id: RESOURCE },
       select: { tenantId: true },
     });
   });
 
+  it('rejects a malformed resource id as a client error, not a server error', async () => {
+    const mockModel = { findUnique: jest.fn() };
+    const mockPrisma = { application: mockModel } as any;
+    const reflector = {
+      getAllAndOverride: jest.fn((key) => key === TENANT_RESOURCE_KEY ? { table: 'application', idParam: 'id' } : undefined),
+    } as unknown as Reflector;
+
+    const guard = new TenantGuard(reflector, mockPrisma);
+
+    await expect(
+      guard.canActivate(ctx({ tenantId: TENANT_A }, { id: 'res-1' })),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(mockModel.findUnique).not.toHaveBeenCalled();
+  });
+
   it('allows access when resource tenant matches principal tenant', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: 'a' }),
+      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_A }),
     };
     const mockPrisma = {
       application: mockModel,
@@ -57,7 +78,7 @@ describe('IAM guard contracts', () => {
     const guard = new TenantGuard(reflector, mockPrisma);
 
     await expect(
-      guard.canActivate(ctx({ tenantId: 'a' }, { id: 'res-1' })),
+      guard.canActivate(ctx({ tenantId: TENANT_A }, { id: RESOURCE })),
     ).resolves.toBe(true);
   });
 
