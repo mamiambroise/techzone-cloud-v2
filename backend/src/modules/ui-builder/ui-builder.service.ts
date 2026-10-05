@@ -256,9 +256,10 @@ export class UiBuilderService {
 
   async getUiDefinition(applicationVersionId: string, tenantId: string | null) {
     const version = await this.ensureVersion(applicationVersionId, tenantId);
-    const [pages, theme] = await Promise.all([
+    const [pages, theme, businessContext] = await Promise.all([
       this.listPages(applicationVersionId, tenantId),
       this.getTheme(applicationVersionId, tenantId).catch(() => null),
+      this.getBusinessContext(applicationVersionId, tenantId),
     ]);
 
     const navigationItems = pages
@@ -279,6 +280,7 @@ export class UiBuilderService {
       projectId: applicationVersionId,
       applicationId: pages[0]?.applicationId ?? null,
       applicationVersionId,
+      businessContext,
       theme: theme?.tokens ?? null,
       navigation: { items: navigationItems },
       pages: pages.map((p) => ({
@@ -294,7 +296,7 @@ export class UiBuilderService {
         permissions: p.permissions ?? [],
         components: p.components ?? { root: 'root', nodes: {} },
         metadata: p.metadata ?? {},
-        updatedAt: p.updatedAt,
+        updatedAt: p.updatedAt.toISOString(),
       })),
       dataSources: pages.flatMap((p) => Object.values(((p.components ?? {}) as { nodes?: Record<string, { bindings?: Record<string, { kind?: string; entity?: string }> }> }).nodes ?? {}))
         .flatMap((node) => Object.values(node.bindings ?? {}))
@@ -303,7 +305,9 @@ export class UiBuilderService {
         .filter((source, index, sources) => source.resource && sources.findIndex((candidate) => candidate.resource === source.resource) === index),
       requiredPermissions: [...new Set(pages.flatMap((p) => (Array.isArray(p.permissions) ? p.permissions : [])))].sort(),
       capabilities: ['data-runtime:query', 'data-runtime:execute'],
-      metadata: { pageCount: pages.length, versionStatus: version.status, generatedAt: new Date().toISOString() },
+      // This is a versioned contract, not a request timestamp. Stable timestamps
+      // and JSON-native dates keep pre/post-persistence hashes identical.
+      metadata: { pageCount: pages.length, versionStatus: version.status, generatedAt: new Date(Math.max(0, ...pages.map(p => p.updatedAt.getTime()), theme?.updatedAt?.getTime() ?? 0)).toISOString() },
     };
   }
 
@@ -506,8 +510,11 @@ export class UiBuilderService {
     await this.ensureVersion(applicationVersionId, tenantId);
     const entities = await this.prisma.bmEntity.findMany({
       where: { applicationVersionId, tenantId: tenantId ?? undefined },
-      include: { fields: { orderBy: { position: 'asc' } } },
+      include: { fields: { orderBy: { position: 'asc' }, include: { validations: true } } },
       orderBy: { code: 'asc' },
+    });
+    const relations = await this.prisma.bmRelation.findMany({
+      where: { applicationVersionId, tenantId: tenantId ?? undefined },
     });
     return {
       applicationVersionId,
@@ -524,6 +531,8 @@ export class UiBuilderService {
           required: field.required,
           readonly: field.readonly,
           defaultValue: field.defaultValue,
+          options: field.validations.find(v => v.validationType === 'ALLOWED_VALUES')?.value?.split(',').map(value => value.trim()) ?? [],
+          relationTarget: entities.find(target => target.id === relations.find(relation => relation.sourceEntityId === entity.id && relation.code === field.code)?.targetEntityId)?.code ?? null,
         })),
       })),
     };

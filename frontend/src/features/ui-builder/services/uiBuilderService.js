@@ -59,3 +59,7 @@ export function queryRuntime(resource, query = {}) {
 export function executeRuntime(request) {
   return api.post('/data-runtime/execute', request, { preserveEnvelope: true }).then(unwrap);
 }
+
+export function getRuntimeRecord(resource, id) {
+  return api.get(`/data-runtime/resources/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`, { preserveEnvelope: true }).then(unwrap);
+}

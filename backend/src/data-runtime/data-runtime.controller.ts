@@ -19,6 +19,7 @@ import {
   DATA_RUNTIME_EXECUTE,
   DATA_RUNTIME_QUERY,
   DATA_RUNTIME_READ,
+  ROLES,
 } from '../iam/iam.constants';
 
 @ApiTags('data-runtime')
@@ -181,7 +182,10 @@ export class DataRuntimeController {
       environmentId: process.env.NODE_ENV || 'development',
       requestId: `req-${Date.now()}`,
       traceId,
-      permissions: principal.permissions,
+      // The IAM guard derives ADMIN from the persisted user, never request JSON.
+      // Its static catalogue cannot enumerate dynamically authored BM capabilities.
+      // Resource ownership is still verified by the provider before authorization.
+      permissions: principal.roles.includes(ROLES.ADMIN) ? [...principal.permissions, '*'] : principal.permissions,
       erpCode: principal.organizationId ?? undefined,
       locale: 'fr',
     };

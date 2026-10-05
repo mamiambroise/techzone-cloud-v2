@@ -10,8 +10,10 @@
  * runtime branchera le même renderer sur Data Runtime.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { executeRuntime, queryRuntime } from '../services/uiBuilderService.js';
-import { runtimeResource, fieldSchema, serializeFields, recordRows } from './runtimeBinding.js';
+import { executeRuntime, getRuntimeRecord } from '../services/uiBuilderService.js';
+import { runtimeResource, serializeFields } from './runtimeBinding.js';
+import RuntimeField from './RuntimeField.jsx';
+import RuntimeDataTable from './RuntimeTable.jsx';
 import {
   Box, PanelTop, Square, Grid3X3, Columns3, Heading1, Type, TextCursorInput,
   AlignLeft, ChevronDownSquare, CheckSquare, Calendar, Braces, ClipboardList,
@@ -50,27 +52,6 @@ function entityFor(node, prop = 'value') {
   return binding?.kind === 'ENTITY_FIELD' || binding?.kind === 'ENTITY_LIST' ? binding.entity : null;
 }
 
-function RuntimeTable({ node, props, ctx }) {
-  const resource = runtimeResource(entityFor(node, 'rows'), ctx.businessContext);
-  const [state, setState] = useState({ rows: [], loading: Boolean(resource), error: null });
-  useEffect(() => {
-    let active = true;
-    if (!resource) { setState({ rows: [], loading: false, error: null }); return undefined; }
-    queryRuntime(resource, { pageSize: Math.min(Number(props.pageSize) || 20, 100) })
-      .then((result) => active && setState({ rows: recordRows(result), loading: false, error: null }))
-      .catch(() => active && setState({ rows: [], loading: false, error: 'Lecture Data Runtime impossible.' }));
-    return () => { active = false; };
-  }, [resource, props.pageSize, ctx.dataRevision]);
-  const rows = resource ? state.rows : ctx.resolveBinding(node, 'rows', null);
-  const columns = Array.isArray(rows) && rows.length ? Object.keys(rows[0]) : [];
-  return <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-    {props.title && <div className="border-b border-slate-100 px-4 py-2.5 text-sm font-bold text-slate-900">{props.title}</div>}
-    <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-slate-100 bg-slate-50/70">{columns.map((column) => <th key={column} className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{column}</th>)}</tr></thead><tbody>
-      {state.loading && <tr><td colSpan="1" className="px-4 py-6 text-center text-xs text-slate-400">Chargement des données…</td></tr>}
-      {!state.loading && Array.isArray(rows) && rows.slice(0, Math.min(Number(props.pageSize) || 20, 100)).map((row, index) => <tr key={row.id || index} className="border-b border-slate-50 last:border-0">{columns.map((column) => <td key={column} className="px-4 py-2 text-slate-700">{String(row[column] ?? '')}</td>)}</tr>)}
-      {!state.loading && (!Array.isArray(rows) || rows.length === 0) && <tr><td colSpan={Math.max(columns.length, 1)} className="px-4 py-6 text-center text-xs text-slate-400">{state.error || props.emptyMessage || 'Aucun enregistrement'}</td></tr>}
-    </tbody></table></div></div>;
-}
 
 function RuntimeForm({ node, props, childNodes, ctx }) {
   const [message, setMessage] = useState(null);
@@ -79,24 +60,37 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
   const visit = (child) => { fields.push(child); (child.children || []).map(id => ctx.nodes[id]).filter(Boolean).forEach(visit); };
   childNodes.forEach(visit);
   const resource = runtimeResource(entityFor(fields.find((child) => entityFor(child)), 'value'), ctx.businessContext);
+  const operation = ['UPDATE', 'READ'].includes(props.operation) ? props.operation : 'CREATE';
+  const [record, setRecord] = useState(null);
+  useEffect(() => {
+    let active = true;
+    setRecord(null); setMessage(null);
+    if (operation === 'CREATE') return undefined;
+    if (!ctx.recordId) { setMessage({ error: 'Sélectionnez un enregistrement depuis la liste.' }); return undefined; }
+    getRuntimeRecord(resource, ctx.recordId).then(value => { if (active) setRecord(value); })
+      .catch(() => active && setMessage({ error: 'Enregistrement inaccessible.' }));
+    return () => { active = false; };
+  }, [resource, ctx.recordId, operation]);
   const submit = async (event) => {
     event.preventDefault();
     if (!resource) return setMessage({ error: 'Aucun binding ENTITY_FIELD ne définit la ressource.' });
     if (ctx.mode === 'preview') return setMessage({ error: 'Aperçu protégé : les mutations sont désactivées.' });
+    if (operation === 'READ' || (operation === 'UPDATE' && !record)) return;
+    if (event.currentTarget.querySelector('[data-runtime-blocked="true"]')) return setMessage({ error: 'Attendez le chargement des relations ou rechargez la page en cas d’erreur.' });
     if (submitting) return;
     if (fields.some(child => entityFor(child) && runtimeResource(entityFor(child), ctx.businessContext) !== resource)) return setMessage({ error: 'Les champs doivent appartenir à une seule ressource.' });
     const input = serializeFields(fields, event.currentTarget, ctx.businessContext);
     setSubmitting(true);
     try {
-    const result = await executeRuntime({ resource, operation: 'CREATE', input, idempotencyKey: `ui-${node.id}-${Date.now()}` });
-    setMessage(result.success ? { success: 'Enregistrement créé.' } : { error: result.errorMessage || 'Création refusée.' });
+    const result = await executeRuntime({ resource, operation, ...(operation === 'UPDATE' ? { targetId: ctx.recordId } : {}), input, idempotencyKey: `ui-${node.id}-${Date.now()}` });
+    setMessage(result.success ? { success: operation === 'CREATE' ? 'Enregistrement créé.' : 'Enregistrement modifié.' } : { error: result.errorMessage || 'Écriture refusée.' });
     if (result.success) ctx.refreshData();
     } catch { setMessage({ error: 'Création impossible. Réessayez après vérification de la connexion.' }); }
     finally { setSubmitting(false); }
   };
   return <form aria-busy={submitting} className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad('md') }} onSubmit={submit}>
-    {props.title && <h3 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h3>}<div className="flex flex-col" style={{ gap: pad('md') }}>{childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}</div>
-    <div className="mt-4 flex items-center gap-2"><button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white">{props.submitLabel || 'Enregistrer'}</button><button type="reset" className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">{props.cancelLabel || 'Annuler'}</button></div>
+    {props.title && <h3 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h3>}<div className="flex flex-col" style={{ gap: pad('md') }}>{(operation === 'CREATE' || record) && childNodes.map((child) => <RendererNode key={`${child.id}:${record?.id || ''}`} node={child} ctx={{ ...ctx, record: record?.data ?? record, readonly: operation === 'READ' }} />)}</div>
+    {operation !== 'READ' && <div className="mt-4 flex items-center gap-2"><button type="submit" disabled={submitting || ctx.mode === 'preview' || (operation === 'UPDATE' && !record)} className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{props.submitLabel || 'Enregistrer'}</button><button type="reset" className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">{props.cancelLabel || 'Annuler'}</button></div>}
     {message && <p role="status" className={`mt-2 text-xs ${message.error ? 'text-rose-600' : 'text-emerald-600'}`}>{message.error || message.success}</p>}
   </form>;
 }
@@ -220,32 +214,14 @@ function renderNode(node, ctx) {
         </label>
       );
 
-    case 'FormField': {
-      const schema = fieldSchema(node, ctx.businessContext);
-      const value = schema?.defaultValue ?? '';
-      const inputType = schema?.type === 'BOOLEAN' ? 'checkbox' : ['INTEGER', 'DECIMAL'].includes(schema?.type) ? 'number' : schema?.type === 'EMAIL' ? 'email' : ['DATE', 'DATETIME'].includes(schema?.type) ? 'date' : props.inputType;
-      return (
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-slate-600">{props.label || schema?.label || 'Champ métier'}</span>
-          <input
-            name={node.id}
-            type={['text', 'email', 'number', 'date', 'checkbox'].includes(inputType) ? inputType : 'text'}
-            defaultChecked={inputType === 'checkbox' ? value === true || value === 'true' : undefined}
-            placeholder={props.placeholder || ''}
-            required={Boolean(props.required ?? schema?.required)}
-            disabled={Boolean(props.readonly ?? schema?.readonly)}
-            defaultValue={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 disabled:bg-slate-50 disabled:text-slate-400"
-          />
-        </label>
-      );
-    }
+    case 'FormField':
+      return <RuntimeField node={node} ctx={ctx} />;
 
     case 'Form':
       return <RuntimeForm node={node} props={props} childNodes={childNodes} ctx={ctx} />;
 
     case 'DataTable': {
-      return <RuntimeTable node={node} props={props} ctx={ctx} />;
+      return <RuntimeDataTable key={`${ctx.businessContext?.applicationVersionId}:${node.id}`} node={node} props={props} ctx={ctx} />;
     }
 
     case 'Badge': {
@@ -351,17 +327,19 @@ function RendererNode({ node, ctx }) {
  * Rendu racine d'une page.
  * resolveBinding(node, prop, fallback) : résolution structurée injectée.
  */
-export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview' }) {
+export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate }) {
   const [dataRevision, setDataRevision] = useState(0);
   const ctx = useMemo(() => ({
     nodes: tree?.nodes || {},
     businessContext,
+    recordId,
+    onNavigate,
     mode,
-    resolveBinding: resolveBinding || (() => null),
+    resolveBinding: resolveBinding || ((node, prop, fallback) => node.bindings?.[prop]?.kind === 'STATIC' ? node.bindings[prop].value : fallback),
     fieldSchemas: new Map(),
     dataRevision,
     refreshData: () => setDataRevision((value) => value + 1),
-  }), [tree, resolveBinding, businessContext, mode, dataRevision]);
+  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate]);
 
   const rootNode = ctx.nodes[tree?.root];
   if (!rootNode) {
@@ -373,7 +351,7 @@ export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'prev
       </div>
     );
   }
-  return <RendererNode node={rootNode} ctx={ctx} />;
+  return <RendererNode key={`${businessContext?.applicationVersionId}:${tree.root}:${recordId || ''}`} node={rootNode} ctx={ctx} />;
 }
 
 export default UiRenderer;

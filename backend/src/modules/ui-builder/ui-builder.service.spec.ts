@@ -26,8 +26,9 @@ function createMockPrisma() {
       update: jest.fn(),
     },
     bmEntity: {
-      findMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
+    bmRelation: { findMany: jest.fn().mockResolvedValue([]) },
     auditEvent: {
       create: jest.fn(),
     },
@@ -363,7 +364,10 @@ describe('UiBuilderService — UI DEFINITION + THEME', () => {
     });
     expect(def.pages).toHaveLength(1);
     expect(def.pages[0].components).toMatchObject({ root: 'root' });
-    expect(def.navigation.items[0]).toMatchObject({ pageKey: 'customers', icon: 'Users' });
+      expect(def.navigation.items[0]).toMatchObject({ pageKey: 'customers', icon: 'Users' });
+      expect(def.pages[0].updatedAt).toEqual(expect.any(String));
+      expect(JSON.parse(JSON.stringify(def))).toEqual(def);
+      expect(await service.getUiDefinition(VERSION_ID, TENANT_A)).toEqual(def);
   });
 
   it('upsertTheme incrémente la révision', async () => {

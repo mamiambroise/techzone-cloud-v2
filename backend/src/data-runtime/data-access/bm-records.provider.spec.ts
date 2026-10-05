@@ -21,4 +21,12 @@ describe('BM records query safety', () => {
     jest.spyOn(provider, 'get').mockRejectedValueOnce(new Error('DATABASE_UNAVAILABLE'));
     await expect(provider.exists('bm:any:any', 'id', {} as any)).rejects.toThrow('DATABASE_UNAVAILABLE');
   });
+  it('enforces declarative transition capabilities even when generic update is granted', async () => {
+    const db = { bmFeatureCapability: { findMany: jest.fn().mockResolvedValue([{code:'request.approve',configuration:{transition:{entity:'request',field:'state',value:'APPROVED'}}}]) } };
+    const definition = {version:{id:'version'},entity:{code:'request'}};
+    const context = {tenantId:'tenant',permissions:['request.update']};
+    await expect((provider as any).authorizeFieldChanges(definition,{state:'DRAFT'},{state:'APPROVED'},context,db)).rejects.toThrow('request.approve');
+    await expect((provider as any).authorizeFieldChanges(definition,{state:'DRAFT'},{state:'APPROVED'},{...context,permissions:['request.update','request.approve']},db)).resolves.toBeUndefined();
+    await expect((provider as any).authorizeFieldChanges(definition,{state:'APPROVED'},{state:'APPROVED'},context,db)).resolves.toBeUndefined();
+  });
 });

@@ -62,6 +62,21 @@ export class BmRecordsProvider implements DataProvider {
     }
   }
 
+  private async authorizeFieldChanges(d: any, before: any, data: any, ctx: RuntimeContext, db: any) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new BadRequestException('VALIDATION_FAILED: object required');
+    if (ctx.permissions?.includes('*')) return;
+    const capabilities = await db.bmFeatureCapability.findMany({ where: {
+      tenantId: ctx.tenantId, status: 'ACTIVE', feature: { applicationVersionId: d.version.id },
+    } });
+    for (const capability of capabilities) {
+      const transition = capability.configuration?.transition;
+      if (transition?.entity !== d.entity.code || typeof transition.field !== 'string') continue;
+      if (Object.hasOwn(data, transition.field) && data[transition.field] !== before[transition.field] && data[transition.field] === transition.value && !ctx.permissions?.includes(capability.code)) {
+        throw new ForbiddenException(`FORBIDDEN: Permission "${capability.code}" manquante`);
+      }
+    }
+  }
+
   private scope(d: any, ctx: RuntimeContext) {
     return { tenantId: ctx.tenantId!, applicationId: d.version.applicationId, entityCode: d.entity.code, archivedAt: null };
   }
@@ -79,6 +94,7 @@ export class BmRecordsProvider implements DataProvider {
   async create(resource: string, data: any, ctx: RuntimeContext) {
     const d = await this.check(resource, 'create', ctx);
     return this.write(d, ctx, async tx => {
+      await this.authorizeFieldChanges(d, {}, data, ctx, tx);
       await this.validate(d, data, ctx, undefined, tx);
       return tx.businessRecord.create({ data: { ...this.scope(d, ctx), entityId: d.entity.id, schemaVersion: d.version.version, data, createdBy: ctx.userId, updatedBy: ctx.userId } });
     });
@@ -97,6 +113,7 @@ export class BmRecordsProvider implements DataProvider {
     return this.write(d, ctx, async tx => {
       const before = await tx.businessRecord.findFirst({ where: { ...this.scope(d, ctx), id } });
       if (!before) throw new NotFoundException('RECORD_NOT_FOUND');
+      await this.authorizeFieldChanges(d, before.data, data, ctx, tx);
       for (const f of d.entity.fields) if (f.readonly && Object.hasOwn(data, f.code)) throw new BadRequestException('READONLY_FIELD: ' + f.code);
       const merged = { ...before.data, ...data };
       await this.validate(d, merged, ctx, id, tx);
