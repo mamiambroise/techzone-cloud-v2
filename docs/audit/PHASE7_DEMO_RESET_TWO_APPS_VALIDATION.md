@@ -328,6 +328,150 @@ application, `applicationId` et `tenantId` corrects, aucune page orpheline.
 | Applications UNKNOWN | 5 preservées |
 | Orphelins | 0 |
 
+## M. Accès de `techzonetest` aux deux boutiques
+
+### Audit IAM préalable
+
+| Élément | Valeur |
+|---|---|
+| Identité | `iamUser.id = 0c801adb-49e2-4f06-a074-12266650898b` |
+| Username | `techzonetest` |
+| Email primaire | `recette.techzone@example.com` |
+| `isAdmin` | `false` |
+| Rôle effectif | `user` (15 permissions) |
+| Membership `techzone-test` | `ACTIVE`, `joinedAt 2026-09-28T13:32:26.704Z`, `createdBy = lui-même` |
+| Membership `techzone-wifi-services` | **ABSENTE** avant intervention |
+| Membership `techzone-informatique` | **ABSENTE** avant intervention |
+
+Aucun credential modifié. Aucun utilisateur créé. `defaultTenantId` laissé vide :
+c'est le mécanisme normal, la session porte le tenant actif.
+
+### Création par le mécanisme IAM officiel
+
+Appel direct de `IamTenantsService.createMembership` — la méthode exacte derrière
+`POST /api/iam/admin/tenants/:id/memberships` (iam-tenants.controller.ts:75) —
+résolue depuis `backend/dist`, donc avec les mêmes validations que le endpoint :
+tenant existant, utilisateur existant, refus de doublon, `joinedAt` posé
+uniquement si `status = ACTIVE`, `createdBy` = acteur authentifié.
+
+Impossible de passer par HTTP : la route exige `IAM_ADMIN`
+(`IamAdminGuard`), donc un compte admin. L'appel de service évite de promouvoir
+`techzonetest` en superadmin, conformément à la consigne. Acteur enregistré :
+`bm.demo`, administrateur IAM existant.
+
+| Tenant | membership avant | après | joinedAt |
+|---|---|---|---|
+| `techzone-wifi-services` | ABSENTE | `ACTIVE` | 2026-10-05T11:26:04.581Z |
+| `techzone-informatique` | ABSENTE | `ACTIVE` | 2026-10-05T11:26:04.613Z |
+
+Trois memberships ACTIVE au total. Aucun garde-corps IAM modifié :
+`Appartenance au locataire non active` (iam-context.service.ts:127) reste
+intact et a réellement bloqué les switches avant l'intervention (403),
+il les autorise maintenant par la membership et non par un contournement.
+
+### Rôle retenu
+
+Rôle `user` inchangé. C'est le seul rôle non-admin du projet
+(`iam.constants.ts:13-16`) et il couvre exactement les surfaces de lecture
+demandées : `bm:read`, `ui-builder:read`, `data-runtime:read`,
+`data-runtime:query`.
+
+Il n'existe pas de rôle « administrateur tenant ». Les tables `role`,
+`role_permission`, `role_assignment` et `permission` sont **vides** (0 ligne
+chacune) et ne sont pas lues par le chemin d'autorisation : `IamJwtGuard`
+dérive le rôle du seul booléen `user.isAdmin` (iam-jwt.guard.ts:89) et résout
+les permissions via le catalogue statique `ROLE_PERMISSIONS`
+(iam.constants.ts:152). Créer un rôle tenant réel aurait exigé de réécrire la
+résolution d'autorisation, hors périmètre. Promouvoir en `admin` aurait donné
+les 111 permissions et désobéit à la consigne.
+
+Limite assumée : `pack.*` et `runtime.*` ne figurent pas dans `ROLE_PERMISSIONS[user]`
+(iam.constants.ts:154-188). Pack Manager et l'API Runtime renvoient donc **403
+« Insufficient permission »** pour ce compte. Ce n'est pas un défaut : ces
+surfaces sont réservées à l'admin par conception, et `bm.demo` en conserve l'accès.
+
+### Test de bascule de tenant (authentification réelle `techzonetest`)
+
+Sept basculements successifs via `POST /api/iam/auth/tenant/switch`, tous 200
+« Locataire changé », avec `/auth/me` et `/business-manager/applications`
+relus après chaque bascule.
+
+| Bascule | HTTP | Applications retournées | WIFI_SERVICES | IT_SALES | 5 UNKNOWN |
+|---|---:|---|:---:|:---:|:---:|
+| → techzone-test | 200 | 5 | absent | absent | 5 |
+| → WiFi | 200 | 1 | **présent** | absent | 0 |
+| → IT | 200 | 1 | absent | **présent** | 0 |
+| → WiFi | 200 | 1 | **présent** | absent | 0 |
+| → techzone-test | 200 | 5 | absent | absent | 5 |
+| → IT | 200 | 1 | absent | **présent** | 0 |
+| → techzone-test | 200 | 5 | absent | absent | 5 |
+
+`/auth/me` expose désormais les trois tenants ; le sélecteur de l'en-tête les
+affiche tous (`Choisir un tenant`, `Techzone Test`, `Techzone WiFi Services`,
+`Techzone Informatique`).
+
+### Isolation
+
+Fuites croisées : **aucune**, dans les deux sens, sur les 7 basculements.
+
+Au niveau service, `PackRuntimeService.publishedManifest` refuse le pack de
+l'autre tenant avec `PUBLISHED_PACK_MANIFEST_NOT_FOUND` — l'isolation ne dépend
+donc pas du simple filtrage de liste.
+
+### Vérification navigateur
+
+WiFi : sélecteur → `Techzone WiFi Services` → Vue d'ensemble `Applications 1`,
+`Actives 1` → Applications → `Gestion WiFi & Services` (`WIFI_SERVICES`,
+`ACTIVE`) → Versions `1.0.0 DRAFT` → Modèles de données : `11 élément(s) sur 11`
+dans le contexte `Tenant : Techzone WiFi Services`. UI Builder :
+`Gestion WiFi & Services · Version 1.0.0 · DRAFT`, pages `customer-list`,
+`customer-create`, `customer-detail`, `customer-edit`, `subscription-*`,
+`order-*` présentes.
+
+Informatique : sélecteur → `Techzone Informatique` → UI Builder :
+`Gestion Vente Informatique · Version 1.0.0 · DRAFT`, pages `product-*`,
+`customerorder-*`, `sale-*` présentes. Business Manager : `13 élément(s) sur 13`,
+contexte `Tenant : Techzone Informatique`.
+
+Retour sur `techzone-test` : contexte remis à « Non sélectionné », aucune trace
+de l'application précédente dans le DOM, puis les 5 applications de recette
+réapparaissent avec leurs codes d'origine et leurs trois libellés `BM Recette
+v?rifi?e` inchangés. Aucune écriture effectuée : aucun record créé, aucun
+`RT-*` régénéré.
+
+### Bug réel corrigé : UI Builder rejetait les deux boutiques
+
+`GET /api/ui-builder/pages/:applicationVersionId` répondait **400 « Validation
+failed (uuid v 4 is expected) »** pour les deux boutiques. Les versions Phase 7
+sont provisionnées de façon déterministe et portent des UUID **v5**
+(`472584fe-…`, `2920e376-…`), alors que `ui-builder.controller.ts:50` épinglait
+`new ParseUUIDPipe({ version: '4' })`. C'était le seul contrôleur de tout le
+projet à contraindre la version ; les 30 autres utilisent `new ParseUUIDPipe()`
+non contraint, et Prisma produit des UUID v4 par défaut.
+
+La contrainte de version d'UUID n'est pas une contrainte de sécurité : le tenant
+est imposé par `TenantGuard` et le service filtre sur `principal.tenantId`.
+Le pipe est donc passé en `new ParseUUIDPipe()`, aligné sur tous les autres
+contrôleurs, et exporté pour être testable. Après correction : 200 sur
+`pages` (45 / 53), `overview` (`WIFI_SERVICES` / `IT_SALES`, version 1.0.0) et
+`business-context`.
+
+Test de non-régression ajouté dans `ui-builder.controller.spec.ts` : les
+identifiants v4 et v5 passent, un identifiant malformé est toujours refusé, et
+le service reçoit bien le tenant actif. Vérifié rouge sur l'ancien pipe
+épinglé, vert après correction.
+
+### Écarts hors périmètre, non corrigés
+
+`GET /api/business-manager/applications/<segment non-uuid>` renvoie **500
+« Failed to resolve tenant for resource application »** au lieu d'un 404 : la
+route `@Get(':id')` avale n'importe quelle chaîne et le `TenantResource` échoue
+ensuite. Reproduit sur `/applications/versions` et `/applications/pas-une-app`.
+Aucun appel frontend n'atteint cette forme (le frontend utilise toujours un
+UUID réel), l'erreur n'a été observée qu'en naviguant manuellement vers une URL
+qui ne correspond à aucune page. Préexistant, sans lien avec les tenants ni avec
+la Phase 7 : non corrigé dans cette étape.
+
 ## K. Verdict
 
 RESET 10 DEMOS : PASS. TECHZONE WIFI SERVICES : PASS. TECHZONE INFORMATIQUE : PASS. UI BUILDER : PASS. PACK / RUNTIME : PASS pour publication immutable et consommation des UI publiées, avec les limites explicites ci-dessus.
@@ -338,5 +482,8 @@ compte du navigateur n'est membre que de `techzone-test`, qui ne contient que le
 5 applications de recette historiques. PostgreSQL, API et UI concordent
 exactement (5 / 5 / 5 / 0) et le dashboard ne mélange pas statuts d'application
 et cycle de vie de version.
+
+**TECHZONETEST MULTI-TENANT ACCESS : PASS.**
+**TENANT ISOLATION : PASS.**
 
 **PHASE 7 — 2 BOUTIQUES TECHZONE : GO.**

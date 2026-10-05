@@ -47,7 +47,12 @@ import { BmTenantGuard } from '../business-manager/bm-tenant.guard';
 import { RequirePermission } from '../../iam/permission.decorator';
 import { UI_BUILDER_READ, UI_BUILDER_VALIDATE, UI_BUILDER_WRITE } from '../../iam/iam.constants';
 
-const UUID = new ParseUUIDPipe({ version: '4' });
+// Version d'UUID non contrainte : les identifiants d'application version sont
+// produits par Prisma (v4) mais aussi par les workflows déterministes de
+// provisionnement (v5). Épingler la version rejetait ces derniers en 400 alors
+// que les autres contrôleurs BM acceptent les deux. La contrainte de tenant est
+// appliquée par TenantGuard, pas par le format de l'identifiant.
+export const UUID = new ParseUUIDPipe();
 
 @TenantResource({ table: 'ui_page', idParam: 'pageId' })
 @UseGuards(BmTenantGuard, TenantGuard)
