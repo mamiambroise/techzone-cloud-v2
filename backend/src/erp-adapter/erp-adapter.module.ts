@@ -8,6 +8,7 @@ import { ErpCapabilityService } from './capabilities/erp-capability.service';
 import { ErpCommandService } from './commands/erp-command.service';
 import { ErpResourceCatalogService } from './catalog/erp-resource-catalog.service';
 import { ErpResourceCatalogController } from './catalog/erp-resource-catalog.controller';
+import { ErpResourceRuntimeService } from './runtime/erp-resource-runtime.service';
 
 @Module({
   imports: [forwardRef(() => ErpRegistryModule)],
@@ -19,7 +20,8 @@ import { ErpResourceCatalogController } from './catalog/erp-resource-catalog.con
     ErpCapabilityService,
     ErpCommandService,
     ErpResourceCatalogService,
+    ErpResourceRuntimeService,
   ],
-  exports: [ErpAdapterService, MockAdapter, DolibarrAdapter, ErpCapabilityService, ErpCommandService, ErpResourceCatalogService],
+  exports: [ErpAdapterService, MockAdapter, DolibarrAdapter, ErpCapabilityService, ErpCommandService, ErpResourceCatalogService, ErpResourceRuntimeService],
 })
 export class ErpAdapterModule {}

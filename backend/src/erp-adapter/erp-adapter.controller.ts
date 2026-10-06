@@ -39,6 +39,7 @@ import { CreateAgendaEventDto } from './dto/create-agenda-event.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { ErpCommandService } from './commands/erp-command.service';
 import type { ErpCommandRequest } from './commands/erp-command.service';
+import { ErpResourceRuntimeService } from './runtime/erp-resource-runtime.service';
 
 @ApiTags('erp-adapter')
 @Controller('api/erp')
@@ -49,6 +50,7 @@ export class ErpAdapterController {
     private readonly adapterService: ErpAdapterService,
     private readonly erpRegistry: ErpRegistryService,
     private readonly commandService: ErpCommandService,
+    private readonly runtime: ErpResourceRuntimeService,
   ) {}
 
   private async resolveErpFromTenant(principal: IamAuthContext): Promise<IErpAdapter> {
@@ -56,7 +58,13 @@ export class ErpAdapterController {
     if (!tenantId) {
       throw new ForbiddenException('TENANT_REQUIRED: tenantId manquant dans le principal');
     }
-    return this.adapterService.resolveAdapterForTenant(tenantId);
+    const adapter = await this.adapterService.resolveAdapterForTenant(tenantId);
+    return this.runtime.guardAdapter(adapter, {
+      tenantId,
+      actorId: principal.userId,
+      permissions: principal.permissions,
+      isSuperAdmin: principal.isSuperAdmin,
+    });
   }
 
   // === ADAPTATEURS ===
@@ -77,7 +85,7 @@ export class ErpAdapterController {
     return { contracts: this.commandService.listContracts(connector) };
   }
 
-  @Permissions(ERP_WRITE)
+  @Permissions(ERP_READ)
   @Post('commands')
   @ApiOperation({ summary: 'Executer un contrat d integration ERP (query ou command, valide et capability-gate)' })
   @ApiResponse({ status: 200, description: 'Operation executee' })
@@ -86,7 +94,7 @@ export class ErpAdapterController {
   @ApiResponse({ status: 502, description: 'Capability indisponible ou reponse non conforme' })
   async executeCommand(@Body() request: ErpCommandRequest, @CurrentUser() principal: IamAuthContext) {
     this.logger.log(`POST /erp/commands -> ${request.operation} [tenant=${principal.tenantId}]`);
-    return this.commandService.execute(request, { tenantId: principal.tenantId ?? undefined, actorId: principal.userId });
+    return this.commandService.execute(request, { tenantId: principal.tenantId ?? undefined, actorId: principal.userId, permissions: principal.permissions, isSuperAdmin: principal.isSuperAdmin });
   }
 
   // === CLIENTS ===

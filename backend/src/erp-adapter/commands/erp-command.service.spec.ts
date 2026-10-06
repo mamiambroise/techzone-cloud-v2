@@ -6,7 +6,7 @@ describe('ErpCommandService read contracts', () => {
     getProducts: jest.fn().mockResolvedValue([]),
     getOrders: jest.fn().mockResolvedValue([]),
   };
-  const service = new ErpCommandService({} as any, {} as any, {} as any);
+  const service = new ErpCommandService({} as any, {} as any, {} as any, {} as any);
 
   beforeEach(() => jest.clearAllMocks());
 

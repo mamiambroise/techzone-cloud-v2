@@ -6,6 +6,7 @@ import { ErpRegistryService, TenantContext } from '../../erp-registry/erp-regist
 import { ExternalResourceLinkService } from '../../erp-registry/external-resource-link.service';
 import { erpContractRegistry, ErpIntegrationContract } from '../contracts/erp-integration-contracts';
 import { ExternalResourceLink } from '../../generated/prisma/client';
+import { ErpResourceRuntimeService } from '../runtime/erp-resource-runtime.service';
 
 export interface ErpCommandRequest {
   operation: string;
@@ -32,6 +33,7 @@ export class ErpCommandService {
     private readonly adapterService: ErpAdapterService,
     private readonly erpRegistry: ErpRegistryService,
     private readonly linkService: ExternalResourceLinkService,
+    private readonly runtime: ErpResourceRuntimeService,
   ) {}
 
   async listContracts(connector: string | undefined): Promise<unknown> {
@@ -69,18 +71,8 @@ export class ErpCommandService {
       );
     }
 
+    await this.runtime.assertContractAllowed({ ...ctx, contractOperation: contract.operation });
     const registry = await this.erpRegistry.getActiveForTenant({ tenantId, actorId: ctx?.actorId });
-    const stored = (registry.capabilities || {}) as Record<string, unknown>;
-    const capabilities = (stored.capabilities as Record<string, string>) || {};
-    const missing = contract.requiredCapabilities.filter(c => capabilities[c] !== 'AVAILABLE');
-    if (missing.length > 0) {
-      throw new ErpError(
-        `Capabilities ERP indisponibles pour cette operation: ${missing.join(', ')}`,
-        502,
-        'ERP_CAPABILITY_UNAVAILABLE',
-        { contract: contract.key, missing, capabilities },
-      );
-    }
 
     const payload = (request.payload ?? {}) as Record<string, unknown>;
     const inputValidation = erpContractRegistry.validateInput(contract, payload);

@@ -4,11 +4,22 @@ import { ConfigurationScope, ConfigurationStatus, ConfigurationType } from '../.
 import { PrismaService } from '../../prisma/prisma.service';
 import { ErpRegistryService, TenantContext } from '../../erp-registry/erp-registry.service';
 import { ErpCapabilityStatus } from '../capabilities/erp-capability.service';
-import { ERP_RESOURCE_CATALOG, ErpResourceDefinition, getErpResourceDefinition } from './erp-resource-catalog';
+import { hasPermission } from '../../iam/decorators/current-user.decorator';
+import { ERP_READ, ERP_WRITE } from '../../iam/iam.constants';
+import { ERP_RESOURCE_CATALOG, ErpOperation, ErpResourceDefinition, getErpResourceDefinition } from './erp-resource-catalog';
 
 const POLICY_KEY = 'erp.resource-policy';
 
 type StoredPolicy = { version?: number; resources?: Record<string, boolean> };
+
+export interface ErpOperationDecision {
+  allowed: boolean;
+  statusCode: number;
+  code: string;
+  message: string;
+  providerStatus: ErpCapabilityStatus | null;
+  requiredPermission: string | null;
+}
 
 export interface EffectiveErpResource {
   key: string;
@@ -21,7 +32,7 @@ export interface EffectiveErpResource {
   providerStatus: ErpCapabilityStatus;
   effectiveStatus: ErpCapabilityStatus;
   usable: boolean;
-  operations: Array<{ key: string; adapterImplemented: boolean; capability: string | null; providerStatus: ErpCapabilityStatus }>;
+  operations: Array<{ key: string; adapterImplemented: boolean; capability: string | null; providerStatus: ErpCapabilityStatus; requiredPermission: string; iamAllowed: boolean; executable: boolean }>;
   capabilities: string[];
   probeSupported: boolean;
   contractOperations: readonly string[];
@@ -46,7 +57,7 @@ export class ErpResourceCatalogService {
     const policy = await this.readPolicy();
     const lastCheckedAt = typeof stored.lastCapabilityCheck === 'string' ? stored.lastCapabilityCheck : null;
     const resources = ERP_RESOURCE_CATALOG.map((definition) =>
-      this.resolveResource(definition, policy.resources ?? {}, capabilities, evidence, lastCheckedAt),
+      this.resolveResource(definition, policy.resources ?? {}, capabilities, evidence, lastCheckedAt, ctx),
     );
 
     return {
@@ -73,6 +84,33 @@ export class ErpResourceCatalogService {
       defaultAllowed: true,
       resources: ERP_RESOURCE_CATALOG.map((resource) => ({ key: resource.key, platformAllowed: policy.resources?.[resource.key] !== false })),
     };
+  }
+
+  /** Shared fail-closed decision for every ERP business operation. */
+  async getOperationDecision(input: TenantContext & { resourceKey: string; operation: ErpOperation; mappingRequired?: boolean }): Promise<ErpOperationDecision> {
+    const definition = getErpResourceDefinition(input.resourceKey);
+    if (!definition) return this.denied(404, 'ERP_RESOURCE_DISABLED', 'Ressource ERP inconnue ou dÃ©sactivÃ©e.', null, null);
+    const operation = definition.operations.find((item) => item.key === input.operation);
+    const requiredPermission = input.operation === 'read' ? ERP_READ : ERP_WRITE;
+    if (!operation) return this.denied(501, 'ERP_OPERATION_NOT_IMPLEMENTED', 'OpÃ©ration ERP non dÃ©clarÃ©e dans le catalogue.', null, requiredPermission);
+    if (!this.iamAllowed(input, requiredPermission)) return this.denied(403, 'ERP_PERMISSION_DENIED', 'Permission IAM insuffisante pour cette opÃ©ration ERP.', null, requiredPermission);
+
+    const tenantId = this.requireTenant(input);
+    const connector = await this.registry.getActiveForTenant({ tenantId, actorId: input.actorId });
+    const stored = (connector.capabilities || {}) as Record<string, unknown>;
+    const policy = await this.readPolicy();
+    if (policy.resources?.[definition.key] === false) return this.denied(409, 'ERP_PLATFORM_DISABLED', 'Cette ressource ERP est dÃ©sactivÃ©e par la politique plateforme.', null, requiredPermission);
+    if (input.mappingRequired && definition.mappingSupport === 'NONE') return this.denied(409, 'ERP_RESOURCE_DISABLED', 'Cette ressource ne dispose pas du mapping requis.', null, requiredPermission);
+
+    const capabilities = this.statusMap(stored.capabilities);
+    const providerStatus: ErpCapabilityStatus = operation.capability
+      ? capabilities[operation.capability] ?? 'UNKNOWN'
+      : operation.adapterImplemented && definition.adapterImplemented ? 'UNKNOWN' : 'NOT_IMPLEMENTED';
+    if (providerStatus !== 'AVAILABLE') return this.providerDenied(providerStatus, requiredPermission);
+    if (!definition.adapterImplemented || !operation.adapterImplemented) {
+      return this.denied(501, 'ERP_OPERATION_NOT_IMPLEMENTED', 'Lâ€™adaptateur Techzone ne prend pas encore en charge cette opÃ©ration.', providerStatus, requiredPermission);
+    }
+    return { allowed: true, statusCode: 200, code: 'ERP_OPERATION_AVAILABLE', message: 'OpÃ©ration ERP autorisÃ©e.', providerStatus, requiredPermission };
   }
 
   async setPlatformAllowed(resourceKey: string, platformAllowed: boolean, actorId?: string) {
@@ -128,19 +166,28 @@ export class ErpResourceCatalogService {
     capabilities: Record<string, ErpCapabilityStatus>,
     evidence: Record<string, string>,
     lastCheckedAt: string | null,
+    ctx: TenantContext,
   ): EffectiveErpResource {
     const platformAllowed = policy[definition.key] !== false;
     const resourceCapabilities = definition.operations.flatMap((operation) => operation.capability ? [operation.capability] : []);
-    const operationStatuses = definition.operations.map((operation) => ({
-      key: operation.key,
-      adapterImplemented: operation.adapterImplemented,
-      capability: operation.capability ?? null,
-      providerStatus: operation.capability
+    const operationStatuses = definition.operations.map((operation) => {
+      const requiredPermission = operation.key === 'read' ? ERP_READ : ERP_WRITE;
+      const providerStatus: ErpCapabilityStatus = operation.capability
         ? capabilities[operation.capability] ?? 'UNKNOWN'
         : operation.adapterImplemented
           ? 'UNKNOWN'
-          : 'NOT_IMPLEMENTED' as ErpCapabilityStatus,
-    }));
+          : 'NOT_IMPLEMENTED';
+      const iamAllowed = this.iamAllowed(ctx, requiredPermission);
+      return {
+        key: operation.key,
+        adapterImplemented: operation.adapterImplemented,
+        capability: operation.capability ?? null,
+        providerStatus,
+        requiredPermission,
+        iamAllowed,
+        executable: definition.adapterImplemented && operation.adapterImplemented && platformAllowed && iamAllowed && providerStatus === 'AVAILABLE',
+      };
+    });
     const providerStatus = this.providerStatus(definition.adapterImplemented, operationStatuses.map((operation) => operation.providerStatus));
     const effectiveStatus: ErpCapabilityStatus = !definition.adapterImplemented
       ? 'NOT_IMPLEMENTED'
@@ -231,6 +278,30 @@ export class ErpResourceCatalogService {
 
   private credentialConfigured(stored: Record<string, unknown>) {
     return Boolean(stored.encryptedApiKey || stored.apiKey);
+  }
+
+  private iamAllowed(input: TenantContext, permission: string) {
+    return hasPermission({ userId: input.actorId || '', sessionId: '', roles: [], permissions: input.permissions || [], isSuperAdmin: input.isSuperAdmin } as any, permission);
+  }
+
+  private providerDenied(providerStatus: ErpCapabilityStatus, requiredPermission: string): ErpOperationDecision {
+    const normalized: Record<ErpCapabilityStatus, [number, string, string]> = {
+      AVAILABLE: [200, 'ERP_OPERATION_AVAILABLE', 'OpÃ©ration ERP autorisÃ©e.'],
+      PERMISSION_DENIED: [409, 'ERP_PERMISSION_DENIED', 'Dolibarr refuse cette opÃ©ration : permission fournisseur requise.'],
+      MODULE_DISABLED: [409, 'ERP_PROVIDER_MODULE_DISABLED', 'Le module Dolibarr requis est dÃ©sactivÃ© ou inaccessible.'],
+      NOT_SUPPORTED: [501, 'ERP_OPERATION_NOT_SUPPORTED', 'Cette opÃ©ration nâ€™est pas supportÃ©e par lâ€™API fournisseur.'],
+      NOT_IMPLEMENTED: [501, 'ERP_OPERATION_NOT_IMPLEMENTED', 'Cette opÃ©ration nâ€™est pas implÃ©mentÃ©e dans Techzone.'],
+      UNKNOWN: [409, 'ERP_CAPABILITY_UNKNOWN', 'La capability fournisseur doit Ãªtre vÃ©rifiÃ©e avant exÃ©cution.'],
+      UNAVAILABLE: [503, 'ERP_PROVIDER_UNAVAILABLE', 'Le fournisseur ERP est indisponible.'],
+      AUTH_FAILED: [502, 'ERP_PERMISSION_DENIED', 'Lâ€™authentification fournisseur doit Ãªtre corrigÃ©e.'],
+      ERROR: [502, 'ERP_PROVIDER_UNAVAILABLE', 'La capability fournisseur est en erreur.'],
+    };
+    const [statusCode, code, message] = normalized[providerStatus];
+    return this.denied(statusCode, code, message, providerStatus, requiredPermission);
+  }
+
+  private denied(statusCode: number, code: string, message: string, providerStatus: ErpCapabilityStatus | null, requiredPermission: string | null): ErpOperationDecision {
+    return { allowed: false, statusCode, code, message, providerStatus, requiredPermission };
   }
 
   private requireTenant(ctx?: TenantContext) {

@@ -16,7 +16,7 @@ export class ErpResourceCatalogController {
   @Permissions(ERP_READ)
   @ApiOperation({ summary: 'Catalogue ERP effectif pour le tenant courant, sans secret ni appel métier' })
   getCatalog(@CurrentUser() principal: IamAuthContext) {
-    return this.catalog.getCatalog({ tenantId: principal.tenantId ?? undefined, actorId: principal.userId });
+    return this.catalog.getCatalog({ tenantId: principal.tenantId ?? undefined, actorId: principal.userId, permissions: principal.permissions, isSuperAdmin: principal.isSuperAdmin });
   }
 
   @Get('policy')

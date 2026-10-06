@@ -38,6 +38,23 @@ function matchesFilter(resource, filter) {
 }
 
 function ResourceCard({ resource, canManage, onToggle, busy }) {
+  const readOperation = resource.operations.find((operation) => operation.key === 'read');
+  const canOpen = Boolean(resource.routeKey && readOperation?.executable);
+  const actionReason = !resource.platformAllowed
+    ? 'Désactivée par la politique plateforme.'
+    : !resource.adapterImplemented
+      ? 'À intégrer dans Techzone.'
+      : resource.effectiveStatus === 'MODULE_DISABLED'
+        ? 'Module Dolibarr requis.'
+        : resource.effectiveStatus === 'PERMISSION_DENIED'
+          ? 'Permission Dolibarr requise.'
+          : resource.effectiveStatus === 'NOT_SUPPORTED'
+            ? 'Opération non supportée par le fournisseur.'
+            : resource.effectiveStatus === 'UNKNOWN'
+              ? 'Capability à vérifier.'
+              : !readOperation?.iamAllowed
+                ? 'Permission IAM requise.'
+                : 'Action indisponible.';
   const operationLabels = resource.operations.filter((operation) => operation.adapterImplemented).map((operation) => ({ read: 'Lecture', create: 'Création', update: 'Modification', delete: 'Suppression' }[operation.key]));
   return <article data-erp-resource={resource.key} data-state={resource.effectiveStatus} className="flex min-w-0 flex-col rounded-lg border border-slate-200 bg-white p-4">
     <div className="flex items-start justify-between gap-3"><div><h3 className="font-medium text-slate-900">{resource.label}</h3><p className="mt-1 text-xs text-slate-500">{resource.adapterImplemented ? 'Adapter implémenté' : 'Adapter non implémenté'}</p></div><StatusBadge status={resource.effectiveStatus} /></div>
@@ -45,7 +62,7 @@ function ResourceCard({ resource, canManage, onToggle, busy }) {
     <dl className="mt-3 space-y-1 text-xs text-slate-600"><div className="flex justify-between gap-3"><dt>Dolibarr</dt><dd className="text-right">{ERP_STATUS_LABELS[resource.providerStatus] || resource.providerStatus}</dd></div><div className="flex justify-between gap-3"><dt>Techzone</dt><dd className="text-right">{resource.platformAllowed ? 'Autorisé' : 'Interdit'}</dd></div></dl>
     {resource.diagnostic && <p className="mt-3 text-xs text-slate-500">{resource.diagnostic}</p>}
     <div className="mt-4 flex flex-wrap items-center gap-3">
-      {resource.routeKey && resource.adapterImplemented && <Link to={`/erp/${resource.routeKey}`} className="text-sm font-medium text-blue-700 hover:text-blue-900">Ouvrir</Link>}
+      {canOpen ? <Link to={`/erp/${resource.routeKey}`} className="text-sm font-medium text-blue-700 hover:text-blue-900">Ouvrir</Link> : <span className="text-sm text-slate-500" aria-disabled="true">{actionReason}</span>}
       {canManage && <button type="button" disabled={busy} onClick={() => onToggle(resource)} className="text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">{resource.platformAllowed ? 'Interdire' : 'Autoriser'}</button>}
     </div>
   </article>;
