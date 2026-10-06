@@ -20,6 +20,9 @@ if (!['local', 'remote'].includes(APP_ENV)) {
 /** Keep the cross-platform launcher aligned with scripts/windows/environment.cjs. */
 const backendEnvFiles = APP_ENV === 'remote' ? ['.env.remote'] : ['.env', '.env.local'];
 const backendEnvArgs = backendEnvFiles.flatMap((file) => [`--env-file-if-exists=${file}`]);
+// Vite reserves the "local" suffix for .env.local files, so its local mode
+// must remain the conventional "development" while the backend uses APP_ENV.
+const viteMode = APP_ENV === 'local' ? 'development' : 'remote';
 
 const NODE = process.execPath;
 function npmCli() {
@@ -63,7 +66,7 @@ const SERVICES = [
   {
     name: 'FRONTEND', tag: 'BUSINESS', port: 3000,
     cwd: path.join(root, 'frontend'),
-    cmd: () => ({ cmd: NODE, args: [path.join(root, 'frontend/node_modules/vite/bin/vite.js'), '--mode', APP_ENV, '--port', '3000', '--host', '0.0.0.0', '--strictPort'] }),
+    cmd: () => ({ cmd: NODE, args: [path.join(root, 'frontend/node_modules/vite/bin/vite.js'), '--mode', viteMode, '--port', '3000', '--host', '0.0.0.0', '--strictPort'] }),
     url: 'http://localhost:3000',
   },
   {
@@ -305,7 +308,7 @@ async function run(rebuilt) {
   console.log(c('DOLIB', '  ▶ Dolibarr (techzone) → http://127.0.0.1:8080'));
   console.log(c('INFO', '────────────────────────────────────────────────'));
   console.log(c('INFO', '(Ctrl+C hampijanona daholo · npm run stop mamono koa)'));
-  console.log(c('INFO', `Profil d'environnement : ${APP_ENV} (${backendEnvFiles.join(' + ')})`));
+  console.log(c('INFO', `Profil d'environnement : ${APP_ENV} (${backendEnvFiles.join(' + ')}; Vite ${viteMode})`));
 }
 
 const flags = new Set(process.argv.slice(2));
