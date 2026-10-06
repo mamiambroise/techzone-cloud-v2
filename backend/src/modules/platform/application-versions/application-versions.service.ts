@@ -4,13 +4,17 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';
 import { PlatformException } from '../../../common/errors/platform.exception';
 import { canTransitionVersion } from '../../../common/lifecycle/version-lifecycle.util';
+import { BusinessDefinitionCopyService } from '../../business-manager/business-definition-copy.service';
 
 import { CreateApplicationVersionDto } from './dto/create-app-version.dto';
 import { UpdateApplicationVersionDto } from './dto/update-app-version.dto';
 
 @Injectable()
 export class ApplicationVersionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly definitionCopy: BusinessDefinitionCopyService,
+  ) {}
 
   async findByApplication(applicationId: string, tenantId: string | null) {
     await this.ensureApplicationExists(applicationId, tenantId);
@@ -42,6 +46,7 @@ export class ApplicationVersionsService {
     dto: CreateApplicationVersionDto,
     tenantId: string | null,
   ) {
+    const scopedTenantId = this.requireTenantId(tenantId);
     await this.ensureApplicationExists(applicationId, tenantId);
 
     const version = dto.version.trim();
@@ -50,7 +55,7 @@ export class ApplicationVersionsService {
       where: {
         applicationId,
         version,
-        tenantId: tenantId ?? undefined,
+        tenantId: scopedTenantId,
       },
     });
 
@@ -69,7 +74,7 @@ export class ApplicationVersionsService {
         releaseNotes: dto.releaseNotes?.trim(),
         createdFrom: dto.createdFrom?.trim(),
         status: 'DRAFT',
-        tenantId: tenantId ?? undefined,
+        tenantId: scopedTenantId,
       },
     });
   }
@@ -178,7 +183,14 @@ export class ApplicationVersionsService {
     });
   }
 
+  /**
+   * Clone une version : crée une nouvelle version DRAFT et recopie la
+   * Business Definition complète (entités, champs, relations, fonctionnalités,
+   * navigation, configuration) en ré-échappant toutes les références vers les
+   * nouveaux objets. La version source n'est jamais modifiée.
+   */
   async clone(id: string, tenantId: string | null) {
+    const scopedTenantId = this.requireTenantId(tenantId);
     const source = await this.findOne(id, tenantId);
 
     const newVersion = await this.generateCloneVersion(
@@ -187,7 +199,7 @@ export class ApplicationVersionsService {
       tenantId,
     );
 
-    return this.prisma.applicationVersion.create({
+    const created = await this.prisma.applicationVersion.create({
       data: {
         applicationId: source.applicationId,
         version: newVersion,
@@ -196,9 +208,19 @@ export class ApplicationVersionsService {
           : `Cloned from ${source.version}`,
         createdFrom: source.id,
         status: 'DRAFT',
-        tenantId: tenantId ?? undefined,
+        tenantId: scopedTenantId,
       },
+      select: { id: true },
     });
+
+    const copied = await this.definitionCopy.copy(source.id, created.id, tenantId);
+
+    return {
+      ...created,
+      version: newVersion,
+      createdFrom: source.id,
+      copiedDefinition: copied,
+    };
   }
 
   private async generateCloneVersion(
@@ -277,5 +299,16 @@ export class ApplicationVersionsService {
     }
 
     return application;
+  }
+
+  private requireTenantId(tenantId: string | null): string {
+    if (!tenantId) {
+      throw new PlatformException(
+        PlatformErrorCode.TENANT_VIOLATION,
+        'Select a tenant before creating or cloning an application version',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return tenantId;
   }
 }

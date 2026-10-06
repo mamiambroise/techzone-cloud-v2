@@ -1,29 +1,49 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES, ROLE_PERMISSIONS } from './iam.constants';
 import { PERMISSIONS_KEY } from './iam-permissions.guard';
 import type { IamAuthContext } from './decorators/current-user.decorator';
 
+/**
+ * Phase 8 — contrôle des routes administratives.
+ *
+ * Décision volontairement modifiée par rapport à l'ancien contrôle par nom de rôle :
+ * l'autorité vient du `isSuperAdmin`calculé par `IamAuthorizationService` et de
+ * l'ensemble de permissions effectives, jamais d'une comparaison de chaîne.
+ *
+ * Raison : `ctx.roles` contient désormais des codes de rôles TENANT
+ * (`application_manager`, `tenant_user`, …) résolus en base. Tester
+ * `roles.includes('admin')` ferait qu'un rôle créé par un tenant avec le code
+ * `admin` vaudrait administration plateforme — une escalade de privilège
+ * entièrement pilotable par un client.
+ */
 @Injectable()
 export class IamAdminGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
+    // Une route déclarée « administrative » sans permission explicite est
+    // inexploitable : l'octroyer serait décider par omission.
     if (!requiredPermissions || requiredPermissions.length === 0) {
       throw new ForbiddenException({
         success: false,
-        message: 'Accès refusé — aucune permission explicite déclarée sur cette route administrative',
+        message:
+          'Accès refusé — aucune permission explicite déclarée sur cette route administrative',
         statusCode: 403,
       });
     }
 
     const request = context.switchToHttp().getRequest();
-    const ctx: IamAuthContext = request.iamAuth;
+    const ctx: IamAuthContext | undefined = request.iamAuth;
 
     if (!ctx) {
       throw new ForbiddenException({
@@ -33,20 +53,17 @@ export class IamAdminGuard implements CanActivate {
       });
     }
 
-    const userRoles = ctx.roles ?? [];
-    const userPermissions = ctx.permissions ?? [];
-
-    for (const role of userRoles) {
-      if (role === ROLES.ADMIN) {
-        return true;
-      }
-      const rolePerms = ROLE_PERMISSIONS[role] ? (Array.isArray(ROLE_PERMISSIONS[role]) ? ROLE_PERMISSIONS[role] : Object.values(ROLE_PERMISSIONS[role]).flat() as string[]) : [];
-      if (rolePerms.some((p) => requiredPermissions.includes(p))) {
-        return true;
-      }
+    // Override plateforme : un superadmin reste superadmin, sans condition.
+    if (ctx.isSuperAdmin === true) {
+      return true;
     }
 
-    if (userPermissions.some((p) => requiredPermissions.includes(p))) {
+    const userPermissions = ctx.permissions ?? [];
+    const granted = requiredPermissions.every((permission) =>
+      userPermissions.includes(permission),
+    );
+
+    if (granted) {
       return true;
     }
 

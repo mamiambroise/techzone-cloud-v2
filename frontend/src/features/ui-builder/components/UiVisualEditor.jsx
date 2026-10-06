@@ -66,6 +66,17 @@ function EditorBody() {
     [businessContext, page?.metadata],
   );
 
+  // Debounced autosave keeps the server as the source of truth without sending
+  // a request for each keystroke. Manual Save remains available for retries.
+  const autosaveTimer = useRef(null);
+  useEffect(() => {
+    if (saveState !== 'DIRTY' || !selectedPageId) return undefined;
+    autosaveTimer.current = window.setTimeout(() => {
+      dispatch(saveCurrentPage());
+    }, 750);
+    return () => window.clearTimeout(autosaveTimer.current);
+  }, [dispatch, saveState, selectedPageId, tree]);
+
   if (!page) {
     return (
       <BmEmptyState
@@ -568,7 +579,7 @@ function ActionsTab({ node, def, onChange }) {
               <input value={action.config?.workflowCode || ''} onChange={(event) => update(index, { config: { ...action.config, workflowCode: event.target.value } })} placeholder="ex. onboarding-notify" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400" />
             </label>
           )}
-          {action.type === 'CALL_API' && (
+          {['CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD'].includes(action.type) && (
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Resource Data Runtime</span>
               <input value={action.config?.resource || ''} onChange={(event) => update(index, { config: { ...action.config, resource: event.target.value } })} placeholder="ex. customers" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400" />
@@ -586,7 +597,7 @@ function ActionsTab({ node, def, onChange }) {
               <input value={action.config?.name || ''} onChange={(event) => update(index, { config: { ...action.config, name: event.target.value } })} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400" />
             </label>
           )}
-          {['REFRESH', 'OPEN_MODAL', 'CLOSE_MODAL'].includes(action.type) && (
+          {['REFRESH_DATA', 'OPEN_MODAL', 'OPEN_DRAWER', 'CLOSE_MODAL'].includes(action.type) && (
             <p className="text-[10px] text-slate-400">Action sans configuration supplémentaire.</p>
           )}
         </div>
@@ -691,7 +702,6 @@ function LeafPreview({ node, resolveBinding }) {
           <span className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400">{props.placeholder || '—'}</span>
         </label>
       );
-    case 'FormField': // bindings affichés
     default:
       return (
         <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">

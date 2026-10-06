@@ -156,6 +156,32 @@ const uiBuilderSlice = createSlice({
       state.redoStack = [];
     },
 
+    generateFormFromEntity(state, action) {
+      const { entity, fields } = action.payload || {};
+      if (!entity || !Array.isArray(fields)) return;
+      const before = state.tree;
+      const parentId = state.selectedComponentId && state.tree.nodes[state.selectedComponentId]
+        ? state.selectedComponentId : state.tree.root;
+      const form = createNode('Form', { ...defaultProps('Form'), title: `Ajouter ${entity}` });
+      const nodes = { ...state.tree.nodes, [form.id]: form };
+      const parent = nodes[parentId];
+      nodes[parentId] = { ...parent, children: [...(parent.children || []), form.id] };
+      for (const field of fields.slice(0, 30)) {
+        const node = createNode('FormField', {
+          ...defaultProps('FormField'), label: field.label || field.code,
+          required: Boolean(field.required), readonly: Boolean(field.readonly), inputType: fieldInputType(field.type),
+        });
+        node.bindings = { value: { kind: 'ENTITY_FIELD', entity, field: field.code } };
+        nodes[node.id] = node;
+        nodes[form.id] = { ...nodes[form.id], children: [...nodes[form.id].children, node.id] };
+      }
+      state.tree = { ...state.tree, nodes };
+      state.selectedComponentId = form.id;
+      pushHistory(state, { type: 'GENERATE_FORM', doState: before });
+      state.saveState = 'DIRTY';
+      state.redoStack = [];
+    },
+
     moveComponent(state, action) {
       const { nodeId, newParentId, index } = action.payload;
       const nodes = state.tree.nodes;
@@ -355,6 +381,14 @@ function pushHistory(state, entry) {
   if (state.undoStack.length > MAX_HISTORY) state.undoStack.shift();
 }
 
+function fieldInputType(type) {
+  const normalized = String(type || '').toUpperCase();
+  if (['INT', 'INTEGER', 'DECIMAL', 'FLOAT', 'NUMBER'].includes(normalized)) return 'number';
+  if (['DATE', 'DATETIME', 'TIMESTAMP'].includes(normalized)) return 'date';
+  if (normalized === 'EMAIL') return 'email';
+  return 'text';
+}
+
 export const {
   setContext,
   selectPage,
@@ -362,6 +396,7 @@ export const {
   setDevice,
   setZoom,
   addComponent,
+  generateFormFromEntity,
   moveComponent,
   updateComponentProps,
   updateComponentBinding,

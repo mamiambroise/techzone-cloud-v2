@@ -1,7 +1,5 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { resolveRoute } from '../app/navigationConfig.js';
-import { canAccess } from '../app/navigationAccess.js';
 import { useAuth, AuthLoadingBoundary } from '../auth/AuthProvider.jsx';
 
 export function ModernSpinner({ label = 'Chargement...' }) {
@@ -13,6 +11,9 @@ export function ModernSpinner({ label = 'Chargement...' }) {
   );
 }
 
+// Garde d'authentification uniquement. Le contrôle d'accès IAM est appliqué par
+// RequireNavigationAccess, à l'intérieur du layout, afin que le 403 conserve
+// la navigation et permette de changer de module ou de se déconnecter.
 export default function ProtectedRoute({ children }) {
   const { user, loading, authState } = useAuth();
   const location = useLocation();
@@ -33,18 +34,5 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const metadata = resolveRoute(location.pathname);
-  if (metadata && !canAccess(metadata, user)) return <ForbiddenPage />;
   return children ?? <Outlet />;
-}
-
-export function ForbiddenPage() {
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Accès interdit</h1>
-        <p className="text-slate-600">Vous n'avez pas les droits nécessaires.</p>
-      </div>
-    </div>
-  );
 }

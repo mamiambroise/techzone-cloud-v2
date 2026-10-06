@@ -14,3 +14,14 @@ export function updateApplication(id, body) {
 export function archiveApplication(id) {
   return api.post(`/business-manager/applications/${id}/archive`).then(unwrap);
 }
+/** Repasse une application archivée en service. */
+export function restoreApplication(id) {
+  return api.post(`/business-manager/applications/${id}/restore`).then(unwrap);
+}
+/**
+ * Duplique une application (et, par défaut, sa définition métier).
+ * `copyDefinition: false` ne duplique que la coquille applicative.
+ */
+export function duplicateApplication(id, body = {}) {
+  return api.post(`/business-manager/applications/${id}/duplicate`, body).then(unwrap);
+}

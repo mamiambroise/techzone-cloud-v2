@@ -4,6 +4,7 @@ import { Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { api } from '../../services/apiClient.js';
 import { useTenant } from '../../contexts/TenantProvider.jsx';
 import { useAuth } from '../../auth/AuthProvider.jsx';
+import PublishedApplication from './PublishedApplication.jsx';
 import { BmPage, BmPageHeader, BmBreadcrumb, BmContextBar, BmCard, BmKpiCard, BmButton, BmTable, BmStatusBadge, BmEmptyState, BmErrorState, BmLoading, BmSelect } from '../business-manager/bm/ui.jsx';
 const get = path => api.get(path).then(r => r.data);
 const titles = { overview:'Vue d’ensemble Runtime',context:'Contextes',manifest:'Manifest publié',resolver:'Résolution',effective:'Configuration effective',cache:'Cache',diagnostics:'Diagnostics' };
@@ -34,6 +35,7 @@ function Workspace({ tenant }) {
   const app = data?.applications.find(a => a.id === context.applicationId);
   return <BmPage><BmBreadcrumb items={[{ label:'Runtime',to:'/runtime' },{ label:titles[section] }]}/><BmPageHeader title={titles[section] ?? 'Runtime'} subtitle="Résolution de packs publiés dans un contexte métier vérifié."/>
     {error && <BmErrorState message={error} onRetry={refresh}/>}
+    {context.packCode && context.packVersion && <PublishedApplication packCode={context.packCode} packVersion={context.packVersion} tenantId={tenant?.id} />}
     {!data ? !error && <BmLoading/> : <>
       <BmContextBar items={[{ label:'Application',value:effective?.businessConfiguration?.application?.name ?? app?.name },{ label:'Pack',value:effective?.source?.packCode ?? context.packCode },{ label:'Version',value:effective?.source?.packVersion ?? context.packVersion },{ label:'Tenant',value:tenant?.name ?? tenant?.id },{ label:'Environnement',value:effective?.scope?.environment ?? context.environment }]}/>
       {['overview','context','resolver'].includes(section) && <BmCard title="Contexte de résolution" subtitle="L’identité, les permissions et la configuration sont déterminées par le serveur."><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

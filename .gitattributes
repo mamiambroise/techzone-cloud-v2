@@ -1,0 +1,2 @@
+# Prisma checksums cover exact bytes. Preserve the validated SQL on Windows too.
+backend/prisma/migrations/**/migration.sql -text whitespace=cr-at-eol

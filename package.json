@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-all.mjs",
+    "dev:local": "set APP_ENV=local&& node scripts/dev-all.mjs",
+    "dev:remote": "set APP_ENV=remote&& node scripts/dev-all.mjs",
     "dev:rebuild": "node scripts/dev-all.mjs --rebuild",
     "stop": "node scripts/dev-all.mjs --stop",
     "status": "node scripts/dev-all.mjs --status",
@@ -15,6 +17,9 @@
     "windows:test": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/runtime.ps1 test",
     "windows:start:local": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/runtime.ps1 start -Mode local",
     "windows:start:remote": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/runtime.ps1 start -Mode remote",
-    "test-user:provision": "node scripts/windows/provision.cjs"
+    "test-user:provision": "node scripts/windows/provision.cjs",
+    "start": "node scripts/dev-all.mjs",
+    "restart": "node scripts/dev-all.mjs --restart",
+    "test:launcher": "node --test scripts/windows/stop-project.test.mjs"
   }
 }

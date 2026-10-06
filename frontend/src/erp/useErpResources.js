@@ -1,51 +1,66 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../services/apiClient.js';
-import { erpFailure, isUnconfigured } from './ErpErrorPanel.jsx';
 
-export const ERP_RESOURCES = { clients: 'Clients', products: 'Produits', orders: 'Commandes', invoices: 'Factures', stocks: 'Stocks' };
-export const ERP_REQUEST_DEADLINE_MS = 15000;
-export function useErpResources(tenantId) {
-  const [states, setStates] = useState({});
-  const requests = useRef(new Map());
+export const ERP_CATALOG_DEADLINE_MS = 15000;
+
+/**
+ * Fetches metadata and resolved capability states only. It intentionally does
+ * not load every business collection: resource data is fetched on navigation.
+ */
+export function useErpCatalog(tenantId) {
+  const [state, setState] = useState({ status: 'LOADING', catalog: null, error: null });
+  const requestRef = useRef(null);
   const generation = useRef(0);
-  const load = useCallback(async resource => {
-    requests.current.get(resource)?.abort();
-    const controller = new AbortController(); requests.current.set(resource, controller);
-    const current = generation.current;
-    let timedOut = false;
-    let timeoutId;
-    setStates(previous => ({ ...previous, [resource]: { status: 'LOADING' } }));
+
+  const load = useCallback(async () => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    const currentGeneration = generation.current;
+    setState({ status: 'LOADING', catalog: null, error: null });
     try {
-      const deadline = new Promise((_, reject) => {
-        controller.signal.addEventListener('abort', () => {
-          clearTimeout(timeoutId);
-          if (!timedOut) reject(new DOMException('ERP request cancelled', 'AbortError'));
-        }, { once: true });
-        timeoutId = setTimeout(() => {
-          timedOut = true;
-          reject({ code: 'INTEGRATION_TIMEOUT', message: 'Le délai de chargement ERP est dépassé. Réessayez.', statusCode: 504 });
-          controller.abort();
-        }, ERP_REQUEST_DEADLINE_MS);
+      const response = await api.get('/erp/catalog', {
+        signal: controller.signal,
+        errorHandling: 'local',
+        timeout: ERP_CATALOG_DEADLINE_MS,
       });
-      const result = await Promise.race([api.get(`/erp/${resource}`, { signal: controller.signal, errorHandling: 'local', timeout: ERP_REQUEST_DEADLINE_MS }), deadline]);
-      if (!Array.isArray(result.data)) throw { code: 'INTEGRATION_PAYLOAD_INVALID', message: 'Réponse ERP invalide.' };
-      if (controller.signal.aborted || current !== generation.current) return;
-      setStates(previous => ({ ...previous, [resource]: { status: result.data.length ? 'LOADED' : 'EMPTY', data: result.data } }));
+      if (controller.signal.aborted || currentGeneration !== generation.current) return;
+      const catalog = response.data;
+      if (!catalog || !Array.isArray(catalog.resources)) throw new Error('Réponse catalogue ERP invalide.');
+      setState({ status: catalog.resources.length ? 'LOADED' : 'EMPTY', catalog, error: null });
     } catch (error) {
-      if ((controller.signal.aborted && !timedOut) || current !== generation.current || requests.current.get(resource) !== controller) return;
-      const detail = erpFailure(error);
-      const status = isUnconfigured(error) ? 'UNCONFIGURED' : detail.statusCode === 403 || detail.code === 'ERP_PERMISSION_DENIED' ? 'FORBIDDEN' : [502,503,504].includes(detail.statusCode) || detail.code === 'INTEGRATION_TIMEOUT' ? 'UNAVAILABLE' : 'ERROR';
-      setStates(previous => ({ ...previous, [resource]: { status, error } }));
+      if (controller.signal.aborted || currentGeneration !== generation.current) return;
+      setState({ status: 'ERROR', catalog: null, error });
     } finally {
-      clearTimeout(timeoutId);
-      if (requests.current.get(resource) === controller) requests.current.delete(resource);
+      if (requestRef.current === controller) requestRef.current = null;
     }
   }, []);
+
   useEffect(() => {
-    generation.current++; setStates({});
-    if (tenantId) Object.keys(ERP_RESOURCES).forEach(load);
-    else setStates(Object.fromEntries(Object.keys(ERP_RESOURCES).map(resource => [resource, { status: 'UNCONFIGURED', error: { code: 'ERP_INSTANCE_NOT_CONFIGURED', message: 'Selectionnez un tenant pour charger ses ressources ERP.' } }])));
-    return () => { generation.current++; requests.current.forEach(controller => controller.abort()); requests.current.clear(); };
+    generation.current += 1;
+    if (!tenantId) {
+      setState({ status: 'UNCONFIGURED', catalog: null, error: null });
+      return undefined;
+    }
+    load();
+    return () => {
+      generation.current += 1;
+      requestRef.current?.abort();
+      requestRef.current = null;
+    };
   }, [tenantId, load]);
-  return { states, retry: load, retryAll: () => Object.keys(ERP_RESOURCES).forEach(load) };
+
+  return { ...state, retry: load };
 }
+
+export const ERP_STATUS_LABELS = {
+  AVAILABLE: 'Disponible',
+  PERMISSION_DENIED: 'Accès Dolibarr refusé',
+  MODULE_DISABLED: 'Module Dolibarr désactivé',
+  NOT_SUPPORTED: 'Non supporté par Dolibarr',
+  NOT_IMPLEMENTED: 'Non implémenté',
+  UNKNOWN: 'Non vérifié',
+  UNAVAILABLE: 'Indisponible',
+  AUTH_FAILED: 'Authentification refusée',
+  ERROR: 'Erreur de diagnostic',
+};

@@ -10,6 +10,7 @@ import {
   CreateVersionCapabilityDto,
   UpdateFeatureDto,
 } from './dto/create-feature.dto';
+import { assertVersionWritable } from '../version-mutability';
 
 @Injectable()
 export class FeatureCapabilityService {
@@ -39,7 +40,7 @@ export class FeatureCapabilityService {
   // =====================================================================
 
   async createFeature(applicationVersionId: string, dto: CreateFeatureDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const code = dto.code.trim().toLowerCase();
 
@@ -124,6 +125,8 @@ export class FeatureCapabilityService {
   async updateFeature(id: string, dto: UpdateFeatureDto, tenantId: string | null) {
     const feature = await this.findOneFeature(id, tenantId);
 
+    await assertVersionWritable(this.prisma, feature.applicationVersionId, tenantId);
+
     if (feature.status === BmFeatureStatus.ARCHIVED) {
       throw new PlatformException(
         PlatformErrorCode.APPLICATION_ARCHIVED,
@@ -149,6 +152,7 @@ export class FeatureCapabilityService {
 
   async archiveFeature(id: string, tenantId: string | null) {
     const feature = await this.findOneFeature(id, tenantId);
+    await assertVersionWritable(this.prisma, feature.applicationVersionId, tenantId);
     if (feature.status === BmFeatureStatus.ARCHIVED) return feature;
 
     return this.prisma.bmFeature.update({
@@ -195,6 +199,8 @@ export class FeatureCapabilityService {
       );
     }
 
+    await assertVersionWritable(this.prisma, feature.applicationVersionId, tenantId);
+
     const code = dto.code.trim().toLowerCase();
 
     return this.prisma.bmFeatureCapability.create({
@@ -218,7 +224,7 @@ export class FeatureCapabilityService {
   // =====================================================================
 
   async activateFeature(applicationId: string, applicationVersionId: string, dto: CreateVersionFeatureDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const existing = await this.prisma.bmVersionFeature.findFirst({
       where: {
@@ -254,7 +260,7 @@ export class FeatureCapabilityService {
   }
 
   async activateCapability(applicationId: string, applicationVersionId: string, dto: CreateVersionCapabilityDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     return this.prisma.bmVersionCapability.create({
       data: {
@@ -331,6 +337,7 @@ export class FeatureCapabilityService {
     const capability = await this.prisma.bmFeatureCapability.findFirst({ where: { id, tenantId: tenantId ?? undefined } });
     if (!capability) throw new PlatformException(PlatformErrorCode.APPLICATION_NOT_FOUND, 'Capability not found', HttpStatus.NOT_FOUND);
     const feature = await this.findOneFeature(capability.featureId, tenantId);
+    await assertVersionWritable(this.prisma, feature.applicationVersionId, tenantId);
     if (feature.status === BmFeatureStatus.ARCHIVED || capability.status === BmCapabilityStatus.ARCHIVED) {
       throw new PlatformException(PlatformErrorCode.APPLICATION_ARCHIVED, 'Archived capability cannot be modified', HttpStatus.CONFLICT);
     }

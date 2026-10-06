@@ -19,6 +19,7 @@ import {
   DATA_RUNTIME_EXECUTE,
   DATA_RUNTIME_QUERY,
   DATA_RUNTIME_READ,
+  ROLES,
 } from '../iam/iam.constants';
 
 @ApiTags('data-runtime')
@@ -63,12 +64,12 @@ export class DataRuntimeController {
     @Req() req: Request,
     @CurrentUser() principal: IamAuthContext,
     @Body() query: QueryContractDto,
-    @Body('ctx') ctx?: RuntimeContextDto,
   ) {
     this.logger.log(`POST /data-runtime/query resource=${query.resource}`);
-    const context = ctx || this.buildContext(query.resource, principal, req);
+    const context = this.buildContext(query.resource, principal, req);
     return this.queryEngine.execute(query, context);
   }
+  @Get('resources/:resource/:id')
   @Permissions(DATA_RUNTIME_READ)
   @ApiOperation({ summary: 'Obtenir un element canonique' })
   async getResource(
@@ -157,9 +158,8 @@ export class DataRuntimeController {
     @Req() req: Request,
     @CurrentUser() principal: IamAuthContext,
     @Param('bindingId') bindingId: string,
-    @Body('ctx') ctx?: RuntimeContextDto,
   ) {
-    const context = ctx || this.buildContext('default', principal, req);
+    const context = this.buildContext('default', principal, req);
     return this.bindingService.resolve(bindingId, context);
   }
 
@@ -182,7 +182,10 @@ export class DataRuntimeController {
       environmentId: process.env.NODE_ENV || 'development',
       requestId: `req-${Date.now()}`,
       traceId,
-      permissions: principal.permissions,
+      // The IAM guard derives ADMIN from the persisted user, never request JSON.
+      // Its static catalogue cannot enumerate dynamically authored BM capabilities.
+      // Resource ownership is still verified by the provider before authorization.
+      permissions: principal.roles.includes(ROLES.ADMIN) ? [...principal.permissions, '*'] : principal.permissions,
       erpCode: principal.organizationId ?? undefined,
       locale: 'fr',
     };

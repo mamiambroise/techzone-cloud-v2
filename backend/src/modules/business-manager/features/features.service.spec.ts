@@ -1,5 +1,4 @@
 import { jest } from '@jest/globals';
-import { HttpStatus } from '@nestjs/common';
 import { FeatureCapabilityService } from './features.service';
 import { PlatformException } from '../../../common/errors/platform.exception';
 import { BmFeatureStatus, BmCapabilityStatus } from '../../../generated/prisma/enums';
@@ -43,6 +42,9 @@ describe('FeatureCapabilityService (TENANT-ISOLATION)', () => {
   let service: FeatureCapabilityService;
   let prisma: ReturnType<typeof createMockPrisma>;
 
+  /** Version ouverte à l'écriture : DRAFT et VALIDATING restent mutables. */
+  const writableVersion = { id: 'av-1', applicationId: 'app-1', status: 'DRAFT', version: '1.0.0' };
+
   beforeEach(() => {
     prisma = createMockPrisma();
     service = new FeatureCapabilityService(prisma as any);
@@ -50,7 +52,7 @@ describe('FeatureCapabilityService (TENANT-ISOLATION)', () => {
 
   describe('createFeature', () => {
     it('should create feature with tenantId', async () => {
-      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1' });
+      prisma.applicationVersion.findFirst.mockResolvedValue(writableVersion);
       prisma.bmFeature.findFirst.mockResolvedValue(null);
       prisma.applicationVersion.findUnique.mockResolvedValue({ applicationId: 'app-1' });
       prisma.bmFeature.create.mockResolvedValue({ id: 'f-1', code: 'feature1', name: 'Feature 1' });
@@ -61,9 +63,9 @@ describe('FeatureCapabilityService (TENANT-ISOLATION)', () => {
         'tenant-123',
       );
 
-      expect(prisma.applicationVersion.findFirst).toHaveBeenCalledWith({
-        where: { id: 'av-1', tenantId: 'tenant-123' },
-      });
+      expect(prisma.applicationVersion.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'av-1', tenantId: 'tenant-123' } }),
+      );
       expect(prisma.bmFeature.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           applicationId: 'app-1',
@@ -82,7 +84,7 @@ describe('FeatureCapabilityService (TENANT-ISOLATION)', () => {
     });
 
     it('should create feature with undefined tenantId when null', async () => {
-      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1' });
+      prisma.applicationVersion.findFirst.mockResolvedValue(writableVersion);
       prisma.bmFeature.findFirst.mockResolvedValue(null);
       prisma.applicationVersion.findUnique.mockResolvedValue({ applicationId: 'app-1' });
       prisma.bmFeature.create.mockResolvedValue({ id: 'f-1', code: 'feature1', name: 'Feature 1' });
@@ -97,18 +99,33 @@ describe('FeatureCapabilityService (TENANT-ISOLATION)', () => {
     });
 
     it('should throw when feature code already exists', async () => {
-      prisma.applicationVersion.findFirst.mockResolvedValue({ id: 'av-1' });
+      prisma.applicationVersion.findFirst.mockResolvedValue(writableVersion);
       prisma.bmFeature.findFirst.mockResolvedValue({ id: 'existing', code: 'feature1' });
 
       await expect(
         service.createFeature('av-1', { code: 'FEATURE1', name: 'Feature 1' } as any, 'tenant-123'),
       ).rejects.toThrow(PlatformException);
     });
+
+    it('should reject a feature written on a published version', async () => {
+      prisma.applicationVersion.findFirst.mockResolvedValue({ ...writableVersion, status: 'ACTIVE' });
+
+      await expect(
+        service.createFeature('av-1', { code: 'FEATURE1', name: 'Feature 1' } as any, 'tenant-123'),
+      ).rejects.toThrow(PlatformException);
+
+      expect(prisma.bmFeature.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('createCapability', () => {
     it('should create capability with tenantId', async () => {
-      prisma.bmFeature.findFirst.mockResolvedValue({ id: 'feat-1', tenantId: 'tenant-123' });
+      prisma.bmFeature.findFirst.mockResolvedValue({
+        id: 'feat-1',
+        applicationVersionId: 'av-1',
+        tenantId: 'tenant-123',
+      });
+      prisma.applicationVersion.findFirst.mockResolvedValue(writableVersion);
       prisma.bmFeatureCapability.create.mockResolvedValue({ id: 'cap-1', code: 'cap1', name: 'Capability 1' });
 
       const result = await service.createCapability('feat-1', { code: 'CAP1', name: 'Capability 1' } as any, 'tenant-123');
@@ -128,7 +145,12 @@ describe('FeatureCapabilityService (TENANT-ISOLATION)', () => {
     });
 
     it('should create capability with undefined tenantId when null', async () => {
-      prisma.bmFeature.findFirst.mockResolvedValue({ id: 'feat-1', tenantId: undefined });
+      prisma.bmFeature.findFirst.mockResolvedValue({
+        id: 'feat-1',
+        applicationVersionId: 'av-1',
+        tenantId: undefined,
+      });
+      prisma.applicationVersion.findFirst.mockResolvedValue(writableVersion);
       prisma.bmFeatureCapability.create.mockResolvedValue({ id: 'cap-1', code: 'cap1', name: 'Capability 1' });
 
       await service.createCapability('feat-1', { code: 'CAP1', name: 'Capability 1' } as any, null);
@@ -138,6 +160,21 @@ describe('FeatureCapabilityService (TENANT-ISOLATION)', () => {
           data: expect.objectContaining({ tenantId: undefined }),
         }),
       );
+    });
+
+    it('should reject a capability added to a feature of a published version', async () => {
+      prisma.bmFeature.findFirst.mockResolvedValue({
+        id: 'feat-1',
+        applicationVersionId: 'av-1',
+        tenantId: 'tenant-123',
+      });
+      prisma.applicationVersion.findFirst.mockResolvedValue({ ...writableVersion, status: 'ACTIVE' });
+
+      await expect(
+        service.createCapability('feat-1', { code: 'CAP1', name: 'Capability 1' } as any, 'tenant-123'),
+      ).rejects.toThrow(PlatformException);
+
+      expect(prisma.bmFeatureCapability.create).not.toHaveBeenCalled();
     });
   });
 });

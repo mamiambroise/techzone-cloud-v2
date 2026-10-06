@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DataRuntimeController } from './data-runtime.controller';
 import { DataAccessManager } from './data-access/data-access-manager';
 import { ERPAdapterDataProvider } from './data-access/erp-adapter.provider';
+import { BmRecordsProvider } from './data-access/bm-records.provider';
 import { QueryEngine } from './query-engine/query-engine';
 import { ExecutionEngine } from './execution-engine/execution-engine';
 import { DataBindingService } from './binding/data-binding.service';
@@ -17,6 +18,7 @@ import { ResourceDescriptor } from './interfaces';
   providers: [
     DataAccessManager,
     ERPAdapterDataProvider,
+    BmRecordsProvider,
     QueryEngine,
     ExecutionEngine,
     DataBindingService,
@@ -36,10 +38,12 @@ export class DataRuntimeModule {
   constructor(
     private readonly dataAccess: DataAccessManager,
     private readonly erpDataProvider: ERPAdapterDataProvider,
+    private readonly bmRecordsProvider: BmRecordsProvider,
     private readonly validationService: ValidationService,
   ) {
     // Register the ERP Adapter provider
     this.dataAccess.registerProvider('ERP_ADAPTER', this.erpDataProvider);
+    this.dataAccess.registerProvider('BM_RECORDS', this.bmRecordsProvider);
 
     // Register canonical resources
     const productResource: ResourceDescriptor = {

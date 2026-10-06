@@ -26,8 +26,9 @@ function createMockPrisma() {
       update: jest.fn(),
     },
     bmEntity: {
-      findMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
+    bmRelation: { findMany: jest.fn().mockResolvedValue([]) },
     auditEvent: {
       create: jest.fn(),
     },
@@ -290,6 +291,24 @@ describe('UiBuilderService — VALIDATION ENGINE', () => {
     expect(codes).toContain('FIELD_UNKNOWN');
   });
 
+  it('refuse les composants et actions absents du contrat v1', async () => {
+    prisma.uiPage.findMany.mockResolvedValue([
+      {
+        id: 'p-1', key: 'safe', route: '/safe',
+        components: { root: 'root', nodes: {
+          root: { id: 'root', type: 'ArbitraryReact', actions: [{ type: 'EVAL', config: {} }], children: [] },
+        } },
+      },
+    ]);
+    prisma.bmEntity.findMany.mockResolvedValue([]);
+
+    const result = await service.validate(VERSION_ID, TENANT_A);
+    expect(result.status).toBe('INVALID');
+    expect(result.issues.map((issue: { code: string }) => issue.code)).toEqual(
+      expect.arrayContaining(['COMPONENT_UNKNOWN', 'ACTION_UNKNOWN']),
+    );
+  });
+
   it('isole la validation par tenant (findMany filtre tenantId)', async () => {
     prisma.uiPage.findMany.mockResolvedValue([]);
     prisma.bmEntity.findMany.mockResolvedValue([]);
@@ -339,13 +358,16 @@ describe('UiBuilderService — UI DEFINITION + THEME', () => {
     const def = await service.getUiDefinition(VERSION_ID, TENANT_A);
 
     expect(def).toMatchObject({
-      schemaVersion: '1.0',
+      schemaVersion: '1.1',
       applicationId: 'app-1',
       applicationVersionId: VERSION_ID,
     });
     expect(def.pages).toHaveLength(1);
     expect(def.pages[0].components).toMatchObject({ root: 'root' });
-    expect(def.navigation.items[0]).toMatchObject({ pageKey: 'customers', icon: 'Users' });
+      expect(def.navigation.items[0]).toMatchObject({ pageKey: 'customers', icon: 'Users' });
+      expect(def.pages[0].updatedAt).toEqual(expect.any(String));
+      expect(JSON.parse(JSON.stringify(def))).toEqual(def);
+      expect(await service.getUiDefinition(VERSION_ID, TENANT_A)).toEqual(def);
   });
 
   it('upsertTheme incrémente la révision', async () => {
@@ -374,7 +396,117 @@ describe('UiBuilderService — UI DEFINITION + THEME', () => {
     const overview = await service.getOverview(VERSION_ID, TENANT_A);
 
     expect(overview.application).toEqual({ id: 'app-1', name: null, code: null });
-    expect(overview.counts).toEqual({ pages: 0, components: 0, forms: 0 });
+    expect(overview.counts).toEqual({
+      pages: 0,
+      components: 0,
+      forms: 0,
+      bindings: 0,
+      navigationItems: 0,
+      hiddenPages: 0,
+      errors: 0,
+      warnings: 1,
+    });
     expect(overview.themeConfigured).toBe(false);
+    expect(overview.lastSavedAt).toBeNull();
+    expect(overview.uiProject).toMatchObject({ applicationVersionId: VERSION_ID, resolved: true, pageCount: 0, hasTheme: false });
+  });
+
+  it('overview dérive KPI, progression et dernière sauvegarde des pages réelles', async () => {
+    prisma.application.findFirst.mockResolvedValue({ id: 'app-1', name: 'App', code: 'APP' });
+    prisma.bmEntity.findMany.mockResolvedValue([
+      { id: 'e-1', code: 'customer', fields: [{ id: 'f-1', code: 'name' }] },
+    ]);
+    prisma.uiThemeSetting.findFirst.mockResolvedValue({
+      id: 't-1',
+      revision: 2,
+      tokens: { breakpoints: { tablet: 834, mobile: 420 } },
+      updatedAt: new Date('2026-02-02T10:00:00.000Z'),
+    });
+    prisma.uiPage.findMany.mockResolvedValue([
+      {
+        id: 'p-1',
+        key: 'customers',
+        title: 'Clients',
+        route: '/customers',
+        type: 'LIST',
+        status: 'READY',
+        visibility: 'ALWAYS',
+        updatedAt: new Date('2026-02-01T09:00:00.000Z'),
+        components: {
+          root: 'root',
+          nodes: {
+            root: { id: 'root', type: 'Container', children: ['c-1'] },
+            'c-1': { id: 'c-1', type: 'DataTable', bindings: { rows: { kind: 'ENTITY_LIST', entity: 'customer' } } },
+          },
+        },
+      },
+      {
+        id: 'p-2',
+        key: 'customer-form',
+        title: 'Formulaire client',
+        route: '/customers/form',
+        type: 'FORM',
+        status: 'DRAFT',
+        visibility: 'HIDDEN',
+        updatedAt: new Date('2026-01-20T09:00:00.000Z'),
+        components: { root: 'root', nodes: { root: { id: 'root', type: 'Container', children: [] } } },
+      },
+    ]);
+
+    const overview = await service.getOverview(VERSION_ID, TENANT_A);
+
+    expect(overview.counts).toMatchObject({
+      pages: 2,
+      components: 3,
+      forms: 1,
+      bindings: 1,
+      navigationItems: 1,
+      hiddenPages: 1,
+    });
+    expect(overview.lastSavedAt).toBe('2026-02-02T10:00:00.000Z');
+    expect(overview.progression).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'pages', status: 'IN_PROGRESS' }),
+        expect.objectContaining({ id: 'bindings', status: 'READY' }),
+        expect.objectContaining({ id: 'navigation', status: 'IN_PROGRESS' }),
+        expect.objectContaining({ id: 'theme', status: 'READY' }),
+        expect.objectContaining({ id: 'responsive', status: 'READY' }),
+      ]),
+    );
+    expect(overview.lastPages[0]).toMatchObject({ id: 'p-1', type: 'LIST', status: 'READY', visibility: 'ALWAYS', bindings: 1 });
+    expect(overview.uiProject).toMatchObject({ pageCount: 2, hasTheme: true, themeRevision: 2 });
+  });
+
+  it('overview expose les issues de validation réelles (page + composant)', async () => {
+    prisma.application.findFirst.mockResolvedValue({ id: 'app-1', name: 'App', code: 'APP' });
+    prisma.bmEntity.findMany.mockResolvedValue([]);
+    prisma.uiThemeSetting.findFirst.mockResolvedValue(null);
+    prisma.uiPage.findMany.mockResolvedValue([
+      {
+        id: 'p-1',
+        key: 'broken',
+        title: 'Cassée',
+        route: 'broken',
+        type: 'CUSTOM',
+        status: 'DRAFT',
+        visibility: 'ALWAYS',
+        updatedAt: new Date('2026-01-01T09:00:00.000Z'),
+        components: { root: 'root', nodes: { root: { id: 'root', type: 'Container', children: ['c-1'] }, 'c-1': { id: 'c-1', type: 'Unknown', bindings: {} } } },
+      },
+    ]);
+
+    const overview = await service.getOverview(VERSION_ID, TENANT_A);
+
+    expect(overview.validation.status).toBe('INVALID');
+    expect(overview.counts.errors).toBeGreaterThan(0);
+    expect(overview.validation.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'ROUTE_INVALID', pageId: 'p-1' }),
+        expect.objectContaining({ code: 'COMPONENT_UNKNOWN', pageId: 'p-1', componentId: 'c-1' }),
+      ]),
+    );
+    expect(overview.progression).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'validation', status: 'IN_PROGRESS' })]),
+    );
   });
 });

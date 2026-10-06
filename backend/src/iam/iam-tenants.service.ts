@@ -9,6 +9,10 @@ import { CreateMembershipDto } from './dto/create-membership.dto';
 export class IamTenantsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private generateId(): string {
+    return crypto.randomUUID();
+  }
+
   async listTenants(params?: {
     status?: string;
     search?: string;
@@ -62,6 +66,7 @@ export class IamTenantsService {
 
     return this.prisma.tenant.create({
       data: {
+        id: this.generateId(),
         code: dto.code,
         name: dto.name,
         description: dto.description ?? null,

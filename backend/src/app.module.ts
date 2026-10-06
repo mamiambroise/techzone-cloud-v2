@@ -17,6 +17,7 @@ import { DataRuntimeModule } from './data-runtime/data-runtime.module';
 import { AutomationModule } from './automation/automation.module';
 import { ErpRegistryModule } from './erp-registry/erp-registry.module';
 import { UiBuilderModule } from './modules/ui-builder/ui-builder.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { ConfigController } from './config/config.controller';
 
 @Module({
@@ -36,6 +37,7 @@ import { ConfigController } from './config/config.controller';
     DataRuntimeModule,
     AutomationModule,
     UiBuilderModule,
+    BillingModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

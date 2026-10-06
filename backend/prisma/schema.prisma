@@ -68,8 +68,8 @@ model Application {
   name        String            @db.VarChar(255)
   description String?
   status      ApplicationStatus @default(ACTIVE)
-  tenantId    String?           @db.Uuid
-  tenantScope String?           @db.VarChar(100) @default("TENANT")
+  tenantId    String?           @db.VarChar(100)
+  tenantScope String            @db.VarChar(100) @default("TENANT")
 
   versions               ApplicationVersion[]
   releases               Release[]
@@ -80,7 +80,7 @@ model Application {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -98,9 +98,10 @@ model ApplicationVersion {
   status        ApplicationVersionStatus @default(DRAFT)
   releaseNotes  String?
   createdFrom   String?                  @db.Uuid
-  tenantId      String?                  @db.Uuid
+  tenantId      String                   @db.VarChar(100)
 
   releases Release[]
+  packVersions PackVersion[]
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -1104,6 +1105,7 @@ model ERPRegistry {
 
   // Relations
   entityMappings EntityMapping[]
+  externalResourceLinks ExternalResourceLink[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -1146,6 +1148,32 @@ model EntityMapping {
   @@index([tenantId])
   @@index([erpId])
   @@map("entity_mapping")
+}
+
+// Table des liens de ressources externes (local ID <-> external ERP ID)
+// Phase 10 — additive. Préserve l'identité Techzone sans jamais remplacer
+// l'ID interne par l'ID Dolibarr (RG-INT-027, CDC §15/§25).
+model ExternalResourceLink {
+  id           String    @id @default(uuid())
+  tenantId     String    @db.Uuid
+  connectorId  String
+  resourceType String    @db.VarChar(100)
+  localId      String    @db.VarChar(100)
+  externalId   String    @db.VarChar(100)
+  externalRef  String?   @db.VarChar(100)
+  lastSyncedAt DateTime? @map("last_synced_at")
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  erp ERPRegistry @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, connectorId, resourceType, localId])
+  @@index([tenantId])
+  @@index([tenantId, resourceType])
+  @@index([connectorId])
+  @@map("external_resource_links")
 }
 
 // ============ IAM / AUTH (merged from new erp-adapter-platform/backend) ============
@@ -1225,7 +1253,7 @@ model IamUser {
   timezone            String?
   status              UserStatus @default(PENDING)
   isAdmin             Boolean    @default(false)
-  defaultTenantId     String? @db.Uuid
+  defaultTenantId     String?    @db.Text
   metadata            Json?
   statusChangedAt     DateTime?
   statusChangedBy     String?
@@ -1487,35 +1515,42 @@ enum SecuritySeverity {
   CRITICAL
 }
 
+// ==================================================================================================================
+// BILLING / SUBSCRIPTION ENUMS (CDC 15)
+// ==================================================================================================================
+
 enum PlanStatus {
   DRAFT
   ACTIVE
-  DISABLED
+  DEPRECATED
   ARCHIVED
 }
 
 enum SubscriptionStatus {
-  TRIAL
+  DRAFT
+  TRIALING
   ACTIVE
   PAST_DUE
+  GRACE_PERIOD
   SUSPENDED
   CANCELLED
   EXPIRED
+  ENDED
 }
 
 enum BillingInterval {
   MONTHLY
   QUARTERLY
-  SEMESTER
-  YEARLY
+  SEMI_ANNUAL
+  ANNUAL
   CUSTOM
 }
 
 enum InvoiceStatus {
   DRAFT
   OPEN
-  PAID
   PARTIALLY_PAID
+  PAID
   OVERDUE
   VOID
   CANCELLED
@@ -1537,6 +1572,109 @@ enum EntitlementValueType {
   DECIMAL
   STRING
   JSON
+}
+
+// RG-BILL-005 : un Price est sépare du Plan, donc son modèle est versionné.
+enum PricingModel {
+  FLAT
+  PER_SEAT
+  TIERED
+  USAGE_BASED
+  HYBRID
+  CUSTOM
+}
+
+enum PriceStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+// CDC 18 : BOOLEAN | LIMIT | QUOTA | CAPABILITY.
+enum EntitlementKind {
+  BOOLEAN
+  LIMIT
+  QUOTA
+  CAPABILITY
+}
+
+// CDC 28 : la politique d'enforcement est explicite, jamais déduite.
+enum EnforcementPolicy {
+  SOFT_LIMIT
+  HARD_LIMIT
+  OVERAGE
+  NOTIFY_ONLY
+}
+
+enum BillingAccountStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum CancellationMode {
+  IMMEDIATE
+  END_OF_PERIOD
+}
+
+// CDC 43 : le support effectif d'un moyen de paiement dépend des providers réellement
+// intégrés. MANUAL est le seul moyen réellement disponible en MVP.
+enum PaymentMethod {
+  MANUAL
+  BANK_TRANSFER
+  MOBILE_MONEY
+  CARD
+  CASH
+  GATEWAY
+}
+
+enum CreditStatus {
+  AVAILABLE
+  PARTIALLY_APPLIED
+  APPLIED
+  EXPIRED
+  CANCELLED
+}
+
+enum AdjustmentType {
+  MANUAL_CORRECTION
+  COMMERCIAL_GESTURE
+  USAGE_CORRECTION
+  BILLING_CORRECTION
+}
+
+enum MeterAggregation {
+  SUM
+  MAX
+  COUNT
+  LAST
+}
+
+enum MeterPeriod {
+  BILLING_PERIOD
+  MONTH
+  DAY
+  YEAR
+}
+
+// CDC 101 : les stages de diagnostic Billing.
+enum BillingStage {
+  SUBSCRIPTION_RESOLVER
+  ENTITLEMENT_RESOLVER
+  METERING
+  INVOICE_GENERATION
+  PAYMENT_PROVIDER
+  WEBHOOK
+  RENEWAL
+  ERP_SYNC
+}
+
+enum BillingDiagnosticStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  CRITICAL
+  UNKNOWN
 }
 
 enum AdminActionStatus {
@@ -1649,21 +1787,21 @@ model ExternalIdentityLink {
 }
 
 model Tenant {
-  id                  String        @id @default(uuid()) @db.Uuid
-  code                String        @unique
-  name                String
-  description         String?
+  id                  String        @id @default(uuid()) @db.Text
+  code                String        @unique @db.Text
+  name                String        @db.Text
+  description         String?       @db.Text
   status              TenantStatus  @default(PENDING)
-  locale              String?
-  timezone            String?
+  locale              String?       @db.Text
+  timezone            String?       @db.Text
   metadata            Json?
   statusChangedAt     DateTime?
-  statusChangedBy     String?
-  statusChangedReason String?
+  statusChangedBy     String?       @db.Text
+  statusChangedReason String?       @db.Text
   createdAt           DateTime      @default(now())
-  createdBy           String?
+  createdBy           String?       @db.Text
   updatedAt           DateTime      @updatedAt
-  updatedBy           String?
+  updatedBy           String?       @db.Text
   archivedAt          DateTime?
   version             Int           @default(1)
 
@@ -1678,6 +1816,11 @@ model Tenant {
   subscriptions       Subscription[]
   invoices            Invoice[]
   delegations         AdminDelegation[]
+  billingAccounts     BillingAccount[]
+  billingPayments     Payment[]
+  billingCredits      Credit[]
+  billingAdjustments  Adjustment[]
+  roleAssignments     RoleAssignment[]
 
   @@index([status])
   @@map("tenant")
@@ -1685,7 +1828,7 @@ model Tenant {
 
 model Organization {
   id                  String            @id @default(uuid())
-  tenantId            String @db.Uuid
+  tenantId            String            @db.Text
   code                String
   name                String
   description         String?
@@ -1740,7 +1883,7 @@ model Site {
 model Membership {
   id                  String           @id @default(uuid())
   userId              String
-  tenantId            String @db.Uuid
+  tenantId            String           @db.Text
   organizationId      String?
   siteId              String?
   status              MembershipStatus @default(INVITED)
@@ -1773,7 +1916,7 @@ model Membership {
 
 model Group {
   id                  String    @id @default(uuid())
-  tenantId            String @db.Uuid
+  tenantId            String    @db.Text
   organizationId      String?
   code                String
   name                String
@@ -1844,7 +1987,7 @@ model Permission {
 
 model Role {
   id                  String    @id @default(uuid())
-  tenantId            String? @db.Uuid
+  tenantId            String?   @db.Text
   code                String
   name                String
   description         String?
@@ -1894,7 +2037,7 @@ model RoleAssignment {
   userId              String?
   groupId             String?
   serviceAccountId    String?
-  tenantId            String? @db.Uuid
+  tenantId            String? @db.Text
   organizationId      String?
   siteId              String?
   validFrom           DateTime?
@@ -1911,6 +2054,7 @@ model RoleAssignment {
   user            IamUser?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   group           Group?            @relation(fields: [groupId], references: [id], onDelete: Cascade)
   serviceAccount  ServiceAccount?   @relation(fields: [serviceAccountId], references: [id], onDelete: Cascade)
+  tenant          Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([roleId])
   @@index([userId])
@@ -1924,7 +2068,7 @@ model RoleAssignment {
 
 model AccessPolicy {
   id                  String       @id @default(uuid())
-  tenantId            String? @db.Uuid
+  tenantId            String?      @db.Text
   code                String
   name                String
   description         String?
@@ -2040,7 +2184,7 @@ model RecoveryCode {
 
 model ServiceAccount {
   id                  String                @id @default(uuid())
-  tenantId            String @db.Uuid
+  tenantId            String                @db.Text
   identityId          String                @unique
   code                String
   name                String
@@ -2240,44 +2384,116 @@ model OutboxEvent {
   @@map("outbox_event")
 }
 
-model Plan {
-  id              String    @id @default(uuid())
-  code            String    @unique
-  name            String
-  description     String?
-  status          PlanStatus @default(DRAFT)
-  billingInterval BillingInterval @default(MONTHLY)
-  price           Decimal   @db.Decimal(18, 2)
-  currency        String    @default("MGA") @db.VarChar(3)
-  trialDays       Int?
-  metadata        Json?
-  createdAt       DateTime  @default(now())
-  createdBy       String?
-  updatedAt       DateTime  @updatedAt
-  updatedBy       String?
-  archivedAt      DateTime?
-  version         Int       @default(1)
+// ==================================================================================================================
+// SUBSCRIPTION & BILLING (CDC 15)
+//
+// Modèle fondamental (CDC 6) :
+//   Tenant -> BillingAccount -> Subscription -> Plan/Price -> Entitlements -> Usage -> Invoice -> Payment
+//
+// RG-BILL-005 : Price est séparé de Plan pour qu'un changement de tarif n'écrase jamais
+//               l'identité du plan ni l'historique financier d'une facture (RG-BILL-008/009).
+// RG-BILL-027 : Subscription, Invoice, Payment, Usage, BillingAccount, Credit et Adjustment
+//               portent tous tenantId. Seuls Product, Plan, Price, Meter et Feature sont
+//               PLATFORM GLOBAL (CDC 83) — la frontière de sécurité y est la permission.
+// ==================================================================================================================
 
-  entitlements   PlanEntitlement[]
-  subscriptions  Subscription[]
+/// Produit commercial du catalogue. Distinct du Registry technique (CDC 7).
+model BillingProduct {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  status      String   @default("ACTIVE")
+  features    Json?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  createdBy   String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+  archivedAt  DateTime?
+
+  plans Plan[]
 
   @@index([status])
+  @@map("billing_product")
+}
+
+/// Un Plan définit un ensemble commercial cohérent. Le prix n'est PAS porté par le Plan.
+model Plan {
+  id              String          @id @default(uuid())
+  code            String          @unique
+  name            String
+  description     String?
+  status          PlanStatus      @default(DRAFT)
+  billingModel    PricingModel    @default(FLAT)
+  billingInterval BillingInterval @default(MONTHLY)
+  intervalCount   Int             @default(1)
+  trialDays       Int?
+  metadata        Json?
+  productId       String?
+  createdAt       DateTime        @default(now())
+  createdBy       String?
+  updatedAt       DateTime        @updatedAt
+  updatedBy       String?
+  archivedAt      DateTime?
+  version         Int             @default(1)
+
+  product      BillingProduct?     @relation(fields: [productId], references: [id])
+  prices       Price[]
+  entitlements PlanEntitlement[]
+  subscriptions Subscription[]
+
+  @@index([status])
+  @@index([productId])
   @@map("plan")
 }
 
+/// Prix versionné. Un ancien prix passe INACTIVE, il n'est jamais écrasé (CDC 45/95/96).
+model Price {
+  id             String          @id @default(uuid())
+  planId         String
+  currency       String          @db.VarChar(3)
+  amount         Decimal         @db.Decimal(18, 2)
+  interval       BillingInterval
+  intervalCount  Int             @default(1)
+  pricingModel   PricingModel    @default(FLAT)
+  effectiveFrom  DateTime
+  effectiveUntil DateTime?
+  status         PriceStatus     @default(ACTIVE)
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+  createdBy      String?
+  updatedAt      DateTime        @updatedAt
+
+  plan           Plan            @relation(fields: [planId], references: [id], onDelete: Cascade)
+  subscriptions  Subscription[]
+  invoiceLines   InvoiceItem[]
+
+  @@unique([planId, currency, interval, intervalCount, effectiveFrom])
+  @@index([planId, status])
+  @@index([currency])
+  @@map("billing_price")
+}
+
+/// Entitlement de base d'un Plan. L'override par abonnement passe par
+/// SubscriptionEntitlementOverride ; l'usage par QuotaUsage/UsageAggregate.
 model PlanEntitlement {
-  id            String               @id @default(uuid())
-  planId        String
-  featureCode   String
-  valueType     EntitlementValueType @default(BOOLEAN)
-  enabled       Boolean              @default(true)
-  integerValue  Int?
-  decimalValue  Decimal?             @db.Decimal(18, 4)
-  stringValue   String?
-  jsonValue     Json?
-  metadata      Json?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  id           String               @id @default(uuid())
+  planId       String
+  featureCode  String
+  kind         EntitlementKind      @default(BOOLEAN)
+  valueType    EntitlementValueType @default(BOOLEAN)
+  enabled      Boolean              @default(true)
+  integerValue Int?
+  decimalValue Decimal?             @db.Decimal(18, 4)
+  stringValue  String?
+  jsonValue    Json?
+  unit         String?
+  enforcement  EnforcementPolicy    @default(SOFT_LIMIT)
+  meterKey     String?
+  metadata     Json?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
@@ -2286,21 +2502,70 @@ model PlanEntitlement {
   @@map("plan_entitlement")
 }
 
+/// Payeur. CDC 6/30 : ne jamais supposer que l'utilisateur est le payeur.
+model BillingAccount {
+  id             String              @id @default(uuid())
+  tenantId       String              @db.Uuid
+  customerName   String
+  billingEmail   String
+  billingAddress Json?
+  taxInformation Json?
+  currency       String              @default("MGA") @db.VarChar(3)
+  status         BillingAccountStatus @default(ACTIVE)
+
+  // Billing Profile (CDC 31)
+  legalName       String?
+  billingContact  String?
+  taxIdentifier   String?
+  invoiceLanguage String              @default("fr")
+  paymentTerms    Int?
+
+  metadata  Json?
+  createdAt DateTime @default(now())
+  createdBy String?
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  subscriptions Subscription[]
+  invoices      Invoice[]
+  credits       Credit[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("billing_account")
+}
+
 model Subscription {
   id              String             @id @default(uuid())
-  tenantId        String @db.Uuid
+  tenantId        String             @db.Text
+  billingAccountId String?
   planId          String
+  priceId         String?
   applicationCode String?
-  status          SubscriptionStatus @default(TRIAL)
+  status          SubscriptionStatus @default(DRAFT)
   startsAt        DateTime
   trialEndsAt     DateTime?
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?
-  endsAt          DateTime?
+  nextBillingAt   DateTime?
+  renewalAt       DateTime?
+
+  graceEndsAt     DateTime?
+  graceDays       Int?
+
+  suspendReason   String?
   suspendedAt     DateTime?
+  cancelAt        DateTime?
+  cancelRequestedAt DateTime?
+  cancelRequestedBy String?
+  cancellationMode CancellationMode?
   cancelledAt     DateTime?
   cancelledBy     String?
   cancellationReason String?
+  endsAt          DateTime?
+  endedAt         DateTime?
+
   autoRenew       Boolean          @default(true)
   metadata        Json?
   createdAt       DateTime         @default(now())
@@ -2309,8 +2574,10 @@ model Subscription {
   updatedBy       String?
   version         Int              @default(1)
 
-  tenant    Tenant                        @relation(fields: [tenantId], references: [id])
-  plan      Plan                          @relation(fields: [planId], references: [id])
+  tenant        Tenant                        @relation(fields: [tenantId], references: [id])
+  billingAccount BillingAccount?              @relation(fields: [billingAccountId], references: [id])
+  plan          Plan                          @relation(fields: [planId], references: [id])
+  price         Price?                        @relation(fields: [priceId], references: [id])
   entitlementOverrides SubscriptionEntitlementOverride[]
   quotaUsages         QuotaUsage[]
   invoices            Invoice[]
@@ -2320,23 +2587,25 @@ model Subscription {
   @@index([status])
   @@index([tenantId, status])
   @@index([currentPeriodEnd])
+  @@index([nextBillingAt])
   @@map("subscription")
 }
 
+/// Override commercial explicite, borné et audité (CDC 58).
 model SubscriptionEntitlementOverride {
-  id            String               @id @default(uuid())
+  id            String                 @id @default(uuid())
   subscriptionId String
   featureCode   String
   valueType     EntitlementValueType   @default(BOOLEAN)
   enabled       Boolean?
   integerValue  Int?
-  decimalValue  Decimal?             @db.Decimal(18, 4)
+  decimalValue  Decimal?               @db.Decimal(18, 4)
   stringValue   String?
   jsonValue     Json?
   reason        String?
   validFrom     DateTime?
   validUntil    DateTime?
-  createdAt     DateTime             @default(now())
+  createdAt     DateTime               @default(now())
   createdBy     String?
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
@@ -2346,6 +2615,7 @@ model SubscriptionEntitlementOverride {
   @@map("subscription_entitlement_override")
 }
 
+/// État de limite et de quota pour une période de facturation donnée (CDC 20/21).
 model QuotaUsage {
   id            String   @id @default(uuid())
   subscriptionId String
@@ -2354,6 +2624,8 @@ model QuotaUsage {
   periodEnd     DateTime
   usedValue     Decimal  @default(0) @db.Decimal(18, 4)
   limitValue    Decimal? @db.Decimal(18, 4)
+  unit          String?
+  enforcement   EnforcementPolicy @default(SOFT_LIMIT)
   updatedAt     DateTime @updatedAt
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
@@ -2365,29 +2637,39 @@ model QuotaUsage {
 }
 
 model Invoice {
-  id            String      @id @default(uuid())
-  tenantId      String @db.Uuid
+  id            String        @id @default(uuid())
+  tenantId      String        @db.Text
+  billingAccountId String?
   subscriptionId String?
-  invoiceNumber  String      @unique
-  status         InvoiceStatus @default(DRAFT)
-  currency       String      @default("MGA") @db.VarChar(3)
-  subtotal       Decimal     @default(0) @db.Decimal(18, 2)
-  taxTotal       Decimal     @default(0) @db.Decimal(18, 2)
-  discountTotal  Decimal     @default(0) @db.Decimal(18, 2)
-  total          Decimal     @default(0) @db.Decimal(18, 2)
-  amountPaid     Decimal     @default(0) @db.Decimal(18, 2)
-  amountDue      Decimal     @default(0) @db.Decimal(18, 2)
-  issuedAt       DateTime?
-  dueAt          DateTime?
-  paidAt         DateTime?
-  metadata       Json?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  invoiceNumber String        @unique
+  status        InvoiceStatus @default(DRAFT)
+  currency      String        @default("MGA") @db.VarChar(3)
+  subtotal      Decimal       @default(0) @db.Decimal(18, 2)
+  taxTotal      Decimal       @default(0) @db.Decimal(18, 2)
+  discountTotal Decimal       @default(0) @db.Decimal(18, 2)
+  creditApplied Decimal       @default(0) @db.Decimal(18, 2)
+  total         Decimal       @default(0) @db.Decimal(18, 2)
+  amountPaid    Decimal       @default(0) @db.Decimal(18, 2)
+  amountDue     Decimal       @default(0) @db.Decimal(18, 2)
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  issuedAt      DateTime?
+  dueAt         DateTime?
+  paidAt        DateTime?
+  voidedAt      DateTime?
+  voidReason    String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  createdBy     String?
+  updatedAt     DateTime      @updatedAt
 
-  tenant        Tenant?      @relation(fields: [tenantId], references: [id])
-  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
+  tenant        Tenant?         @relation(fields: [tenantId], references: [id])
+  billingAccount BillingAccount? @relation(fields: [billingAccountId], references: [id])
+  subscription  Subscription?  @relation(fields: [subscriptionId], references: [id])
   items         InvoiceItem[]
   payments      Payment[]
+  adjustments   Adjustment[]
+  credits       Credit[]
 
   @@index([tenantId])
   @@index([subscriptionId])
@@ -2396,49 +2678,202 @@ model Invoice {
   @@map("invoice")
 }
 
+/// Une ligne doit expliquer le montant (CDC 34). priceId fige le tarif historique :
+/// un changement de catalogue ne modifie pas une facture émise (RG-BILL-009).
 model InvoiceItem {
   id          String   @id @default(uuid())
   invoiceId   String
+  priceId     String?
   code        String?
   description String
   quantity    Decimal  @default(1) @db.Decimal(18, 4)
   unitPrice   Decimal  @db.Decimal(18, 2)
   subtotal    Decimal  @db.Decimal(18, 2)
   taxAmount   Decimal  @default(0) @db.Decimal(18, 2)
+  discount    Decimal  @default(0) @db.Decimal(18, 2)
   total       Decimal  @db.Decimal(18, 2)
+  sourceType  String?
+  sourceRef   String?
+  periodStart DateTime?
+  periodEnd   DateTime?
   metadata    Json?
 
+  createdAt DateTime @default(now())
+
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  price   Price?  @relation(fields: [priceId], references: [id])
 
   @@index([invoiceId])
+  @@index([sourceType])
   @@map("invoice_item")
 }
 
 model Payment {
-  id             String   @id @default(uuid())
+  id             String        @id @default(uuid())
+  tenantId       String @db.Uuid
   invoiceId      String
-  status         PaymentStatus @default(PENDING)
+  amount         Decimal       @db.Decimal(18, 2)
+  currency       String        @default("MGA") @db.VarChar(3)
+  method         PaymentMethod @default(MANUAL)
   provider       String?
-  paymentMethod  String?
   externalReference String?
-  amount         Decimal  @db.Decimal(18, 2)
-  currency       String   @default("MGA") @db.VarChar(3)
-  initiatedAt    DateTime @default(now())
+  status         PaymentStatus @default(PENDING)
+
+  // RG-BILL-021 : une même clé d'idempotence ne produit jamais deux débits.
+  idempotencyKey String?
+
+  // Paiement manuel (CDC 49) : la validation exige une permission IAM explicite.
+  proofReference String?
+  notes          String?
+  validatedBy    String?
+  validatedAt    DateTime?
+
+  initiatedAt    DateTime      @default(now())
   completedAt    DateTime?
   failedAt       DateTime?
   refundedAt     DateTime?
   failureCode    String?
   failureMessage String?
+  refundAmount   Decimal?      @db.Decimal(18, 2)
+  refundReason   String?
   metadata       Json?
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice  Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tenant   Tenant?          @relation(fields: [tenantId], references: [id])
+  attempts PaymentAttempt[]
 
+  @@index([tenantId])
   @@index([invoiceId])
   @@index([status])
   @@index([externalReference])
+  @@unique([tenantId, idempotencyKey])
   @@map("payment")
 }
 
+model PaymentAttempt {
+  id             String        @id @default(uuid())
+  attemptId      String        @unique
+  paymentId      String
+  provider       String?
+  providerReference String?
+  status         PaymentStatus @default(PENDING)
+  errorCode      String?
+  correlationId  String?
+  startedAt      DateTime      @default(now())
+  completedAt    DateTime?
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@map("payment_attempt")
+}
+
+model Credit {
+  id               String       @id @default(uuid())
+  tenantId         String @db.Uuid
+  billingAccountId String?
+  invoiceId        String?
+  amount           Decimal      @db.Decimal(18, 2)
+  remainingAmount  Decimal      @db.Decimal(18, 2)
+  currency         String       @default("MGA") @db.VarChar(3)
+  reason           String
+  source           String
+  status           CreditStatus @default(AVAILABLE)
+  expiresAt        DateTime?
+  createdAt        DateTime     @default(now())
+  createdBy        String?
+
+  tenant         Tenant?        @relation(fields: [tenantId], references: [id])
+  billingAccount BillingAccount? @relation(fields: [billingAccountId], references: [id])
+  invoice        Invoice?       @relation(fields: [invoiceId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("billing_credit")
+}
+
+model Adjustment {
+  id         String         @id @default(uuid())
+  tenantId   String @db.Uuid
+  invoiceId  String?
+  type       AdjustmentType
+  amount     Decimal        @db.Decimal(18, 2)
+  currency   String         @default("MGA") @db.VarChar(3)
+  reason     String
+  createdBy  String
+  createdAt  DateTime       @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@map("billing_adjustment")
+}
+
+/// Définition d'une métrique mesurable. PLATFORM GLOBAL (CDC 83).
+model Meter {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  name        String
+  unit        String
+  aggregation MeterAggregation @default(SUM)
+  period      MeterPeriod      @default(BILLING_PERIOD)
+  status      String           @default("ACTIVE")
+  entitlementCode String?
+  description String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  aggregates UsageAggregate[]
+
+  @@index([status])
+  @@index([entitlementCode])
+  @@map("meter")
+}
+
+/// Événement de consommation brut. eventId assure l'idempotence (CDC 26, RG-BILL-011/012).
+model UsageEvent {
+  id             String   @id @default(uuid())
+  eventId        String   @unique
+  tenantId       String @db.Uuid
+  subscriptionId String?
+  meterKey       String
+  quantity       Decimal  @db.Decimal(18, 4)
+  unit           String
+  occurredAt     DateTime
+  source         String
+  resourceId     String?
+  correlationId  String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId, meterKey, occurredAt])
+  @@index([tenantId])
+  @@index([meterKey])
+  @@map("usage_event")
+}
+
+/// Agrégat tenant x meter x période de facturation (CDC 27).
+model UsageAggregate {
+  id             String   @id @default(uuid())
+  tenantId       String @db.Uuid
+  subscriptionId String?
+  meterKey       String
+  periodStart    DateTime
+  periodEnd      DateTime
+  value          Decimal  @default(0) @db.Decimal(18, 4)
+  updatedAt      DateTime @updatedAt
+
+  meter Meter @relation(fields: [meterKey], references: [key], onDelete: Cascade)
+
+  @@unique([tenantId, meterKey, periodStart, periodEnd])
+  @@index([tenantId])
+  @@map("usage_aggregate")
+}
+
+/// Journal d'événement Billing (CDC 76) + journal d'audit métier (CDC 79).
 model BillingEvent {
   id            String   @id @default(uuid())
   traceId       String?
@@ -2459,9 +2894,47 @@ model BillingEvent {
   @@map("billing_event")
 }
 
+/// Diagnostic Billing (CDC 101). Ne contient aucun secret ni donnée de paiement.
+model BillingDiagnostic {
+  id            String                 @id @default(uuid())
+  stage         BillingStage
+  status        BillingDiagnosticStatus @default(UNKNOWN)
+  code          String?
+  message       String?
+  resource      String?
+  correlationId String?
+  traceId       String?
+  tenantId      String?                @db.Uuid
+  details       Json?
+  checkedAt     DateTime               @default(now())
+
+  @@index([stage])
+  @@index([status])
+  @@index([tenantId])
+  @@index([checkedAt])
+  @@map("billing_diagnostic")
+}
+
+/// Dédoublonnage des webhooks providers. RG-BILL-022 : un webhook non vérifié ne
+/// modifie jamais un Payment ; cette table n'est écrite qu'après vérification.
+model BillingWebhookEvent {
+  id              String   @id @default(uuid())
+  provider        String
+  providerEventId String
+  signatureValid  Boolean
+  processed       Boolean  @default(false)
+  processedAt     DateTime?
+  payload         Json
+  receivedAt      DateTime @default(now())
+
+  @@unique([provider, providerEventId])
+  @@index([provider])
+  @@map("billing_webhook_event")
+}
+
 model AdminDelegation {
   id                  String  @id @default(uuid())
-  tenantId            String? @db.Uuid
+  tenantId            String? @db.Text
   grantorUserId       String
   granteeUserId       String
   scopeType           String
@@ -2573,18 +3046,26 @@ model PlatformMaintenance {
   @@map("platform_maintenance")
 }
 
+/// Référentiel des clés d'entitlement autorisées sur la plateforme (CDC 17/18).
+/// PLATFORM GLOBAL : la frontière de sécurité est la permission, pas le tenant (CDC 83).
+/// Une Feature décrit une DROIT COMMERCIAL, jamais une permission IAM (RG-BILL-004).
 model Feature {
-  code        String  @id
+  code        String          @id
   name        String
   description String?
-  status      String  @default("ACTIVE")
-  metered     Boolean @default(false)
+  status      String          @default("ACTIVE")
+  metered     Boolean         @default(false)
   quotaCode   String?
+  kind        EntitlementKind @default(BOOLEAN)
+  unit        String?
+  meterKey    String?
+  enforcement EnforcementPolicy @default(SOFT_LIMIT)
   metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@index([status])
+  @@index([kind])
   @@map("feature")
 }
 
@@ -2817,6 +3298,7 @@ model BmEntity {
   constraints    BmConstraint[]   @relation("EntityConstraints")
   indexes        BmIndex[]        @relation("EntityIndexes")
   computedFields BmComputedField[] @relation("EntityComputedFields")
+  businessRecords BusinessRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2826,6 +3308,32 @@ model BmEntity {
   @@index([tenantId])
   @@index([status])
   @@map("bm_entities")
+}
+
+/// Tenant-safe runtime values for an entity defined by Business Manager.
+/// `entityCode` and `schemaVersion` retain a durable application-level identity
+/// when a later ApplicationVersion evolves the definition.
+model BusinessRecord {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String   @db.Uuid
+  applicationId       String   @db.Uuid
+  entityId            String   @db.Uuid
+  entityCode          String   @db.VarChar(100)
+  schemaVersion       String   @db.VarChar(50)
+  data                Json
+  createdBy           String?
+  updatedBy           String?
+  archivedAt          DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  entity BmEntity @relation(fields: [entityId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, applicationId, entityCode, archivedAt], map: "business_records_tenantId_applicationId_entityCode_archivedAt_i")
+  @@index([tenantId, entityId, archivedAt])
+  @@index([applicationId, entityCode])
+  @@index([data], type: Gin, map: "business_records_data_gin_idx")
+  @@map("business_records")
 }
 
 model BmField {
@@ -3448,6 +3956,7 @@ model PackVersion {
   id               String           @id @default(uuid()) @db.Uuid
   tenantId         String @db.Uuid
   packId           String           @db.Uuid
+  applicationVersionId String?      @db.Uuid
   versionNumber    String
   label            String?
   description      String?
@@ -3471,6 +3980,7 @@ model PackVersion {
   archivedAt       DateTime?        @db.Timestamptz(6)
   rowVersion       Int              @default(1)
   pack             Pack             @relation(fields: [packId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  applicationVersion ApplicationVersion? @relation(fields: [applicationVersionId], references: [id], onDelete: Restrict)
   modules          PackModule[]
   features         PackFeature[]
   dependencies     PackDependency[]
@@ -3482,6 +3992,7 @@ model PackVersion {
   @@unique([id, tenantId])
   @@unique([tenantId, packId, versionNumber])
   @@index([tenantId, status])
+  @@index([applicationVersionId])
   @@map("pm_pack_versions")
 }
 

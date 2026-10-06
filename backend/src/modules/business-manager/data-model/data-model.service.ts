@@ -2,7 +2,8 @@ import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';
 import { PlatformException } from '../../../common/errors/platform.exception';
-import { BmEntityStatus } from '../../../generated/prisma/enums';
+import { BmEntityStatus, BmRelationType } from '../../../generated/prisma/enums';
+import { assertVersionWritable } from '../version-mutability';
 import {
   CreateEntityDto,
   CreateFieldDto,
@@ -17,6 +18,48 @@ import {
 @Injectable()
 export class DataModelService {
   constructor(private readonly prisma: PrismaService) {}
+
+/**
+   * Résout la version propriétaire d'une entité puis vérifie qu'elle accepte
+   * encore une écriture. Centralise l'immuabilité des versions publiées pour
+   * toutes les écritures « enfant » (champs, contraintes, index, …).
+   */
+  private async assertEntityVersionWritable(entityId: string, tenantId: string | null) {
+    const entity = await this.prisma.bmEntity.findFirst({
+      where: { id: entityId, tenantId: tenantId ?? undefined },
+      select: { id: true, applicationVersionId: true },
+    });
+
+    if (!entity) {
+      throw new PlatformException(
+        PlatformErrorCode.APPLICATION_NOT_FOUND,
+        `Entity "${entityId}" not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    await assertVersionWritable(this.prisma, entity.applicationVersionId, tenantId);
+    return entity;
+  }
+
+  /** Variante champ : résout l'entité propriétaire du champ. */
+  private async assertFieldVersionWritable(fieldId: string, tenantId: string | null) {
+    const field = await this.prisma.bmField.findFirst({
+      where: { id: fieldId, tenantId: tenantId ?? undefined },
+      select: { id: true, entityId: true },
+    });
+
+    if (!field) {
+      throw new PlatformException(
+        PlatformErrorCode.APPLICATION_NOT_FOUND,
+        `Field "${fieldId}" not found`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    await this.assertEntityVersionWritable(field.entityId, tenantId);
+    return field;
+  }
 
   // =====================================================================
   // ENTITY MANAGER
@@ -42,7 +85,7 @@ export class DataModelService {
   }
 
   async createEntity(applicationVersionId: string, dto: CreateEntityDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const code = dto.code.trim().toLowerCase();
 
@@ -134,6 +177,7 @@ export class DataModelService {
   }
 
   async updateEntity(id: string, dto: UpdateEntityDto, tenantId: string | null) {
+    await this.assertEntityVersionWritable(id, tenantId);
     const entity = await this.findOneEntity(id, tenantId);
 
     if (entity.status === BmEntityStatus.ARCHIVED) {
@@ -161,6 +205,7 @@ export class DataModelService {
   }
 
   async archiveEntity(id: string, tenantId: string | null) {
+    await this.assertEntityVersionWritable(id, tenantId);
     const entity = await this.findOneEntity(id, tenantId);
     if (entity.status === BmEntityStatus.ARCHIVED) return entity;
 
@@ -192,6 +237,7 @@ export class DataModelService {
   // =====================================================================
 
   async createField(entityId: string, dto: CreateFieldDto, tenantId: string | null) {
+    await this.assertEntityVersionWritable(entityId, tenantId);
     const entity = await this.prisma.bmEntity.findFirst({
       where: { id: entityId, tenantId: tenantId ?? undefined },
     });
@@ -260,6 +306,7 @@ export class DataModelService {
   }
 
   async updateField(id: string, dto: Partial<CreateFieldDto>, tenantId: string | null) {
+    await this.assertFieldVersionWritable(id, tenantId);
     const field = await this.prisma.bmField.findFirst({
       where: { id, tenantId: tenantId ?? undefined },
     });
@@ -292,6 +339,7 @@ export class DataModelService {
   }
 
   async deleteField(id: string, tenantId: string | null) {
+    await this.assertFieldVersionWritable(id, tenantId);
     const field = await this.prisma.bmField.findFirst({
       where: { id, tenantId: tenantId ?? undefined },
     });
@@ -311,8 +359,8 @@ export class DataModelService {
   // RELATION BUILDER
   // =====================================================================
 
-  async createRelation(applicationVersionId: string, dto: CreateRelationDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+async createRelation(applicationVersionId: string, dto: CreateRelationDto, tenantId: string | null) {
+    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     for (const id of [dto.sourceEntityId, dto.targetEntityId]) {
       const entity = await this.findOneEntity(id, tenantId);
@@ -327,6 +375,7 @@ export class DataModelService {
         code: dto.code.trim().toLowerCase(),
         sourceEntityId: dto.sourceEntityId,
         targetEntityId: dto.targetEntityId,
+        relationType: dto.relationType || BmRelationType.ONE_TO_MANY,
         sourceLabel: dto.sourceLabel,
         targetLabel: dto.targetLabel,
         required: dto.required ?? false,
@@ -355,6 +404,7 @@ export class DataModelService {
   // =====================================================================
 
   async createConstraint(entityId: string, dto: CreateConstraintDto, tenantId: string | null) {
+    await this.assertEntityVersionWritable(entityId, tenantId);
     const entity = await this.prisma.bmEntity.findFirst({
       where: { id: entityId, tenantId: tenantId ?? undefined },
     });
@@ -390,6 +440,7 @@ export class DataModelService {
   // =====================================================================
 
   async createIndex(entityId: string, dto: CreateIndexDto, tenantId: string | null) {
+    await this.assertEntityVersionWritable(entityId, tenantId);
     const entity = await this.prisma.bmEntity.findFirst({
       where: { id: entityId, tenantId: tenantId ?? undefined },
     });
@@ -429,7 +480,9 @@ export class DataModelService {
   // VALIDATION ENGINE
   // =====================================================================
 
-  async createFieldValidation(dto: CreateFieldValidationDto, tenantId: string | null) {
+async createFieldValidation(dto: CreateFieldValidationDto, tenantId: string | null) {
+    await this.assertFieldVersionWritable(dto.fieldId, tenantId);
+
     const field = await this.prisma.bmField.findFirst({
       where: { id: dto.fieldId, tenantId: tenantId ?? undefined },
     });
@@ -459,8 +512,9 @@ export class DataModelService {
   // COMPUTED FIELD ENGINE
   // =====================================================================
 
-  async createComputedField(applicationVersionId: string, entityId: string, dto: CreateComputedFieldDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+async createComputedField(applicationVersionId: string, entityId: string, dto: CreateComputedFieldDto, tenantId: string | null) {
+    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    await this.assertEntityVersionWritable(entityId, tenantId);
 
     const entity = await this.prisma.bmEntity.findFirst({
       where: { id: entityId, tenantId: tenantId ?? undefined },

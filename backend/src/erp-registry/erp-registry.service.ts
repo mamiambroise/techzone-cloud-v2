@@ -11,6 +11,8 @@ import { randomUUID } from 'node:crypto';
 export interface TenantContext {
   tenantId?: string;
   actorId?: string;
+  permissions?: string[];
+  isSuperAdmin?: boolean;
 }
 
 @Injectable()

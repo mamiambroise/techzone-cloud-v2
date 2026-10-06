@@ -220,6 +220,26 @@ export default function EnvironmentsView() {
     setMaintenanceReason('');
   };
 
+  // Aucun environnement disponible : la vue complète dépend de `currentEnv`
+  // (filtres, matrice IAM, journal). On affiche un état vide explicite plutôt
+  // que de déréférencer un objet undefined et casser le rendu de la page.
+  if (!currentEnv) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+            Environnements &amp; Isolation Technique
+          </h1>
+          <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+            Aucun environnement n’est disponible pour ce tenant. Créez un environnement
+            DEV, TEST, STAGING ou PRODUCTION pour retrouver la supervision du
+            cloisonnement technique.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -434,12 +454,17 @@ export default function EnvironmentsView() {
 
             <div className="space-y-2 pt-2">
               <span className="text-[11px] text-slate-400 font-mono font-medium block">Rôles autorisés pour actions d'écriture :</span>
-              {currentEnv.allowedRoles.map((role) => (
+              {(currentEnv.allowedRoles ?? []).map((role) => (
                 <div key={role} className="flex items-center gap-2 text-xs text-slate-700">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <span className="font-mono text-[11px] font-medium">{role}</span>
                 </div>
               ))}
+              {(currentEnv.allowedRoles ?? []).length === 0 && (
+                <p className="text-[11px] text-slate-400">
+                  Aucun rôle autorisé n’est renseigné pour cet environnement.
+                </p>
+              )}
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs">

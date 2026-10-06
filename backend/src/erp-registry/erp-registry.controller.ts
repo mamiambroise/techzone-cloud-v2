@@ -1,9 +1,11 @@
 import {
   Controller, Get, Post, Put, Delete,
-  Body, Param, Logger, HttpCode, HttpStatus,
+  Body, Param, Query, Logger, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ErpRegistryService, TenantContext } from './erp-registry.service';
+import { ExternalResourceLinkService } from './external-resource-link.service';
+import { ErpCapabilityService } from '../erp-adapter/capabilities/erp-capability.service';
 import { CreateErpDto } from './dto/create-erp.dto';
 import { UpdateErpDto } from './dto/update-erp.dto';
 import { CurrentUser } from '../iam/decorators/current-user.decorator';
@@ -21,7 +23,11 @@ function toTenantContext(principal: IamAuthContext): TenantContext {
 export class ErpRegistryController {
   private readonly logger = new Logger(ErpRegistryController.name);
 
-  constructor(private readonly service: ErpRegistryService) {}
+  constructor(
+    private readonly service: ErpRegistryService,
+    private readonly links: ExternalResourceLinkService,
+    private readonly capabilities: ErpCapabilityService,
+  ) {}
 
   @Post()
   @Permissions(ERP_WRITE)
@@ -40,6 +46,36 @@ export class ErpRegistryController {
   async getAll(@CurrentUser() principal: IamAuthContext) {
     this.logger.log(`GET /erp-registry [tenant=${principal.tenantId}]`);
     return (await this.service.getAll(toTenantContext(principal))).map(safeErpRegistry);
+  }
+
+  @Get('health')
+  @Permissions(ERP_READ)
+  @ApiOperation({ summary: 'Sante du connecteur ERP actif du tenant (snapshot, sans appel reseau)' })
+  @ApiResponse({ status: 200, description: 'Sante du connecteur' })
+  @ApiResponse({ status: 503, description: 'Aucun ERP actif configure' })
+  async health(@CurrentUser() principal: IamAuthContext) {
+    this.logger.log(`GET /erp-registry/health [tenant=${principal.tenantId}]`);
+    return this.capabilities.getHealth(undefined, toTenantContext(principal));
+  }
+
+  @Get('links')
+  @Permissions(ERP_READ)
+  @ApiOperation({ summary: 'Lister les liens de ressources externes du tenant' })
+  @ApiResponse({ status: 200, description: 'Liste des liens' })
+  async listLinks(@CurrentUser() principal: IamAuthContext, @Query('connectorId') connectorId?: string, @Query('resourceType') resourceType?: string) {
+    this.logger.log(`GET /erp-registry/links [tenant=${principal.tenantId}]`);
+    return this.links.list(toTenantContext(principal), { connectorId, resourceType });
+  }
+
+  @Post('test')
+  @Permissions(ERP_READ)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Tester la connexion du connecteur ERP actif (sonde reelle Dolibarr + capabilities)' })
+  @ApiResponse({ status: 200, description: 'Rapport de connexion' })
+  @ApiResponse({ status: 503, description: 'Aucun ERP actif configure' })
+  async testActive(@CurrentUser() principal: IamAuthContext) {
+    this.logger.log(`POST /erp-registry/test [tenant=${principal.tenantId}]`);
+    return this.capabilities.testConnection(undefined, toTenantContext(principal));
   }
 
   @Get(':id')
@@ -87,11 +123,66 @@ export class ErpRegistryController {
     await this.service.remove(id, toTenantContext(principal));
   }
 
+  @Post(':id/test')
+  @Permissions(ERP_READ)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Tester la connexion d un ERP (sonde reelle Dolibarr + capabilities detectees)' })
+  @ApiParam({ name: 'id', description: 'UUID de l ERP' })
+  @ApiResponse({ status: 200, description: 'Rapport de connexion' })
+  @ApiResponse({ status: 404, description: 'ERP non trouve' })
+  async testOne(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
+    this.logger.log(`POST /erp-registry/${id}/test [tenant=${principal.tenantId}]`);
+    return this.capabilities.testConnection(id, toTenantContext(principal));
+  }
+
+  @Get(':id/health')
+  @Permissions(ERP_READ)
+  @ApiOperation({ summary: 'Sante et capabilities d un ERP (snapshot, sans appel reseau)' })
+  @ApiParam({ name: 'id', description: 'UUID de l ERP' })
+  @ApiResponse({ status: 200, description: 'Sante du connecteur' })
+  @ApiResponse({ status: 404, description: 'ERP non trouve' })
+  async oneHealth(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
+    this.logger.log(`GET /erp-registry/${id}/health [tenant=${principal.tenantId}]`);
+    return this.capabilities.getHealth(id, toTenantContext(principal));
+  }
+
+  @Get(':id/capabilities')
+  @Permissions(ERP_READ)
+  @ApiOperation({ summary: 'Capabilities ERP reellement detectees chez le fournisseur' })
+  @ApiParam({ name: 'id', description: 'UUID de l ERP' })
+  @ApiResponse({ status: 200, description: 'Capabilities' })
+  @ApiResponse({ status: 404, description: 'ERP non trouve' })
+  async oneCapabilities(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
+    this.logger.log(`GET /erp-registry/${id}/capabilities [tenant=${principal.tenantId}]`);
+    return this.capabilities.getCapabilities(id, toTenantContext(principal));
+  }
+
+  @Get(':id/links')
+  @Permissions(ERP_READ)
+  @ApiOperation({ summary: 'Liens de ressources externes d un connecteur' })
+  @ApiParam({ name: 'id', description: 'UUID de l ERP' })
+  @ApiResponse({ status: 200, description: 'Liste des liens' })
+  @ApiResponse({ status: 404, description: 'ERP non trouve' })
+  async oneLinks(@Param('id') id: string, @CurrentUser() principal: IamAuthContext, @Query('resourceType') resourceType?: string) {
+    this.logger.log(`GET /erp-registry/${id}/links [tenant=${principal.tenantId}]`);
+    return this.links.list(toTenantContext(principal), { connectorId: id, resourceType });
+  }
+
+  @Delete('links/:id')
+  @Permissions(ERP_WRITE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Supprimer un lien de ressource externe' })
+  @ApiParam({ name: 'id', description: 'UUID du lien' })
+  @ApiResponse({ status: 204, description: 'Lien supprime' })
+  @ApiResponse({ status: 404, description: 'Lien non trouve' })
+  async removeLink(@Param('id') id: string, @CurrentUser() principal: IamAuthContext): Promise<void> {
+    this.logger.log(`DELETE /erp-registry/links/${id} [tenant=${principal.tenantId}]`);
+    await this.links.remove(id, toTenantContext(principal));
+  }
+
   @Get(':id/history')
   @Permissions(ERP_READ)
   history(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
     return this.service.history(id, toTenantContext(principal));
   }
 }
-
-

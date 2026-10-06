@@ -3,6 +3,8 @@ import request from 'supertest';
 import { ErpAdapterController } from './erp-adapter.controller';
 import { ErpAdapterService } from './erp-adapter.service';
 import { ErpRegistryService } from '../erp-registry/erp-registry.service';
+import { ErpCommandService } from './commands/erp-command.service';
+import { ErpResourceRuntimeService } from './runtime/erp-resource-runtime.service';
 import { AllExceptionsFilter } from '../common/filters/all-exceptions.filter';
 import { DolibarrError } from './dolibarr/dolibarr.error';
 import { ErpError } from './erp-error';
@@ -17,10 +19,12 @@ describe('ERP resource HTTP error contract (real controller/filter, test provide
       providers: [
         { provide: ErpAdapterService, useValue: { resolveAdapterForTenant: async () => ({ getClients: read, getProducts: read, getOrders: read, getInvoices: read, getStocks: read }) } },
         { provide: ErpRegistryService, useValue: {} },
+        { provide: ErpCommandService, useValue: {} },
+        { provide: ErpResourceRuntimeService, useValue: { guardAdapter: (adapter: unknown) => adapter } },
       ],
     }).compile();
     app = module.createNestApplication();
-    app.use((req: any, _res: any, next: any) => { req.iamAuth = { tenantId: 'tenant-a' }; req.traceId = 'erp-test-trace'; next(); });
+    app.use((req: any, _res: any, next: any) => { req.iamAuth = { tenantId: 'tenant-a', permissions: ['erp:read', 'erp:write'] }; req.traceId = 'erp-test-trace'; next(); });
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
   });

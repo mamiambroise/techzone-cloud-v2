@@ -168,7 +168,7 @@ export default function BMOverview() {
               ) : (
                 <ul className="divide-y divide-slate-100">
                   {state.activity.slice(0, 5).map((event, index) => (
-                    <li key={event.resourceId || index} className="flex items-start gap-3 py-2.5">
+                    <li key={`${event.resourceId || 'event'}-${event.action}-${event.timestamp || index}`} className="flex items-start gap-3 py-2.5">
                       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500" aria-hidden="true">
                         <Activity className="h-4 w-4" />
                       </span>

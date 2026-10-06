@@ -1,16 +1,5 @@
 #!/usr/bin/env node
-/**
- * Techzone Cloud — launcher unique.
- *
- * Mamerina amin'ny baiko tokana ny 5 services rehetra:
- *   FRONTEND (3000), PLATFORM API (3003),
- *   ERP-API (3002), DOLIBARR (8080).
- *
- *   npm run dev          → lance tout
- *   npm run dev:rebuild  → build ERP API + Jasmina aloha, dia lance
- *   npm run stop         → mamono ny service rehetra avy ato
- *   npm run status       → fampisehoana ny état
- */
+/** Project services: frontend (3000), backend (3003), Dolibarr (8080). */
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import http from 'node:http';
@@ -22,6 +11,15 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PID_FILE = path.join(root, 'logs', '.dev-pids.json');
 const LOG_DIR = path.join(root, 'logs');
+const APP_ENV = process.env.APP_ENV || 'local';
+
+if (!['local', 'remote'].includes(APP_ENV)) {
+  throw new Error(`CONFIG_MISSING: APP_ENV must be "local" or "remote" (received ${APP_ENV})`);
+}
+
+/** Keep the cross-platform launcher aligned with scripts/windows/environment.cjs. */
+const backendEnvFiles = APP_ENV === 'remote' ? ['.env.remote'] : ['.env', '.env.local'];
+const backendEnvArgs = backendEnvFiles.flatMap((file) => [`--env-file-if-exists=${file}`]);
 
 const NODE = process.execPath;
 function npmCli() {
@@ -65,15 +63,15 @@ const SERVICES = [
   {
     name: 'FRONTEND', tag: 'BUSINESS', port: 3000,
     cwd: path.join(root, 'frontend'),
-    cmd: (npm) => ({ cmd: NODE, args: [npm, 'run', 'dev'] }),
+    cmd: () => ({ cmd: NODE, args: [path.join(root, 'frontend/node_modules/vite/bin/vite.js'), '--mode', APP_ENV, '--port', '3000', '--host', '0.0.0.0', '--strictPort'] }),
     url: 'http://localhost:3000',
   },
   {
-    name: 'JASMINA',
+    name: 'BACKEND',
     tag: 'JASMINE',
     port: 3003,
     cwd: path.join(root, 'backend'),
-    cmd: () => ({ cmd: NODE, args: ['--env-file-if-exists=.env', '--env-file-if-exists=.env.local', 'dist/main.js'] }),
+    cmd: () => ({ cmd: NODE, args: [...backendEnvArgs, path.join(root, 'backend/dist/main.js')] }),
     build: (npm) => ({ cmd: NODE, args: [npm, 'run', 'build'] }),
     dist: ['dist/main.js'],
     url: 'http://localhost:3003',
@@ -136,29 +134,38 @@ function savePids(pids) {
   fs.writeFileSync(PID_FILE, JSON.stringify(pids, null, 2));
 }
 
-function stopAll() {
-  const pids = loadPids();
-  const targets = [...new Set(Object.values(pids))];
-  if (targets.length === 0) {
-    console.log(c('INFO', 'Tsy misy service ataoko (PNY .dev-pids.json).'));
+function windowsLifecycle(args) {
+  const result = spawnSync('powershell.exe', [
+    '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+    path.join(root, 'scripts/windows/stop-project.ps1'),
+    '-CallerPid', String(process.pid), ...args,
+  ], { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', windowsHide: true });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  if (result.error || result.status !== 0) {
+    throw new Error('LIFECYCLE_FAILED: ' + (result.error?.message || result.signal || result.status));
+  }
+}
+
+async function stopAll() {
+  if (isWin) {
+    windowsLifecycle([]);
     return;
   }
-  console.log(c('INFO', `Mamono service ${targets.length}:\t${Object.keys(pids).join(', ')}`));
-  for (const pid of targets) {
-    killTree(pid);
-  }
-  // fanampiny: miadana tany
-  setTimeout(() => {
-    for (const pid of targets) {
-      if (!isWin) killTree(pid, 'SIGKILL');
-    }
-    fs.rmSync(PID_FILE, { force: true });
-  }, 3500);
+  const targets = [...new Set(Object.values(loadPids()))];
+  for (const pid of targets) killTree(pid);
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  for (const pid of targets) killTree(pid, 'SIGKILL');
+  const busy = [];
+  for (const service of SERVICES) if (await portOpen(service.port)) busy.push(service.port);
+  if (busy.length) throw new Error('STOP_FAILED: ports encore occupes : ' + busy.join(', '));
+  fs.rmSync(PID_FILE, { force: true });
+  console.log('Projet arrete. Ports 3000, 3003 et 8080 libres.');
 }
 
 async function status() {
   for (const s of SERVICES) {
-    const up = s.name === 'DOLIBARR' ? await httpOk(s.port, '/index.php') : await portOpen(s.port);
+    const up = await portOpen(s.port);
     console.log(`  ${up ? c('DONE', '[UP]  ') : c('ERR', '[DOWN]')} ${s.name.padEnd(12)} :${String(s.port).padEnd(5)} ${s.url}`);
   }
 }
@@ -172,7 +179,22 @@ async function run(rebuilt) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 
   const children = [];
+  if (isWin) {
+    windowsLifecycle(['-RegisterLauncher']);
+  }
   const pids = loadPids();
+  let stopping = false;
+  const retries = new Set();
+  const stop = async () => {
+    if (stopping) return;
+    stopping = true;
+    for (const timer of retries) clearTimeout(timer);
+    console.log('Arret du projet...');
+    try { await stopAll(); process.exit(0); }
+    catch (error) { console.error(error.message); process.exit(1); }
+  };
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
 
   const savePidsNow = () => {
     fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -180,12 +202,13 @@ async function run(rebuilt) {
   };
 
   const launch = (s, attempt = 1) => {
+    if (stopping) return;
     const { cmd, args } = s.cmd(npm);
     const child = spawn(cmd, args, {
       cwd: s.cwd,
       detached: true,
       windowsHide: true,
-      env: { ...process.env, BROWSER: 'none' },
+      env: { ...process.env, APP_ENV, BROWSER: 'none' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     pids[s.name] = child.pid;
@@ -206,10 +229,13 @@ async function run(rebuilt) {
     });
 
     const graceUntil = Date.now() + 15000;
+    child.once('error', (error) => console.error('[' + s.name + '] ' + error.message));
     child.once('exit', (code) => {
+      if (stopping) return;
       if (Date.now() < graceUntil && code !== 0 && attempt < 3 && s.name !== 'ERP-CONSOLE') {
         console.log(c('WARN', `[${s.name}] noraiketana (exit ${code}) → averiana indray aorian'ny 3s …`));
-        setTimeout(() => launch(s, attempt + 1), 3000);
+        const timer = setTimeout(() => { retries.delete(timer); launch(s, attempt + 1); }, 3000);
+        retries.add(timer);
       } else {
         console.log(c('ERR', `[${s.name}] nijanona (exit ${code}).`));
       }
@@ -219,7 +245,7 @@ async function run(rebuilt) {
   };
 
   for (const s of SERVICES) {
-    const busy = s.name === 'DOLIBARR' ? await httpOk(8080, '/index.php') : await portOpen(s.port);
+    const busy = await portOpen(s.port);
     if (busy) {
       console.log(c('WARN', `[${s.name}] efa mandeha (${s.port}) → sady skip.`));
       continue;
@@ -252,22 +278,6 @@ async function run(rebuilt) {
   }
   savePids(pids);
 
-  const stop = () => {
-    console.log(c('INFO', "\nMijanon'ny dev (Ctrl+C) …"));
-    for (const p of Object.values(pids)) {
-      killTree(p);
-    }
-    setTimeout(() => {
-      for (const p of Object.values(pids)) {
-        if (!isWin) killTree(p, 'SIGKILL');
-      }
-      fs.rmSync(PID_FILE, { force: true });
-      process.exit(0);
-    }, 3000);
-  };
-  process.on('SIGINT', stop);
-  process.on('SIGTERM', stop);
-
   // Fandraisan-kenatra: miandry mandra-pahavitan'ny ports rehetra
   const waiting = SERVICES.filter((s) => pids[s.name]);
   const started = new Set();
@@ -295,13 +305,20 @@ async function run(rebuilt) {
   console.log(c('DOLIB', '  ▶ Dolibarr (techzone) → http://127.0.0.1:8080'));
   console.log(c('INFO', '────────────────────────────────────────────────'));
   console.log(c('INFO', '(Ctrl+C hampijanona daholo · npm run stop mamono koa)'));
+  console.log(c('INFO', `Profil d'environnement : ${APP_ENV} (${backendEnvFiles.join(' + ')})`));
 }
 
-const flag = process.argv[2];
-if (flag === '--stop') {
-  stopAll();
-} else if (flag === '--status') {
-  await status();
-} else {
-  await run(flag === '--rebuild');
+const flags = new Set(process.argv.slice(2));
+try {
+  if (flags.has('--stop')) {
+    await stopAll();
+  } else if (flags.has('--status')) {
+    await status();
+  } else {
+    if (flags.has('--restart') || flags.has('--rebuild')) await stopAll();
+    await run(flags.has('--rebuild'));
+  }
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
 }

@@ -14,6 +14,7 @@ import {
 import ErpErrorPanel from '../erp/ErpErrorPanel.jsx';
 import { useTenant } from '../contexts/TenantProvider.jsx';
 import { MODULES_BY_KEY } from '../erp/modulesConfig.js';
+import { ERP_STATUS_LABELS, useErpCatalog } from '../erp/useErpResources.js';
 import { productService } from '../services/apiClient.js';
 import { TableSkeleton } from '../components/Loaders.jsx';
 
@@ -99,8 +100,12 @@ function StatusBadge({ value }) {
 
 function ErpModuleContent({ moduleKeyOverride }) {
   const { moduleKey: routeModuleKey } = useParams();
+  const { activeTenant } = useTenant();
   const moduleKey = moduleKeyOverride || routeModuleKey;
   const mod = MODULES_BY_KEY[moduleKey];
+  const { status: catalogStatus, catalog } = useErpCatalog(activeTenant?.id);
+  const resource = catalog?.resources?.find((item) => item.routeKey === moduleKey);
+  const readOperation = resource?.operations?.find((operation) => operation.key === 'read');
 
   const [page, setPage] = useState(0);
   const requestRef = useRef(null);
@@ -140,10 +145,19 @@ function ErpModuleContent({ moduleKeyOverride }) {
   };
 
   useEffect(() => {
-    if (!mod) return;
+    if (!mod || catalogStatus !== 'LOADED') {
+      if (catalogStatus !== 'LOADING') setLoading(false);
+      return;
+    }
+    if (resource && !readOperation?.executable) {
+      setLoading(false);
+      setRows([]);
+      setEmpty(false);
+      return;
+    }
     load();
     return () => requestRef.current?.abort();
-  }, [mod, page]);
+  }, [mod, page, catalogStatus, resource?.key, readOperation?.executable]);
 
   const Icon = mod?.icon;
 
@@ -170,6 +184,18 @@ function ErpModuleContent({ moduleKeyOverride }) {
     );
   }
 
+  if (resource && catalogStatus !== 'LOADING' && !readOperation?.executable) {
+    return <div className="mx-auto max-w-5xl space-y-5 p-6">
+      <Link to="/erp" className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-900"><ArrowLeftIcon className="h-4 w-4" /> Retour au catalogue ERP</Link>
+      <section data-erp-resource-detail={resource.key} className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-slate-800">
+        <h1 className="text-xl font-semibold">{resource.label}</h1>
+        <p className="mt-1 text-sm">Cette ressource ne peut pas être interrogée dans l’état effectif du tenant.</p>
+        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2"><div><dt className="text-slate-500">Catégorie</dt><dd>{resource.category}</dd></div><div><dt className="text-slate-500">Provider</dt><dd>{resource.provider}</dd></div><div><dt className="text-slate-500">État</dt><dd>{ERP_STATUS_LABELS[resource.effectiveStatus] || resource.effectiveStatus}</dd></div><div><dt className="text-slate-500">Politique plateforme</dt><dd>{resource.platformAllowed ? 'Autorisée' : 'Interdite'}</dd></div><div><dt className="text-slate-500">Permission requise</dt><dd>{readOperation?.requiredPermission || 'erp:read'}</dd></div><div><dt className="text-slate-500">Dernière capability</dt><dd>{resource.lastCheckedAt || 'Non vérifiée'}</dd></div><div><dt className="text-slate-500">Adapter</dt><dd>{resource.adapterImplemented ? 'Supporté' : 'À intégrer'}</dd></div><div><dt className="text-slate-500">Contrats / mapping</dt><dd>{resource.contractOperations.length ? 'Contrat disponible' : 'Aucun contrat'} · {resource.mappingSupport}</dd></div></dl>
+        <p className="mt-5 text-sm text-amber-900">{resource.diagnostic || (readOperation?.iamAllowed === false ? 'Permission IAM requise.' : 'Capability fournisseur non disponible.')}</p>
+      </section>
+    </div>;
+  }
+
   const canEdit = !!mod.service?.update;
   const canDelete = !!mod.service?.delete;
   const hasActions = canEdit || canDelete;
@@ -193,6 +219,7 @@ function ErpModuleContent({ moduleKeyOverride }) {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {resource && <section data-erp-resource-detail={resource.key} className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700"><span className="font-medium">{resource.label}</span> · {ERP_STATUS_LABELS[resource.effectiveStatus] || resource.effectiveStatus} · Provider {resource.provider} · politique {resource.platformAllowed ? 'autorisée' : 'interdite'} · capability {resource.lastCheckedAt || 'non vérifiée'} · contrat {resource.contractOperations.length ? 'supporté' : 'non disponible'} · mapping {resource.mappingSupport}</section>}
       <nav className="flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500">
         <Link to="/erp" className="hover:text-[#5469D4] flex items-center gap-1">
           <ArrowLeftIcon className="w-3.5 h-3.5" /> Tableau de bord

@@ -40,10 +40,13 @@ export class ExecutionEngine {
       this.logger.debug(`EXECUTE ${request.operation} ${request.resource} [tenant=${ctx.tenantId}]`);
 
       this.validateRequest(request);
+      this.checkPermission(request, ctx);
+      if (request.resource.startsWith('bm:')) await this.dataAccess.authorize(request.resource, request.operation, ctx);
+      const idempotencyScope = JSON.stringify([ctx.tenantId, ctx.userId, request.resource, request.operation, request.targetId, request.input, request.idempotencyKey]);
 
       if (request.idempotencyKey) {
         const existing = this.idempotencyStore.get(
-          `${ctx.tenantId}:${request.idempotencyKey}`,
+          idempotencyScope,
         );
         if (existing) {
           this.logger.debug(`Idempotence hit pour ${request.idempotencyKey}`);
@@ -94,7 +97,8 @@ export class ExecutionEngine {
       };
 
       if (request.idempotencyKey) {
-        this.idempotencyStore.set(`${ctx.tenantId}:${request.idempotencyKey}`, result);
+        if (this.idempotencyStore.size >= 1000) this.idempotencyStore.delete(this.idempotencyStore.keys().next().value!);
+        this.idempotencyStore.set(idempotencyScope, result);
       }
 
       return result;
@@ -123,6 +127,7 @@ export class ExecutionEngine {
     let skipped = 0;
 
     this.basicValidateBatch(request);
+    if (request.resource.startsWith('bm:') && request.strategy === 'ALL_OR_NOTHING') throw new BadRequestException('ATOMIC_BATCH_NOT_SUPPORTED');
 
     for (const item of request.items) {
       const result = await this.execute(

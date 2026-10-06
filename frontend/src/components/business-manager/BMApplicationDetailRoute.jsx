@@ -12,15 +12,29 @@ export function BMApplicationDetailRoute() {
   const navigate = useNavigate();
   const [app, setApp] = useState(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [edit, setEdit] = useState(false);
+  const [duplicate, setDuplicate] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const path = '/business-manager/applications/' + applicationId;
   useEffect(() => {
     let live = true;
-    setApp(null); setError('');
+    setApp(null); setError(''); setNotice('');
     api.get(path).then((r) => { if (live) setApp(r.data); }).catch(() => { if (live) setError(bmSafeError); });
     return () => { live = false; };
   }, [path, revision]);
+
+  // Archive / restauration et duplication passent par les endpoints réels du
+  // backend : aucun état local n'est simulé après l'appel.
+  async function run(action, successMessage) {
+    setBusy(true); setError('');
+    try {
+      await action();
+      setNotice(successMessage);
+      setRevision((r) => r + 1);
+    } catch { setError(bmSafeError); } finally { setBusy(false); }
+  }
 
   return (
     <BmPage>
@@ -31,10 +45,16 @@ export function BMApplicationDetailRoute() {
         action={(
           <>
             <BmButton variant="secondary" onClick={() => navigate(path + '/versions')}>Versions</BmButton>
-            <BmButton disabled={app?.status === 'ARCHIVED'} onClick={() => setEdit(true)}>Modifier</BmButton>
+            {app?.status === 'ARCHIVED' ? (
+              <BmButton disabled={busy} onClick={() => run(() => api.post(`${path}/restore`), 'Application restaurée.')}>Restaurer</BmButton>
+            ) : (
+              <BmButton disabled={busy} onClick={() => setDuplicate(true)}>Dupliquer</BmButton>
+            )}
+            <BmButton disabled={busy || app?.status === 'ARCHIVED'} onClick={() => setEdit(true)}>Modifier</BmButton>
           </>
         )}
       />
+      {notice && <p role="status" className="mb-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p>}
       {error ? (
         <BmErrorState message={error} onRetry={() => setRevision((r) => r + 1)} />
       ) : !app ? (
@@ -60,6 +80,22 @@ export function BMApplicationDetailRoute() {
             </div>
           </dl>
         </div>
+      )}
+      {duplicate && app && (
+        <BMResourceEditor
+          fields={[
+            { key: 'code', label: 'Code technique de la copie', required: true, default: `${app.code}-copie` },
+            { key: 'name', label: 'Nom de la copie', default: `${app.name} (copie)` },
+            { key: 'copyDefinition', label: 'Copier la définition métier', type: 'checkbox' },
+          ]}
+          initial={{ code: `${app.code}-copie`, name: `${app.name} (copie)`, copyDefinition: true }}
+          onCancel={() => setDuplicate(false)}
+          onSave={async (body) => {
+            const created = await api.post(`${path}/duplicate`, body);
+            setDuplicate(false);
+            navigate(`/business-manager/applications/${created.data.id}`);
+          }}
+        />
       )}
       {edit && app && (
         <BMResourceEditor

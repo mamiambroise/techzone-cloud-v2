@@ -17,6 +17,8 @@ import { CurrentPrincipal } from '../../../iam/principal.decorator';
 import type { IamPrincipal } from '../../../iam/principal.decorator';
 import { TenantResource } from '../../../iam/tenant-resource.decorator';
 import { TenantGuard } from '../../../iam/tenant.guard';
+import { RequirePermission } from '../../../iam/permission.decorator';
+import { BM_READ, BM_VALIDATE, BM_WRITE } from '../../../iam/iam.constants';
 
 @TenantResource({ table: 'applicationVersion', idParam: 'id' })
 @UseGuards(BmTenantGuard, TenantGuard)
@@ -24,6 +26,7 @@ import { TenantGuard } from '../../../iam/tenant.guard';
 export class ApplicationVersionsController {
   constructor(private readonly versionsService: ApplicationVersionsService) {}
 
+  @RequirePermission(BM_READ)
   @Get('applications/:applicationId/versions')
   findByApplication(
     @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
@@ -32,11 +35,13 @@ export class ApplicationVersionsController {
     return this.versionsService.findByApplication(applicationId, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get('versions')
   findAll(@CurrentPrincipal() principal: IamPrincipal) {
     return this.versionsService.findAll(principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Post('applications/:applicationId/versions')
   create(
     @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
@@ -46,6 +51,7 @@ export class ApplicationVersionsController {
     return this.versionsService.create(applicationId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_READ)
   @Get('versions/:id')
   findOne(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -54,6 +60,7 @@ export class ApplicationVersionsController {
     return this.versionsService.findOne(id, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Patch('versions/:id')
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -63,6 +70,7 @@ export class ApplicationVersionsController {
     return this.versionsService.update(id, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_WRITE)
   @Post('versions/:id/clone')
   clone(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -71,6 +79,7 @@ export class ApplicationVersionsController {
     return this.versionsService.clone(id, principal.tenantId);
   }
 
+  @RequirePermission(BM_VALIDATE)
   @Post('versions/:id/status/:status')
   changeStatus(
     @Param('id', new ParseUUIDPipe()) id: string,

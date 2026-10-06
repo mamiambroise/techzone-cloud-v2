@@ -49,3 +49,17 @@ export function saveTheme(applicationVersionId, tokens) {
 export function getBusinessContext(applicationVersionId) {
   return api.get(`${root}/business-context/${applicationVersionId}`).then(unwrap);
 }
+
+// Data Runtime is the sole gateway for records rendered by a UI definition.
+// Keeping this here makes preview and the eventual runtime use the same API contract.
+export function queryRuntime(resource, query = {}) {
+  return api.post('/data-runtime/query', { resource, page: 1, pageSize: 20, ...query }).then(unwrap);
+}
+
+export function executeRuntime(request) {
+  return api.post('/data-runtime/execute', request, { preserveEnvelope: true }).then(unwrap);
+}
+
+export function getRuntimeRecord(resource, id) {
+  return api.get(`/data-runtime/resources/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`, { preserveEnvelope: true }).then(unwrap);
+}

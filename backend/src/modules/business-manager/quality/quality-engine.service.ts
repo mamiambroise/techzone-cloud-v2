@@ -9,33 +9,19 @@ import {
   BmqGateResult,
 } from '../../../generated/prisma/enums';
 import { RunQualityValidationDto, CreateQualityGateDto } from './dto/create-quality.dto';
+import {
+  runBusinessDefinitionValidation,
+  SEVERITY_WEIGHT,
+  type BmValidationInput,
+  type BmValidationIssue,
+} from './business-definition-validation';
 
-const QUALITY_RULES: Record<string, { severity: BmqSeverity; message: string; check: (ctx: any) => boolean }> = {
-  'entity_has_fields': {
-    severity: BmqSeverity.ERROR,
-    message: 'Each entity must have at least one field',
-    check: (ctx) => ctx.entity && ctx.entity.fields && ctx.entity.fields.length > 0,
-  },
-  'relation_valid': {
-    severity: BmqSeverity.WARNING,
-    message: 'All relation endpoints must reference existing entities',
-    check: (ctx) => true,
-  },
-  'feature_has_capabilities': {
-    severity: BmqSeverity.WARNING,
-    message: 'Each feature must have at least one capability',
-    check: (ctx) => ctx.feature && ctx.feature.capabilities && ctx.feature.capabilities.length > 0,
-  },
-  'menu_not_empty': {
-    severity: BmqSeverity.INFO,
-    message: 'Menu should contain at least one navigation item',
-    check: (ctx) => ctx.menu && ctx.menu.items && ctx.menu.items.length > 0,
-  },
-  'contract_valid': {
-    severity: BmqSeverity.BLOCKER,
-    message: 'Contract must be in LOCKED or ACTIVE status for publication',
-    check: (ctx) => ctx.contract && ['LOCKED', 'ACTIVE'].includes(ctx.contract.status),
-  },
+/** Sévérité Prisma <-> sévérité du moteur de validation. */
+const SEVERITY_TO_BMQ: Record<BmValidationIssue['severity'], BmqSeverity> = {
+  BLOCKER: BmqSeverity.BLOCKER,
+  ERROR: BmqSeverity.ERROR,
+  WARNING: BmqSeverity.WARNING,
+  INFO: BmqSeverity.INFO,
 };
 
 @Injectable()
@@ -65,230 +51,313 @@ export class QualityEngineService {
   // QUALITY VALIDATION ORCHESTRATION
   // =====================================================================
 
+/**
+   * Charge l'état complet de la Business Definition d'une version.
+   * Toute la validation s'appuie uniquement sur cet instantané : aucune règle
+   * ne requête la base, ce qui les rend testables et le score reproductible.
+   */
+  private async loadDefinition(applicationVersionId: string, tenantId: string | null): Promise<BmValidationInput> {
+    const scope = { tenantId: tenantId ?? undefined };
+
+    const [entities, relations, features, menus, contracts, configurations, versionFeatures, versionCapabilities] =
+      await Promise.all([
+        this.prisma.bmEntity.findMany({
+          where: { applicationVersionId, ...scope },
+          include: { fields: true, constraints: true },
+        }),
+        this.prisma.bmRelation.findMany({ where: { applicationVersionId, ...scope } }),
+        this.prisma.bmFeature.findMany({
+          where: { applicationVersionId, ...scope },
+          include: { capabilities: { include: { dependencies: true } } },
+        }),
+        this.prisma.bmMenu.findMany({
+          where: { applicationVersionId, ...scope },
+          include: { items: true },
+        }),
+        this.prisma.bmBusinessContract.findMany({ where: { applicationVersionId, ...scope } }),
+        this.prisma.configuration.findMany({
+          where: { scope: 'APPLICATION_VERSION', scopeId: applicationVersionId, ...scope },
+        }),
+        this.prisma.bmVersionFeature.findMany({ where: { applicationVersionId, ...scope } }),
+        this.prisma.bmVersionCapability.findMany({ where: { applicationVersionId, ...scope } }),
+      ]);
+
+    return {
+      entities: entities.map((entity) => ({
+        id: entity.id,
+        code: entity.code,
+        name: entity.name,
+        description: entity.description,
+        status: entity.status,
+        fields: entity.fields.map((field) => ({
+          id: field.id,
+          code: field.code,
+          label: field.label,
+          description: field.description,
+          type: field.type,
+          required: field.required,
+          unique: field.unique,
+          entityId: entity.id,
+        })),
+        constraints: entity.constraints.map((constraint) => ({
+          id: constraint.id,
+          code: constraint.code,
+          constraintType: constraint.constraintType,
+          fieldId: constraint.fieldId,
+        })),
+      })),
+      relations: relations.map((relation) => ({
+        id: relation.id,
+        code: relation.code,
+        relationType: relation.relationType,
+        sourceEntityId: relation.sourceEntityId,
+        targetEntityId: relation.targetEntityId,
+        required: relation.required,
+      })),
+      features: features.map((feature) => ({
+        id: feature.id,
+        code: feature.code,
+        name: feature.name,
+        description: feature.description,
+        status: feature.status,
+        capabilities: feature.capabilities.map((capability) => ({
+          id: capability.id,
+          code: capability.code,
+          name: capability.name,
+          description: capability.description,
+          requiredEntities: capability.requiredEntities,
+          dependencies: capability.dependencies.map((dependency) => ({
+            targetCapabilityCode: dependency.targetCapabilityCode,
+            dependencyType: dependency.dependencyType,
+          })),
+        })),
+      })),
+      menus: menus.map((menu) => ({
+        id: menu.id,
+        code: menu.code,
+        name: menu.name,
+        status: menu.status,
+        items: menu.items.map((item) => ({
+          id: item.id,
+          code: item.code,
+          label: item.label,
+          itemType: item.itemType,
+          parentItemId: item.parentItemId,
+          requiredCapabilities: item.requiredCapabilities,
+        })),
+      })),
+      contracts: contracts.map((contract) => ({ id: contract.id, code: contract.code, status: contract.status })),
+      configurations: configurations.map((configuration) => ({
+        id: configuration.id,
+        key: configuration.key,
+        status: configuration.status,
+        required: configuration.required,
+      })),
+      versionFeatures: versionFeatures.map((activation) => activation.featureCode),
+      versionCapabilities: versionCapabilities.map((activation) => ({
+        featureCode: activation.featureCode,
+        capabilityCode: activation.capabilityCode,
+      })),
+    };
+  }
+
+  /**
+   * Lance la validation complète de la Business Definition d'une version.
+   *
+   * Les règles vivent dans `business-definition-validation.ts` : elles
+   * détectent notamment les relations cassées, les permissions métier en
+   * doublon, les références de navigation invalides, les dépendances
+   * inexistantes et les descriptions manquantes. Chaque problème est persisté
+   * avec son `details` (resourceType / resourceId / resourceCode / path) pour
+   * permettre à l'UI d'ouvrir directement l'élément concerné.
+   */
   async runValidation(applicationVersionId: string, dto: RunQualityValidationDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    const version = await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
     const inputHash = tenantId ? await definitionRevision(this.prisma, applicationVersionId, tenantId) : null;
 
-    const campaign = await this.prisma.bmqValidationCampaign.create({
-      data: {
-        applicationVersionId,
-        code: `validation-${Date.now()}`,
-        name: `Validation Campaign ${new Date().toISOString()}`,
-        profileCode: dto.profileCodes?.[0],
-        status: BmqStatus.RUNNING,
-        startedAt: new Date(),
-        trigger: dto.trigger || 'manual',
-        tenantId: tenantId ?? undefined,
-      },
-    });
+    // Un code dérivé du contenu (et non de l'horloge) garde la validation
+    // reproductible : deux exécutions sur une définition inchangée produisent
+    // le même code, ce qui rend les seeds et les tests déterministes.
+    const runToken = inputHash ? inputHash.slice(-12) : String(applicationVersionId).slice(-12);
+    const runCode = `validation-${version.status.toLowerCase()}-${runToken}`;
 
-    const issues: any[] = [];
-    const metrics: Record<string, number> = {};
-    const runs: any[] = [];
+    const definition = await this.loadDefinition(applicationVersionId, tenantId);
+    const issues = runBusinessDefinitionValidation(definition);
 
-    // --- Run Data Model checks ---
-    const entities = await this.prisma.bmEntity.findMany({
-      where: { applicationVersionId, tenantId: tenantId ?? undefined },
-      include: { fields: true },
-    });
+    const errors = issues.filter((issue) => issue.severity === 'BLOCKER' || issue.severity === 'ERROR');
+    const warnings = issues.filter((issue) => issue.severity === 'WARNING');
+    const infos = issues.filter((issue) => issue.severity === 'INFO');
 
-    const dataModelRun = await this.prisma.bmqValidationRun.create({
-      data: {
+    const weightedIssues = issues.reduce((total, issue) => total + SEVERITY_WEIGHT[issue.severity], 0);
+    const score = Math.max(0, Math.round(100 - (weightedIssues / Math.max(issues.length, 1)) * 12));
+
+    const gateResult =
+      issues.some((issue) => issue.severity === 'BLOCKER')
+        ? BmqGateResult.BLOCKED
+        : errors.length > 0
+          ? BmqGateResult.FAIL
+          : warnings.length > 0
+            ? BmqGateResult.WARNING
+            : BmqGateResult.PASS;
+
+    const status =
+      errors.length > 0 ? BmqStatus.FAILED : warnings.length > 0 ? BmqStatus.WARNING : BmqStatus.PASSED;
+
+    const metrics = {
+      entities: definition.entities.length,
+      fields: definition.entities.reduce((total, entity) => total + entity.fields.length, 0),
+      relations: definition.relations.length,
+      constraints: definition.entities.reduce((total, entity) => total + entity.constraints.length, 0),
+      features: definition.features.length,
+      capabilities: definition.features.reduce(
+        (total, feature) => total + feature.capabilities.length,
+        0,
+      ),
+      menus: definition.menus.length,
+      navigationItems: definition.menus.reduce((total, menu) => total + menu.items.length, 0),
+      configurations: definition.configurations.length,
+      contracts: definition.contracts.length,
+    };
+
+    // La campagne et le rapport sont upsertés sur `code` : relancer la
+    // validation ne duplique pas l'historique et reste idempotent.
+    const [campaign] = await Promise.all([
+      this.prisma.bmqValidationCampaign.upsert({
+        where: {
+          applicationVersionId_code: { applicationVersionId, code: runCode },
+        },
+        update: {
+          status: BmqStatus.RUNNING,
+          startedAt: new Date(),
+          completedAt: null,
+        },
+        create: {
+          applicationVersionId,
+          code: runCode,
+          name: `Validation de ${version.version}`,
+          profileCode: dto.profileCodes?.[0],
+          status: BmqStatus.RUNNING,
+          startedAt: new Date(),
+          trigger: dto.trigger || 'manual',
+          tenantId: tenantId ?? undefined,
+        },
+      }),
+    ]);
+
+    const run = await this.prisma.bmqValidationRun.upsert({
+      where: { campaignId_code: { campaignId: campaign.id, code: 'business-definition' } },
+      update: { status: status, result: { issueCount: issues.length, gateResult }, completedAt: new Date() },
+      create: {
         campaignId: campaign.id,
-        code: 'data-model-validator',
-        name: 'Data Model Validation',
-        status: BmqStatus.PENDING,
-        validatorCode: 'datamodel',
+        code: 'business-definition',
+        name: 'Business Definition Validation',
+        status,
+        validatorCode: 'business-definition',
+        result: { issueCount: issues.length, gateResult },
+        completedAt: new Date(),
         tenantId: tenantId ?? undefined,
       },
     });
 
-    let dmPassed = true;
-    const entityCount = entities.length;
-    const fieldCount = entities.reduce((sum, e) => sum + (e.fields?.length || 0), 0);
-    const relationCount = await this.prisma.bmRelation.count({ where: { applicationVersionId, tenantId: tenantId ?? undefined } });
+    // Les problèmes d'une exécution précédente sur le même rapport sont
+    // remplacés : le rapport reflète toujours l'état actuel de la version.
+    await this.prisma.bmqQualityIssue.deleteMany({ where: { runId: run.id } });
 
-    for (const entity of entities) {
-      const ctx = { entity };
-      for (const [ruleCode, rule] of Object.entries(QUALITY_RULES)) {
-        if (ruleCode === 'entity_has_fields') {
-          const passed = rule.check(ctx);
-          if (!passed) {
-            dmPassed = false;
-            issues.push({
-              reportCode: campaign.code,
-              ruleCode,
-              severity: rule.severity,
-              code: ruleCode,
-              message: rule.message,
-              source: 'data-model',
-            });
-          }
-        }
-      }
-    }
-
-    await this.prisma.bmqValidationRun.update({
-      where: { id: dataModelRun.id },
-      data: {
-        status: dmPassed ? BmqStatus.PASSED : BmqStatus.FAILED,
-        result: { passed: dmPassed, entityCount, fieldCount, relationCount },
+    const report = await this.prisma.bmqQualityReport.upsert({
+      where: {
+        tenantId_applicationVersionId_code: {
+          tenantId: tenantId ?? '',
+          applicationVersionId,
+          code: runCode,
+        },
+      },
+      update: {
+        inputHash,
+        status,
+        score,
+        gateResult,
+        startedAt: campaign.startedAt,
         completedAt: new Date(),
       },
-    });
-    runs.push({ ...dataModelRun, _count: { entityCount, fieldCount, relationCount } });
-
-    metrics.entities = entityCount;
-    metrics.fields = fieldCount;
-    metrics.relations = relationCount;
-
-    // --- Run Features checks ---
-    const features = await this.prisma.bmFeature.findMany({
-      where: { applicationVersionId, tenantId: tenantId ?? undefined },
-      include: { capabilities: true },
-    });
-
-    let featPassed = true;
-    const featureCount = features.length;
-    const capabilityCount = features.reduce((sum, f) => sum + (f.capabilities?.length || 0), 0);
-
-    for (const feature of features) {
-      const ctx = { feature };
-      for (const [ruleCode, rule] of Object.entries(QUALITY_RULES)) {
-        if (ruleCode === 'feature_has_capabilities') {
-          const passed = rule.check(ctx);
-          if (!passed) {
-            featPassed = false;
-            issues.push({
-              reportCode: campaign.code,
-              ruleCode,
-              severity: rule.severity,
-              code: ruleCode,
-              message: rule.message,
-              source: 'features',
-            });
-          }
-        }
-      }
-    }
-
-    metrics.features = featureCount;
-    metrics.capabilities = capabilityCount;
-
-    // --- Run Navigation checks ---
-    const menus = await this.prisma.bmMenu.findMany({
-      where: { applicationVersionId, tenantId: tenantId ?? undefined },
-      include: { items: true },
-    });
-    metrics.menus = menus.length;
-
-    // --- Run Contract checks ---
-    const contracts = await this.prisma.bmBusinessContract.findMany({
-      where: { applicationVersionId, tenantId: tenantId ?? undefined },
-    });
-
-    let contractPassed = contracts.some(c => ['LOCKED','ACTIVE'].includes(c.status));
-    if (!contractPassed) {
-      issues.push({
-        reportCode: campaign.code,
-        ruleCode: 'contract_valid',
-        severity: BmqSeverity.BLOCKER,
-        code: 'contract_valid',
-        message: 'No locked or active contract found',
-        source: 'contracts',
-      });
-    }
-    metrics.contracts = contracts.length;
-
-    // --- Compute overall result ---
-    const failedCount = issues.filter(i => i.severity === BmqSeverity.ERROR || i.severity === BmqSeverity.BLOCKER).length;
-    const warningCount = issues.filter(i => i.severity === BmqSeverity.WARNING).length;
-    const passedCount = issues.filter(i => i.severity === BmqSeverity.INFO || i.severity === BmqSeverity.WARNING).length;
-
-    const totalIssues = issues.length;
-    const score = totalIssues === 0 ? 100 : Math.round(((totalIssues - failedCount) / totalIssues) * 100);
-
-    const gateResult = failedCount > 0
-      ? (issues.some(i => i.severity === BmqSeverity.BLOCKER) ? BmqGateResult.BLOCKED : BmqGateResult.FAIL)
-      : (warningCount > 0 ? BmqGateResult.WARNING : BmqGateResult.PASS);
-
-    const report = await this.prisma.bmqQualityReport.create({
-      data: {
+      create: {
         inputHash,
-        applicationId: (await this.prisma.applicationVersion.findUnique({
-          where: { id: applicationVersionId },
-          select: { applicationId: true },
-        }))?.applicationId ?? '',
+        applicationId: version.applicationId,
         applicationVersionId,
-        code: campaign.code,
-        name: campaign.name,
-        description: `Validation run at ${new Date().toISOString()}`,
+        code: runCode,
+        name: `Validation de ${version.version}`,
+        description: `Validation de la définition métier de la version ${version.version}`,
         scope: 'VERSION',
-        status: failedCount > 0 ? BmqStatus.FAILED : (warningCount > 0 ? BmqStatus.WARNING : BmqStatus.PASSED),
+        status,
         score,
         gateResult,
         startedAt: campaign.startedAt,
         completedAt: new Date(),
         tenantId: tenantId ?? undefined,
-        issues: {
-          create: issues.map(i => ({
-            ruleCode: i.ruleCode,
-            severity: i.severity,
-            code: i.code,
-            message: i.message,
-            source: i.source,
-            tenantId: tenantId ?? undefined,
-          })),
-        },
-        metrics: {
-          create: Object.entries(metrics).map(([key, val]) => ({
-            key,
-            label: key.charAt(0).toUpperCase() + key.slice(1),
-            numericValue: typeof val === 'number' ? val : undefined,
-            value: typeof val === 'number' ? val.toString() : String(val),
-            unit: '',
-            tenantId: tenantId ?? undefined,
-          })),
-        },
       },
+    });
+
+    await this.prisma.bmqQualityIssue.deleteMany({ where: { reportId: report.id } });
+    await this.prisma.bmqQualityMetric.deleteMany({ where: { reportId: report.id } });
+
+    if (issues.length > 0) {
+      await this.prisma.bmqQualityIssue.createMany({
+        data: issues.map((issue) => ({
+          reportId: report.id,
+          runId: run.id,
+          ruleCode: issue.code,
+          severity: SEVERITY_TO_BMQ[issue.severity],
+          code: issue.code,
+          message: issue.message,
+          source: issue.source,
+          // resourceType / resourceId / resourceCode / path : ce que l'UI
+          // utilise pour ouvrir directement l'élément fautif.
+          details: {
+            resourceType: issue.resourceType ?? null,
+            resourceId: issue.resourceId ?? null,
+            resourceCode: issue.resourceCode ?? null,
+            path: issue.path ?? null,
+          },
+          tenantId: tenantId ?? undefined,
+        })),
+      });
+    }
+
+    await this.prisma.bmqQualityMetric.createMany({
+      data: Object.entries(metrics).map(([key, value]) => ({
+        reportId: report.id,
+        key,
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+        numericValue: value,
+        value: String(value),
+        unit: '',
+        tenantId: tenantId ?? undefined,
+      })),
     });
 
     await this.prisma.bmqValidationCampaign.update({
       where: { id: campaign.id },
-      data: {
-        status: failedCount > 0 ? BmqStatus.FAILED : (warningCount > 0 ? BmqStatus.WARNING : BmqStatus.PASSED),
-        completedAt: new Date(),
-      },
+      data: { status, completedAt: new Date() },
     });
-
-    for (const run of runs) {
-      await this.prisma.bmqValidationRun.update({
-        where: { id: run.id },
-        data: {
-          status: run.status,
-        },
-      });
-    }
 
     return {
       campaignId: campaign.id,
       reportId: report.id,
+      runId: run.id,
       applicationVersionId,
-      status: report.status,
-      gateResult: report.gateResult,
-      score: report.score,
+      code: runCode,
+      status,
+      gateResult,
+      score,
+      inputHash,
       summary: {
-        totalIssues,
-        errors: failedCount,
-        warnings: warningCount,
-        entities: entityCount,
-        fields: fieldCount,
-        relations: relationCount,
-        features: featureCount,
-        capabilities: capabilityCount,
-        contracts: contracts.length,
+        totalIssues: issues.length,
+        blockers: issues.filter((issue) => issue.severity === 'BLOCKER').length,
+        errors: errors.length,
+        warnings: warnings.length,
+        infos: infos.length,
+        ...metrics,
       },
-      issues: issues,
+      issues,
     };
   }
 

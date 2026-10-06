@@ -31,10 +31,10 @@ describe('ApplicationsService (TENANT-ISOLATION)', () => {
     });
   });
 
-  it('should find all applications with undefined tenantId when tenantId is null', async () => {
+  it('should find only global applications when tenantId is null', async () => {
     await service.findAll(null);
     expect(prisma.application.findMany).toHaveBeenCalledWith({
-      where: { tenantId: undefined },
+      where: { tenantId: null },
       orderBy: { createdAt: 'desc' },
     });
   });
@@ -107,6 +107,34 @@ describe('ApplicationsService (TENANT-ISOLATION)', () => {
     );
 
     expect(result.tenantId).toBe('tenant-456');
+  });
+
+  it('accepts a global application only without a tenant', async () => {
+    prisma.application.findFirst.mockResolvedValue(null);
+    prisma.application.create.mockResolvedValue({ id: 'global-app', tenantId: null });
+
+    await service.create(
+      { code: 'CORE', name: 'Core', tenantScope: 'GLOBAL' } as any,
+      null,
+    );
+
+    expect(prisma.application.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ tenantId: null, tenantScope: 'GLOBAL' }),
+    }));
+  });
+
+  it('rejects a global scope from a tenant-scoped request', async () => {
+    await expect(
+      service.create({ code: 'APP01', name: 'Invalid', tenantScope: 'GLOBAL' } as any, 'tenant-123'),
+    ).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST });
+    expect(prisma.application.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a tenant scope without a tenant', async () => {
+    await expect(
+      service.create({ code: 'APP01', name: 'Invalid' } as any, null),
+    ).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST });
+    expect(prisma.application.create).not.toHaveBeenCalled();
   });
 
   it('should update application only if it belongs to the tenant', async () => {

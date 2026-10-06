@@ -1,203 +1,122 @@
-import { jest } from '@jest/globals';
+import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ForbiddenException } from '@nestjs/common';
 import { IamAdminGuard } from './iam-admin-guard';
-import { PERMISSIONS_KEY } from './iam-permissions.guard';
-import { IAM_PERMISSIONS_KEY, ROLES, ROLE_PERMISSIONS, PERMISSIONS } from './iam.constants';
+import { PERMISSIONS } from './iam.constants';
+import type { IamAuthContext } from './decorators/current-user.decorator';
 
+/**
+ * Phase 8 — régression d'escalade de privilège.
+ *
+ * `ctx.roles` contient des codes de rôles TENANT résolus en base. Le contrôle
+ * ne doit jamais traduire un NOM de rôle en autorité plateforme : sinon un
+ * tenant qui crée un rôle `admin` s'attribue l'administration de la plateforme.
+ */
 describe('IamAdminGuard', () => {
-  const buildContext = (
-    principal: any,
-    permissions?: string[],
-  ) => {
-    const reflector = {
-      getAllAndOverride: jest.fn((key: string) => {
-        if (key === PERMISSIONS_KEY) return permissions;
-        return undefined;
-      }),
-    } as unknown as Reflector;
-
-    const request: any = {
-      headers: {},
-      method: 'GET',
-      url: '/test',
-      iamAuth: principal,
-      iamPrincipal: principal,
-    };
-
-    const context = {
+  const contextFor = (principal: Partial<IamAuthContext> | undefined) => {
+    const request = { iamAuth: principal };
+    return {
       getHandler: () => ({}),
       getClass: () => ({}),
       switchToHttp: () => ({ getRequest: () => request }),
-    } as any;
-
-    return { reflector, context, request };
+    } as unknown as ExecutionContext;
   };
 
-  describe('deny-by-default (no @Permissions declared)', () => {
-    it('throws ForbiddenException when no permissions metadata is present', () => {
-      const { reflector, context } = buildContext(
-        { userId: 'u1', roles: [ROLES.ADMIN], permissions: Object.values(PERMISSIONS), isSuperAdmin: true },
-        undefined,
-      );
-      const guard = new IamAdminGuard(reflector);
+  const guardRequiring = (permissions: string[]) =>
+    new IamAdminGuard({
+      getAllAndOverride: () => permissions,
+    } as unknown as Reflector);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(/aucune permission explicite/);
-    });
+  it('refuses a route marked administrative without explicit permission', () => {
+    const guard = guardRequiring([]);
 
-    it('throws ForbiddenException even for an admin-role user when no permissions are declared', () => {
-      const { reflector, context } = buildContext(
-        { userId: 'u1', roles: [ROLES.ADMIN], permissions: Object.values(PERMISSIONS), isSuperAdmin: true },
-        undefined,
-      );
-      const guard = new IamAdminGuard(reflector);
-
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-    });
+    expect(() =>
+      guard.canActivate(
+        contextFor({ userId: 'u', roles: ['admin'], permissions: [] }),
+      ),
+    ).toThrow(ForbiddenException);
   });
 
-  describe('authenticated with required permission', () => {
-    it('grants access to a user with IAM_ADMIN permission', () => {
-      const { reflector, context } = buildContext(
-        {
-          userId: 'u1',
-          roles: [ROLES.ADMIN],
+  it('refuses when there is no principal', () => {
+    const guard = guardRequiring([PERMISSIONS.IAM_ADMIN]);
+
+    expect(() => guard.canActivate(contextFor(undefined))).toThrow(
+      /Authentification requise/,
+    );
+  });
+
+  it('grants a superadmin regardless of the declared permission', () => {
+    const guard = guardRequiring([PERMISSIONS.IAM_ADMIN]);
+
+    expect(
+      guard.canActivate(
+        contextFor({ userId: 'u', roles: [], permissions: [], isSuperAdmin: true }),
+      ),
+    ).toBe(true);
+  });
+
+  it('grants when the effective permission set covers the requirement', () => {
+    const guard = guardRequiring([PERMISSIONS.IAM_ADMIN]);
+
+    expect(
+      guard.canActivate(
+        contextFor({
+          userId: 'u',
+          roles: ['tenant_admin'],
           permissions: [PERMISSIONS.IAM_ADMIN],
-          isSuperAdmin: true,
-        },
-        [PERMISSIONS.IAM_ADMIN],
-      );
-      const guard = new IamAdminGuard(reflector);
+          isSuperAdmin: false,
+        }),
+      ),
+    ).toBe(true);
+  });
 
-      expect(guard.canActivate(context)).toBe(true);
-    });
+  it('refuses when only part of the required permissions is present', () => {
+    const guard = guardRequiring([
+      PERMISSIONS.IAM_ADMIN,
+      PERMISSIONS.INTEGRATION_CREDENTIAL_WRITE,
+    ]);
 
-    it('grants access when the principal is super-admin', () => {
-      const { reflector, context } = buildContext(
-        {
-          userId: 'u1',
-          roles: [ROLES.ADMIN],
+    expect(() =>
+      guard.canActivate(
+        contextFor({
+          userId: 'u',
+          roles: ['tenant_admin'],
           permissions: [PERMISSIONS.IAM_ADMIN],
-          isSuperAdmin: true,
-        },
-        [PERMISSIONS.IAM_ADMIN],
-      );
-      const guard = new IamAdminGuard(reflector);
-
-      expect(guard.canActivate(context)).toBe(true);
-    });
-  });
-
-  describe('authenticated with wrong / insufficient permission', () => {
-    it('throws ForbiddenException when the user has USER role (no IAM_ADMIN)', () => {
-      const { reflector, context } = buildContext(
-        {
-          userId: 'u1',
-          roles: [ROLES.USER],
-          permissions: [PERMISSIONS.ERP_READ, PERMISSIONS.CONFIG_READ],
           isSuperAdmin: false,
-        },
-        [PERMISSIONS.IAM_ADMIN],
-      );
-      const guard = new IamAdminGuard(reflector);
+        }),
+      ),
+    ).toThrow(/Permissions insuffisantes/);
+  });
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-    });
+  it('refuses a tenant-defined role named admin', () => {
+    const guard = guardRequiring([PERMISSIONS.IAM_ADMIN]);
 
-    it('throws ForbiddenException when the user has ERP_READ but route requires IAM_ADMIN', () => {
-      const { reflector, context } = buildContext(
-        {
-          userId: 'u1',
-          roles: [ROLES.USER],
-          permissions: [PERMISSIONS.ERP_READ],
+    expect(() =>
+      guard.canActivate(
+        contextFor({
+          userId: 'u',
+          // Rôle créé par un tenant : même code que le rôle plateforme.
+          roles: ['admin'],
+          tenantRoleCodes: ['admin'],
+          permissions: [],
           isSuperAdmin: false,
-        },
-        [PERMISSIONS.IAM_ADMIN],
-      );
-      const guard = new IamAdminGuard(reflector);
-
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-    });
+        }),
+      ),
+    ).toThrow(/Permissions insuffisantes/);
   });
 
-  describe('no authenticated principal', () => {
-    it('throws ForbiddenException when request has no iamAuth (anonymous)', () => {
-      const { reflector, context } = buildContext(
-        undefined,
-        [PERMISSIONS.IAM_ADMIN],
-      );
-      const guard = new IamAdminGuard(reflector);
+  it('refuses a tenant role whose name matches nothing but that lacks the permission', () => {
+    const guard = guardRequiring([PERMISSIONS.IAM_ADMIN]);
 
-      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-    });
-  });
-
-  describe('metadata key isolation', () => {
-    it('reads from PERMISSIONS_KEY (same key as @Permissions decorator), not IAM_PERMISSIONS_KEY', () => {
-      const permissions = [PERMISSIONS.IAM_ADMIN];
-      const reflector = {
-        getAllAndOverride: jest.fn((key: string) =>
-          key === PERMISSIONS_KEY ? permissions : undefined,
-        ),
-      } as unknown as Reflector;
-
-      const request: any = {
-        headers: {},
-        method: 'GET',
-        url: '/test',
-        iamAuth: {
-          userId: 'u1',
-          roles: [ROLES.ADMIN],
-          permissions: [PERMISSIONS.IAM_ADMIN],
-          isSuperAdmin: true,
-        },
-      };
-
-      const context = {
-        getHandler: () => ({}),
-        getClass: () => ({}),
-        switchToHttp: () => ({ getRequest: () => request }),
-      } as any;
-
-      const guard = new IamAdminGuard(reflector);
-
-      expect(guard.canActivate(context)).toBe(true);
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
-        PERMISSIONS_KEY,
-        [context.getHandler(), context.getClass()],
-      );
-    });
-  });
-
-  describe('integration with ROLE_PERMISSIONS mapping', () => {
-    it('admin role user has IAM_ADMIN permission via role mapping and passes', () => {
-      const adminPerms = Object.values(ROLE_PERMISSIONS[ROLES.ADMIN]).flat();
-      expect(adminPerms).toContain(PERMISSIONS.IAM_ADMIN);
-
-      const { reflector, context } = buildContext(
-        {
-          userId: 'u1',
-          roles: [ROLES.ADMIN],
-          permissions: adminPerms,
+    expect(() =>
+      guard.canActivate(
+        contextFor({
+          userId: 'u',
+          roles: ['application_manager'],
+          tenantRoleCodes: ['application_manager'],
+          permissions: ['bm:read', 'bm:write'],
           isSuperAdmin: false,
-        },
-        [PERMISSIONS.IAM_ADMIN],
-      );
-      const guard = new IamAdminGuard(reflector);
-
-      expect(guard.canActivate(context)).toBe(true);
-    });
-
-    it('user role does NOT have IAM_ADMIN permission', () => {
-      const userPerms = Object.values(ROLE_PERMISSIONS[ROLES.USER]).flat();
-      expect(userPerms).not.toContain(PERMISSIONS.IAM_ADMIN);
-    });
-  });
-
-  it('ensures IAM_PERMISSIONS_KEY constant is not used by the guard (regression guard)', () => {
-    expect(IAM_PERMISSIONS_KEY).toBe('iam_permissions');
-    expect(PERMISSIONS_KEY).toBe('permissions');
-    expect(PERMISSIONS_KEY).not.toBe(IAM_PERMISSIONS_KEY);
+        }),
+      ),
+    ).toThrow(/Permissions insuffisantes/);
   });
 });
