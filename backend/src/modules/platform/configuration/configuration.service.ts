@@ -16,10 +16,32 @@ import { PlatformException } from '../../../common/errors/platform.exception';
 
 import { CreateConfigurationDto } from '../configuration/dto/create-config.dto';
 import { UpdateConfigurationDto } from './dto/update-config.dto';
+import { assertVersionWritable } from '../../business-manager/version-mutability';
 
 @Injectable()
 export class ConfigurationService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * La configuration portée par une version (`APPLICATION_VERSION`) fait partie
+   * de la Business Definition : elle se fige avec la version qui la porte, sinon
+   * une version publiée pourrait voir ses paramètres changer sous ses pieds.
+   *
+   * Les autres scopes (PLATFORM, TENANT, APPLICATION, ENVIRONMENT) conservent
+   * leur sémantique propre, y compris le versionnement d'une configuration
+   * ACTIVE décrit plus bas.
+   */
+  private async assertScopeWritable(
+    scope: ConfigurationScope,
+    scopeId: string | null | undefined,
+    tenantId: string | null,
+  ): Promise<void> {
+    if (scope !== ConfigurationScope.APPLICATION_VERSION || !scopeId) {
+      return;
+    }
+
+    await assertVersionWritable(this.prisma, scopeId, tenantId);
+  }
 
   async create(dto: CreateConfigurationDto, tenantId: string | null) {
     const key = dto.key.trim();
@@ -43,6 +65,8 @@ export class ConfigurationService {
     }
 
     await this.validateScopeTarget(dto.scope, dto.scopeId, tenantId);
+
+    await this.assertScopeWritable(dto.scope, dto.scopeId, tenantId);
 
     const existing = dto.scopeId
       ? await this.prisma.configuration.findFirst({
@@ -667,6 +691,8 @@ export class ConfigurationService {
         HttpStatus.NOT_FOUND,
       );
     }
+
+    await this.assertScopeWritable(configuration.scope, configuration.scopeId, tenantId);
 
     if (dto.value !== undefined) {
       const newValue =

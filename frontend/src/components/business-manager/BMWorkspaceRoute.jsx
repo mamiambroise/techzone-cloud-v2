@@ -19,15 +19,27 @@ import { BMResourceEditor, inputClass } from './BMResourceEditor.jsx';
 const root = '/business-manager';
 const get = (path) => api.get(root + path).then((r) => r.data);
 
-const SECTION_ICONS = { 'data-model': Database, features: Boxes, navigation: Compass, validation: ShieldCheck };
+const SECTION_ICONS = { 'data-model': Database, features: Boxes, navigation: Compass, configuration: Settings2, validation: ShieldCheck };
 const SECTIONS = [
   ['data-model', 'Modèles de données'],
   ['features', 'Fonctionnalités'],
   ['navigation', 'Navigation'],
+  ['configuration', 'Configuration'],
   ['validation', 'Validation & publication'],
 ];
 
 const fieldTypes = 'TEXT LONG_TEXT INTEGER BIG_INTEGER DECIMAL CURRENCY PERCENTAGE BOOLEAN DATE DATETIME TIME EMAIL PHONE URL ENUM MULTI_ENUM UUID SEQUENCE FILE IMAGE JSON RELATION FORMULA'.split(' ');
+
+// Cardinalités réelles du modèle Prisma (BmRelationType).
+const relationTypeOptions = [
+  { value: 'ONE_TO_ONE', label: 'Un à un' },
+  { value: 'ONE_TO_MANY', label: 'Un à plusieurs' },
+  { value: 'MANY_TO_ONE', label: 'Plusieurs à un' },
+  { value: 'MANY_TO_MANY', label: 'Plusieurs à plusieurs' },
+];
+
+// Types de configuration réels (ConfigurationType du schéma Prisma).
+const configurationTypes = ['STRING', 'NUMBER', 'BOOLEAN', 'ENUM', 'JSON', 'URL', 'DURATION'];
 
 // Metadonnées d'un champ du formulaire BMResourceEditor (aucune donnée inventée :
 // les listes d'options reflètent les enums réels du schéma Prisma).
@@ -172,6 +184,7 @@ const TABS = {
   'data-model': ['overview', 'entities', 'fields', 'relations', 'constraints'],
   features: ['features', 'capabilities', 'dependencies'],
   navigation: ['menus', 'items'],
+  configuration: ['configuration'],
   validation: ['workflow', 'reports'],
 };
 
@@ -179,6 +192,7 @@ const TAB_LABELS = {
   overview: 'Vue d’ensemble', entities: 'Entités', fields: 'Champs', relations: 'Relations', constraints: 'Contraintes',
   features: 'Features', capabilities: 'Capacités', dependencies: 'Dépendances',
   menus: 'Menus', items: 'Éléments',
+  configuration: 'Paramètres de la version',
   workflow: 'Workflow de publication', reports: 'Historique des validations',
 };
 
@@ -200,6 +214,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
   const base = section === 'data-model' ? `/data-model/${versionId}/schema`
     : section === 'features' ? `/features/${versionId}`
     : section === 'navigation' ? `/navigation/${versionId}/menus`
+    : section === 'configuration' ? `/configurations/APPLICATION_VERSION/${versionId}`
     : `/validation/${versionId}/reports`;
 
   useEffect(() => {
@@ -231,11 +246,12 @@ function Domain({ versionId, section, navigate, applicationId }) {
   const parentOptions = rows.map((row) => ({ value: row.id, label: row.name || row.code }));
 
   // ---- État vide réel (pas de faux contenu) — libellés selon la section ----
-  const emptyLabel = section === 'data-model' ? 'Aucune entité' : section === 'features' ? 'Aucune fonctionnalité' : section === 'navigation' ? 'Aucun menu' : 'Aucun rapport';
+  const emptyLabel = section === 'data-model' ? 'Aucune entité' : section === 'features' ? 'Aucune fonctionnalité' : section === 'navigation' ? 'Aucun menu' : section === 'configuration' ? 'Aucun paramètre' : 'Aucun rapport';
   const emptyHint = {
     'data-model': 'Créez votre première entité pour définir les données métier de cette version.',
     features: 'Créez une fonctionnalité puis ses capacités pour décrire ce que fait l’application.',
     navigation: 'Créez un menu pour structurer la navigation de l’application.',
+    configuration: 'Déclarez les paramètres métier de cette version (devise, nomenclatures, seuils).',
     validation: 'Lancez une première validation pour évaluer la préparation de cette version.',
   }[section];
 
@@ -270,11 +286,13 @@ function Domain({ versionId, section, navigate, applicationId }) {
     } else if (tab === 'relations') {
       data = relations;
       createPath = `/data-model/${versionId}/relations`;
-      fields = [COMMON_FIELDS[0], { key: 'sourceEntityId', label: 'Entité source', required: true, options: parentOptions }, { key: 'targetEntityId', label: 'Entité cible', required: true, options: parentOptions }, { key: 'deleteBehavior', label: 'Comportement de suppression', options: ['RESTRICT', 'CASCADE', 'SET_NULL'], default: 'RESTRICT' }];
+      fields = [COMMON_FIELDS[0], { key: 'sourceEntityId', label: 'Entité source', required: true, options: parentOptions }, { key: 'targetEntityId', label: 'Entité cible', required: true, options: parentOptions }, { key: 'relationType', label: 'Cardinalité', required: true, options: relationTypeOptions, default: 'ONE_TO_MANY' }, { key: 'required', label: 'Obligatoire', type: 'checkbox' }, { key: 'deleteBehavior', label: 'Comportement de suppression', options: ['RESTRICT', 'CASCADE', 'SET_NULL'], default: 'RESTRICT' }];
       columns = [
         { key: 'code', label: 'Code technique', render: monoCode },
         { key: 'sourceEntityId', label: 'Source', render: (row) => rows.find((e) => e.id === row.sourceEntityId)?.name || 'Indisponible' },
         { key: 'targetEntityId', label: 'Cible', render: (row) => rows.find((e) => e.id === row.targetEntityId)?.name || 'Indisponible' },
+        { key: 'relationType', label: 'Cardinalité', render: (row) => <BmBadge tone="blue">{row.relationType || 'ONE_TO_MANY'}</BmBadge> },
+        { key: 'required', label: 'Obligatoire', render: (row) => (row.required ? <BmBadge tone="green">Oui</BmBadge> : <BmBadge tone="neutral">Non</BmBadge>) },
         { key: 'deleteBehavior', label: 'Suppression', render: (row) => <BmBadge tone="neutral">{row.deleteBehavior}</BmBadge> },
       ];
       createLabel = 'Créer une relation';
@@ -372,6 +390,26 @@ function Domain({ versionId, section, navigate, applicationId }) {
       ];
       createLabel = 'Créer un menu';
     }
+  } else if (section === 'configuration') {
+    // Configuration portée par la version : scope APPLICATION_VERSION + scopeId.
+    data = rows;
+    createPath = '/configurations';
+    updatePath = (row) => `/configurations/${row.id}`;
+    fields = [
+      { key: 'key', label: 'Clé', required: true },
+      { key: 'type', label: 'Type', required: true, options: configurationTypes, default: 'STRING' },
+      { key: 'value', label: 'Valeur', type: 'json' },
+      { key: 'required', label: 'Obligatoire', type: 'checkbox' },
+      { key: 'schema', label: 'Schéma (JSON)', type: 'json' },
+    ];
+    columns = [
+      { key: 'key', label: 'Clé', render: monoCode },
+      { key: 'type', label: 'Type', render: (row) => <BmBadge tone="violet">{row.type}</BmBadge> },
+      { key: 'value', label: 'Valeur', render: (row) => <span className="font-mono text-xs text-slate-500">{formatConfigValue(row.value)}</span> },
+      { key: 'required', label: 'Obligatoire', render: (row) => (row.required ? <BmBadge tone="green">Oui</BmBadge> : <BmBadge tone="neutral">Non</BmBadge>) },
+      { key: 'status', label: 'Statut', render: (row) => <BmStatusBadge value={row.status} /> },
+    ];
+    createLabel = 'Créer un paramètre';
   }
 
   // Liste affichée : data est réassignée par la configuration de section (onglets
@@ -381,7 +419,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
   const filtered = data.filter((row) => {
     if (!dataSearch.trim()) return true;
     const q = dataSearch;
-    return [row.name, row.code, row.label, row.description].some((value) => String(value || '').toLowerCase().includes(q));
+    return [row.name, row.code, row.key, row.label, row.description].some((value) => String(value || '').toLowerCase().includes(q));
   });
 
   function createButton() {
@@ -401,6 +439,21 @@ function Domain({ versionId, section, navigate, applicationId }) {
       action={search ? undefined : createButton()}
     />
   );
+
+  // Cycle de vie d'une configuration : DRAFT → VALIDATING → READY → ACTIVE.
+// Les transitions passent par les endpoints réels de la plateforme ; aucune
+// activation n'est simulée côté UI.
+const configurationLifecycleColumn = section === 'configuration' ? {
+    key: 'lifecycle',
+    label: 'Cycle de vie',
+    className: 'text-right',
+    render: (row) => (
+      <div className="flex items-center justify-end gap-1">
+        <BmIconButton label="Valider" disabled={busy || ['READY', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'].includes(row.status)} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/validate`))}><ShieldCheck className="h-4 w-4" /></BmIconButton>
+        <BmIconButton label="Activer" disabled={busy || row.status !== 'READY'} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/activate`))}><Rocket className="h-4 w-4" /></BmIconButton>
+      </div>
+    ),
+  } : null;
 
   const actionsColumn = (onView) => ({
     key: 'actions',
@@ -484,7 +537,12 @@ function Domain({ versionId, section, navigate, applicationId }) {
                   initial={editor}
                   onCancel={() => setEditor(null)}
                   onSave={async (body) => {
-                    await (editor.id ? api.patch(root + updatePath(editor), body) : api.post(root + createPath, body));
+                    // Une configuration créée depuis le BM appartient à la version
+                    // sélectionnée : le scope n'est jamais saisi à la main.
+                    const payload = section === 'configuration' && !editor.id
+                      ? { ...body, scope: 'APPLICATION_VERSION', scopeId: versionId, version: '1.0.0' }
+                      : body;
+                    await (editor.id ? api.patch(root + updatePath(editor), payload) : api.post(root + createPath, payload));
                     setEditor(null); refresh();
                   }}
                 />
@@ -502,7 +560,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
               )}
 
               <BmTable
-                columns={[...columns, actionsColumn(section === 'data-model' && ['overview', 'entities'].includes(tab) ? (row) => { setParent(row.id); setTab('fields'); setEditor(null); } : section === 'data-model' && tab === 'fields' ? (row) => setValidationField(row) : undefined)]}
+                columns={[...(configurationLifecycleColumn ? [configurationLifecycleColumn] : []), ...columns, actionsColumn(section === 'data-model' && ['overview', 'entities'].includes(tab) ? (row) => { setParent(row.id); setTab('fields'); setEditor(null); } : section === 'data-model' && tab === 'fields' ? (row) => setValidationField(row) : undefined)]}
                 rows={filtered}
                 emptyState={emptyState}
                 footer={<> {filtered.length} élément(s) sur {rows.length}</>}
@@ -522,6 +580,15 @@ function monoCode(row) {
   return <span className="font-mono text-xs text-slate-500">{row?.code ?? '—'}</span>;
 }
 
+// Valeur de configuration : JSON.stringify pour les objets/tableaux, texte
+// brut pour un scalaire. Une valeur absente reste affichée comme telle plutôt
+// que masquée par un tenseur.
+function formatConfigValue(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
 // =====================================================================
 // Validation & publication — workflow réel uniquement
 // Sources : POST /validation/:versionId/run, GET /validation/:versionId/gate-status,
@@ -534,7 +601,7 @@ const WORKFLOW_STEPS = [
   { id: 'data-model', label: 'Modèles de données', detail: (checks) => checks && `${checks.entities.length} entité(s), ${checks.relations.length} relation(s)` },
   { id: 'features', label: 'Fonctionnalités', detail: (checks) => checks && `${checks.features.length} fonctionnalité(s)` },
   { id: 'navigation', label: 'Navigation', detail: (checks) => checks && `${checks.menus.length} menu(s)` },
-  { id: 'configuration', label: 'Configuration', detail: () => 'Voir l’écran Configuration' },
+  { id: 'configuration', label: 'Configuration', detail: (checks) => checks && `${checks.configurations.length} paramètre(s) de version` },
   { id: 'tests', label: 'Tests & validation', detail: (checks) => checks && `${checks.reports.length} rapport(s) de validation` },
   { id: 'publication', label: 'Publication', detail: (checks) => checks && `Statut : ${checks.version?.status}` },
 ];
@@ -551,13 +618,14 @@ function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
       get(`/data-model/${versionId}/relations`),
       get(`/features/${versionId}`),
       get(`/navigation/${versionId}/menus`),
+      get(`/configurations/APPLICATION_VERSION/${versionId}`),
       get(`/validation/${versionId}/reports`),
       get(`/validation/${versionId}/gate-status`),
       get(`/versions/${versionId}`),
       get('/environments'),
     ])
-      .then(([schema, relations, features, menus, reports, gate, version, environments]) => {
-        setState({ loading: false, error: '', data: { schema, relations, features, menus, reports, gate, version, environments } });
+      .then(([schema, relations, features, menus, configurations, reports, gate, version, environments]) => {
+        setState({ loading: false, error: '', data: { schema, relations, features, menus, configurations, reports, gate, version, environments } });
       })
       .catch(() => { setState({ loading: false, error: bmSafeError, data: null }); });
   }
@@ -565,14 +633,17 @@ function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
 
   if (state.loading) return <BmLoading label="Évaluation de la préparation…" />;
   if (state.error) return <BmErrorState message={state.error} onRetry={load} />;
-  const { schema, relations, features, menus, reports, gate, version, environments } = state.data;
+  const { schema, relations, features, menus, configurations, reports, gate, version, environments } = state.data;
 
-  const checks = { entities: schema || [], relations: relations || [], features: features || [], menus: menus || [], reports: reports || [], version };
+  const checks = { entities: schema || [], relations: relations || [], features: features || [], menus: menus || [], configurations: configurations || [], reports: reports || [], version };
+  // Une configuration requise sans valeur n'est pas « faite » : le paramètre
+  // existe mais la version n'est pas prête tant qu'il est vide.
+  const pendingConfigurations = checks.configurations.filter((config) => config.required && (config.value === null || config.value === undefined));
   const stepStates = {
     'data-model': checks.entities.length > 0 ? 'done' : 'todo',
     features: checks.features.length > 0 ? 'done' : 'todo',
     navigation: checks.menus.length > 0 ? 'done' : 'todo',
-    configuration: 'todo',
+    configuration: checks.configurations.length === 0 ? 'todo' : pendingConfigurations.length > 0 ? 'current' : 'done',
     tests: gate?.overallStatus === 'PASS' ? 'done' : gate?.overallStatus === 'NOT_EVALUATED' ? 'todo' : 'current',
     publication: version?.status === 'ACTIVE' ? 'done' : 'todo',
   };

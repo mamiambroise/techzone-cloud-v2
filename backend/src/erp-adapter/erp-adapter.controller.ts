@@ -37,6 +37,8 @@ import { CreateExpenseDto } from './dto/create-expense.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { CreateAgendaEventDto } from './dto/create-agenda-event.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { ErpCommandService } from './commands/erp-command.service';
+import type { ErpCommandRequest } from './commands/erp-command.service';
 
 @ApiTags('erp-adapter')
 @Controller('api/erp')
@@ -46,6 +48,7 @@ export class ErpAdapterController {
   constructor(
     private readonly adapterService: ErpAdapterService,
     private readonly erpRegistry: ErpRegistryService,
+    private readonly commandService: ErpCommandService,
   ) {}
 
   private async resolveErpFromTenant(principal: IamAuthContext): Promise<IErpAdapter> {
@@ -64,6 +67,26 @@ export class ErpAdapterController {
   @ApiResponse({ status: 200, description: 'Liste des adaptateurs' })
   getAdapters() {
     return { adapters: this.adapterService.getAvailableAdapters() };
+  }
+
+  @Permissions(ERP_READ)
+  @Get('contracts')
+  @ApiOperation({ summary: 'Lister les contrats d integration ERP stables (versionnes)' })
+  @ApiResponse({ status: 200, description: 'Contrats disponibles' })
+  listContracts(@Query('connector') connector?: string) {
+    return { contracts: this.commandService.listContracts(connector) };
+  }
+
+  @Permissions(ERP_WRITE)
+  @Post('commands')
+  @ApiOperation({ summary: 'Executer un contrat d integration ERP (query ou command, valide et capability-gate)' })
+  @ApiResponse({ status: 200, description: 'Operation executee' })
+  @ApiResponse({ status: 400, description: 'Contrat inconnu' })
+  @ApiResponse({ status: 422, description: 'Payload invalide' })
+  @ApiResponse({ status: 502, description: 'Capability indisponible ou reponse non conforme' })
+  async executeCommand(@Body() request: ErpCommandRequest, @CurrentUser() principal: IamAuthContext) {
+    this.logger.log(`POST /erp/commands -> ${request.operation} [tenant=${principal.tenantId}]`);
+    return this.commandService.execute(request, { tenantId: principal.tenantId ?? undefined, actorId: principal.userId });
   }
 
   // === CLIENTS ===

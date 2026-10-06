@@ -14,7 +14,7 @@ npm run windows:stop
 
 Ne pas reconstruire `backend/dist` pendant un démarrage/redémarrage. Arrêter le runtime avant une reconstruction. Le démarrage signale un build absent ; il ne lance aucune migration.
 
-`Lancer-Techzone.cmd` et `scripts/start-windows.ps1` délèguent au même runtime. Les anciennes commandes `dev` restent un workflow historique distinct et ne doivent pas tourner simultanément sur les mêmes ports.
+`Lancer-Techzone.cmd` et `scripts/start-windows.ps1` délèguent au même runtime. `Arreter-Techzone.cmd` arrête les services et `Redemarrer-Techzone.cmd` redémarre le profil Windows. Les commandes `dev` et `windows:start` conservent leurs modes de démarrage respectifs. `npm run stop` et `windows:stop` partagent le même arrêt : lanceurs, descendants et services du projet, avec vérification des ports 3000, 3003 et 8080. `npm run restart` relance le mode dev ; `windows:restart` relance le profil Windows sélectionné. Ne pas démarrer les deux modes simultanément.
 
 Le runtime conserve les identités de ses processus dans `.runtime/*.pid` (PID, date de création, exécutable, commande). Il refuse d'arrêter un PID réutilisé ou de remplacer un processus inconnu. Il laisse PostgreSQL en service et ne démarre ni PHP/Dolibarr ni un IAM séparé. Les sorties privées et les captures de recette sont dans `.runtime/`, ignoré par Git.
 

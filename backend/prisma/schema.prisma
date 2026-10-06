@@ -1105,6 +1105,7 @@ model ERPRegistry {
 
   // Relations
   entityMappings EntityMapping[]
+  externalResourceLinks ExternalResourceLink[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -1147,6 +1148,32 @@ model EntityMapping {
   @@index([tenantId])
   @@index([erpId])
   @@map("entity_mapping")
+}
+
+// Table des liens de ressources externes (local ID <-> external ERP ID)
+// Phase 10 — additive. Préserve l'identité Techzone sans jamais remplacer
+// l'ID interne par l'ID Dolibarr (RG-INT-027, CDC §15/§25).
+model ExternalResourceLink {
+  id           String    @id @default(uuid())
+  tenantId     String    @db.Uuid
+  connectorId  String
+  resourceType String    @db.VarChar(100)
+  localId      String    @db.VarChar(100)
+  externalId   String    @db.VarChar(100)
+  externalRef  String?   @db.VarChar(100)
+  lastSyncedAt DateTime? @map("last_synced_at")
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  erp ERPRegistry @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, connectorId, resourceType, localId])
+  @@index([tenantId])
+  @@index([tenantId, resourceType])
+  @@index([connectorId])
+  @@map("external_resource_links")
 }
 
 // ============ IAM / AUTH (merged from new erp-adapter-platform/backend) ============

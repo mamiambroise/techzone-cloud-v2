@@ -9,6 +9,7 @@ import {
   UpdateMenuItemDto,
   ResolveNavigationDto,
 } from './dto/create-navigation.dto';
+import { assertVersionWritable } from '../version-mutability';
 
 @Injectable()
 export class NavigationService {
@@ -37,8 +38,8 @@ export class NavigationService {
   // MENU MANAGEMENT
   // =====================================================================
 
-  async createMenu(applicationVersionId: string, dto: CreateMenuDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+async createMenu(applicationVersionId: string, dto: CreateMenuDto, tenantId: string | null) {
+    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const code = dto.code.trim().toLowerCase();
 
@@ -115,8 +116,10 @@ export class NavigationService {
     return menu;
   }
 
-  async updateMenu(id: string, dto: CreateMenuDto, tenantId: string | null) {
+async updateMenu(id: string, dto: CreateMenuDto, tenantId: string | null) {
     const menu = await this.findOneMenu(id, tenantId);
+
+    await assertVersionWritable(this.prisma, menu.applicationVersionId, tenantId);
 
     if (menu.status === BmNavigationStatus.ACTIVE) {
       throw new PlatformException(
@@ -142,8 +145,10 @@ export class NavigationService {
   // MENU ITEM MANAGEMENT
   // =====================================================================
 
-  async createMenuItem(menuId: string, dto: CreateMenuItemDto, tenantId: string | null) {
+async createMenuItem(menuId: string, dto: CreateMenuItemDto, tenantId: string | null) {
     const menu = await this.findOneMenu(menuId, tenantId);
+
+    await assertVersionWritable(this.prisma, menu.applicationVersionId, tenantId);
 
     if (dto.parentItemId) {
       const parent = await this.prisma.bmNavigationItem.findFirst({
@@ -178,9 +183,10 @@ export class NavigationService {
     });
   }
 
-  async updateMenuItem(id: string, dto: UpdateMenuItemDto, tenantId: string | null) {
+async updateMenuItem(id: string, dto: UpdateMenuItemDto, tenantId: string | null) {
     const item = await this.prisma.bmNavigationItem.findFirst({
       where: { id, tenantId: tenantId ?? undefined },
+      include: { menu: { select: { applicationVersionId: true } } },
     });
 
     if (!item) {
@@ -190,6 +196,8 @@ export class NavigationService {
         HttpStatus.NOT_FOUND,
       );
     }
+
+    await assertVersionWritable(this.prisma, item.menu.applicationVersionId, tenantId);
 
     return this.prisma.bmNavigationItem.update({
       where: { id },
@@ -227,23 +235,28 @@ export class NavigationService {
   // =====================================================================
 
   async resolveNavigation(menuId: string, dto: ResolveNavigationDto, tenantId: string | null) {
-    const menu = await this.findOneMenu(menuId, tenantId);
+const menu = await this.findOneMenu(menuId, tenantId);
     const userCapabilities = dto.capabilities || [];
 
-    const hasCapability = (required: string[]): boolean => {
-      if (!required || required.length === 0) return true;
-      if (menu.items.length > 0) {
-        for (const cap of required) {
-          if (userCapabilities.includes(cap)) return true;
-        }
-        return false;
-      }
-      return true;
+    /**
+     * Une entrée est visible si elle n'exige aucune permission métier, ou si
+     * l'utilisateur la possède. `capabilityOperator` décide si une seule
+     * permission suffit (ANY, défaut) ou si toutes sont exigées (ALL).
+     *
+     * Sans ce filtre, la navigation renvoyée exposait tous les écrans quel que
+     * soit l'utilisateur : la résolution était décorative.
+     */
+    const isVisibleFor = (item: { requiredCapabilities: string[]; capabilityOperator: string }): boolean => {
+      const required = item.requiredCapabilities || [];
+      if (required.length === 0) return true;
+      const granted = required.filter((code) => userCapabilities.includes(code));
+      return item.capabilityOperator === 'ALL' ? granted.length === required.length : granted.length > 0;
     };
 
     const buildTree = (parentId: string | null, items: any[]): any[] => {
       const children = items
         .filter(item => (parentId === null ? item.parentItemId === null : item.parentItemId === parentId))
+        .filter(isVisibleFor)
         .sort((a, b) => a.orderIndex - b.orderIndex)
         .map(item => {
           const resolved: any = {

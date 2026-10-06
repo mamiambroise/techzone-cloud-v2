@@ -20,6 +20,8 @@ export type CopyBusinessDefinitionResult = {
   versionFeatures: number;
   versionCapabilities: number;
   configurations: number;
+  contracts: number;
+  contractVersions: number;
 };
 
 /**
@@ -71,7 +73,23 @@ export class BusinessDefinitionCopyService {
     }
 
     const applicationId = targetVersion.applicationId;
+
+    /**
+     * Trois portées de rattachement, à ne pas confondre. Le schéma n'expose
+     * pas les mêmes colonnes sur chaque modèle de la définition :
+     *   - `application` : modèles liés à l'application ET à sa version
+     *     (BmEntity, BmFeature, BmMenu, BmComputedField, BmVersionFeature…),
+     *   - `version` : modèles liés à la seule version (BmRelation),
+     *   - `parent` : modèles rattachés à leur seul parent (BmField via
+     *     BmEntity, BmFeatureCapability via BmFeature, BmNavigationItem via
+     *     BmMenu) : leur clé étrangère suffit, aucune colonne application.
+     *
+     * Envoyer `applicationId` à un modèle qui ne le possède pas fait échouer
+     * l'appel Prisma : la copie doit rester stricte sur ce point.
+     */
     const target = { applicationId, applicationVersionId: targetVersionId, ...scope };
+    const targetVersionScoped = { applicationVersionId: targetVersionId, ...scope };
+    const targetParentScoped = { ...scope };
 
     // ---------------------------------------------------------------- data model
     const sourceEntities = await this.prisma.bmEntity.findMany({
@@ -234,7 +252,8 @@ export class BusinessDefinitionCopyService {
 
       await this.prisma.bmRelation.create({
         data: {
-          ...target,
+          // BmRelation est rattaché à la version, pas à l'application.
+          ...targetVersionScoped,
           sourceEntityId,
           targetEntityId,
           code: relation.code,
@@ -281,7 +300,8 @@ export class BusinessDefinitionCopyService {
       for (const capability of feature.capabilities) {
         const createdCapability = await this.prisma.bmFeatureCapability.create({
           data: {
-            ...target,
+            // BmFeatureCapability est rattaché à sa fonctionnalité.
+            ...targetParentScoped,
             featureId: createdFeature.id,
             code: capability.code,
             name: capability.name,
@@ -348,7 +368,8 @@ export class BusinessDefinitionCopyService {
 
           const createdItem = await this.prisma.bmNavigationItem.create({
             data: {
-              ...target,
+              // BmNavigationItem est rattaché à son menu.
+              ...targetParentScoped,
               menuId: createdMenu.id,
               parentItemId,
               code: item.code,
@@ -427,6 +448,52 @@ export class BusinessDefinitionCopyService {
       });
     }
 
+    // ------------------------------------------------------------------ contrats
+    // Un contrat publication verrouillé (LOCKED / ACTIVE) est la condition de
+    // publication de la version. Sans lui, la copie n'est pas publiable et la
+    // validation remonte NO_PUBLISHABLE_CONTRACT : dupliquer ou cloner doit
+    // produire un point de depart exploitable.
+    const sourceContracts = await this.prisma.bmBusinessContract.findMany({
+      where: { applicationVersionId: sourceVersionId, ...scope },
+      include: { contractVersions: true },
+      orderBy: { code: 'asc' },
+    });
+
+    let contractCount = 0;
+    let contractVersionCount = 0;
+
+    for (const contract of sourceContracts) {
+      const createdContract = await this.prisma.bmBusinessContract.create({
+        data: {
+          ...target,
+          code: contract.code,
+          name: contract.name,
+          description: contract.description,
+          version: contract.version,
+          status: contract.status,
+          contractHash: contract.contractHash,
+          manifest: contract.manifest as never,
+        },
+        select: { id: true },
+      });
+      contractCount += 1;
+
+      for (const contractVersion of contract.contractVersions) {
+        await this.prisma.bmContractVersion.create({
+          data: {
+            contractId: createdContract.id,
+            versionNumber: contractVersion.versionNumber,
+            content: contractVersion.content as never,
+            hash: contractVersion.hash,
+            compatibility: contractVersion.compatibility,
+            status: contractVersion.status,
+            tenantId: tenantId ?? undefined,
+          },
+        });
+        contractVersionCount += 1;
+      }
+    }
+
     return {
       entities: sourceEntities.length,
       fields: fieldCount,
@@ -443,6 +510,8 @@ export class BusinessDefinitionCopyService {
       versionFeatures: versionFeatures.length,
       versionCapabilities: versionCapabilities.length,
       configurations: configurations.length,
+      contracts: contractCount,
+      contractVersions: contractVersionCount,
     };
   }
 }

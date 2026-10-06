@@ -42,16 +42,8 @@ function Wait-Http([string]$Url) {
     throw "READINESS_FAILED: $Url"
 }
 function Stop-Techzone {
-    foreach ($name in @('frontend','backend')) {
-        $owned = Owned-Process $name
-        if ($owned) { Stop-Process -Id $owned.ProcessId; Wait-Process -Id $owned.ProcessId -Timeout 15 -ErrorAction SilentlyContinue }
-        $file = Join-Path $runtimeRoot "$name.pid"
-        if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file }
-    }
-    $deadline = (Get-Date).AddSeconds(15)
-    while (((Port-Open 3000) -or (Port-Open 3003)) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 300 }
-    if ((Port-Open 3000) -or (Port-Open 3003)) { throw 'PORT_IN_USE: another process is listening; left untouched' }
-    Write-Output "TECHZONE CLOUD STOP`n========================`nFrontend : STOPPED`nBackend  : STOPPED`n========================"
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'stop-project.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'STOP_FAILED: restart cancelled' }
 }
 function Status-Techzone {
     Write-Output "TECHZONE CLOUD STATUS`n================================"

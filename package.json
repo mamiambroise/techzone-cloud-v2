@@ -15,6 +15,9 @@
     "windows:test": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/runtime.ps1 test",
     "windows:start:local": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/runtime.ps1 start -Mode local",
     "windows:start:remote": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/runtime.ps1 start -Mode remote",
-    "test-user:provision": "node scripts/windows/provision.cjs"
+    "test-user:provision": "node scripts/windows/provision.cjs",
+    "start": "node scripts/dev-all.mjs",
+    "restart": "node scripts/dev-all.mjs --restart",
+    "test:launcher": "node --test scripts/windows/stop-project.test.mjs"
   }
 }

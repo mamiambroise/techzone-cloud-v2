@@ -6,7 +6,7 @@ export async function createDeploymentFixture(prisma: PrismaService) {
   return prisma.$transaction(async (tx) => {
     const code = `deployment-test-${randomUUID()}`;
     const tenant = await tx.tenant.create({
-      data: { code, name: code, status: 'ACTIVE' },
+      data: { id: randomUUID(), code, name: code, status: 'ACTIVE' },
     });
     const application = await tx.application.create({
       data: { code, name: code, tenantId: tenant.id },
