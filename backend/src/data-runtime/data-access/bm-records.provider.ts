@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { DataProvider, ListOptions } from './data-access-manager';
 import { RuntimeContext, ResourceDescriptor } from '../interfaces';
 import { Prisma } from '../../generated/prisma/client';
+import { DATA_RUNTIME_EXECUTE } from '../../iam/iam.constants';
 
 /** PostgreSQL provider for `bm:<applicationVersionId>:<entityCode>` resources. */
 @Injectable()
@@ -28,7 +29,13 @@ export class BmRecordsProvider implements DataProvider {
     const d = await this.definition(resource, ctx);
     const capability = `${d.entity.code}.${op}`;
     const declared = await this.prisma.bmFeatureCapability.count({ where: { tenantId: ctx.tenantId, code: capability, status: 'ACTIVE', feature: { applicationVersionId: d.version.id } } });
-    if (declared && !ctx.permissions?.includes('*') && !ctx.permissions?.includes(capability)) throw new ForbiddenException(`FORBIDDEN: Permission "${capability}" manquante`);
+    // BM capabilities are authored per application (for example
+    // `customer.read`), so they cannot be pre-registered as static IAM
+    // permissions. `data-runtime:execute` is the explicit tenant-scoped grant
+    // held by application managers for operating those published resources.
+    // Members who only have query/read access still need the named capability.
+    const canManageBusinessData = ctx.permissions?.includes(DATA_RUNTIME_EXECUTE);
+    if (declared && !ctx.permissions?.includes('*') && !canManageBusinessData && !ctx.permissions?.includes(capability)) throw new ForbiddenException(`FORBIDDEN: Permission "${capability}" manquante`);
     return d;
   }
 

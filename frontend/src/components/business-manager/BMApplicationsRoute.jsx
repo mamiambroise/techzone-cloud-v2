@@ -136,7 +136,7 @@ export function BMApplicationsRoute() {
 
 export function ApplicationCard({ app, onClick }) {
   return (
-    <article className="bm-hover-lift flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
+    <article className="bm-hover-lift flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
       <div className="flex items-start gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600" aria-hidden="true">
           <Boxes className="h-5 w-5" />

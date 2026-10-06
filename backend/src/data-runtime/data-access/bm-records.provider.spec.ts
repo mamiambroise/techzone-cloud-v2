@@ -1,5 +1,6 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { BmRecordsProvider } from './bm-records.provider';
+import { DATA_RUNTIME_EXECUTE } from '../../iam/iam.constants';
 
 describe('BM records query safety', () => {
   const provider = new BmRecordsProvider({} as any);
@@ -28,5 +29,17 @@ describe('BM records query safety', () => {
     await expect((provider as any).authorizeFieldChanges(definition,{state:'DRAFT'},{state:'APPROVED'},context,db)).rejects.toThrow('request.approve');
     await expect((provider as any).authorizeFieldChanges(definition,{state:'DRAFT'},{state:'APPROVED'},{...context,permissions:['request.update','request.approve']},db)).resolves.toBeUndefined();
     await expect((provider as any).authorizeFieldChanges(definition,{state:'APPROVED'},{state:'APPROVED'},context,db)).resolves.toBeUndefined();
+  });
+  it('allows an application manager to operate declared dynamic BM capabilities', async () => {
+    const prisma = {
+      applicationVersion: { findFirst: jest.fn().mockResolvedValue({ id: '11111111-1111-1111-1111-111111111111', applicationId: 'app', version: '1.0.0' }) },
+      bmEntity: { findFirst: jest.fn().mockResolvedValue({ code: 'customer', fields: [] }) },
+      bmFeatureCapability: { count: jest.fn().mockResolvedValue(1) },
+    };
+    const scopedProvider = new BmRecordsProvider(prisma as any);
+    const resource = 'bm:11111111-1111-1111-1111-111111111111:customer';
+    const context = { tenantId: 'tenant', userId: 'user', permissions: [DATA_RUNTIME_EXECUTE] };
+    await expect((scopedProvider as any).check(resource, 'read', context)).resolves.toBeDefined();
+    await expect((scopedProvider as any).check(resource, 'read', { ...context, permissions: ['data-runtime:query'] })).rejects.toThrow('customer.read');
   });
 });
