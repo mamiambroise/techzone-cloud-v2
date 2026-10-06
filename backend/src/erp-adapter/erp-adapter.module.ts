@@ -6,17 +6,20 @@ import { MockAdapter } from './mock/mock.adapter';
 import { DolibarrAdapter } from './dolibarr/dolibarr.adapter';
 import { ErpCapabilityService } from './capabilities/erp-capability.service';
 import { ErpCommandService } from './commands/erp-command.service';
+import { ErpResourceCatalogService } from './catalog/erp-resource-catalog.service';
+import { ErpResourceCatalogController } from './catalog/erp-resource-catalog.controller';
 
 @Module({
   imports: [forwardRef(() => ErpRegistryModule)],
-  controllers: [ErpAdapterController],
+  controllers: [ErpAdapterController, ErpResourceCatalogController],
   providers: [
     ErpAdapterService,
     MockAdapter,
     DolibarrAdapter,
     ErpCapabilityService,
     ErpCommandService,
+    ErpResourceCatalogService,
   ],
-  exports: [ErpAdapterService, MockAdapter, DolibarrAdapter, ErpCapabilityService, ErpCommandService],
+  exports: [ErpAdapterService, MockAdapter, DolibarrAdapter, ErpCapabilityService, ErpCommandService, ErpResourceCatalogService],
 })
 export class ErpAdapterModule {}

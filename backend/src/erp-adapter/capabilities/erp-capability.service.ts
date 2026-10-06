@@ -7,8 +7,18 @@ import { ErpError } from '../erp-error';
 import { resolveErpKey } from '../../erp-registry/erp-credentials';
 import { validateDolibarrUrl, dolibarrAgents } from '../dolibarr/dolibarr-destination';
 import { ERPRegistry } from '../../generated/prisma/client';
+import { ERP_CAPABILITY_PROBES, ErpCapabilityProbeDefinition } from '../catalog/erp-resource-catalog';
 
-export type ErpCapabilityStatus = 'AVAILABLE' | 'UNAVAILABLE' | 'NOT_IMPLEMENTED' | 'AUTH_FAILED' | 'ERROR';
+export type ErpCapabilityStatus =
+  | 'AVAILABLE'
+  | 'PERMISSION_DENIED'
+  | 'MODULE_DISABLED'
+  | 'NOT_SUPPORTED'
+  | 'NOT_IMPLEMENTED'
+  | 'UNKNOWN'
+  | 'UNAVAILABLE'
+  | 'AUTH_FAILED'
+  | 'ERROR';
 
 export type ConnectorAvailability = 'UNCONFIGURED' | 'AVAILABLE' | 'DEGRADED' | 'UNAVAILABLE' | 'ERROR';
 
@@ -37,44 +47,18 @@ export interface ErpCapabilityReport {
   };
 }
 
-interface CapabilityProbe {
-  readonly capability: string;
-  readonly method: 'GET' | 'POST' | 'PUT';
-  readonly path: string;
-  readonly kind: 'read' | 'write';
-}
-
-const CAPABILITY_PROBES: readonly CapabilityProbe[] = [
-  { capability: 'customer.read', method: 'GET', path: '/thirdparties', kind: 'read' },
-  { capability: 'customer.create', method: 'POST', path: '/thirdparties', kind: 'write' },
-  { capability: 'customer.update', method: 'PUT', path: '/thirdparties/0', kind: 'write' },
-  { capability: 'product.read', method: 'GET', path: '/products', kind: 'read' },
-  { capability: 'product.create', method: 'POST', path: '/products', kind: 'write' },
-  { capability: 'product.update', method: 'PUT', path: '/products/0', kind: 'write' },
-  { capability: 'order.read', method: 'GET', path: '/orders', kind: 'read' },
-  { capability: 'order.create', method: 'POST', path: '/orders', kind: 'write' },
-  { capability: 'order.update', method: 'PUT', path: '/orders/0', kind: 'write' },
-  { capability: 'invoice.read', method: 'GET', path: '/invoices', kind: 'read' },
-  { capability: 'invoice.create', method: 'POST', path: '/invoices', kind: 'write' },
-  { capability: 'payment.create', method: 'POST', path: '/payments', kind: 'write' },
-  { capability: 'supplierorder.read', method: 'GET', path: '/supplierorders', kind: 'read' },
-  { capability: 'warehouse.read', method: 'GET', path: '/warehouses', kind: 'read' },
-  { capability: 'stockmovement.read', method: 'GET', path: '/stockmovements', kind: 'read' },
-  { capability: 'project.read', method: 'GET', path: '/projects', kind: 'read' },
-  { capability: 'agenda.read', method: 'GET', path: '/agenda', kind: 'read' },
-  { capability: 'agenda.create', method: 'POST', path: '/agenda', kind: 'write' },
-];
-
 const CORE_CAPABILITIES = ['customer.read', 'product.read', 'order.read'];
 
 const PROBE_TIMEOUT_MS = 8000;
 const PROBE_ENTITY = Number(process.env.DOLIBARR_ENTITY) || 1;
 
-function classifyProbe(kind: 'read' | 'write', status: number): { status: ErpCapabilityStatus; evidence: string } {
+export function classifyProbe(probe: ErpCapabilityProbeDefinition, status: number): { status: ErpCapabilityStatus; evidence: string } {
+  if (status >= 500 && probe.method === 'PUT') return { status: 'UNKNOWN', evidence: `HTTP ${status} - identifiant fictif, operation non prouvee` };
+  if (status === 403 && probe.moduleDisabledOn403) return { status: 'MODULE_DISABLED', evidence: 'HTTP 403 - module Dolibarr indisponible ou permission refusee' };
+  if (status === 403) return { status: 'PERMISSION_DENIED', evidence: 'HTTP 403 - permission Dolibarr refusee' };
+  if (status === 501) return { status: 'NOT_SUPPORTED', evidence: 'HTTP 501 - endpoint non supporte par le fournisseur' };
   if (status === 401) return { status: 'AUTH_FAILED', evidence: 'HTTP 401 — cle API refusee' };
-  if (status === 403) return { status: 'UNAVAILABLE', evidence: 'HTTP 403 — permission Dolibarr refusee' };
-  if (status === 501) return { status: 'NOT_IMPLEMENTED', evidence: 'HTTP 501 — API non implementee' };
-  if (kind === 'read') {
+  if (probe.kind === 'read') {
     if (status >= 200 && status < 300) return { status: 'AVAILABLE', evidence: `HTTP ${status}` };
     if (status === 404) return { status: 'AVAILABLE', evidence: 'HTTP 404 — collection vide, route exposee' };
     return { status: 'ERROR', evidence: `HTTP ${status}` };
@@ -175,7 +159,7 @@ export class ErpCapabilityService {
     if (provider.authFailed) {
       const capabilities: Record<string, ErpCapabilityStatus> = {};
       const evidence: Record<string, string> = {};
-      for (const probe of CAPABILITY_PROBES) {
+      for (const probe of ERP_CAPABILITY_PROBES) {
         capabilities[probe.capability] = 'AUTH_FAILED';
         evidence[probe.capability] = 'HTTP 401 — cle API refusee';
       }
@@ -205,7 +189,7 @@ export class ErpCapabilityService {
 
     const capabilities: Record<string, ErpCapabilityStatus> = {};
     const evidence: Record<string, string> = {};
-    for (const probe of CAPABILITY_PROBES) {
+    for (const probe of ERP_CAPABILITY_PROBES) {
       const outcome = await this.probeCapability(client, probe);
       capabilities[probe.capability] = outcome.status;
       evidence[probe.capability] = outcome.evidence;
@@ -305,7 +289,7 @@ export class ErpCapabilityService {
     }
   }
 
-  private async probeCapability(client: AxiosInstance, probe: CapabilityProbe): Promise<{ status: ErpCapabilityStatus; evidence: string; httpStatus: number | null }> {
+  private async probeCapability(client: AxiosInstance, probe: ErpCapabilityProbeDefinition): Promise<{ status: ErpCapabilityStatus; evidence: string; httpStatus: number | null }> {
     try {
       const response = await client.request({
         method: probe.method,
@@ -313,12 +297,12 @@ export class ErpCapabilityService {
         params: probe.kind === 'read' ? { entity: PROBE_ENTITY, limit: 1 } : undefined,
         data: probe.kind === 'write' ? { capabilityProbe: true } : undefined,
       });
-      const { status, evidence } = classifyProbe(probe.kind, response.status);
+      const { status, evidence } = classifyProbe(probe, response.status);
       return { status, evidence, httpStatus: response.status };
     } catch (error) {
       const code = (error as AxiosError).code;
       const evidence = code === 'ECONNABORTED' || code === 'ETIMEDOUT' ? 'delai de reponse depasse' : `erreur reseau (${code || 'inconnue'})`;
-      return { status: 'ERROR', evidence, httpStatus: null };
+      return { status: code === 'ECONNABORTED' || code === 'ETIMEDOUT' ? 'UNAVAILABLE' : 'ERROR', evidence, httpStatus: null };
     }
   }
 

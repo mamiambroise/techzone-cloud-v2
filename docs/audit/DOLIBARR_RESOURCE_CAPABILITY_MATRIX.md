@@ -99,3 +99,7 @@ Current reproduction, tenant `techzone-informatique`:
 | Techzone response | HTTP 502, `ERP_PERMISSION_DENIED`, connector `dolibarr`, traceId `06d27712-41f6-43bf-bf2f-0820a5f12dd3` | structured upstream refusal |
 
 The account audit proves `modFacture` is currently disabled and the account has no `facture` permission family. The corrective action belongs to the Dolibarr administrator: enable the Invoice module successfully, then grant the least privilege needed (`facture.lire` for read; create/update rights only if those commands are explicitly approved). No security bypass is appropriate.
+
+## Mise à jour Phase 11.2 (2026-10-06)
+
+Le catalogue dynamique a remplacé la liste frontend de cinq cartes comme source d'autorité. Les deux connecteurs tenant-scoped ont été re-sondés avec les probes non destructifs étendus : Agenda utilise désormais `/agendaevents` et `agenda.read`/`agenda.create` sont `AVAILABLE`; `payment.create` reste `NOT_SUPPORTED`. Le détail des 29 ressources, de la politique plateforme et de la recette des deux boutiques est dans [ERP_PHASE11_2_DYNAMIC_CATALOG_VALIDATION.md](ERP_PHASE11_2_DYNAMIC_CATALOG_VALIDATION.md).

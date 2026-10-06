@@ -160,6 +160,7 @@ export class ErpCommandService {
     const limit = typeof payload.limit === 'number' ? Math.min(Math.max(payload.limit, 1), 100) : 20;
     switch (contract.key) {
       case 'customer.list@1':
+      case 'customer.read@1':
         return adapter.getClients({ limit });
       case 'customer.get@1':
         return adapter.getClientById(String(payload.id));
@@ -176,6 +177,7 @@ export class ErpCommandService {
           ...(typeof payload.phone === 'string' ? { telephone: payload.phone } : {}),
         });
       case 'product.list@1':
+      case 'product.read@1':
         return adapter.getProducts({ limit });
       case 'product.get@1':
         return adapter.getProductById(String(payload.id));
@@ -193,6 +195,7 @@ export class ErpCommandService {
           ...(typeof payload.price === 'number' ? { price: payload.price } : {}),
         });
       case 'order.list@1':
+      case 'order.read@1':
         return adapter.getOrders({ limit });
       case 'order.get@1':
         return adapter.getOrderById(String(payload.id));
