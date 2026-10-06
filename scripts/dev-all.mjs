@@ -11,6 +11,15 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PID_FILE = path.join(root, 'logs', '.dev-pids.json');
 const LOG_DIR = path.join(root, 'logs');
+const APP_ENV = process.env.APP_ENV || 'local';
+
+if (!['local', 'remote'].includes(APP_ENV)) {
+  throw new Error(`CONFIG_MISSING: APP_ENV must be "local" or "remote" (received ${APP_ENV})`);
+}
+
+/** Keep the cross-platform launcher aligned with scripts/windows/environment.cjs. */
+const backendEnvFiles = APP_ENV === 'remote' ? ['.env.remote'] : ['.env', '.env.local'];
+const backendEnvArgs = backendEnvFiles.flatMap((file) => [`--env-file-if-exists=${file}`]);
 
 const NODE = process.execPath;
 function npmCli() {
@@ -54,7 +63,7 @@ const SERVICES = [
   {
     name: 'FRONTEND', tag: 'BUSINESS', port: 3000,
     cwd: path.join(root, 'frontend'),
-    cmd: () => ({ cmd: NODE, args: [path.join(root, 'frontend/node_modules/vite/bin/vite.js'), '--mode', 'dev', '--port', '3000', '--host', '0.0.0.0', '--strictPort'] }),
+    cmd: () => ({ cmd: NODE, args: [path.join(root, 'frontend/node_modules/vite/bin/vite.js'), '--mode', APP_ENV, '--port', '3000', '--host', '0.0.0.0', '--strictPort'] }),
     url: 'http://localhost:3000',
   },
   {
@@ -62,7 +71,7 @@ const SERVICES = [
     tag: 'JASMINE',
     port: 3003,
     cwd: path.join(root, 'backend'),
-    cmd: () => ({ cmd: NODE, args: ['--env-file-if-exists=.env', '--env-file-if-exists=.env.local', path.join(root, 'backend/dist/main.js')] }),
+    cmd: () => ({ cmd: NODE, args: [...backendEnvArgs, path.join(root, 'backend/dist/main.js')] }),
     build: (npm) => ({ cmd: NODE, args: [npm, 'run', 'build'] }),
     dist: ['dist/main.js'],
     url: 'http://localhost:3003',
@@ -199,7 +208,7 @@ async function run(rebuilt) {
       cwd: s.cwd,
       detached: true,
       windowsHide: true,
-      env: { ...process.env, BROWSER: 'none' },
+      env: { ...process.env, APP_ENV, BROWSER: 'none' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     pids[s.name] = child.pid;
@@ -296,6 +305,7 @@ async function run(rebuilt) {
   console.log(c('DOLIB', '  ▶ Dolibarr (techzone) → http://127.0.0.1:8080'));
   console.log(c('INFO', '────────────────────────────────────────────────'));
   console.log(c('INFO', '(Ctrl+C hampijanona daholo · npm run stop mamono koa)'));
+  console.log(c('INFO', `Profil d'environnement : ${APP_ENV} (${backendEnvFiles.join(' + ')})`));
 }
 
 const flags = new Set(process.argv.slice(2));

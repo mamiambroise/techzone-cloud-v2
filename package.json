@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-all.mjs",
+    "dev:local": "set APP_ENV=local&& node scripts/dev-all.mjs",
+    "dev:remote": "set APP_ENV=remote&& node scripts/dev-all.mjs",
     "dev:rebuild": "node scripts/dev-all.mjs --rebuild",
     "stop": "node scripts/dev-all.mjs --stop",
     "status": "node scripts/dev-all.mjs --status",
