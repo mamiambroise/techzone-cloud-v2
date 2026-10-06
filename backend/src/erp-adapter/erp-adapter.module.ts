@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ErpAdapterService } from './erp-adapter.service';
 import { ErpAdapterController } from './erp-adapter.controller';
 import { ErpRegistryModule } from '../erp-registry/erp-registry.module';
@@ -8,7 +8,7 @@ import { ErpCapabilityService } from './capabilities/erp-capability.service';
 import { ErpCommandService } from './commands/erp-command.service';
 
 @Module({
-  imports: [ErpRegistryModule],
+  imports: [forwardRef(() => ErpRegistryModule)],
   controllers: [ErpAdapterController],
   providers: [
     ErpAdapterService,

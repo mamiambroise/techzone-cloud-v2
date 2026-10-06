@@ -68,7 +68,8 @@ export class ErpRegistryController {
   }
 
   @Post('test')
-  @Permissions(ERP_WRITE)
+  @Permissions(ERP_READ)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Tester la connexion du connecteur ERP actif (sonde reelle Dolibarr + capabilities)' })
   @ApiResponse({ status: 200, description: 'Rapport de connexion' })
   @ApiResponse({ status: 503, description: 'Aucun ERP actif configure' })
@@ -123,7 +124,8 @@ export class ErpRegistryController {
   }
 
   @Post(':id/test')
-  @Permissions(ERP_WRITE)
+  @Permissions(ERP_READ)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Tester la connexion d un ERP (sonde reelle Dolibarr + capabilities detectees)' })
   @ApiParam({ name: 'id', description: 'UUID de l ERP' })
   @ApiResponse({ status: 200, description: 'Rapport de connexion' })

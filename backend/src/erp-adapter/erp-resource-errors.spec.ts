@@ -3,6 +3,7 @@ import request from 'supertest';
 import { ErpAdapterController } from './erp-adapter.controller';
 import { ErpAdapterService } from './erp-adapter.service';
 import { ErpRegistryService } from '../erp-registry/erp-registry.service';
+import { ErpCommandService } from './commands/erp-command.service';
 import { AllExceptionsFilter } from '../common/filters/all-exceptions.filter';
 import { DolibarrError } from './dolibarr/dolibarr.error';
 import { ErpError } from './erp-error';
@@ -17,6 +18,7 @@ describe('ERP resource HTTP error contract (real controller/filter, test provide
       providers: [
         { provide: ErpAdapterService, useValue: { resolveAdapterForTenant: async () => ({ getClients: read, getProducts: read, getOrders: read, getInvoices: read, getStocks: read }) } },
         { provide: ErpRegistryService, useValue: {} },
+        { provide: ErpCommandService, useValue: {} },
       ],
     }).compile();
     app = module.createNestApplication();
