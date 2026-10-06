@@ -46,6 +46,7 @@ export class ApplicationVersionsService {
     dto: CreateApplicationVersionDto,
     tenantId: string | null,
   ) {
+    const scopedTenantId = this.requireTenantId(tenantId);
     await this.ensureApplicationExists(applicationId, tenantId);
 
     const version = dto.version.trim();
@@ -54,7 +55,7 @@ export class ApplicationVersionsService {
       where: {
         applicationId,
         version,
-        tenantId: tenantId ?? undefined,
+        tenantId: scopedTenantId,
       },
     });
 
@@ -73,7 +74,7 @@ export class ApplicationVersionsService {
         releaseNotes: dto.releaseNotes?.trim(),
         createdFrom: dto.createdFrom?.trim(),
         status: 'DRAFT',
-        tenantId: tenantId ?? undefined,
+        tenantId: scopedTenantId,
       },
     });
   }
@@ -189,6 +190,7 @@ export class ApplicationVersionsService {
    * nouveaux objets. La version source n'est jamais modifiée.
    */
   async clone(id: string, tenantId: string | null) {
+    const scopedTenantId = this.requireTenantId(tenantId);
     const source = await this.findOne(id, tenantId);
 
     const newVersion = await this.generateCloneVersion(
@@ -206,7 +208,7 @@ export class ApplicationVersionsService {
           : `Cloned from ${source.version}`,
         createdFrom: source.id,
         status: 'DRAFT',
-        tenantId: tenantId ?? undefined,
+        tenantId: scopedTenantId,
       },
       select: { id: true },
     });
@@ -297,5 +299,16 @@ export class ApplicationVersionsService {
     }
 
     return application;
+  }
+
+  private requireTenantId(tenantId: string | null): string {
+    if (!tenantId) {
+      throw new PlatformException(
+        PlatformErrorCode.TENANT_VIOLATION,
+        'Select a tenant before creating or cloning an application version',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return tenantId;
   }
 }

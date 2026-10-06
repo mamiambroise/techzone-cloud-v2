@@ -21,13 +21,27 @@ import {
 } from '../generated/prisma/enums';
 import type { PrismaClient } from '../generated/prisma/client';
 import { createSeedPrismaClient } from './seed-client';
-import { seedBusinessManagerDemo } from './bm-demo-seed';
 import { seedIamRbac } from './iam-rbac-seed';
 
 const prisma: PrismaClient = createSeedPrismaClient();
+const PLATFORM_TENANT_ID = '00000000-0000-4000-8000-000000000000';
 
 async function main() {
   console.log('🌱 Starting PostgreSQL seed...');
+
+  // This is the system tenant for historical platform records whose tables
+  // require a tenantId. It is not a customer application: GLOBAL and PAYMENTS
+  // applications below still have tenantId = null by contract.
+  await prisma.tenant.upsert({
+    where: { id: PLATFORM_TENANT_ID },
+    update: {},
+    create: {
+      id: PLATFORM_TENANT_ID,
+      code: 'techzone-platform',
+      name: 'TechZone Platform',
+      status: 'ACTIVE',
+    },
+  });
 
   // ============================================================
   // APPLICATIONS
@@ -46,6 +60,7 @@ async function main() {
         'Platform foundation service providing identity and configuration orchestration',
       status: ApplicationStatus.ACTIVE,
       tenantScope: 'GLOBAL',
+      tenantId: null,
       createdAt: new Date('2026-01-15T10:00:00Z'),
       updatedAt: new Date('2026-01-15T10:00:00Z'),
     },
@@ -64,6 +79,7 @@ async function main() {
         'Handles payment connectors and webhook dispatching for transaction events',
       status: ApplicationStatus.ACTIVE,
       tenantScope: 'PAYMENTS',
+      tenantId: null,
       createdAt: new Date('2026-02-01T12:00:00Z'),
       updatedAt: new Date('2026-02-01T12:00:00Z'),
     },
@@ -84,6 +100,7 @@ async function main() {
       version: '1.0.0',
       status: ApplicationVersionStatus.ACTIVE,
       releaseNotes: 'Initial production release of Platform Foundation',
+      tenantId: PLATFORM_TENANT_ID,
       createdAt: new Date('2026-01-15T10:30:00Z'),
       publishedAt: new Date('2026-01-15T11:00:00Z'),
     },
@@ -101,6 +118,7 @@ async function main() {
       status: ApplicationVersionStatus.READY,
       releaseNotes:
         'Release candidate with enhanced telemetry and contract validation',
+      tenantId: PLATFORM_TENANT_ID,
       createdAt: new Date('2026-02-10T14:00:00Z'),
       publishedAt: null,
     },
@@ -124,6 +142,7 @@ async function main() {
       region: 'europe-west2',
       baseUrl: 'https://api.techzone.internal',
       configurationRef: 'cfg-prod-v1',
+      tenantId: PLATFORM_TENANT_ID,
       createdAt: new Date('2026-01-10T08:00:00Z'),
       updatedAt: new Date('2026-01-10T08:00:00Z'),
     },
@@ -143,6 +162,7 @@ async function main() {
       region: 'europe-west2',
       baseUrl: 'https://staging.techzone.internal',
       configurationRef: 'cfg-stage-v1',
+      tenantId: PLATFORM_TENANT_ID,
       createdAt: new Date('2026-01-10T08:30:00Z'),
       updatedAt: new Date('2026-01-10T08:30:00Z'),
     },
@@ -162,6 +182,7 @@ async function main() {
       region: 'europe-west2',
       baseUrl: 'http://localhost:3000',
       configurationRef: 'cfg-dev-v1',
+      tenantId: PLATFORM_TENANT_ID,
       createdAt: new Date('2026-01-10T09:00:00Z'),
       updatedAt: new Date('2026-01-10T09:00:00Z'),
     },
@@ -224,6 +245,7 @@ async function main() {
       contractVersion: '1.0.0',
       ownerTeam: 'Platform Security',
       status: ContractStatus.ACTIVE,
+      tenantId: PLATFORM_TENANT_ID,
       schema: {
         type: 'object',
         properties: {
@@ -255,6 +277,7 @@ async function main() {
       key: 'platform.security.session_timeout',
       scope: ConfigurationScope.PLATFORM,
       scopeId: null,
+      tenantId: PLATFORM_TENANT_ID,
       type: ConfigurationType.DURATION,
       value: '3600s',
       defaultValue: '1800s',
@@ -280,6 +303,7 @@ async function main() {
       applicationId: 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
       applicationVersionId: 'c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f',
       environmentId: 'e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8091',
+      tenantId: PLATFORM_TENANT_ID,
       contracts: [],
       configuration: [],
       createdBy: 'system',
@@ -301,6 +325,7 @@ async function main() {
       code: 'techzone-core-rel',
       version: '1.0.0',
       applicationId: 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
+      tenantId: PLATFORM_TENANT_ID,
       applicationVersionId: 'c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f',
       snapshotId: 'e1f2a3b4-c5d6-4e7f-8091-a2b3c4d5e6f7',
       artifactRefs: {
@@ -327,6 +352,7 @@ async function main() {
       code: 'techzone-core-rel',
       version: '1.1.0',
       applicationId: 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
+      tenantId: PLATFORM_TENANT_ID,
       applicationVersionId: 'd4e5f6a7-b8c9-4d5e-1f2a-3b4c5d6e7f80',
       snapshotId: 'e1f2a3b4-c5d6-4e7f-8091-a2b3c4d5e6f7',
       artifactRefs: {
@@ -352,6 +378,7 @@ async function main() {
       id: 'e6f7a8b9-c0d1-4e2f-3a4b-5c6d7e8f90a1',
       releaseId: 'c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f',
       environmentId: 'e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8091',
+      tenantId: PLATFORM_TENANT_ID,
       status: DeploymentStatus.SUCCEEDED,
       strategy: DeploymentStrategy.STANDARD,
       idempotencyKey: 'idemp-init-prod-001',
@@ -370,6 +397,7 @@ async function main() {
       id: 'f7a8b9c0-d1e2-4f3a-4b5c-6d7e8f90a1b2',
       environmentId: 'e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8091',
       applicationId: 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
+      tenantId: PLATFORM_TENANT_ID,
       currentReleaseId: 'c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f',
       previousReleaseId: null,
       deploymentId: 'e6f7a8b9-c0d1-4e2f-3a4b-5c6d7e8f90a1',
@@ -401,6 +429,7 @@ async function main() {
     create: {
       id: 'd1e2f3a4-b5c6-4d7e-8f90-a1b2c3d4e5f6',
       traceId: 'trc-dep-init-001',
+      tenantId: PLATFORM_TENANT_ID,
       releaseId: 'c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f',
       deploymentId: 'e6f7a8b9-c0d1-4e2f-3a4b-5c6d7e8f90a1',
       applicationId: 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
@@ -641,25 +670,15 @@ async function main() {
   );
 
   // ============================================================
-  // BUSINESS MANAGER — 2 entreprises de démonstration, 10 applications
-  // ============================================================
-
-  console.log('\n🏗 Business Manager : seed des entreprises de démonstration');
-  const bmSummary = await seedBusinessManagerDemo(prisma);
-  console.log(
-    `Business Manager seed completed: ${bmSummary.tenants} tenants, ${bmSummary.applications} applications, ` +
-      `${bmSummary.entities} entités, ${bmSummary.fields} champs, ${bmSummary.relations} relations, ` +
-      `${bmSummary.capabilities} permissions métier, ${bmSummary.configurations} configurations, ` +
-      `${bmSummary.contracts} contrats`,
-  );
-
-  // ============================================================
   // IAM / RBAC — catalogue des permissions et rôles système
   // ============================================================
 
   console.log('\n🔐 IAM/RBAC : catalogue des permissions et rôles système');
   const iamSummary = await seedIamRbac(prisma, {
     logger: (message) => console.log(`  ${message}`),
+    // This base seed creates no customer tenant, test user, or demo app.
+    // Phase 8 assignments are reconciled only where Phase 7 principals exist.
+    assignments: [],
   });
   console.log(
     `IAM/RBAC seed completed: ${iamSummary.permissions} permissions, ` +

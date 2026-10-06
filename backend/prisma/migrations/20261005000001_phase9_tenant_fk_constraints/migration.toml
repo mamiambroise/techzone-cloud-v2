@@ -1,0 +1,5 @@
+# Phase 9 — Contraintes FK tenant manquantes
+# Additive only : aucune colonne ni donnée modifiée
+
+migration_name = "phase9_tenant_fk_constraints"
+created_at = "2026-10-05T23:53:00Z"

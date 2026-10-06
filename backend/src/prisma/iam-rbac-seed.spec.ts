@@ -49,15 +49,15 @@ type AssignmentRow = {
   id: string;
   userId: string;
   roleId: string;
-  tenantId: string;
+  tenantId: string | null;
   assignedBy: string | null;
   revokedAt: Date | null;
 };
 
 const TENANTS = [
-  { id: 'tenant-informatique', code: 'techzone-informatique', status: 'ACTIVE' },
-  { id: 'tenant-test', code: 'techzone-test', status: 'ACTIVE' },
-  { id: 'tenant-wifi', code: 'techzone-wifi-services', status: 'ACTIVE' },
+  { id: '00000000-0000-4000-8000-000000000001', code: 'techzone-informatique', status: 'ACTIVE' },
+  { id: '00000000-0000-4000-8000-000000000002', code: 'techzone-test', status: 'ACTIVE' },
+  { id: '00000000-0000-4000-8000-000000000003', code: 'techzone-wifi-services', status: 'ACTIVE' },
 ];
 
 function createFakePrisma(
@@ -186,7 +186,7 @@ function createFakePrisma(
         async ({
           where,
         }: {
-          where: { userId: string; roleId: string; tenantId: string; revokedAt: null };
+          where: { userId: string; roleId: string; tenantId: string | null; revokedAt: null };
         }) => {
           const found = assignments.find(
             (row) =>

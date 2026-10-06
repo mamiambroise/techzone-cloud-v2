@@ -18,10 +18,11 @@ export class ApplicationsService {
 
   async create(dto: CreateApplicationDto, tenantId: string | null) {
     const code = dto.code.trim();
+    const tenantScope = this.assertScope(dto.tenantScope, tenantId);
 
     const existing = await this.prisma.application.findFirst({
       where: {
-        tenantId: tenantId ?? undefined,
+        tenantId,
         code,
       },
     });
@@ -39,8 +40,8 @@ export class ApplicationsService {
         code,
         name: dto.name.trim(),
         description: dto.description?.trim(),
-        tenantId: tenantId ?? undefined,
-        tenantScope: dto.tenantScope?.trim() ?? 'TENANT',
+        tenantId,
+        tenantScope,
       },
     });
   }
@@ -48,7 +49,7 @@ export class ApplicationsService {
   async findAll(tenantId: string | null) {
     return this.prisma.application.findMany({
       where: {
-        tenantId: tenantId ?? undefined,
+        tenantId,
       },
       orderBy: {
         createdAt: 'desc',
@@ -60,7 +61,7 @@ export class ApplicationsService {
     const application = await this.prisma.application.findFirst({
       where: {
         id,
-        tenantId: tenantId ?? undefined,
+        tenantId,
       },
       include: {
         versions: {
@@ -86,7 +87,7 @@ export class ApplicationsService {
     const application = await this.prisma.application.findFirst({
       where: {
         id,
-        tenantId: tenantId ?? undefined,
+        tenantId,
       },
     });
 
@@ -106,6 +107,10 @@ export class ApplicationsService {
       );
     }
 
+    const tenantScope = dto.tenantScope === undefined
+      ? undefined
+      : this.assertScope(dto.tenantScope, tenantId);
+
     return this.prisma.application.update({
       where: {
         id,
@@ -113,7 +118,7 @@ export class ApplicationsService {
       data: {
         name: dto.name?.trim(),
         description: dto.description?.trim(),
-        tenantScope: dto.tenantScope?.trim(),
+        tenantScope,
       },
     });
   }
@@ -122,7 +127,7 @@ export class ApplicationsService {
     const application = await this.prisma.application.findFirst({
       where: {
         id,
-        tenantId: tenantId ?? undefined,
+        tenantId,
       },
     });
 
@@ -175,13 +180,20 @@ export class ApplicationsService {
 
       // Une application restaurée doit au moins exposer une version modifiable.
       if (!restorable) {
+        if (!tenantId) {
+          throw new PlatformException(
+            PlatformErrorCode.TENANT_VIOLATION,
+            'A global application cannot be restored with a tenant-scoped version',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
         await tx.applicationVersion.create({
           data: {
             applicationId: application.id,
             version: '1.0.0',
             releaseNotes: 'Version initiale créée lors de la restauration',
             status: 'DRAFT',
-            tenantId: tenantId ?? undefined,
+            tenantId,
           },
         });
       } else if (restorable.status === 'ACTIVE') {
@@ -204,6 +216,13 @@ export class ApplicationsService {
    * source est recopiée afin que la copie soit réellement exploitable.
    */
   async duplicate(id: string, dto: DuplicateApplicationDto, tenantId: string | null) {
+    if (!tenantId) {
+      throw new PlatformException(
+        PlatformErrorCode.TENANT_VIOLATION,
+        'A global application cannot be duplicated through the tenant-scoped workflow',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const source = await this.findOne(id, tenantId);
 
     if (source.status === ApplicationStatus.ARCHIVED) {
@@ -219,7 +238,7 @@ export class ApplicationsService {
     const copyDefinition = dto.copyDefinition !== false;
 
     const existing = await this.prisma.application.findFirst({
-      where: { tenantId: tenantId ?? undefined, code },
+      where: { tenantId, code },
       select: { id: true },
     });
     if (existing) {
@@ -244,8 +263,8 @@ export class ApplicationsService {
           name,
           description: source.description,
           status: ApplicationStatus.ACTIVE,
-          tenantId: tenantId ?? undefined,
-          tenantScope: source.tenantScope,
+          tenantId,
+          tenantScope: this.assertScope(source.tenantScope, tenantId),
         },
         select: { id: true },
       });
@@ -256,7 +275,7 @@ export class ApplicationsService {
           version: '1.0.0',
           releaseNotes: `Dupliqué depuis ${source.name} (${source.code})`,
           status: 'DRAFT',
-          tenantId: tenantId ?? undefined,
+          tenantId,
         },
         select: { id: true },
       });
@@ -275,5 +294,21 @@ export class ApplicationsService {
     });
 
     return { ...application, copiedFrom: source.id, copiedDefinition: copied };
+  }
+
+  private assertScope(scope: string | undefined, tenantId: string | null): string {
+    const normalized = (scope?.trim() || 'TENANT').toUpperCase();
+    const allowedWithoutTenant = new Set(['GLOBAL', 'PAYMENTS']);
+
+    if ((tenantId !== null && normalized !== 'TENANT') ||
+        (tenantId === null && !allowedWithoutTenant.has(normalized))) {
+      throw new PlatformException(
+        PlatformErrorCode.TENANT_VIOLATION,
+        'Application tenantScope and tenantId must describe the same scope',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return normalized;
   }
 }

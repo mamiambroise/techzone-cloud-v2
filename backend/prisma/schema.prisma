@@ -68,8 +68,8 @@ model Application {
   name        String            @db.VarChar(255)
   description String?
   status      ApplicationStatus @default(ACTIVE)
-  tenantId    String?           @db.Uuid
-  tenantScope String?           @db.VarChar(100) @default("TENANT")
+  tenantId    String?           @db.VarChar(100)
+  tenantScope String            @db.VarChar(100) @default("TENANT")
 
   versions               ApplicationVersion[]
   releases               Release[]
@@ -80,7 +80,7 @@ model Application {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -98,7 +98,7 @@ model ApplicationVersion {
   status        ApplicationVersionStatus @default(DRAFT)
   releaseNotes  String?
   createdFrom   String?                  @db.Uuid
-  tenantId      String?                  @db.Uuid
+  tenantId      String                   @db.VarChar(100)
 
   releases Release[]
   packVersions PackVersion[]
@@ -1226,7 +1226,7 @@ model IamUser {
   timezone            String?
   status              UserStatus @default(PENDING)
   isAdmin             Boolean    @default(false)
-  defaultTenantId     String? @db.Uuid
+  defaultTenantId     String?    @db.Text
   metadata            Json?
   statusChangedAt     DateTime?
   statusChangedBy     String?
@@ -1760,21 +1760,21 @@ model ExternalIdentityLink {
 }
 
 model Tenant {
-  id                  String        @id @default(uuid()) @db.Uuid
-  code                String        @unique
-  name                String
-  description         String?
+  id                  String        @id @default(uuid()) @db.Text
+  code                String        @unique @db.Text
+  name                String        @db.Text
+  description         String?       @db.Text
   status              TenantStatus  @default(PENDING)
-  locale              String?
-  timezone            String?
+  locale              String?       @db.Text
+  timezone            String?       @db.Text
   metadata            Json?
   statusChangedAt     DateTime?
-  statusChangedBy     String?
-  statusChangedReason String?
+  statusChangedBy     String?       @db.Text
+  statusChangedReason String?       @db.Text
   createdAt           DateTime      @default(now())
-  createdBy           String?
+  createdBy           String?       @db.Text
   updatedAt           DateTime      @updatedAt
-  updatedBy           String?
+  updatedBy           String?       @db.Text
   archivedAt          DateTime?
   version             Int           @default(1)
 
@@ -1793,6 +1793,7 @@ model Tenant {
   billingPayments     Payment[]
   billingCredits      Credit[]
   billingAdjustments  Adjustment[]
+  roleAssignments     RoleAssignment[]
 
   @@index([status])
   @@map("tenant")
@@ -1800,7 +1801,7 @@ model Tenant {
 
 model Organization {
   id                  String            @id @default(uuid())
-  tenantId            String @db.Uuid
+  tenantId            String            @db.Text
   code                String
   name                String
   description         String?
@@ -1855,7 +1856,7 @@ model Site {
 model Membership {
   id                  String           @id @default(uuid())
   userId              String
-  tenantId            String @db.Uuid
+  tenantId            String           @db.Text
   organizationId      String?
   siteId              String?
   status              MembershipStatus @default(INVITED)
@@ -1888,7 +1889,7 @@ model Membership {
 
 model Group {
   id                  String    @id @default(uuid())
-  tenantId            String @db.Uuid
+  tenantId            String    @db.Text
   organizationId      String?
   code                String
   name                String
@@ -1959,7 +1960,7 @@ model Permission {
 
 model Role {
   id                  String    @id @default(uuid())
-  tenantId            String? @db.Uuid
+  tenantId            String?   @db.Text
   code                String
   name                String
   description         String?
@@ -2009,7 +2010,7 @@ model RoleAssignment {
   userId              String?
   groupId             String?
   serviceAccountId    String?
-  tenantId            String? @db.Uuid
+  tenantId            String? @db.Text
   organizationId      String?
   siteId              String?
   validFrom           DateTime?
@@ -2026,6 +2027,7 @@ model RoleAssignment {
   user            IamUser?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   group           Group?            @relation(fields: [groupId], references: [id], onDelete: Cascade)
   serviceAccount  ServiceAccount?   @relation(fields: [serviceAccountId], references: [id], onDelete: Cascade)
+  tenant          Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([roleId])
   @@index([userId])
@@ -2039,7 +2041,7 @@ model RoleAssignment {
 
 model AccessPolicy {
   id                  String       @id @default(uuid())
-  tenantId            String? @db.Uuid
+  tenantId            String?      @db.Text
   code                String
   name                String
   description         String?
@@ -2155,7 +2157,7 @@ model RecoveryCode {
 
 model ServiceAccount {
   id                  String                @id @default(uuid())
-  tenantId            String @db.Uuid
+  tenantId            String                @db.Text
   identityId          String                @unique
   code                String
   name                String
@@ -2509,7 +2511,7 @@ model BillingAccount {
 
 model Subscription {
   id              String             @id @default(uuid())
-  tenantId        String @db.Uuid
+  tenantId        String             @db.Text
   billingAccountId String?
   planId          String
   priceId         String?
@@ -2609,7 +2611,7 @@ model QuotaUsage {
 
 model Invoice {
   id            String        @id @default(uuid())
-  tenantId      String @db.Uuid
+  tenantId      String        @db.Text
   billingAccountId String?
   subscriptionId String?
   invoiceNumber String        @unique
@@ -2905,7 +2907,7 @@ model BillingWebhookEvent {
 
 model AdminDelegation {
   id                  String  @id @default(uuid())
-  tenantId            String? @db.Uuid
+  tenantId            String? @db.Text
   grantorUserId       String
   granteeUserId       String
   scopeType           String
