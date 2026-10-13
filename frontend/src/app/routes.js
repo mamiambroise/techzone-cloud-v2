@@ -37,7 +37,7 @@ export const ROUTES = {
   "automationDiagnostics": "/automation/diagnostics",
   "automationExecutions": "/automation/executions",
   "packs": "/packs",
-  "packManager": "/packs/manager",
+  "packManager": "/packs/packs",
   "packRegistry": "/packs/registry",
   "packVersions": "/packs/versions",
   "packDependencies": "/packs/dependencies",

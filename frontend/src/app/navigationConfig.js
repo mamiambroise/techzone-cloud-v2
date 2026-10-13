@@ -31,14 +31,14 @@ export const pageDefinitions = [
   { ...{"id":"bmValidation","label":"Validation & publication","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"component":"BMWorkspaceRoute","versionSection":true}, route: ROUTES["bmValidation"] },
   { ...{"component":"BMApplicationDetailRoute","id":"bmApplicationDetail","label":"Détail application","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmApplicationDetail"] },
   { ...{"component":"BMWorkspaceRoute","id":"bmVersionDetail","label":"Version détaillée","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmVersionDetail"] },
-  { ...{"id":"uiPages","group":"ui","label":"Pages","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La gestion des pages et de leur organisation visuelle sera intégrée dans une prochaine phase."}, route: ROUTES["uiPages"] },
-  { ...{"id":"uiBuilder","group":"ui","label":"Page Builder","component":"ComingSoon","menu":false,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La construction visuelle des pages nécessite le futur Page Builder."}, route: ROUTES["uiBuilder"] },
-  { ...{"id":"uiForms","group":"ui","label":"Formulaires","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La conception des champs, validations et mises en page de formulaires sera disponible dans le futur UI Builder."}, route: ROUTES["uiForms"] },
-  { ...{"id":"uiComponents","group":"ui","label":"Composants","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Le catalogue de composants réutilisables du UI Builder n’est pas encore disponible."}, route: ROUTES["uiComponents"] },
-  { ...{"id":"uiThemes","group":"ui","label":"Thèmes","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La personnalisation des couleurs, styles et thèmes des applications sera intégrée au UI Builder."}, route: ROUTES["uiThemes"] },
-  { ...{"id":"uiPreview","group":"ui","label":"Prévisualisation","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La prévisualisation des interfaces nécessitera les pages et le moteur UI Builder."}, route: ROUTES["uiPreview"] },
-  { ...{"id":"ui","group":"ui","label":"UI Builder","component":"ComingSoon","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE"}, route: ROUTES["ui"] },
-  { ...{"id":"uiPage","group":"ui","label":"Détail page","component":"ComingSoon","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE"}, route: ROUTES["uiPage"] },
+  { ...{"id":"ui","group":"ui","label":"Vue d’ensemble","component":"UiBuilderOverview","menu":true,"protected":true,"status":"PARTIAL","classification":"NEW_PAGE","implemented":true,"permission":"ui-builder:read","description":"Vue d’ensemble du UI Builder et de ses pages, composants et validations."}, route: ROUTES["ui"] },
+  { ...{"id":"uiPages","group":"ui","label":"Pages","component":"UiPagesManager","menu":true,"protected":true,"status":"PARTIAL","classification":"NEW_PAGE","implemented":true,"description":"Gestion des pages de l’application dans le UI Builder."}, route: ROUTES["uiPages"] },
+  { ...{"id":"uiBuilder","group":"ui","label":"Éditeur visuel","component":"UiVisualEditor","menu":false,"protected":true,"status":"PARTIAL","classification":"NEW_PAGE","implemented":true,"permission":"ui-builder:read","description":"Édition visuelle et configuration des pages de l’application."}, route: ROUTES["uiBuilder"] },
+  { ...{"id":"uiForms","group":"ui","label":"Formulaires","component":"UiFormsBuilder","menu":true,"protected":true,"status":"PARTIAL","classification":"NEW_PAGE","implemented":true,"description":"Création et configuration des formulaires dans le UI Builder."}, route: ROUTES["uiForms"] },
+  { ...{"id":"uiComponents","group":"ui","label":"Composants","component":"UiComponentsCatalog","menu":true,"protected":true,"status":"PARTIAL","classification":"NEW_PAGE","implemented":true,"description":"Catalogue des composants disponibles dans le UI Builder."}, route: ROUTES["uiComponents"] },
+  { ...{"id":"uiThemes","group":"ui","label":"Thèmes","component":"UiThemeBuilder","menu":true,"protected":true,"status":"PARTIAL","classification":"NEW_PAGE","implemented":true,"description":"Personnalisation des styles et thèmes des applications."}, route: ROUTES["uiThemes"] },
+  { ...{"id":"uiPreview","group":"ui","label":"Prévisualisation","component":"UiPreviewValidation","menu":true,"protected":true,"status":"PARTIAL","classification":"NEW_PAGE","implemented":true,"description":"Aperçu et validation des pages du UI Builder."}, route: ROUTES["uiPreview"] },
+  { ...{"id":"uiPage","group":"ui","label":"Détail page","component":"ComingSoon","menu":false,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","permission":"ui-builder:read","description":"Le détail d’une page UI Builder sera disponible lorsque les pages de l’application seront configurables."}, route: ROUTES["uiPage"] },
   { ...{"component":"AutomationCockpit","id":"automation","label":"Vue d’ensemble","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automation"] },
   { ...{"component":"AutomationRules","id":"automationRules","label":"Règles","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automationRules"] },
   { ...{"id":"automationFormulas","group":"automation","label":"Formules","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"permission":"automation:read","description":"L’éditeur de formules et leur évaluation ne sont pas encore intégrés à la console."}, route: ROUTES["automationFormulas"] },
@@ -48,7 +48,7 @@ export const pageDefinitions = [
   { ...{"component":"AutomationHistory","id":"automationExecutions","label":"Exécutions","group":"automation","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read","engine":"PARTIAL"}, route: ROUTES["automationExecutions"] },
   { ...{"component":"AutomationConditions","id":"automation-conditions","label":"conditions","group":"automation","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"automation:read"}, route: ROUTES["automation-conditions"] },
   { ...{"component":"OverviewRoute","id":"packs","label":"Mes Packs","group":"packs","status":"PARTIAL","menu":true,"moduleId":"01","tab":"overview","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["packs"] },
-  { ...{"id":"packManager","group":"packs","label":"Pack Manager","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La composition et la gestion des packs nécessitent le futur Pack Manager."}, route: ROUTES["packManager"] },
+  { ...{"id":"pmpacks","group":"packs","label":"Packs","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"permission":"pack.read","description":"La composition et la gestion des packs nécessitent le futur Pack Manager."}, route: ROUTES["packManager"] },
   { ...{"id":"packRegistry","group":"packs","label":"Registry","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Le catalogue central de packs publiés n’est pas encore intégré."}, route: ROUTES["packRegistry"] },
   { ...{"component":"VersionsDetailView","id":"packVersions","label":"Versions","group":"packs","status":"PARTIAL","menu":true,"moduleId":"01","tab":"versions","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["packVersions"] },
   { ...{"id":"packDependencies","group":"packs","label":"Dépendances","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"L’inspection et la résolution des dépendances des packs seront disponibles dans une prochaine phase."}, route: ROUTES["packDependencies"] },
@@ -57,19 +57,22 @@ export const pageDefinitions = [
   { ...{"component":"HistoryRollbackView","id":"history","label":"Historique","group":"packs","status":"PARTIAL","menu":false,"moduleId":"01","tab":"history","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["history"] },
   { ...{"id":"runtime","group":"runtime","label":"Runtime","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Le moteur d’exécution des applications et la liaison runtime ne sont pas encore intégrés."}, route: ROUTES["runtime"] },
   { ...{"component":"ERPDashboard","id":"erp","label":"ERP Dashboard","group":"erp","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erp"] },
-  { ...{"id":"erp-clients","group":"erp","label":"Clients","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"clients"}, route: ROUTES["erp-clients"] },
-  { ...{"id":"erp-products","group":"erp","label":"Produits","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"products"}, route: ROUTES["erp-products"] },
-  { ...{"id":"erp-orders","group":"erp","label":"Commandes","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"orders"}, route: ROUTES["erp-orders"] },
-  { ...{"id":"erp-invoices","group":"erp","label":"Factures","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"invoices"}, route: ROUTES["erp-invoices"] },
-  { ...{"id":"erp-stocks","group":"erp","label":"Stocks","component":"ErpModule","menu":true,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"stock-movements"}, route: ROUTES["erp-stocks"] },
+  { ...{"id":"erpResources","group":"erp","label":"Ressources","component":"ErpResourcesNav","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erpResources"] },
+  { ...{"id":"erpRegistry","group":"erp","label":"Registre ERP","component":"ERPList","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erpRegistry"] },
+  { ...{"id":"erp-clients","group":"erp","label":"Clients","component":"ErpModule","menu":false,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"clients"}, route: ROUTES["erp-clients"] },
+  { ...{"id":"erp-products","group":"erp","label":"Produits","component":"ErpModule","menu":false,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"products"}, route: ROUTES["erp-products"] },
+  { ...{"id":"erp-orders","group":"erp","label":"Commandes","component":"ErpModule","menu":false,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"orders"}, route: ROUTES["erp-orders"] },
+  { ...{"id":"erp-invoices","group":"erp","label":"Factures","component":"ErpModule","menu":false,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"invoices"}, route: ROUTES["erp-invoices"] },
+  { ...{"id":"erp-stocks","group":"erp","label":"Stocks","component":"ErpModule","menu":false,"protected":true,"status":"REAL","classification":"EXISTING_REAL_PAGE","implemented":true,"permission":"erp:read","moduleKeyOverride":"stock-movements"}, route: ROUTES["erp-stocks"] },
   { ...{"component":"Mapping","id":"erpMapping","label":"Entity Mapping","group":"erp","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erpMapping"] },
   { ...{"component":"DataRuntime","id":"dataRuntime","label":"Data Runtime","group":"data","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"data-runtime:read"}, route: ROUTES["dataRuntime"] },
   { ...{"component":"ErpModule","id":"erp-:moduleKey","label":":moduleKey","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erp-:moduleKey"] },
   { ...{"component":"ERPCreate","id":"erps-create","label":"create","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erps-create"] },
   { ...{"component":"ERPEdit","id":"erps-edit-:id","label":":id","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erps-edit-:id"] },
-  { ...{"component":"DataRuntimeHistory","id":"data-runtime-history","label":"history","group":"data","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["data-runtime-history"] },
+  { ...{"component":"DataRuntimeHistory","id":"data-runtime-history","label":"Historique","group":"data","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"data-runtime:read"}, route: ROUTES["data-runtime-history"] },
   { ...{"component":"Adapters","id":"adapters","label":"Adaptateurs ERP","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["adapters"] },
   { ...{"id":"dataQuery","group":"data","label":"Requêtes","component":null,"menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","redirectTo":"/data-runtime#query","permission":"data-runtime:query"}, route: ROUTES["dataQuery"] },
+  { ...{"id":"billingOverview","group":"billing","label":"Vue d’ensemble","component":"BillingOverviewPage","menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","permission":"billing:read"}, route: ROUTES["billingOverview"] },
   { ...{"component":"ComingSoon","id":"billingPlans","pageId":"billing-planspage","label":"Plans","group":"billing","status":"NOT_IMPLEMENTED","menu":true,"protected":true,"classification":"PLANNED_PAGE","implemented":false,"description":"La gestion des offres commerciales et de leurs tarifs n’est pas encore intégrée."}, route: ROUTES["billingPlans"] },
   { ...{"component":"ComingSoon","id":"billingSubscriptions","pageId":"billing-subscriptionspage","label":"Abonnements","group":"billing","status":"NOT_IMPLEMENTED","menu":true,"protected":true,"classification":"PLANNED_PAGE","implemented":false,"description":"La souscription, le renouvellement et la résiliation des abonnements seront intégrés dans une prochaine phase."}, route: ROUTES["billingSubscriptions"] },
   { ...{"id":"billingEntitlements","group":"billing","label":"Entitlements","component":"ComingSoon","menu":true,"protected":true,"implemented":false,"status":"NOT_IMPLEMENTED","classification":"MISSING_PAGE","description":"La gestion des droits commerciaux des abonnements est distincte des permissions IAM et n’est pas encore disponible."}, route: ROUTES["billingEntitlements"] },
@@ -98,7 +101,7 @@ export const pageDefinitions = [
   { ...{"component":"AlertManagerPage","id":"observability-alerts","label":"Alertes","group":"observability","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"iam:admin"}, route: ROUTES["observability-alerts"] },
   { ...{"id":"settingsGeneral","group":"admin","label":"Paramètres généraux","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Les préférences générales de la plateforme ne disposent pas encore d’un écran dédié."}, route: ROUTES["settingsGeneral"] },
   { ...{"component":"IntegrationsView","id":"settingsIntegrations","label":"Intégrations","group":"api","status":"PARTIAL","menu":true,"moduleId":"api-layer","tab":"integrations","integrationTab":"cockpit","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["settingsIntegrations"] },
-  { ...{"component":"Settings","id":"settingsErp","label":"Configuration ERP","group":"api","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["settingsErp"] },
+  { ...{"component":"Settings","id":"settingsErp","label":"Configuration ERP","group":"erp","status":"PARTIAL","menu":false,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["settingsErp"] },
   { ...{"id":"settingsSecurity","group":"iam","label":"Sécurité","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La configuration des options de sécurité ne dispose pas encore d’un écran dédié."}, route: ROUTES["settingsSecurity"] },
   { ...{"id":"settingsProfile","group":"admin","label":"Profil","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"La modification du profil utilisateur sera intégrée à la console dans une prochaine phase."}, route: ROUTES["settingsProfile"] },
   { ...{"component":"SpecificationsView","id":"specifications","label":"Spécifications","group":"environments","status":"PARTIAL","menu":false,"moduleId":"01","tab":"specifications","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["specifications"] },
@@ -124,6 +127,38 @@ export const pageDefinitions = [
     ...plannedPages,
 ];
 
+const groupPermissions = {
+  ui: "ui-builder:read",
+  automation: "automation:read",
+  packs: "pack.read",
+  runtime: "runtime.resolution.read",
+  data: "data-runtime:read",
+  erp: "erp:read",
+};
+const integrationPermissions = {
+  settingsIntegrations: "integration:read",
+  "integrations-connectors": "integration:read",
+  "integrations-apis": "integration:read",
+  "integrations-webhooks": "integration:read",
+  "integrations-credentials": "integration:credential:read",
+  "integrations-sync": "integration:read",
+  "integrations-diagnostics": "integration:diagnostic:read",
+  "integrations-specifications": "integration:read",
+};
+
+pageDefinitions.forEach((page) => {
+  if (page.id === "uiNavigation") {
+    page.component = "UiNavigationPresentation";
+    page.implemented = true;
+    page.status = "PARTIAL";
+    page.classification = "NEW_PAGE";
+  }
+  page.permission ??= integrationPermissions[page.id] ?? groupPermissions[page.group];
+  if (page.component === "ComingSoon" && !page.description) {
+    page.description = `La destination « ${page.label ?? page.id} » sera disponible dans une prochaine version.`;
+  }
+});
+
 export const routeDefinitions = pageDefinitions.filter((r) => r.component);
 
 export const legacyRedirects = [
@@ -142,7 +177,9 @@ export const legacyRedirects = [
   { from: "/versions", to: "/packs/versions" },
   { from: "/publication", to: "/packs/publication" },
   { from: "/mapping", to: "/erp/mappings" },
-  { from: "/billing/overview", to: "/billing" },
+  { from: "/packs/manager", to: "/packs/packs" },
+  { from: "/packs/runtime", to: "/runtime" },
+  { from: "/data", to: "/data-runtime" },
   { from: "/iam/organisations", to: "/iam/organizations" },
   { from: "/iam/observability", to: "/observability" },
   { from: "/iam/observability/monitoring", to: "/observability/monitoring" },
@@ -177,24 +214,35 @@ const entriesByGroup = new Map();
 const entryByPageId = new Map();
 
 navigationGroups.forEach((g) => {
-  const entries = (navigationItems[g.id] ?? []).flatMap(({ aliases = [], ...overrides }) => {
-    const page = pagesById.get(overrides.id);
+  const entries = (navigationItems[g.id] ?? []).flatMap(
+    ({ aliases = [], pageId, route, ...overrides }) => {
+    const page = pagesById.get(pageId ?? overrides.id);
     if (!page) {
       if (import.meta.env?.DEV) console.warn(`[navigation] page introuvable : "${overrides.id}" (groupe ${g.id})`);
       return [];
     }
-    const entry = { ...page, ...overrides, group: g.id, menu: true };
+    const entry = {
+      ...page,
+      ...overrides,
+      ...(route ? { route } : {}),
+      permission: page.permission ?? overrides.permission,
+      group: g.id,
+      menu: true,
+    };
     entryByPageId.set(page.id, entry);
     aliases.forEach((alias) => entryByPageId.set(alias, entry));
     return [entry];
-  });
+    },
+  );
   entriesByGroup.set(g.id, entries);
 });
 
 export const navigationEntries = [...entriesByGroup.values()].flat();
 
-export const resolveRoute = (pathname) =>
-  routeOrder.find((r) => matchPath({ path: r.route, end: true }, pathname));
+export const resolveRoute = (pathname) => {
+  const path = pathname?.split(/[?#]/, 1)[0] || "/";
+  return routeOrder.find((r) => matchPath({ path: r.route, end: true }, path));
+};
 
 const resolveActiveRoute = (pathname) =>
   resolveRoute(pathname) ??
@@ -202,7 +250,11 @@ const resolveActiveRoute = (pathname) =>
 
 export function activeNavigation(pathname) {
   const page = resolveActiveRoute(pathname);
-  return page ? (entryByPageId.get(page.id) ?? page) : undefined;
+  if (!page) return undefined;
+  const entry = entryByPageId.get(page.id) ?? page;
+  return page.id === "erps-create" || page.id === "erps-edit-:id"
+    ? { ...entry, id: "erpRegistry" }
+    : entry;
 }
 
 export const groupEntries = (id) => entriesByGroup.get(id) ?? [];
@@ -219,7 +271,12 @@ export function navigationStatus(context = {}) {
 
 export function effectiveNavigation(user, context = {}) {
   const status = navigationStatus(context);
-  if (status === "loading") return [];
+  if (status === "loading") {
+    const dashboard = navigationGroups.find((group) => group.id === "dashboard");
+    return dashboard
+      ? [{ ...dashboard, entries: groupEntries("dashboard").filter((entry) => canAccess(entry, user)) }]
+      : [];
+  }
   return navigationGroups
     .filter((g) => !g.hidden && (status === "ready" || g.id === "dashboard"))
     .map((g) => ({ ...g, entries: groupEntries(g.id).filter((e) => canAccess(e, user)) }))

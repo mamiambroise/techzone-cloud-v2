@@ -1,5 +1,5 @@
 ﻿import {
-  Activity, BarChart3, Bell, Box, Building2, CheckCircle2, Circle, ClipboardList, Cloud, Cog,
+  Activity, BarChart3, Bell, Box, BriefcaseBusiness, Building2, CheckCircle2, Circle, ClipboardList, Cloud, Cog,
   CreditCard, Database, Eye, FileSearch, FileText, Fingerprint, Gauge, GitBranch, History, Home,
   Image as ImageIcon, KeyRound, Landmark, Layers, LayoutGrid, Link2, Lock, Monitor, Navigation,
   Network, Package, Palette, PanelsTopLeft, Play, Plug, Puzzle, Receipt, RefreshCw, Rocket,
@@ -8,7 +8,7 @@
 } from "lucide-react";
 
 export const navigationIcons = {
-  Activity, BarChart3, Bell, Box, Building2, CheckCircle2, Circle, ClipboardList, Cloud, Cog,
+  Activity, BarChart3, Bell, Box, BriefcaseBusiness, Building2, CheckCircle2, Circle, ClipboardList, Cloud, Cog,
   CreditCard, Database, Eye, FileSearch, FileText, Fingerprint, Gauge, GitBranch, History, Home,
   ImageIcon, KeyRound, Landmark, Layers, LayoutGrid, Link2, Lock, Monitor, Navigation, Network,
   Package, Palette, PanelsTopLeft, Play, Plug, Puzzle, Receipt, RefreshCw, Rocket, ScrollText,

@@ -1,5 +1,30 @@
-const item = (id, label, icon, aliases = []) => ({ id, label, icon, aliases });
-const group = (id, label, section, icon, accent, items) => ({ id, label, section, icon, accent, items });
+const item = (id, label, icon, aliases = [], options = {}) => ({
+  id,
+  label,
+  icon,
+  aliases,
+  ...options,
+});
+const groupPermissions = {
+  ui: "ui-builder:read",
+  automation: "automation:read",
+  packs: "pack.read",
+  runtime: "runtime.resolution.read",
+  data: "data-runtime:read",
+  erp: "erp:read",
+};
+const group = (id, label, section, icon, accent, items) => ({
+  id,
+  label,
+  section,
+  icon,
+  accent,
+  items: items.map((entry) =>
+    groupPermissions[id] && !entry.permission
+      ? { ...entry, permission: groupPermissions[id] }
+      : entry,
+  ),
+});
 
 export const navigationSections = [
   { id: "accueil", label: "ACCUEIL" },
@@ -12,7 +37,7 @@ export const navigationSections = [
 const menu = [
   group("dashboard", "Tableau de bord", "accueil", "Home", "", [item("dashboard", "Tableau de bord", "Home")]),
 
-  group("bm", "Business Manager", "construction", "Package", "text-pink-500", [
+  group("bm", "Business Manager", "construction", "BriefcaseBusiness", "text-pink-500", [
     item("bm", "Vue d’ensemble", "Home"),
     item("bmApplications", "Applications", "LayoutGrid", ["applications", "applicationNew", "applicationDetail", "applicationWorkspace", "bmApplicationNew", "bmApplicationDetail", "bmVersions", "bmVersionsIndex", "bmVersionDetail", "bmRuntimeIndex", "bmRuntime"]),
     item("bmModels", "Modèles de données", "Database", ["bmDataModel"]),
@@ -24,8 +49,11 @@ const menu = [
 
   group("ui", "UI Builder", "construction", "PanelsTopLeft", "text-violet-500", [
     item("ui", "Vue d’ensemble", "Home"),
-    item("uiPages", "Pages", "FileText", ["uiPage"]),
-    item("uiEditor", "Éditeur visuel", "ImageIcon", ["uiBuilder"]),
+    item("uiPages", "Pages", "FileText"),
+    item("uiEditor", "Éditeur visuel", "ImageIcon", ["uiBuilder", "uiPage"], {
+      pageId: "uiBuilder",
+      route: "/ui/builder/editor",
+    }),
     item("uiComponents", "Composants", "Box"),
     item("uiForms", "Formulaires", "ClipboardList"),
     item("uiNavigation", "Navigation", "Navigation"),
@@ -43,19 +71,24 @@ const menu = [
     item("automationTemplates", "Modèles", "FileText"),
     item("automationDiagnostics", "Diagnostics", "BarChart3"),
     item("automationRules", "Règles", "ShieldCheck", ["automation-conditions"]),
+    item("automationFormulas", "Formules", "SlidersHorizontal"),
   ]),
 
   group("packs", "Pack Manager", "construction", "Layers", "text-emerald-400", [
     item("packs", "Vue d’ensemble", "Home"),
-    item("packManager", "Packs", "Box"),
+    item("pmpacks", "Packs", "Box", [], { pageId: "pmpacks" }),
     item("packVersions", "Versions", "Tag"),
     item("packModules", "Modules", "Puzzle"),
     item("packFeatures", "Fonctionnalités", "ListChecks"),
     item("packCapabilities", "Capacités", "Server"),
     item("packDependencies", "Dépendances", "Link2"),
     item("packRules", "Règles", "ShieldCheck"),
-    item("packValidation", "Validation & Manifest", "CheckCircle2"),
-    item("packPublication", "Publication", "UploadCloud"),
+    item("pmvalidation", "Validation & Manifest", "CheckCircle2", [], {
+      pageId: "packValidation",
+    }),
+    item("pmpublication", "Publication", "UploadCloud", [], {
+      pageId: "packPublication",
+    }),
   ]),
 
   group("runtime", "Runtime", "execution", "Play", "text-sky-400", [
@@ -64,26 +97,36 @@ const menu = [
     item("runtimeManifest", "Manifest", "FileText"),
     item("runtimeResolver", "Résolution", "GitBranch"),
     item("runtimeEffective", "Configuration effective", "SlidersHorizontal"),
-    item("runtimeCache", "Cache", "Database"),
+    item("runtimecache", "Cache", "Database", [], { pageId: "runtimeCache" }),
     item("runtimeDiagnostics", "Diagnostics", "BarChart3"),
   ]),
 
   group("data", "Données", "integrations", "Database", "text-cyan-400", [
-    item("data", "Vue d’ensemble", "Home"),
+    item("dataRuntime", "Vue d’ensemble", "Home"),
     item("dataSources", "Sources", "Database"),
     item("dataContracts", "Modèles & Contrats", "FileText"),
-    item("dataRuntime", "Requêtes", "Search", ["dataQuery", "data-runtime-history"]),
+    item("dataQuery", "Requêtes", "Search"),
     item("dataPolicies", "Politiques", "Lock"),
     item("dataDiagnostics", "Diagnostics", "BarChart3"),
+    item("data-runtime-history", "Historique", "History"),
   ]),
 
   group("erp", "ERP / Dolibarr", "integrations", "Link2", "text-sky-400", [
     item("erp", "Vue d’ensemble", "Home"),
-    item("erp-clients", "Ressources", "Database", ["erp-products", "erp-orders", "erp-invoices", "erp-stocks", "erp-:moduleKey", "erps-create", "erps-edit-:id"]),
+    item("erpResources", "Ressources", "Database", [
+      "erp-clients",
+      "erp-products",
+      "erp-orders",
+      "erp-invoices",
+      "erp-stocks",
+      "erp-:moduleKey",
+    ]),
     item("erpMapping", "Mappings", "Table2"),
     item("erpSynchronizations", "Synchronisations", "RefreshCw"),
-    item("erpDiagnostics", "Diagnostics", "BarChart3"),
-    item("settingsErp", "Configuration", "Settings", ["adapters"]),
+    item("erpDiagnostics", "Paramètres & diagnostics", "Settings", [
+      "settingsErp",
+      "adapters",
+    ]),
   ]),
 
   group("api", "API & Intégrations", "integrations", "Puzzle", "text-teal-300", [
@@ -108,10 +151,7 @@ const menu = [
 
   group("deployments", "Déploiements", "platform", "Rocket", "text-sky-300", [
     item("deployment", "Vue d’ensemble", "Home", ["deployment-cockpit", "deployment-diagnostics", "deployment-specifications"]),
-    item("deployment-releases", "Déploiements", "Rocket", ["deployment-pipelines", "deployment-promotion"]),
-    item("deploymentActivations", "Activations", "Zap"),
     item("history", "Historique", "History"),
-    item("deployment-rollback", "Rollback", "Undo2"),
   ]),
 
   group("iam", "Sécurité & IAM", "platform", "ShieldCheck", "text-slate-200", [
@@ -136,17 +176,18 @@ const menu = [
   ]),
 
   group("billing", "Abonnements", "platform", "CreditCard", "text-sky-400", [
+    item("billingOverview", "Vue d’ensemble", "Home"),
     item("billingPlans", "Plans", "Tag"),
     item("billingSubscriptions", "Abonnements", "CreditCard"),
-    item("billingQuotas", "Usage", "Gauge"),
+    item("billingEntitlements", "Entitlements", "KeyRound"),
+    item("billingQuotas", "Quotas", "Gauge"),
     item("billingInvoices", "Facturation", "Receipt"),
   ]),
 
   group("admin", "Administration", "platform", "Settings", "text-slate-200", [
     item("adminOverview", "Vue d’ensemble", "Home"),
-    item("settingsGeneral", "Paramètres plateforme", "Settings"),
-    item("adminFeatures", "Fonctionnalités", "ListChecks"),
-    item("adminMaintenance", "Maintenance", "SlidersHorizontal"),
+    item("settingsGeneral", "Paramètres généraux", "Settings"),
+    item("settingsProfile", "Profil", "Users"),
   ]),
 ];
 

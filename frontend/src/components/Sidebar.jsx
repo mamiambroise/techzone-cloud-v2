@@ -63,7 +63,7 @@ function SidebarGroup({ group, active, collapsed, expanded, onExpand, onNavigate
         <>
           <span className="min-w-0 flex-1 truncate">{group.label}</span>
           {planned && (
-            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-medium text-slate-300">
+            <span aria-hidden="true" className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-medium text-slate-300">
               Bientôt
             </span>
           )}
@@ -141,7 +141,7 @@ function SidebarGroup({ group, active, collapsed, expanded, onExpand, onNavigate
                       <Child size={16} className="shrink-0" aria-hidden="true" />
                       <span className="min-w-0 flex-1 truncate">{entry.label}</span>
                       {!entry.implemented && !planned && (
-                        <span className="text-[9px] text-slate-500">Bientôt</span>
+                        <span aria-hidden="true" className="text-[9px] text-slate-500">Bientôt</span>
                       )}
                     </Link>
                   </li>
@@ -151,16 +151,6 @@ function SidebarGroup({ group, active, collapsed, expanded, onExpand, onNavigate
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function NavigationSkeleton() {
-  return (
-    <div aria-busy="true" aria-label="Chargement de la navigation" className="space-y-3 px-3 pt-2">
-      {Array.from({ length: 9 }, (_, i) => (
-        <div key={i} className="h-9 animate-pulse rounded-xl bg-white/5 motion-reduce:animate-none" />
-      ))}
     </div>
   );
 }
@@ -312,7 +302,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const toggleMenu = (value) => setMenu((current) => (current === value ? null : value));
   const fallbackMessage = error
     ? "Navigation limitée : contexte entreprise indisponible."
-    : tenants.length > 1
+    : (tenants?.length ?? 0) > 1
       ? "Sélectionnez une entreprise pour afficher les modules."
       : "Aucune entreprise active.";
   const menuItemClass = `flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] text-slate-200 hover:bg-white/10 ${focusClass}`;
@@ -399,11 +389,8 @@ export default function Sidebar({ isOpen, onClose }) {
           className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 [scrollbar-color:#1e3a8a_transparent] [scrollbar-width:thin]"
           onScroll={() => setTooltip(null)}
         >
-          {status === "loading" ? (
-            <NavigationSkeleton />
-          ) : (
-            <>
-              {sections.map((section, index) => (
+          <>
+            {sections.map((section, index) => (
                 <section
                   key={section.id}
                   aria-label={section.label}
@@ -431,19 +418,18 @@ export default function Sidebar({ isOpen, onClose }) {
                     />
                   ))}
                 </section>
-              ))}
-              {!sections.length && status === "ready" && (
-                <p className="px-3 text-xs text-slate-400">
-                  {query ? "Aucun résultat." : "Aucun module accessible."}
-                </p>
-              )}
-              {status === "fallback" && !collapsed && (
-                <p role="status" className="mt-3 px-3 text-xs text-amber-300/90">
-                  {fallbackMessage}
-                </p>
-              )}
-            </>
-          )}
+            ))}
+            {!sections.length && status === "ready" && (
+              <p className="px-3 text-xs text-slate-400">
+                {query ? "Aucun résultat." : "Aucun module accessible."}
+              </p>
+            )}
+            {status === "fallback" && !collapsed && (
+              <p role="status" className="mt-3 px-3 text-xs text-amber-300/90">
+                {fallbackMessage}
+              </p>
+            )}
+          </>
         </nav>
 
         <div ref={footer} className="relative shrink-0 border-t border-white/10 p-3">
