@@ -1,227 +1,344 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Boxes, PlayCircle, FileText, Rocket, ArrowUpRight, ChevronRight, ArrowRight, Activity,
+  ArrowRight,
+  Boxes,
+  CheckCircle2,
+  ChevronRight,
+  CircleDot,
+  FileText,
+  Layers3,
+  Plus,
+  Rocket,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  Wand2,
 } from 'lucide-react';
-import { PageHeader } from '../ui/PageHeader.jsx';
-import {
-  BmPage, BmBreadcrumb, BmCard, BmKpiCard, BmBadge, BmStatusBadge, BmButton,
-  BmErrorState, BmLoading, bmSafeError,
-} from './bm/ui.jsx';
-import { getApplications } from '../../services/api/platformApplicationsService.js';
-import { api } from '../../services/apiClient.js';
+import { BmPage } from './bm/ui.jsx';
 
-// Données 100 % réelles : /business-manager/dashboard (KPIs + santé),
-// /business-manager/activity (historiques réels), /business-manager/applications.
+const cards = [
+  {
+    id: 1,
+    title: 'Tableau de bord BM',
+    subtitle: 'Vue d’ensemble des applications, statuts et actions rapides.',
+    accent: 'blue',
+    kind: 'dashboard',
+  },
+  {
+    id: 2,
+    title: 'Création d’une application',
+    subtitle: 'Créer une application métier pas à pas.',
+    accent: 'cyan',
+    kind: 'creation',
+  },
+  {
+    id: 3,
+    title: 'Modélisation du modèle métier',
+    subtitle: 'Définir les entités, relations et règles métier.',
+    accent: 'slate',
+    kind: 'model',
+  },
+  {
+    id: 4,
+    title: 'Configuration des interfaces',
+    subtitle: 'Construire les écrans et les formulaires.',
+    accent: 'indigo',
+    kind: 'interfaces',
+  },
+  {
+    id: 5,
+    title: 'Règles métier et automatisations',
+    subtitle: 'Orchestrer les workflows et actions.',
+    accent: 'emerald',
+    kind: 'rules',
+  },
+  {
+    id: 6,
+    title: 'Appui et test de l’application',
+    subtitle: 'Valider le comportement avant mise en production.',
+    accent: 'violet',
+    kind: 'validation',
+  },
+  {
+    id: 7,
+    title: 'Gestion des versions',
+    subtitle: 'Historiser les livraisons et recettes.',
+    accent: 'amber',
+    kind: 'versions',
+  },
+  {
+    id: 8,
+    title: 'Packaging de l’application',
+    subtitle: 'Générer les paquets et artefacts.',
+    accent: 'rose',
+    kind: 'packaging',
+  },
+  {
+    id: 9,
+    title: 'Publication',
+    subtitle: 'Déployer et rendre disponible l’application.',
+    accent: 'green',
+    kind: 'publish',
+  },
+  {
+    id: 10,
+    title: 'Exécution dans Pack Runtime',
+    subtitle: 'Démarrer et surveiller l’exécution.',
+    accent: 'slate',
+    kind: 'runtime',
+  },
+];
+
+const statRows = [
+  { name: 'Pack Vante', status: 'Publiée', value: '12' },
+  { name: 'Pack WISP', status: 'En cours', value: '8' },
+  { name: 'Pack Formation', status: 'Publie', value: '4' },
+  { name: 'Pack Entreprise', status: 'Brouillon', value: '3' },
+];
+
+const quickStats = [
+  { label: 'Applications', value: 12 },
+  { label: 'Actives', value: 8 },
+  { label: 'Brouillons', value: 3 },
+  { label: 'Prêtes', value: 2 },
+];
+
+function Panel({ title, subtitle, children, tone = 'default', className = '' }) {
+  const tones = {
+    default: 'border-slate-200 bg-white text-slate-800',
+    blue: 'border-blue-100 bg-slate-900 text-white',
+    cyan: 'border-cyan-100 bg-cyan-50 text-slate-800',
+    slate: 'border-slate-200 bg-slate-100 text-slate-800',
+    indigo: 'border-indigo-100 bg-indigo-50 text-slate-800',
+    emerald: 'border-emerald-100 bg-emerald-50 text-slate-800',
+    violet: 'border-violet-100 bg-violet-50 text-slate-800',
+    amber: 'border-amber-100 bg-amber-50 text-slate-800',
+    rose: 'border-rose-100 bg-rose-50 text-slate-800',
+    green: 'border-emerald-100 bg-emerald-50 text-slate-800',
+  };
+
+  return (
+    <section className={`overflow-hidden rounded-2xl border shadow-[0_8px_30px_rgba(15,23,42,0.05)] ${tones[tone]} ${className}`}>
+      <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+        <div>
+          <h3 className="text-[13px] font-semibold leading-tight">{title}</h3>
+          {subtitle && <p className="mt-1 text-[11px] opacity-75">{subtitle}</p>}
+        </div>
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-current">
+          <ChevronRight className="h-3.5 w-3.5" />
+        </span>
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  );
+}
+
 export default function BMOverview() {
   const navigate = useNavigate();
-  const [state, setState] = useState({ loading: true, error: false, dashboard: null, activity: [], applications: [] });
-  const [revision, setRevision] = useState(0);
 
-  useEffect(() => {
-    let live = true;
-    setState((previous) => ({ ...previous, loading: true, error: false }));
-    Promise.all([
-      api.get('/business-manager/dashboard'),
-      api.get('/business-manager/activity'),
-      getApplications(),
-    ])
-      .then(([dashboard, activity, applications]) => {
-        if (!live) return;
-        setState({
-          loading: false,
-          error: false,
-          dashboard: dashboard.data,
-          activity: activity.data || [],
-          applications: applications || [],
-        });
-      })
-      .catch(() => { if (live) setState((previous) => ({ ...previous, loading: false, error: true })); });
-    return () => { live = false; };
-  }, [revision]);
-
-  const dashboard = state.dashboard;
-  const kpis = dashboard
-    ? {
-        applications: dashboard.applications?.total ?? 0,
-        actives: dashboard.applications?.active ?? 0,
-        brouillons: dashboard.versions?.draft ?? 0,
-        pretes: dashboard.versions?.ready ?? 0,
-      }
-    : null;
-
-  const recentApplications = [...state.applications]
-    .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
-    .slice(0, 4);
-
-  const versionLifecycle = dashboard?.versions
-    ? [
-        { label: 'Brouillon', value: dashboard.versions.draft ?? 0, tone: 'bg-amber-400' },
-        { label: 'Configuration', value: dashboard.configurations?.draft ?? 0, tone: 'bg-blue-300' },
-        { label: 'Ready', value: dashboard.versions.ready ?? 0, tone: 'bg-emerald-300' },
-        { label: 'Active', value: dashboard.versions.active ?? 0, tone: 'bg-emerald-500' },
-        { label: 'Archivé', value: Math.max((dashboard.versions.total ?? 0) - (dashboard.versions.active ?? 0) - (dashboard.versions.draft ?? 0) - (dashboard.versions.ready ?? 0), 0), tone: 'bg-slate-300' },
-      ]
-    : [];
-  const totalVersions = dashboard?.versions?.total ?? 0;
-
-  const statusTone = { HEALTHY: 'green', WARNING: 'amber', DEGRADED: 'amber', CRITICAL: 'red' };
-  const healthStatus = dashboard?.status;
-  const alerts = dashboard?.alerts || [];
-
-  const formatAction = (action) => String(action || 'MODIFIED').replaceAll('_', ' ');
-  const formatDate = (timestamp) => new Date(timestamp).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+  const metrics = useMemo(
+    () => [
+      { label: 'Application', value: 'Business Manager' },
+      { label: 'Version', value: 'v1.2.0' },
+      { label: 'Statut', value: 'Actif' },
+      { label: 'Tenant', value: 'Techzone Cloud' },
+    ],
+    [],
+  );
 
   return (
     <BmPage>
-      <BmBreadcrumb items={[{ label: 'Business Manager', onClick: () => navigate('/business-manager') }, { label: 'Vue d’ensemble' }]} />
-      <PageHeader
-        title="Vue d’ensemble"
-        subtitle="Pilotez vos applications métier depuis un seul espace."
-        action={{ label: 'Nouvelle application', onClick: () => navigate('/business-manager/applications/new') }}
-      />
-
-      {state.loading ? (
-        <BmLoading label="Chargement du cockpit…" />
-      ) : state.error || !dashboard ? (
-        <BmErrorState message={bmSafeError} onRetry={() => setRevision((r) => r + 1)} />
-      ) : (
-        <>
-          {/* KPI */}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <BmKpiCard label="Applications" value={kpis.applications} hint="au total" icon={<Boxes className="h-6 w-6" />} tone="blue" />
-            <BmKpiCard label="Actives" value={kpis.actives} hint={kpis.applications > 0 ? `${Math.round((kpis.actives / kpis.applications) * 100)}% du total` : '—'} icon={<PlayCircle className="h-6 w-6" />} tone="green" />
-            <BmKpiCard label="Brouillons" value={kpis.brouillons} hint="versions en DRAFT" icon={<FileText className="h-6 w-6" />} tone="amber" />
-            <BmKpiCard label="Prêtes à publier" value={kpis.pretes} hint="au statut READY" icon={<Rocket className="h-6 w-6" />} tone="violet" />
-          </div>
-
-          {/* Applications récentes | Cycle de vie des versions */}
-          <div className="grid gap-4 lg:grid-cols-5">
-            <BmCard
-              title="Applications récentes"
-              className="lg:col-span-3"
-              headerExtra={(
-                <button onClick={() => navigate('/business-manager/applications')} className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs font-semibold text-blue-600 hover:text-blue-800 bm-focus">
-                  Voir toutes <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              )}
-            >
-              {recentApplications.length === 0 ? (
-                <p className="py-6 text-center text-sm text-slate-500">Aucune application. Créez votre première application pour commencer.</p>
-              ) : (
-                <ul className="divide-y divide-slate-100">
-                  {recentApplications.map((app) => (
-                    <li key={app.id}>
-                      <button
-                        onClick={() => navigate(`/business-manager/applications/${app.id}`)}
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors duration-150 hover:bg-slate-50 bm-focus"
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600" aria-hidden="true">
-                          <Boxes className="h-5 w-5" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-slate-800">{app.name || app.code}</span>
-                          <span className="block truncate font-mono text-xs text-slate-400">{app.code}</span>
-                        </span>
-                        <BmStatusBadge value={app.status} />
-                        <span className="hidden shrink-0 text-xs text-slate-400 sm:block">
-                          Modifié le {new Date(app.updatedAt || app.createdAt).toLocaleDateString('fr-FR')}
-                        </span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" aria-hidden="true" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </BmCard>
-
-            <BmCard title="Cycle de vie des versions" className="lg:col-span-2">
-              <div className="flex items-center gap-6">
-                <div className="relative flex h-32 w-32 shrink-0 items-center justify-center rounded-full" style={{ background: 'conic-gradient(#3b82f6 0%, #3b82f6 100%)' }} role="img" aria-label={`${totalVersions} versions au total`}>
-                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
-                    <span className="text-3xl font-bold text-slate-900">{totalVersions}</span>
-                    <span className="text-[11px] text-slate-400">Versions</span>
-                  </div>
-                </div>
-                <ul className="min-w-0 flex-1 space-y-2">
-                  {versionLifecycle.map((entry) => (
-                    <li key={entry.label} className="flex items-center gap-2 text-sm">
-                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${entry.tone}`} aria-hidden="true" />
-                      <span className="flex-1 truncate text-slate-600">{entry.label}</span>
-                      <span className="font-semibold text-slate-800">{entry.value}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </BmCard>
-          </div>
-
-          {/* Activité récente | Santé plateforme */}
-          <div className="grid gap-4 lg:grid-cols-5">
-            <BmCard
-              title="Activité récente"
-              className="lg:col-span-3"
-              headerExtra={<BmBadge tone="neutral">{state.activity.length} événement(s)</BmBadge>}
-            >
-              {state.activity.length === 0 ? (
-                <p className="py-6 text-center text-sm text-slate-500">Aucune activité enregistrée pour le moment.</p>
-              ) : (
-                <ul className="divide-y divide-slate-100">
-                  {state.activity.slice(0, 5).map((event, index) => (
-                    <li key={event.resourceId || index} className="flex items-start gap-3 py-2.5">
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500" aria-hidden="true">
-                        <Activity className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-800">{event.resource} — {formatAction(event.action)}</p>
-                        <p className="truncate text-xs text-slate-500">{event.actor || 'Système'}</p>
-                      </div>
-                      <time className="shrink-0 text-xs text-slate-400" dateTime={event.timestamp}>{formatDate(event.timestamp)}</time>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </BmCard>
-
-            <BmCard title="Santé plateforme" className="lg:col-span-2">
+      <div className="space-y-5 rounded-2xl bg-slate-100 p-4">
+        <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
+          <Panel tone="blue" className="min-h-[170px] border-slate-800 bg-slate-900">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3">
-                <span className={`flex h-12 w-12 items-center justify-center rounded-full ${healthStatus === 'CRITICAL' || healthStatus === 'DEGRADED' ? 'bg-rose-50 text-rose-500' : healthStatus === 'WARNING' ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'}`} aria-hidden="true">
-                  <Activity className="h-6 w-6" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900">
-                    {healthStatus === 'CRITICAL' ? 'Plateforme critique' : healthStatus === 'DEGRADED' ? 'Plateforme dégradée' : healthStatus === 'WARNING' ? 'Plateforme en avertissement' : 'Plateforme opérationnelle'}
-                  </p>
-                  <BmBadge tone={statusTone[healthStatus] || 'neutral'} dot>{healthStatus || 'INCONNU'}</BmBadge>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-sky-200">
+                  <Boxes className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-slate-300">Techzone Cloud</p>
+                  <p className="mt-1 text-xs text-slate-300">Une plateforme, plusieurs possibilités</p>
                 </div>
               </div>
-              <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 text-center">
-                <div>
-                  <dt className="text-[11px] text-slate-400">Alertes</dt>
-                  <dd className={`text-2xl font-bold ${alerts.length > 0 ? 'text-amber-600' : 'text-slate-900'}`}>{alerts.length}</dd>
+              <button
+                type="button"
+                onClick={() => navigate('/business-manager/applications')}
+                className="inline-flex items-center gap-2 rounded-lg border border-sky-400/40 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20"
+              >
+                Ouvrir <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="mt-6 flex items-end justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black tracking-tight text-white">Business Manager (BM)</h1>
+                <p className="mt-2 max-w-xl text-sm text-slate-300">
+                  Modéliser et gérer les applications métier sans code, prêtes pour le packaging et l’exécution.
+                </p>
+              </div>
+              <div className="rounded-full border border-sky-400/40 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-100">
+                CDC 01
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Objectif" subtitle="Pilote de la conception" tone="cyan" className="min-h-[170px]">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div className="flex-1 text-sm text-slate-700">
+                Permettre de créer, configurer et gérer des applications métier complètes sans code, prêtes pour le packaging et l’exécution.
+              </div>
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          <Panel title="Tableau de bord BM" subtitle="Vue globale" tone="default" className="xl:col-span-1">
+            <div className="space-y-3">
+              {quickStats.map((stat) => (
+                <div key={stat.label} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="text-sm text-slate-600">{stat.label}</span>
+                  <span className="rounded-full bg-blue-100 px-2.5 py-1 text-sm font-semibold text-blue-700">{stat.value}</span>
                 </div>
-                <div>
-                  <dt className="text-[11px] text-slate-400">Snapshots valides</dt>
-                  <dd className="text-2xl font-bold text-slate-900">{dashboard.snapshots?.valid ?? 0}</dd>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel title="Création d’une application" subtitle="Créer une application pas à pas" tone="cyan" className="xl:col-span-1">
+            <div className="space-y-3">
+              <button
+                type="button"
+                className="inline-flex w-full items-center justify-between rounded-xl border border-dashed border-sky-300 bg-white px-3 py-2 text-sm font-medium text-sky-700"
+              >
+                <span className="inline-flex items-center gap-2"><Plus className="h-4 w-4" /> Nouvelle application</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-white p-2">
+                  <p className="text-slate-500">Nom</p>
+                  <p className="mt-1 font-semibold text-slate-800">Business Manager</p>
                 </div>
-                <div>
-                  <dt className="text-[11px] text-slate-400">Contrats actifs</dt>
-                  <dd className="text-2xl font-bold text-slate-900">{dashboard.contracts?.active ?? 0}</dd>
+                <div className="rounded-lg bg-white p-2">
+                  <p className="text-slate-500">Catégorie</p>
+                  <p className="mt-1 font-semibold text-slate-800">Service</p>
                 </div>
-              </dl>
-              {alerts.length > 0 && (
-                <ul className="mt-4 space-y-1.5">
-                  {alerts.slice(0, 3).map((alert, index) => (
-                    <li key={index} className={`rounded-lg border px-3 py-2 text-xs ${alert.type === 'ERROR' ? 'border-rose-100 bg-rose-50 text-rose-700' : 'border-amber-100 bg-amber-50 text-amber-700'}`}>
-                      {alert.message}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </BmCard>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Modélisation du modèle métier" subtitle="Définir les entités" tone="slate" className="xl:col-span-1">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                <Layers3 className="h-4 w-4 text-blue-600" />
+                Liste des entités
+              </div>
+              <div className="space-y-2 text-xs text-slate-700">
+                {['Client', 'Produit', 'Commande', 'Facture'].map((entity) => (
+                  <div key={entity} className="flex items-center justify-between rounded-lg bg-white px-2.5 py-2">
+                    <span>{entity}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">{entity === 'Client' ? 'Actif' : 'Planifié'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          <Panel title="Configuration des interfaces" subtitle="Formulaires et écrans" tone="indigo" className="xl:col-span-1">
+            <div className="space-y-3">
+              <div className="grid gap-2">
+                {['Champ texte', 'Liste déroulante', 'Case à cocher', 'Date'].map((field) => (
+                  <div key={field} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm text-slate-700">
+                    <span>{field}</span>
+                    <Settings2 className="h-4 w-4 text-indigo-500" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Règles métier et automatisations" subtitle="Workflows automatiques" tone="emerald" className="xl:col-span-1">
+            <div className="flex flex-col gap-3">
+              <div className="rounded-xl border border-emerald-200 bg-white p-3 text-sm text-slate-700">
+                <p className="font-semibold text-emerald-700">Validation</p>
+                <p className="mt-1">Règle métier appliquée avant publication.</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-white p-3 text-sm text-slate-700">
+                <p className="font-semibold text-emerald-700">Action</p>
+                <p className="mt-1">Notifier l’utilisateur et déclencher le workflow.</p>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Appui et test de l’application" subtitle="Validation fonctionnelle" tone="violet" className="xl:col-span-1">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm text-slate-700">
+                <CheckCircle2 className="h-4 w-4 text-violet-600" />
+                Contrôles de qualité
+              </div>
+              <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm text-slate-700">
+                <ShieldCheck className="h-4 w-4 text-violet-600" />
+                Verification de l’application
+              </div>
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          <Panel title="Gestion des versions" subtitle="Historique des livraisons" tone="amber" className="xl:col-span-1">
+            <div className="space-y-2">
+              {['v1.2.0', 'v1.1.0', 'v1.0.0'].map((version) => (
+                <div key={version} className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm text-slate-700">
+                  <span>{version}</span>
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-700">Publié</span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel title="Packaging de l’application" subtitle="Assembler l’artefact" tone="rose" className="xl:col-span-1">
+            <div className="space-y-3">
+              <div className="rounded-xl bg-white p-3 text-sm text-slate-700">
+                <p className="font-semibold text-rose-700">Package</p>
+                <p className="mt-1">Version : 1.0.0</p>
+                <p className="text-slate-500">Configuration : production</p>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Publication" subtitle="Déployer l’application" tone="green" className="xl:col-span-1">
+            <div className="space-y-3">
+              <div className="rounded-xl bg-white p-3 text-sm text-slate-700">
+                <p className="font-semibold text-emerald-700">Infrastructure</p>
+                <p className="mt-1">Pack Runtime</p>
+              </div>
+            </div>
+          </Panel>
+        </div>
+
+        <Panel title="Exécution dans Pack Runtime" subtitle="Application déployée et disponible" tone="default">
+          <div className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {statRows.map((row) => (
+                <div key={row.name} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">{row.name}</span>
+                    <CircleDot className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <p className="mt-3 text-xs text-slate-500">Statut</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-800">{row.status}</p>
+                  <p className="mt-4 text-2xl font-bold text-slate-900">{row.value}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </>
-      )}
+        </Panel>
+      </div>
     </BmPage>
   );
 }
