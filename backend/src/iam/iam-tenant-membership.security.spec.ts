@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { IamError } from './iam-error';
 import { IamAuthService } from './iam-auth.service';
 import { IamContextService } from './iam-context.service';
+import { IamThrottleService } from './iam-throttle.service';
 import type { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -178,12 +179,14 @@ const buildService = (prisma: any) => {
     })),
   };
   const contextService = new IamContextService(prisma as unknown as PrismaService);
+  const throttle = new IamThrottleService(prisma as unknown as PrismaService);
   const service = new IamAuthService(
     prisma as unknown as PrismaService,
     mail as any,
     contextService,
     authorization as any,
     mfa as any,
+    throttle,
   );
   return service;
 };

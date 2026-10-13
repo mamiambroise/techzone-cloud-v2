@@ -8,6 +8,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { integrationRequestContext } from './common/integration-request-context';
+import { iamHttpThrottle } from './iam/iam-http-throttle.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,6 +25,9 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  // LOT 4 : rate limit réel par IP sur login / MFA / refresh / recovery.
+  app.use(iamHttpThrottle());
 
   const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
     .split(',')

@@ -29,6 +29,7 @@ import type { IamAuthContext } from './decorators/current-user.decorator';
 import { IamContextService } from './iam-context.service';
 import { IamAuthorizationService } from './iam-authorization.service';
 import { IamMfaService } from './iam-mfa.service';
+import { IamThrottleService, SECURITY_LOCKOUT } from './iam-throttle.service';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 
@@ -50,6 +51,7 @@ export class IamAuthService {
     private readonly contextService: IamContextService,
     private readonly authorization: IamAuthorizationService,
     private readonly mfaService: IamMfaService,
+    private readonly throttle: IamThrottleService,
   ) {}
 
   // ================= Helpers =================
@@ -168,19 +170,46 @@ export class IamAuthService {
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     this.assertEnv();
 
+    // LOT 4 : brute force protection AVANT toute vérification de credential
+    // (RG-IAM-011). Verrous par identité (identifier réel) et par IP.
+    const loginIpKey = `ip:${ipAddress ?? 'unknown'}`;
+    const loginIdentKey = `ident:${(dto.identifier ?? '').trim().toLowerCase()}`;
+    this.throttle.assertNotLocked('login', loginIpKey);
+    this.throttle.assertNotLocked('login', loginIdentKey);
+
+    const recordLoginFailure = (userId?: string) => {
+      const policy = {
+        maxAttempts: SECURITY_LOCKOUT.LOGIN_MAX_ATTEMPTS,
+        windowMs: SECURITY_LOCKOUT.LOGIN_WINDOW_MS,
+        lockMs: SECURITY_LOCKOUT.LOGIN_LOCK_MS,
+      };
+      return Promise.all([
+        this.throttle.recordFailure('login', loginIpKey, policy, { userId }),
+        userId
+          ? this.throttle.recordFailure('login', loginIdentKey, policy, { userId })
+          : Promise.resolve(false),
+      ]);
+    };
+
     const user = await this.prisma.iamUser.findFirst({
       where: { OR: [{ username: dto.identifier }, { primaryEmail: dto.identifier }] },
     });
     if (!user) {
+      // Un identifiant inexistant ne lock jamais la clé identité (jeu de
+      // poison possible) : seul l'IP devient limité.
+      await recordLoginFailure();
       throw new IamError('Identifiants invalides', 401, 'INVALID_CREDENTIALS');
     }
 
     const isValid = await this.verifyPasswordCredential(user.id, dto.password);
     if (!isValid) {
+      await recordLoginFailure(user.id);
       throw new IamError('Identifiants invalides', 401, 'INVALID_CREDENTIALS');
     }
 
     this.assertUserIsActive(user);
+    this.throttle.recordSuccess('login', loginIpKey);
+    this.throttle.recordSuccess('login', loginIdentKey);
 
     const mfaEnabled = await this.hasMfaEnabled(user.id);
     if (mfaEnabled) {
@@ -405,6 +434,10 @@ export class IamAuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     this.assertEnv();
 
+    // LOT 4 : le flux recovery est protégé (seuil fenêtre + lock temporaire).
+    const recoveryKey = `ident:${(dto.identifier ?? '').trim().toLowerCase()}`;
+    this.throttle.assertNotLocked('recovery', recoveryKey);
+
     const user = await this.findUserForPasswordReset(dto.identifier);
     if (!user || user.status === 'ARCHIVED' || user.status === 'DISABLED') {
       return { success: true, message: 'Si le compte existe, un email de réinitialisation a été envoyé.' };
@@ -451,6 +484,14 @@ export class IamAuthService {
       subject: 'Réinitialisation de votre mot de passe — Techzone Cloud',
       html,
     });
+
+    // Chaque demande compte une tentative : au-delà du seuil, le flux est
+    // verrouillé temporairement (protection de flood + user enumeration).
+    await this.throttle.recordFailure('recovery', recoveryKey, {
+      maxAttempts: SECURITY_LOCKOUT.RECOVERY_MAX_ATTEMPTS,
+      windowMs: SECURITY_LOCKOUT.RECOVERY_WINDOW_MS,
+      lockMs: SECURITY_LOCKOUT.RECOVERY_LOCK_MS,
+    }, { userId: user.id });
 
     if (!sent) {
       await this.prisma.iamUser.update({

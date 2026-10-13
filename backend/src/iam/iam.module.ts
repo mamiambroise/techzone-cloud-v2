@@ -23,6 +23,7 @@ import { IamIdentitiesController } from './iam-identities.controller';
 import { IamIdentityService } from './iam-identity.service';
 import { IamMfaController } from './iam-mfa.controller';
 import { IamMfaService } from './iam-mfa.service';
+import { IamThrottleService } from './iam-throttle.service';
 import { IamObservabilityController } from './iam-observability.controller';
 import { IamObservabilityService } from './iam-observability.service';
 import { IamConfigController } from './iam-config.controller';
@@ -65,6 +66,7 @@ import { IamAdminGuard } from './iam-admin-guard';
     IamTenantsService,
     IamIdentityService,
     IamMfaService,
+    IamThrottleService,
     IamObservabilityService,
     IamConfigService,
     IamContextService,
@@ -92,6 +94,7 @@ import { IamAdminGuard } from './iam-admin-guard';
   ],
   exports: [
     IamAuthService,
+    IamThrottleService,
     IamContextService,
     IamAdminService,
     IamMfaService,
