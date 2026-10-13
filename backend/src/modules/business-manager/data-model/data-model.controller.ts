@@ -31,7 +31,7 @@ import {
   UpdateFieldDto,
 } from './dto/create-data-model.dto';
 
-@TenantResource({ table: 'bm_entity', idParam: 'entityId' })
+@TenantResource({ table: 'bmEntity', idParam: 'entityId' })
 @UseGuards(BmTenantGuard, TenantGuard)
 @Controller('api/business-manager/data-model')
 export class DataModelController {

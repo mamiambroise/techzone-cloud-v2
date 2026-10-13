@@ -22,27 +22,31 @@ process.env.JWT_ACCESS_SECRET ||= 'unit-test-access-secret';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 
+type AnyFn = (...args: any[]) => any;
+const mfn = (): jest.Mock<AnyFn> => jest.fn<AnyFn>();
+const mfnRes = <T>(value: T): jest.Mock<AnyFn> => jest.fn<AnyFn>().mockResolvedValue(value);
+
 const makePrismaStub = () => ({
   mfaChallenge: {
-    create: jest.fn(),
-    findUnique: jest.fn(),
-    update: jest.fn(),
-    updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    create: mfn(),
+    findUnique: mfn(),
+    update: mfn(),
+    updateMany: mfnRes({ count: 1 }),
   },
   mfaMethod: {
-    create: jest.fn(),
-    findFirst: jest.fn(),
-    findMany: jest.fn(),
-    update: jest.fn().mockResolvedValue({}),
-    count: jest.fn(),
+    create: mfn(),
+    findFirst: mfn(),
+    findMany: mfn(),
+    update: mfnRes({}),
+    count: mfn(),
   },
   recoveryCode: {
-    deleteMany: jest.fn(),
-    createMany: jest.fn(),
-    findMany: jest.fn().mockResolvedValue([]),
-    update: jest.fn(),
+    deleteMany: mfn(),
+    createMany: mfn(),
+    findMany: mfnRes([]),
+    update: mfn(),
   },
-  securityEvent: { create: jest.fn().mockResolvedValue({}) },
+  securityEvent: { create: mfnRes({}) },
 });
 
 const prismaAsService = (stub: unknown) => stub as unknown as PrismaService;
@@ -250,7 +254,12 @@ describe('Enrôlement TOTP réel', () => {
     stub.mfaMethod.create.mockImplementation(async ({ data }: any) => ({ id: 'm-1', ...data }));
     const service = new IamMfaService(prismaAsService(stub));
 
-    const result = await service.enroll(USER_ID, 'TOTP', 'Authenticator');
+    const result = (await service.enroll(USER_ID, 'TOTP', 'Authenticator')) as {
+      type: 'TOTP';
+      methodId: string;
+      secret: string;
+      otpauthUri: string;
+    };
     expect(/^[A-Z2-7]+$/.test(result.secret)).toBe(true);
     expect(result.otpauthUri).toContain(`secret=${result.secret}`);
     expect(stub.mfaMethod.create).toHaveBeenCalledWith({
