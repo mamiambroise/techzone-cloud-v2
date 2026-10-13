@@ -80,8 +80,8 @@ function AutomationCockpit() {
       icon: PlayIcon,
       gradient: 'from-emerald-500 to-teal-600',
       items: [
-        { label: 'Total', value: cockpit.executions?.totalCount ?? cockpit.executions?.total, color: 'blue' },
-        { label: 'Succès', value: cockpit.executions?.successCount, color: 'green' },
+        { label: 'Total', value: cockpit.executions?.executionsCount ?? cockpit.executions?.totalCount ?? cockpit.executions?.total, color: 'blue' },
+        { label: 'Succès', value: cockpit.executions?.succeededCount ?? cockpit.executions?.successCount, color: 'green' },
         { label: 'Échecs', value: cockpit.executions?.failedCount, color: 'red' },
         { label: 'Timeouts', value: cockpit.executions?.timeoutCount, color: 'yellow' },
       ],

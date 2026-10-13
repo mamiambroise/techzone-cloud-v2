@@ -15,6 +15,7 @@ import { WorkflowEngine } from './workflow/workflow.engine';
 import { TriggerEngine } from './trigger/trigger.engine';
 import { ConditionsEngine } from './conditions/conditions.engine';
 import { AutomationHistoryService } from './history/automation-history.service';
+import { ActionEngine } from './action/action.engine';
 import { ErpError } from '../erp-adapter/erp-error';
 
 type Mocked<T> = { [K in keyof T]: jest.Mock };
@@ -121,6 +122,7 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
         { provide: TriggerEngine, useValue: triggerEngine },
         { provide: AutomationHistoryService, useValue: historyService },
         { provide: ConditionsEngine, useValue: conditionsEngine },
+        { provide: ActionEngine, useValue: { getActions: jest.fn().mockReturnValue([]) } },
       ],
     }).compile();
 
@@ -421,5 +423,4 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
     });
   });
 });
-
 
