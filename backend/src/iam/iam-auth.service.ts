@@ -28,6 +28,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import type { IamAuthContext } from './decorators/current-user.decorator';
 import { IamContextService } from './iam-context.service';
 import { IamAuthorizationService } from './iam-authorization.service';
+import { IamMfaService } from './iam-mfa.service';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 
@@ -48,6 +49,7 @@ export class IamAuthService {
     private readonly mailService: MailService,
     private readonly contextService: IamContextService,
     private readonly authorization: IamAuthorizationService,
+    private readonly mfaService: IamMfaService,
   ) {}
 
   // ================= Helpers =================
@@ -188,10 +190,16 @@ export class IamAuthService {
         name: dto.deviceName,
         deviceType: dto.deviceType,
       });
+      // Le mot de passe est validé : on émet un challenge MFA opaque,
+      // one-time, TTL, lié au login attempt. Aucune session n'est créée ici.
+      const ipHash = ipAddress ? hashValue(ipAddress) : null;
+      const challenge = await this.mfaService.issueLoginChallenge(user.id, device.id, ipHash);
       return {
         mfaRequired: true,
         user: this.sanitizeUser(user),
         deviceId: device.id,
+        mfaChallengeToken: challenge.token,
+        mfaChallengeExpiresAt: challenge.expiresAt,
       };
     }
 
@@ -225,44 +233,43 @@ export class IamAuthService {
     };
   }
 
-  // ================= MFA Challenge =================
+  // ================= MFA Challenge (challenge opaque obligatoire) =================
 
-  async mfaChallenge(identifier: string, code: string, rememberDevice = false) {
+  /**
+   * Vérifie le code MFA contre UN challenge opaque émis après validation du
+   * mot de passe (voir `login`). Le challenge est consommé de manière
+   * atomique AVANT toute création de session : pas de session pré-MFA, pas
+   * de replay, pas de bruteforce TOTP sans challenge.
+   */
+  async mfaChallenge(
+    challengeToken: string,
+    code: string,
+    recoveryCode?: string | null,
+    rememberDevice = false,
+  ) {
     this.assertEnv();
 
-    const user = await this.prisma.iamUser.findFirst({
-      where: { OR: [{ username: identifier }, { primaryEmail: identifier }] },
-    });
+    const confirmed = await this.mfaService.validateLoginChallenge(
+      challengeToken,
+      code,
+      recoveryCode,
+    );
+
+    const user = await this.prisma.iamUser.findUnique({ where: { id: confirmed.userId } });
     if (!user) {
       throw new IamError('Identifiants invalides', 401, 'INVALID_CREDENTIALS');
     }
 
     this.assertUserIsActive(user);
 
-    const verificationResult = await this.verifyMfaCode(user.id, code);
-    if (!verificationResult.verified) {
-      await this.prisma.securityEvent.create({
-        data: {
-          type: 'MFA_FAILURE',
-          severity: 'MEDIUM',
-          userId: user.id,
-          source: 'MFA_AUTH',
-          metadata: { code: 'MFA_INVALID_CODE' },
-        },
-      });
-      throw new IamError('Code MFA invalide', 401, 'MFA_INVALID_CODE');
-    }
-
-    const deviceId = verificationResult.deviceId;
-
     await this.prisma.securityEvent.create({
       data: {
-        type: 'MFA_SUCCESS',
+        type: 'auth.mfa.success',
         severity: 'INFO',
         userId: user.id,
-        deviceId: deviceId ?? null,
+        deviceId: confirmed.deviceId ?? null,
         source: 'MFA_AUTH',
-        metadata: { rememberDevice },
+        metadata: { rememberDevice: Boolean(rememberDevice) },
       },
     });
 
@@ -273,7 +280,7 @@ export class IamAuthService {
       siteId: undefined,
       applicationId: undefined,
       environment: undefined,
-      deviceId: deviceId ?? (await this.registerDeviceForUser(user.id)).id,
+      deviceId: confirmed.deviceId ?? (await this.registerDeviceForUser(user.id)).id,
       ipAddress: undefined,
       userAgent: undefined,
       authenticationLevel: 'MFA',
@@ -295,34 +302,6 @@ export class IamAuthService {
       where: { userId, enabled: true },
     });
     return count > 0;
-  }
-
-  private async verifyMfaCode(userId: string, code: string): Promise<{ verified: boolean; deviceId?: string }> {
-    const methods = await this.prisma.mfaMethod.findMany({
-      where: { userId, enabled: true },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    for (const method of methods) {
-      if (method.type === 'TOTP') {
-        if (this.verifyTotpCode(code, method.secretRef)) {
-          await this.prisma.mfaMethod.update({
-            where: { id: method.id },
-            data: { lastUsedAt: new Date() },
-          });
-          return { verified: true };
-        }
-      }
-    }
-
-    return { verified: false };
-  }
-
-  private verifyTotpCode(code: string, secretRef: string | null): boolean {
-    if (!secretRef) return false;
-    const digits = code.replace(/\D/g, '');
-    if (digits.length !== 6) return false;
-    return digits === '000000';
   }
 
   private async registerDeviceForUser(userId: string) {

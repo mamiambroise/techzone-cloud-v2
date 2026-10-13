@@ -1272,6 +1272,7 @@ model IamUser {
    devices         IamDevice[]
    sessions        IamSession[]
    mfaMethods      MfaMethod[]
+   mfaChallenges   MfaChallenge[]
    recoveryCodes   RecoveryCode[]
    identities      UserIdentity[]
    memberships     Membership[]
@@ -2166,6 +2167,29 @@ model MfaMethod {
   @@index([type])
   @@index([enabled])
   @@map("mfa_method")
+}
+
+/// Challenge MFA à usage unique, opaque, TTL, lié à un login attempt.
+/// La session n'est créée qu'APRÈS consommation réussie du challenge.
+model MfaChallenge {
+  id           String    @id @default(uuid())
+  userId       String
+  tokenHash    String    @unique
+  status       String    @default("PENDING")
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(5)
+  deviceId     String?
+  ipHash       String?
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  consumedReason String?
+  createdAt    DateTime  @default(now())
+
+  user IamUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("mfa_challenge")
 }
 
 model RecoveryCode {

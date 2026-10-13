@@ -46,10 +46,16 @@ export class IamAuthController {
       req.headers['user-agent'],
     );
     if (result.mfaRequired) {
+      // Le challenge opaque est remis une seule fois, seul moyen de
+      // poster vers /auth/login/mfa. Aucune session n'a été créée ici.
       res.json({
         success: true,
         message: 'MFA requis',
-        data: { mfaRequired: true },
+        data: {
+          mfaRequired: true,
+          mfaChallengeToken: result.mfaChallengeToken,
+          mfaChallengeExpiresAt: result.mfaChallengeExpiresAt,
+        },
       });
       return;
     }
@@ -63,8 +69,21 @@ export class IamAuthController {
   @Public()
   @Post('login/mfa')
   @HttpCode(HttpStatus.OK)
-  async loginMfa(@Body() body: { identifier: string; code: string; rememberDevice?: boolean }, @Res() res: Response) {
-    const data = await this.authService.mfaChallenge(body.identifier, body.code, body.rememberDevice ?? false);
+  async loginMfa(
+    @Body() body: { challengeToken?: string; code: string; recoveryCode?: string; rememberDevice?: boolean },
+    @Res() res: Response,
+  ) {
+    // Fail-closed : sans challenge émis par /auth/login (post-MDP), impossible
+    // de créer une session MFA.
+    if (!body.challengeToken) {
+      throw new IamError('Code MFA invalide', 401, 'MFA_INVALID_CODE');
+    }
+    const data = await this.authService.mfaChallenge(
+      body.challengeToken,
+      body.code,
+      body.recoveryCode ?? null,
+      body.rememberDevice ?? false,
+    );
     this.setTokenCookies(res, data.accessToken, data.refreshToken);
     res.json({ success: true, message: 'Connexion MFA réussie' });
   }
