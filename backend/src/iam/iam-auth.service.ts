@@ -713,14 +713,36 @@ export class IamAuthService {
     const now = new Date();
     const { idleExpiresAt, expiresAt } = this.computeExpirations(now);
 
-    const resolvedTenantId = tenantId ?? (await this.resolveTenantId(userId));
+    // RG-IAM-018 : le tenantId proposé par le client n'est jamais une
+    // autorité. Sans membership ACTIVE (tenant/organization/site actifs) sur
+    // le tenant demandé, aucune session n'est créée.
+    let resolvedTenantId: string | null = null;
+    let resolvedOrganizationId: string | null = organizationId ?? null;
+    let resolvedSiteId: string | null = siteId ?? null;
+    if (tenantId) {
+      const membership = await this.contextService.assertTenantAccess(userId, tenantId, {
+        organizationId,
+        siteId,
+      });
+      resolvedTenantId = tenantId;
+      resolvedOrganizationId = membership.organizationId ?? resolvedOrganizationId;
+      resolvedSiteId = membership.siteId ?? resolvedSiteId;
+    } else {
+      resolvedTenantId = await this.resolveTenantId(userId);
+      if (resolvedTenantId) {
+        // Le tenant par défaut doit lui aussi rester autorisé au moment du login.
+        const membership = await this.contextService.assertTenantAccess(userId, resolvedTenantId);
+        resolvedOrganizationId = membership.organizationId ?? resolvedOrganizationId;
+        resolvedSiteId = membership.siteId ?? resolvedSiteId;
+      }
+    }
 
     return this.prisma.iamSession.create({
       data: {
         userId,
         tenantId: resolvedTenantId ?? null,
-        organizationId: organizationId ?? null,
-        siteId: siteId ?? null,
+        organizationId: resolvedOrganizationId,
+        siteId: resolvedSiteId,
         applicationId: applicationId ?? null,
         environment: environment ? (environment as any) : null,
         deviceId,
