@@ -92,3 +92,88 @@ export class FireTriggerDto {
   @IsObject()
   variables?: Record<string, any>;
 }
+
+export class WorkflowStepDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @ApiProperty({ enum: ['START', 'STEP', 'CONDITION', 'ACTION', 'BRANCH', 'END'] })
+  @IsIn(['START', 'STEP', 'CONDITION', 'ACTION', 'BRANCH', 'END'])
+  type: 'START' | 'STEP' | 'CONDITION' | 'ACTION' | 'BRANCH' | 'END';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  actionRef?: string;
+
+  @ApiPropertyOptional({ type: Object })
+  @IsOptional()
+  @IsObject()
+  condition?: Record<string, any>;
+
+  @ApiPropertyOptional({ type: Object })
+  @IsOptional()
+  @IsObject()
+  transitions?: Record<string, string>;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  next?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  retryable?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  maxRetries?: number;
+}
+
+export class WorkflowDefinitionDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  nom: string;
+
+  @ApiPropertyOptional({ enum: ['DRAFT', 'READY', 'ACTIVE', 'PAUSED', 'DEPRECATED', 'ARCHIVED'] })
+  @IsOptional()
+  @IsIn(['DRAFT', 'READY', 'ACTIVE', 'PAUSED', 'DEPRECATED', 'ARCHIVED'])
+  lifecycle?: 'DRAFT' | 'READY' | 'ACTIVE' | 'PAUSED' | 'DEPRECATED' | 'ARCHIVED';
+
+  @ApiPropertyOptional({ default: '1.0' })
+  @IsOptional()
+  @IsString()
+  version?: string;
+
+  @ApiProperty({ type: [WorkflowStepDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WorkflowStepDto)
+  steps: WorkflowStepDto[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  maxSteps?: number;
+}
+
+export class WorkflowLifecycleDto {
+  @ApiProperty({ enum: ['DRAFT', 'READY', 'ACTIVE', 'PAUSED', 'DEPRECATED', 'ARCHIVED'] })
+  @IsIn(['DRAFT', 'READY', 'ACTIVE', 'PAUSED', 'DEPRECATED', 'ARCHIVED'])
+  lifecycle: 'DRAFT' | 'READY' | 'ACTIVE' | 'PAUSED' | 'DEPRECATED' | 'ARCHIVED';
+}

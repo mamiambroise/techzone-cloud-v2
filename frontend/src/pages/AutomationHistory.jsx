@@ -33,8 +33,8 @@ function AutomationHistory() {
   useEffect(() => { fetchData(); }, []);
 
   const metricCards = [
-    { label: 'Exécutions', value: metrics?.totalCount ?? metrics?.total, gradient: 'from-blue-500 to-indigo-600', icon: CircleStackIcon, bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-700' },
-    { label: 'Succès', value: metrics?.successCount, gradient: 'from-emerald-500 to-teal-600', icon: CheckCircleIcon, bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-700' },
+    { label: 'Exécutions', value: metrics?.executionsCount ?? metrics?.totalCount ?? metrics?.total, gradient: 'from-blue-500 to-indigo-600', icon: CircleStackIcon, bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-700' },
+    { label: 'Succès', value: metrics?.succeededCount ?? metrics?.successCount, gradient: 'from-emerald-500 to-teal-600', icon: CheckCircleIcon, bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-700' },
     { label: 'Échecs', value: metrics?.failedCount, gradient: 'from-red-500 to-red-600', icon: XCircleIcon, bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700' },
     { label: 'Timeouts', value: metrics?.timeoutCount, gradient: 'from-amber-500 to-orange-600', icon: ExclamationTriangleIcon, bg: 'bg-amber-50 dark:bg-amber-900/30', text: 'text-amber-700' },
   ];

@@ -1,7 +1,7 @@
 // WF-CDC-03 : Workflow Engine
 // Orchestre une sequence controlee d'etapes, conditions et actions.
 
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import {
   WorkflowStep,
   WorkflowLifecycle,
@@ -54,6 +54,29 @@ export class WorkflowEngine {
     this.logger.log(`Workflow enregistre: ${def.code} (v${def.version}, ${def.steps.length} etapes)`);
   }
 
+  createWorkflow(def: WorkflowDefinition): WorkflowDefinition {
+    if (this.workflows.has(def.code)) {
+      throw new ConflictException(`Workflow "${def.code}" existe deja`);
+    }
+    const workflow = { ...structuredClone(def), lifecycle: 'DRAFT' as const };
+    this.registerWorkflow(workflow);
+    return this.getWorkflow(workflow.code);
+  }
+
+  updateWorkflow(code: string, definition: WorkflowDefinition): WorkflowDefinition {
+    const existing = this.getWorkflow(code);
+    if (definition.code !== code) {
+      throw new BadRequestException('Le code du workflow ne peut pas etre modifie');
+    }
+    const workflow = {
+      ...structuredClone(definition),
+      lifecycle: 'DRAFT' as const,
+      version: definition.version || existing.version,
+    };
+    this.registerWorkflow(workflow);
+    return this.getWorkflow(code);
+  }
+
   getWorkflow(code: string): WorkflowDefinition {
     const wf = this.workflows.get(code);
     if (!wf) throw new NotFoundException(`Workflow "${code}" non trouve`);
@@ -94,6 +117,26 @@ export class WorkflowEngine {
       if (!step.id) { errors.push('Id d etape requis'); continue; }
       if (ids.has(step.id)) errors.push(`Id d etape duplique: ${step.id}`);
       ids.add(step.id);
+
+      if (step.type === 'ACTION') {
+        if (!step.actionRef) errors.push(`Action requise pour l'etape ${step.id}`);
+        else {
+          try {
+            this.actionEngine.getAction(step.actionRef);
+          } catch {
+            errors.push(`Action inconnue "${step.actionRef}" pour l'etape ${step.id}`);
+          }
+        }
+      }
+      if (step.type === 'CONDITION' && !step.condition) {
+        errors.push(`Condition requise pour l'etape ${step.id}`);
+      }
+      if (step.type === 'CONDITION' && (!step.transitions?.YES || !step.transitions?.NO)) {
+        errors.push(`Transitions YES et NO requises pour l'etape ${step.id}`);
+      }
+      if (['START', 'STEP', 'ACTION'].includes(step.type) && !step.next) {
+        errors.push(`Transition next requise pour l'etape ${step.id}`);
+      }
     }
 
     // Exactly one START
@@ -210,6 +253,9 @@ export class WorkflowEngine {
             status: result === 'SUCCEEDED' ? 'SUCCEEDED' : 'FAILED',
             detail: `outcome=${result}`,
           });
+          if (result !== 'SUCCEEDED') {
+            return { success: false, error: `Action "${step.actionRef}" terminee avec le statut ${result}` };
+          }
         } catch (error) {
           const err = error as Error;
           record.timeline.push({
@@ -255,14 +301,22 @@ export class WorkflowEngine {
   }
 
   getExecutions(): WorkflowExecutionRecord[] {
-    return Array.from(this.executions.values());
+    return Array.from(this.executions.values()).reverse();
   }
 
   setLifecycle(code: string, lifecycle: WorkflowLifecycle): void {
     const wf = this.getWorkflow(code);
+    if (lifecycle === 'READY' || lifecycle === 'ACTIVE') {
+      const validation = this.validateWorkflow(wf);
+      if (!validation.valid) {
+        throw new BadRequestException(`Workflow invalide: ${validation.errors.join('; ')}`);
+      }
+    }
+    if (wf.lifecycle === 'ARCHIVED' && lifecycle !== 'ARCHIVED') {
+      throw new BadRequestException('Un workflow archive ne peut pas etre reactive');
+    }
     wf.lifecycle = lifecycle;
     this.workflows.set(code, wf);
     this.logger.log(`Workflow ${code} lifecycle -> ${lifecycle}`);
   }
 }
-

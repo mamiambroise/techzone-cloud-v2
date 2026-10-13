@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Param, Logger, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { RulesEngine } from './rules/rules.engine';
@@ -6,12 +6,15 @@ import { WorkflowEngine } from './workflow/workflow.engine';
 import { TriggerEngine } from './trigger/trigger.engine';
 import { AutomationHistoryService } from './history/automation-history.service';
 import { ConditionsEngine } from './conditions/conditions.engine';
+import { ActionEngine } from './action/action.engine';
 import { AutomationContext } from './interfaces/automation.contract';
 import {
   EventPayloadDto,
   SimulateRuleDto,
   StartWorkflowDto,
   FireTriggerDto,
+  WorkflowDefinitionDto,
+  WorkflowLifecycleDto,
 } from './dto/automation.dto';
 import { CurrentUser } from '../iam/decorators/current-user.decorator';
 import type { IamAuthContext } from '../iam/decorators/current-user.decorator';
@@ -30,6 +33,7 @@ export class AutomationController {
     private readonly triggerEngine: TriggerEngine,
     private readonly historyService: AutomationHistoryService,
     private readonly conditionsEngine: ConditionsEngine,
+    private readonly actionEngine: ActionEngine,
   ) {}
 
   // === CONTRACT / COCKPIT (WF-CDC-00 / WF-CDC-01) ===
@@ -78,8 +82,16 @@ export class AutomationController {
       rules: this.rulesEngine.getRules(),
       workflows: this.workflowEngine.getWorkflows(),
       triggers: this.triggerEngine.getTriggers(),
+      actions: this.actionEngine.getActions().map(({ handler: _handler, ...action }) => action),
       health: { status: 'UP' },
     };
+  }
+
+  @Get('actions')
+  @Permissions(AUTOMATION_READ)
+  @ApiOperation({ summary: 'Lister les actions disponibles' })
+  async getActions() {
+    return this.actionEngine.getActions().map(({ handler: _handler, ...action }) => action);
   }
 
   // === RULES (WF-CDC-02) ===
@@ -123,9 +135,48 @@ export class AutomationController {
   // === WORKFLOW (WF-CDC-03) ===
 
   @Get('workflows')
+  @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Lister les workflows' })
   async getWorkflows() {
     return this.workflowEngine.getWorkflows();
+  }
+
+  @Post('workflows')
+  @Permissions(AUTOMATION_EXECUTE)
+  @ApiOperation({ summary: 'Creer un workflow en brouillon' })
+  async createWorkflow(@Body() dto: WorkflowDefinitionDto) {
+    return this.workflowEngine.createWorkflow({
+      ...dto,
+      lifecycle: 'DRAFT',
+      version: dto.version || '1.0',
+    });
+  }
+
+  @Put('workflows/:code')
+  @Permissions(AUTOMATION_EXECUTE)
+  @ApiOperation({ summary: 'Modifier un workflow' })
+  async updateWorkflow(@Param('code') code: string, @Body() dto: WorkflowDefinitionDto) {
+    return this.workflowEngine.updateWorkflow(code, {
+      ...dto,
+      lifecycle: 'DRAFT',
+      version: dto.version || '1.0',
+    });
+  }
+
+  @Post('workflows/:code/validate')
+  @Permissions(AUTOMATION_EXECUTE)
+  @ApiOperation({ summary: 'Valider la definition d un workflow' })
+  async validateWorkflow(@Param('code') code: string) {
+    const workflow = this.workflowEngine.getWorkflow(code);
+    return this.workflowEngine.validateWorkflow(workflow);
+  }
+
+  @Patch('workflows/:code/lifecycle')
+  @Permissions(AUTOMATION_EXECUTE)
+  @ApiOperation({ summary: 'Modifier le cycle de vie d un workflow' })
+  async setWorkflowLifecycle(@Param('code') code: string, @Body() dto: WorkflowLifecycleDto) {
+    this.workflowEngine.setLifecycle(code, dto.lifecycle);
+    return this.workflowEngine.getWorkflow(code);
   }
 
   @Post('workflows/start')
@@ -263,6 +314,5 @@ export class AutomationController {
     return (req as any).traceId || `tr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 10)}`;
   }
 }
-
 
 

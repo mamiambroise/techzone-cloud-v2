@@ -56,6 +56,50 @@ describe('WorkflowEngine', () => {
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.includes('inconnue'))).toBe(true);
     });
+
+    it('should reject workflow actions that are not registered', () => {
+      const invalid: WorkflowDefinition = {
+        ...workflow,
+        code: 'wf.bad-action',
+        steps: [
+          { id: 'start', type: 'START', next: 'act' },
+          { id: 'act', type: 'ACTION', actionRef: 'unknown.action', next: 'end' },
+          { id: 'end', type: 'END' },
+        ],
+      };
+      expect(workflowEngine.validateWorkflow(invalid)).toEqual({
+        valid: false,
+        errors: ['Action inconnue "unknown.action" pour l\'etape act'],
+      });
+    });
+
+    it('should create workflows as drafts and reject duplicate codes', () => {
+      const draft: WorkflowDefinition = {
+        ...workflow,
+        code: 'wf.created',
+        lifecycle: 'ACTIVE',
+      };
+      expect(workflowEngine.createWorkflow(draft).lifecycle).toBe('DRAFT');
+      expect(() => workflowEngine.createWorkflow(draft)).toThrow('existe deja');
+    });
+
+    it('should save edits as drafts and refuse to change the workflow code', () => {
+      const edited = workflowEngine.updateWorkflow('wf.simple', {
+        ...workflow,
+        nom: 'Workflow modifie',
+      });
+      expect(edited.nom).toBe('Workflow modifie');
+      expect(edited.lifecycle).toBe('DRAFT');
+      expect(() => workflowEngine.updateWorkflow('wf.simple', {
+        ...workflow,
+        code: 'wf.changed',
+      })).toThrow('ne peut pas etre modifie');
+    });
+
+    it('should refuse to activate invalid workflow definitions', () => {
+      workflowEngine.getWorkflow('wf.simple').steps[0].next = 'missing';
+      expect(() => workflowEngine.setLifecycle('wf.simple', 'ACTIVE')).toThrow('Workflow invalide');
+    });
   });
 
   describe('execution', () => {
@@ -89,6 +133,25 @@ describe('WorkflowEngine', () => {
       workflowEngine.registerWorkflow(loopWf);
       const rec = await workflowEngine.startWorkflow('wf.loop', ctx);
       expect(rec.status).toBe('FAILED');
+    });
+
+    it('should stop the workflow when an action reports failure', async () => {
+      const failingActionEngine = new ActionEngine();
+      failingActionEngine.registerAction({
+        code: 'send.notification',
+        category: 'NOTIFICATION',
+        retryable: false,
+        timeout: 1000,
+        idempotent: false,
+        version: '1.0',
+        handler: async () => ({ success: false, error: 'notification rejected' }),
+      });
+      const engineWithFailingAction = new WorkflowEngine(new ConditionsEngine(), failingActionEngine);
+      engineWithFailingAction.registerWorkflow(workflow);
+
+      const rec = await engineWithFailingAction.startWorkflow('wf.simple', ctx);
+      expect(rec.status).toBe('FAILED');
+      expect(rec.timeline.some((entry) => entry.status === 'FAILED')).toBe(true);
     });
   });
 
