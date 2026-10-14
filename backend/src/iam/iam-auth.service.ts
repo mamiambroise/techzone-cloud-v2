@@ -28,6 +28,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import type { IamAuthContext } from './decorators/current-user.decorator';
 import { IamContextService } from './iam-context.service';
 import { IamAuthorizationService } from './iam-authorization.service';
+import { IamMfaService } from './iam-mfa.service';
+import { IamThrottleService, SECURITY_LOCKOUT } from './iam-throttle.service';
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 
@@ -48,6 +50,8 @@ export class IamAuthService {
     private readonly mailService: MailService,
     private readonly contextService: IamContextService,
     private readonly authorization: IamAuthorizationService,
+    private readonly mfaService: IamMfaService,
+    private readonly throttle: IamThrottleService,
   ) {}
 
   // ================= Helpers =================
@@ -166,19 +170,46 @@ export class IamAuthService {
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     this.assertEnv();
 
+    // LOT 4 : brute force protection AVANT toute vérification de credential
+    // (RG-IAM-011). Verrous par identité (identifier réel) et par IP.
+    const loginIpKey = `ip:${ipAddress ?? 'unknown'}`;
+    const loginIdentKey = `ident:${(dto.identifier ?? '').trim().toLowerCase()}`;
+    this.throttle.assertNotLocked('login', loginIpKey);
+    this.throttle.assertNotLocked('login', loginIdentKey);
+
+    const recordLoginFailure = (userId?: string) => {
+      const policy = {
+        maxAttempts: SECURITY_LOCKOUT.LOGIN_MAX_ATTEMPTS,
+        windowMs: SECURITY_LOCKOUT.LOGIN_WINDOW_MS,
+        lockMs: SECURITY_LOCKOUT.LOGIN_LOCK_MS,
+      };
+      return Promise.all([
+        this.throttle.recordFailure('login', loginIpKey, policy, { userId }),
+        userId
+          ? this.throttle.recordFailure('login', loginIdentKey, policy, { userId })
+          : Promise.resolve(false),
+      ]);
+    };
+
     const user = await this.prisma.iamUser.findFirst({
       where: { OR: [{ username: dto.identifier }, { primaryEmail: dto.identifier }] },
     });
     if (!user) {
+      // Un identifiant inexistant ne lock jamais la clé identité (jeu de
+      // poison possible) : seul l'IP devient limité.
+      await recordLoginFailure();
       throw new IamError('Identifiants invalides', 401, 'INVALID_CREDENTIALS');
     }
 
     const isValid = await this.verifyPasswordCredential(user.id, dto.password);
     if (!isValid) {
+      await recordLoginFailure(user.id);
       throw new IamError('Identifiants invalides', 401, 'INVALID_CREDENTIALS');
     }
 
     this.assertUserIsActive(user);
+    this.throttle.recordSuccess('login', loginIpKey);
+    this.throttle.recordSuccess('login', loginIdentKey);
 
     const mfaEnabled = await this.hasMfaEnabled(user.id);
     if (mfaEnabled) {
@@ -188,10 +219,16 @@ export class IamAuthService {
         name: dto.deviceName,
         deviceType: dto.deviceType,
       });
+      // Le mot de passe est validé : on émet un challenge MFA opaque,
+      // one-time, TTL, lié au login attempt. Aucune session n'est créée ici.
+      const ipHash = ipAddress ? hashValue(ipAddress) : null;
+      const challenge = await this.mfaService.issueLoginChallenge(user.id, device.id, ipHash);
       return {
         mfaRequired: true,
         user: this.sanitizeUser(user),
         deviceId: device.id,
+        mfaChallengeToken: challenge.token,
+        mfaChallengeExpiresAt: challenge.expiresAt,
       };
     }
 
@@ -225,44 +262,43 @@ export class IamAuthService {
     };
   }
 
-  // ================= MFA Challenge =================
+  // ================= MFA Challenge (challenge opaque obligatoire) =================
 
-  async mfaChallenge(identifier: string, code: string, rememberDevice = false) {
+  /**
+   * Vérifie le code MFA contre UN challenge opaque émis après validation du
+   * mot de passe (voir `login`). Le challenge est consommé de manière
+   * atomique AVANT toute création de session : pas de session pré-MFA, pas
+   * de replay, pas de bruteforce TOTP sans challenge.
+   */
+  async mfaChallenge(
+    challengeToken: string,
+    code: string,
+    recoveryCode?: string | null,
+    rememberDevice = false,
+  ) {
     this.assertEnv();
 
-    const user = await this.prisma.iamUser.findFirst({
-      where: { OR: [{ username: identifier }, { primaryEmail: identifier }] },
-    });
+    const confirmed = await this.mfaService.validateLoginChallenge(
+      challengeToken,
+      code,
+      recoveryCode,
+    );
+
+    const user = await this.prisma.iamUser.findUnique({ where: { id: confirmed.userId } });
     if (!user) {
       throw new IamError('Identifiants invalides', 401, 'INVALID_CREDENTIALS');
     }
 
     this.assertUserIsActive(user);
 
-    const verificationResult = await this.verifyMfaCode(user.id, code);
-    if (!verificationResult.verified) {
-      await this.prisma.securityEvent.create({
-        data: {
-          type: 'MFA_FAILURE',
-          severity: 'MEDIUM',
-          userId: user.id,
-          source: 'MFA_AUTH',
-          metadata: { code: 'MFA_INVALID_CODE' },
-        },
-      });
-      throw new IamError('Code MFA invalide', 401, 'MFA_INVALID_CODE');
-    }
-
-    const deviceId = verificationResult.deviceId;
-
     await this.prisma.securityEvent.create({
       data: {
-        type: 'MFA_SUCCESS',
+        type: 'auth.mfa.success',
         severity: 'INFO',
         userId: user.id,
-        deviceId: deviceId ?? null,
+        deviceId: confirmed.deviceId ?? null,
         source: 'MFA_AUTH',
-        metadata: { rememberDevice },
+        metadata: { rememberDevice: Boolean(rememberDevice) },
       },
     });
 
@@ -273,7 +309,7 @@ export class IamAuthService {
       siteId: undefined,
       applicationId: undefined,
       environment: undefined,
-      deviceId: deviceId ?? (await this.registerDeviceForUser(user.id)).id,
+      deviceId: confirmed.deviceId ?? (await this.registerDeviceForUser(user.id)).id,
       ipAddress: undefined,
       userAgent: undefined,
       authenticationLevel: 'MFA',
@@ -295,34 +331,6 @@ export class IamAuthService {
       where: { userId, enabled: true },
     });
     return count > 0;
-  }
-
-  private async verifyMfaCode(userId: string, code: string): Promise<{ verified: boolean; deviceId?: string }> {
-    const methods = await this.prisma.mfaMethod.findMany({
-      where: { userId, enabled: true },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    for (const method of methods) {
-      if (method.type === 'TOTP') {
-        if (this.verifyTotpCode(code, method.secretRef)) {
-          await this.prisma.mfaMethod.update({
-            where: { id: method.id },
-            data: { lastUsedAt: new Date() },
-          });
-          return { verified: true };
-        }
-      }
-    }
-
-    return { verified: false };
-  }
-
-  private verifyTotpCode(code: string, secretRef: string | null): boolean {
-    if (!secretRef) return false;
-    const digits = code.replace(/\D/g, '');
-    if (digits.length !== 6) return false;
-    return digits === '000000';
   }
 
   private async registerDeviceForUser(userId: string) {
@@ -426,6 +434,10 @@ export class IamAuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     this.assertEnv();
 
+    // LOT 4 : le flux recovery est protégé (seuil fenêtre + lock temporaire).
+    const recoveryKey = `ident:${(dto.identifier ?? '').trim().toLowerCase()}`;
+    this.throttle.assertNotLocked('recovery', recoveryKey);
+
     const user = await this.findUserForPasswordReset(dto.identifier);
     if (!user || user.status === 'ARCHIVED' || user.status === 'DISABLED') {
       return { success: true, message: 'Si le compte existe, un email de réinitialisation a été envoyé.' };
@@ -472,6 +484,14 @@ export class IamAuthService {
       subject: 'Réinitialisation de votre mot de passe — Techzone Cloud',
       html,
     });
+
+    // Chaque demande compte une tentative : au-delà du seuil, le flux est
+    // verrouillé temporairement (protection de flood + user enumeration).
+    await this.throttle.recordFailure('recovery', recoveryKey, {
+      maxAttempts: SECURITY_LOCKOUT.RECOVERY_MAX_ATTEMPTS,
+      windowMs: SECURITY_LOCKOUT.RECOVERY_WINDOW_MS,
+      lockMs: SECURITY_LOCKOUT.RECOVERY_LOCK_MS,
+    }, { userId: user.id });
 
     if (!sent) {
       await this.prisma.iamUser.update({
@@ -734,14 +754,36 @@ export class IamAuthService {
     const now = new Date();
     const { idleExpiresAt, expiresAt } = this.computeExpirations(now);
 
-    const resolvedTenantId = tenantId ?? (await this.resolveTenantId(userId));
+    // RG-IAM-018 : le tenantId proposé par le client n'est jamais une
+    // autorité. Sans membership ACTIVE (tenant/organization/site actifs) sur
+    // le tenant demandé, aucune session n'est créée.
+    let resolvedTenantId: string | null = null;
+    let resolvedOrganizationId: string | null = organizationId ?? null;
+    let resolvedSiteId: string | null = siteId ?? null;
+    if (tenantId) {
+      const membership = await this.contextService.assertTenantAccess(userId, tenantId, {
+        organizationId,
+        siteId,
+      });
+      resolvedTenantId = tenantId;
+      resolvedOrganizationId = membership.organizationId ?? resolvedOrganizationId;
+      resolvedSiteId = membership.siteId ?? resolvedSiteId;
+    } else {
+      resolvedTenantId = await this.resolveTenantId(userId);
+      if (resolvedTenantId) {
+        // Le tenant par défaut doit lui aussi rester autorisé au moment du login.
+        const membership = await this.contextService.assertTenantAccess(userId, resolvedTenantId);
+        resolvedOrganizationId = membership.organizationId ?? resolvedOrganizationId;
+        resolvedSiteId = membership.siteId ?? resolvedSiteId;
+      }
+    }
 
     return this.prisma.iamSession.create({
       data: {
         userId,
         tenantId: resolvedTenantId ?? null,
-        organizationId: organizationId ?? null,
-        siteId: siteId ?? null,
+        organizationId: resolvedOrganizationId,
+        siteId: resolvedSiteId,
         applicationId: applicationId ?? null,
         environment: environment ? (environment as any) : null,
         deviceId,

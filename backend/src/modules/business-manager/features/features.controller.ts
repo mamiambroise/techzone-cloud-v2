@@ -28,7 +28,7 @@ import {
   UpdateCapabilityDto,
 } from './dto/create-feature.dto';
 
-@TenantResource({ table: 'bm_feature', idParam: 'featureId' })
+@TenantResource({ table: 'bmFeature', idParam: 'featureId' })
 @UseGuards(BmTenantGuard, TenantGuard)
 @Controller('api/business-manager/features')
 export class FeaturesController {

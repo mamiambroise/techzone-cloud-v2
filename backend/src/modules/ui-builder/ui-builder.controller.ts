@@ -54,7 +54,7 @@ import { UI_BUILDER_READ, UI_BUILDER_VALIDATE, UI_BUILDER_WRITE } from '../../ia
 // appliquée par TenantGuard, pas par le format de l'identifiant.
 export const UUID = new ParseUUIDPipe();
 
-@TenantResource({ table: 'ui_page', idParam: 'pageId' })
+@TenantResource({ table: 'uiPage', idParam: 'pageId' })
 @UseGuards(BmTenantGuard, TenantGuard)
 @Controller('api/ui-builder')
 export class UiBuilderController {

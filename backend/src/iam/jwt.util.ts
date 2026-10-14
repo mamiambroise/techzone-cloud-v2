@@ -42,17 +42,40 @@ export interface AccessTokenPayload {
   iss?: string;
 }
 
+export const IAM_AUDIENCE = 'techzone-cloud-api';
+
 export function signAccessToken(payload: AccessTokenPayload): string {
-  return jwt.sign({ ...payload, type: 'access' }, getAccessSecret(), {
-    expiresIn: JWT_ACCESS_TTL as any,
-  });
+  return jwt.sign(
+    {
+      ...payload,
+      type: 'access',
+      // LOT 5 : identité stricte du jeton émis (LOT 15 audite). Un token
+      // sans issuer/audience émis par une autre chaîne est refusé au
+      // dépouillement d'échanges ci-dessous.
+      iss: IAM_ISSUER,
+      aud: IAM_AUDIENCE,
+    },
+    getAccessSecret(),
+    { expiresIn: JWT_ACCESS_TTL as any, algorithm: 'HS256' },
+  );
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  const decoded = jwt.verify(token, getAccessSecret(), { algorithms: ['HS256'] }) as jwt.JwtPayload;
-  if (!decoded.userId || !decoded.sessionId || decoded.purpose ||
-      (decoded.iss && decoded.iss !== IAM_ISSUER) ||
-      (!decoded.iss && decoded.type !== 'access')) throw new Error('Invalid access token');
+  const decoded = jwt.verify(token, getAccessSecret(), {
+    algorithms: ['HS256'],
+    // Fail-closed : iss/aud sont obligatoires et doivent correspondre ;
+    // 'alg: none' et les autres algorithmes sont déjà exclus ci-dessus.
+    issuer: IAM_ISSUER,
+    audience: IAM_AUDIENCE,
+  }) as jwt.JwtPayload;
+  if (
+    !decoded.userId ||
+    !decoded.sessionId ||
+    decoded.purpose ||
+    decoded.type !== 'access'
+  ) {
+    throw new Error('Invalid access token');
+  }
   return decoded as AccessTokenPayload;
 }
 

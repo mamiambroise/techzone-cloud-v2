@@ -6,6 +6,62 @@ import { IamError } from './iam-error';
 export class IamContextService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * RG-IAM-018 : le `tenantId` qui vient du frontend n'est jamais une
+   * autorité. Toute session/commutation sur un tenant passe ici : membership
+   * ACTIVE, fenêtre de validité, puis statuts tenant / organisation / site.
+   * Toute valeur invalide est un DENY (fail-closed).
+   */
+  async assertTenantAccess(
+    userId: string,
+    tenantId: string,
+    requested?: { organizationId?: string | null; siteId?: string | null },
+  ) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId, tenantId, status: 'ACTIVE' },
+      include: {
+        tenant: { select: { id: true, status: true } },
+        organization: { select: { id: true, status: true } },
+        site: { select: { id: true, status: true } },
+      },
+    });
+    if (!membership) {
+      throw new IamError(
+        'Appartenance au locataire non active',
+        403,
+        'TENANT_ACCESS_DENIED',
+      );
+    }
+
+    const now = new Date();
+    if (membership.validFrom && membership.validFrom > now) {
+      throw new IamError('Appartenance pas encore valide', 403, 'TENANT_ACCESS_DENIED');
+    }
+    if (membership.validUntil && membership.validUntil < now) {
+      throw new IamError('Appartenance expirée', 403, 'TENANT_ACCESS_DENIED');
+    }
+    if (membership.tenant.status !== 'ACTIVE') {
+      throw new IamError('Locataire non actif', 403, 'TENANT_ACCESS_DENIED');
+    }
+    if (membership.organizationId && membership.organization?.status !== 'ACTIVE') {
+      throw new IamError('Organisation non active', 403, 'TENANT_ACCESS_DENIED');
+    }
+    if (membership.siteId && membership.site?.status !== 'ACTIVE') {
+      throw new IamError('Site non actif', 403, 'TENANT_ACCESS_DENIED');
+    }
+
+    // La requête ne peut pas suggérer un org/site hors de son membership :
+    // forge cross-tenant interdite.
+    if (requested?.organizationId && requested.organizationId !== membership.organizationId) {
+      throw new IamError('Contexte organisation non autorisé', 403, 'CONTEXT_ACCESS_DENIED');
+    }
+    if (requested?.siteId && requested.siteId !== membership.siteId) {
+      throw new IamError('Contexte site non autorisé', 403, 'CONTEXT_ACCESS_DENIED');
+    }
+
+    return membership;
+  }
+
   async resolveContext(userId: string, sessionId: string, source = 'ERP_API') {
     const session = await this.prisma.iamSession.findUnique({
       where: { id: sessionId },
@@ -118,14 +174,12 @@ export class IamContextService {
     return memberships.map((m) => m.tenant);
   }
 
-  async switchTenant(userId: string, tenantId: string) {
-    const membership = await this.prisma.membership.findFirst({
-      where: { userId, tenantId, status: 'ACTIVE' },
-      include: { tenant: true },
-    });
-    if (!membership) {
-      throw new IamError('Appartenance au locataire non active', 403, 'TENANT_ACCESS_DENIED');
-    }
+  async switchTenant(
+    userId: string,
+    tenantId: string,
+    requested?: { organizationId?: string | null; siteId?: string | null },
+  ) {
+    const membership = await this.assertTenantAccess(userId, tenantId, requested);
     return { tenantId, organizationId: membership.organizationId ?? null, siteId: membership.siteId ?? null };
   }
 

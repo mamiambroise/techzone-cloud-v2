@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IamMfaService } from './iam-mfa.service';
+import { IamAuthService } from './iam-auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { Public } from './decorators/public.decorator';
 import { IamJwtGuard } from './iam-jwt.guard';
@@ -14,6 +15,7 @@ export class IamMfaController {
   constructor(
     private readonly mfaService: IamMfaService,
     private readonly prisma: PrismaService,
+    private readonly authService: IamAuthService,
   ) {}
 
   @Get('methods')
@@ -58,9 +60,24 @@ export class IamMfaController {
 
   @Post('challenge/verify')
   @Public()
-  @ApiOperation({ summary: 'Vérifier un challenge MFA' })
-  async verifyChallenge(@Body() body: { identifier: string; code: string; recoveryCode?: string; rememberDevice?: boolean }) {
-    const data = await this.mfaService.verifyMfaChallenge(body.identifier, body.code, body.recoveryCode, body.rememberDevice);
+  @ApiOperation({
+    summary: 'Vérifier un challenge MFA (challenge opaque émis par /auth/login)',
+  })
+  async verifyChallenge(
+    @Body()
+    body: { challengeToken?: string; identifier?: string; code: string; recoveryCode?: string; rememberDevice?: boolean },
+  ) {
+    // Fail-closed : l'ancien flux « identifier + code » (sans challenge et
+    // sans preuve de login) est supprimé. Un seul chemin : le challenge.
+    if (!body.challengeToken) {
+      await this.mfaService.verifyMfaChallenge();
+    }
+    const data = await this.authService.mfaChallenge(
+      body.challengeToken!,
+      body.code,
+      body.recoveryCode ?? null,
+      body.rememberDevice ?? false,
+    );
     return { success: true, message: 'MFA vérifiée', data };
   }
 
