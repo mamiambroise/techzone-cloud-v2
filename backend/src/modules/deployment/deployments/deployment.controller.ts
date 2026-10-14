@@ -6,73 +6,62 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
-  ForbiddenException,
 } from '@nestjs/common';
-import { CurrentUser } from '../../../iam/decorators/current-user.decorator';
-import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
-import { Permissions } from '../../../iam/iam-permissions.guard';
+import { RequirePermission } from '../../../iam/permission.decorator';
 import { PERMISSIONS } from '../../../iam/iam.constants';
+import { TenantResource } from '../../../iam/tenant-resource.decorator';
 import { DeploymentService } from './deployment.service';
 import { CreateDeploymentDto } from './dto/create-deployment.dto';
 import { QueryDeploymentDto } from './dto/query-deployment.dto';
 import { VerifyDeploymentDto } from './dto/verify-deployment.dto';
 
 @Controller('api/deployments')
+@TenantResource({ table: 'deployment' })
 export class DeploymentController {
   constructor(private readonly deploymentService: DeploymentService) {}
 
   @Post()
-  @Permissions(PERMISSIONS.DEPLOYMENT_CREATE, PERMISSIONS.DEPLOYMENT_EXECUTE)
-  create(
-    @Body() dto: CreateDeploymentDto,
-    @CurrentUser() principal: IamAuthContext,
-  ) {
-    return this.deploymentService.create(dto, principal.tenantId, principal.userId);
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_CREATE)
+  create(@Body() dto: CreateDeploymentDto) {
+    return this.deploymentService.create(dto);
   }
 
   @Get()
-  @Permissions(PERMISSIONS.DEPLOYMENT_READ)
-  findAll(
-    @Query() query: QueryDeploymentDto,
-    @CurrentUser() principal: IamAuthContext,
-  ) {
-    return this.deploymentService.findAll(query, principal.tenantId);
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
+  findAll(@Query() query: QueryDeploymentDto) {
+    return this.deploymentService.findAll(query);
   }
 
   @Get(':id')
-  @Permissions(PERMISSIONS.DEPLOYMENT_READ)
-  findOne(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @CurrentUser() principal: IamAuthContext,
-  ) {
-    return this.deploymentService.findOne(id, principal.tenantId);
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.deploymentService.findOne(id);
   }
 
   @Post(':id/verify')
-  @Permissions(PERMISSIONS.DEPLOYMENT_READ)
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_DIAGNOSTICS)
   verify(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: VerifyDeploymentDto,
-    @CurrentUser() principal: IamAuthContext,
   ) {
-    return this.deploymentService.verify(id, dto, principal.tenantId);
+    return this.deploymentService.verify(id, dto);
   }
 
   @Post(':id/cancel')
-  @Permissions(PERMISSIONS.DEPLOYMENT_CANCEL)
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_CANCEL)
   cancel(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @CurrentUser() principal: IamAuthContext,
+    @Body('actor') actor?: string,
   ) {
-    return this.deploymentService.cancel(id, principal.tenantId, principal.userId);
+    return this.deploymentService.cancel(id, actor);
   }
 
   @Post(':id/retry')
-  @Permissions(PERMISSIONS.DEPLOYMENT_RETRY, PERMISSIONS.DEPLOYMENT_EXECUTE)
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_RETRY)
   retry(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @CurrentUser() principal: IamAuthContext,
+    @Body('actor') actor?: string,
   ) {
-    return this.deploymentService.retry(id, principal.tenantId, principal.userId);
+    return this.deploymentService.retry(id, actor);
   }
 }

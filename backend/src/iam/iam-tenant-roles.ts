@@ -24,9 +24,8 @@ export type TenantRoleCode =
   (typeof TENANT_ROLE_CODES)[keyof typeof TENANT_ROLE_CODES];
 
 /**
- * Permissions de lecture communes à tout membre d'un tenant. C'est exactement
- * l'historique `ROLE_PERMISSIONS[ROLES.USER]` : la Phase 8 ne doit ni retirer
- * ni ajouter de visibilité à un membre sans rôle.
+ * Permissions de lecture communes à tout membre d'un tenant. Les surfaces
+ * Environment/Deployment sont tenant-scoped et en lecture seule par défaut.
  */
 const TENANT_USER_PERMISSIONS: string[] = [
   PERMISSIONS.ERP_READ,
@@ -44,6 +43,8 @@ const TENANT_USER_PERMISSIONS: string[] = [
   PERMISSIONS.BILLING_INVOICE_READ,
   PERMISSIONS.BILLING_PAYMENT_READ,
   PERMISSIONS.BILLING_USAGE_READ,
+  PERMISSIONS.ENVIRONMENT_READ,
+  PERMISSIONS.DEPLOYMENT_READ,
 ];
 
 /**
@@ -111,6 +112,16 @@ const APPLICATION_MANAGER_EXTRA_PERMISSIONS: string[] = [
   PERMISSIONS.RUNTIME_PROVIDER_PROBE,
   PERMISSIONS.RUNTIME_RESILIENCE_READ,
   PERMISSIONS.RUNTIME_DIAGNOSTIC_READ,
+  // Environment & Deployment : opérations applicatives, limitées au tenant.
+  PERMISSIONS.ENVIRONMENT_CREATE,
+  PERMISSIONS.ENVIRONMENT_UPDATE,
+  PERMISSIONS.ENVIRONMENT_DISABLE,
+  PERMISSIONS.DEPLOYMENT_CREATE,
+  PERMISSIONS.DEPLOYMENT_EXECUTE,
+  PERMISSIONS.DEPLOYMENT_CANCEL,
+  PERMISSIONS.DEPLOYMENT_RETRY,
+  PERMISSIONS.DEPLOYMENT_ROLLBACK,
+  PERMISSIONS.DEPLOYMENT_DIAGNOSTICS,
 ];
 
 const APPLICATION_MANAGER_PERMISSIONS: string[] = Array.from(

@@ -4,77 +4,60 @@ import {
   Get,
   Param,
   Post,
-  ForbiddenException,
 } from '@nestjs/common';
-import { CurrentUser } from '../../../iam/decorators/current-user.decorator';
-import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
-import { Permissions } from '../../../iam/iam-permissions.guard';
+import { RequirePermission } from '../../../iam/permission.decorator';
 import { PERMISSIONS } from '../../../iam/iam.constants';
+import { TenantResource } from '../../../iam/tenant-resource.decorator';
 import { EnvironmentDeploymentService } from './environment-deployment.service';
 import { PromoteReleaseDto } from './dto/promote-release.dto';
 import { LockEnvironmentDto } from './dto/lock-environment.dto';
 
 @Controller('api/deployment/environments')
+@TenantResource({ table: 'environment', idParam: 'environmentId' })
 export class EnvironmentDeploymentController {
   constructor(
     private readonly envDeploymentService: EnvironmentDeploymentService,
   ) {}
 
   @Get()
-  @Permissions(PERMISSIONS.ENVIRONMENT_READ)
-  findAll(@CurrentUser() principal: IamAuthContext) {
-    if (!principal.tenantId) throw new ForbiddenException('Tenant context required');
-    return this.envDeploymentService.findAll(principal.tenantId);
+  @RequirePermission(PERMISSIONS.ENVIRONMENT_READ)
+  findAll() {
+    return this.envDeploymentService.findAll();
   }
 
   @Post('promote')
-  @Permissions(PERMISSIONS.DEPLOYMENT_CREATE, PERMISSIONS.DEPLOYMENT_EXECUTE)
-  promote(
-    @Body() dto: PromoteReleaseDto,
-    @CurrentUser() principal: IamAuthContext,
-  ) {
-    if (!principal.tenantId) throw new ForbiddenException('Tenant context required');
-    return this.envDeploymentService.promote(dto, principal.tenantId, principal.userId);
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_EXECUTE)
+  promote(@Body() dto: PromoteReleaseDto) {
+    return this.envDeploymentService.promote(dto);
   }
 
   @Get(':environmentId/status')
-  @Permissions(PERMISSIONS.ENVIRONMENT_READ)
-  getStatus(
-    @Param('environmentId') environmentId: string,
-    @CurrentUser() principal: IamAuthContext,
-  ) {
-    if (!principal.tenantId) throw new ForbiddenException('Tenant context required');
-    return this.envDeploymentService.getStatus(environmentId, principal.tenantId);
+  @RequirePermission(PERMISSIONS.ENVIRONMENT_READ)
+  getStatus(@Param('environmentId') environmentId: string) {
+    return this.envDeploymentService.getStatus(environmentId);
   }
 
   @Post(':environmentId/lock')
-  @Permissions(PERMISSIONS.ENVIRONMENT_UPDATE)
+  @RequirePermission(PERMISSIONS.ENVIRONMENT_UPDATE)
   lock(
     @Param('environmentId') environmentId: string,
     @Body() dto: LockEnvironmentDto,
-    @CurrentUser() principal: IamAuthContext,
   ) {
-    if (!principal.tenantId) throw new ForbiddenException('Tenant context required');
-    return this.envDeploymentService.lock(environmentId, dto, principal.tenantId, principal.userId);
+    return this.envDeploymentService.lock(environmentId, dto);
   }
 
   @Post(':environmentId/unlock')
-  @Permissions(PERMISSIONS.ENVIRONMENT_UPDATE)
+  @RequirePermission(PERMISSIONS.ENVIRONMENT_UPDATE)
   unlock(
     @Param('environmentId') environmentId: string,
-    @CurrentUser() principal: IamAuthContext,
+    @Body('actor') actor?: string,
   ) {
-    if (!principal.tenantId) throw new ForbiddenException('Tenant context required');
-    return this.envDeploymentService.unlock(environmentId, principal.tenantId, principal.userId);
+    return this.envDeploymentService.unlock(environmentId, actor);
   }
 
   @Get(':environmentId/drift')
-  @Permissions(PERMISSIONS.ENVIRONMENT_READ)
-  detectDrift(
-    @Param('environmentId') environmentId: string,
-    @CurrentUser() principal: IamAuthContext,
-  ) {
-    if (!principal.tenantId) throw new ForbiddenException('Tenant context required');
-    return this.envDeploymentService.detectDrift(environmentId, principal.tenantId);
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_DIAGNOSTICS)
+  detectDrift(@Param('environmentId') environmentId: string) {
+    return this.envDeploymentService.detectDrift(environmentId);
   }
 }
