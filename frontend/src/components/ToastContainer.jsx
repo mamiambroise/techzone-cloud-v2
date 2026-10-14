@@ -24,11 +24,16 @@ export default function ToastContainer() {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-md w-full pointer-events-none px-4 sm:px-0">
+    <div
+      className="fixed bottom-5 right-5 z-50 flex w-full max-w-md flex-col gap-2.5 px-4 pointer-events-none sm:px-0"
+      aria-live="polite"
+      aria-label="Notifications"
+    >
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl border shadow-xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-2 ${
+          role={toast.type === 'error' ? 'alert' : 'status'}
+          className={`pointer-events-auto flex items-start gap-3 rounded-[var(--radius-xl)] border p-4 shadow-[var(--shadow-card-hover)] backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-2 ${
             borderMap[toast.type] || borderMap.info
           }`}
         >
@@ -38,9 +43,10 @@ export default function ToastContainer() {
             <div className="text-xs text-slate-600 mt-0.5 leading-relaxed">{toast.message}</div>
           </div>
           <button
+            type="button"
             onClick={() => dispatch(removeToast(toast.id))}
             className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
-            title="Fermer"
+            aria-label={`Fermer la notification${toast.title ? ` : ${toast.title}` : ''}`}
           >
             <X className="w-4 h-4" />
           </button>

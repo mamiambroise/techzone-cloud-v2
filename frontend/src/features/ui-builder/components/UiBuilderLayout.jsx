@@ -117,7 +117,7 @@ export default function UiBuilderLayout({ subTab, children }) {
         </div>
       </header>
 
-      <nav aria-label="Sections UI Builder" className="flex flex-wrap gap-1 border-b border-slate-200">
+      <nav aria-label="Sections UI Builder" className="flex gap-1 overflow-x-auto border-b border-slate-200 pb-px [scrollbar-width:thin]">
         {UIB_SUB_TABS.map((tab) => {
           const isActive = tab.id === subTab;
           return (
@@ -125,7 +125,7 @@ export default function UiBuilderLayout({ subTab, children }) {
               key={tab.id}
               to={tab.route}
               aria-current={isActive ? 'page' : undefined}
-              className={`rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors duration-150 ${isActive ? 'border-b-2 border-violet-500 text-violet-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+              className={`shrink-0 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors duration-150 bm-focus ${isActive ? 'border-b-2 border-violet-500 text-violet-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
             >
               {tab.label}
             </Link>

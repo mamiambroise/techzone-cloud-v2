@@ -149,13 +149,13 @@ function PagesBody() {
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Liste des clients" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />
             </Field>
             <Field label="Type">
-              <BmSelect value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} options={PAGE_TYPES.map((t) => ({ value: t, label: t }))} />
+              <BmSelect value={form.type} onChange={(value) => setForm({ ...form, type: value })} options={PAGE_TYPES.map((t) => ({ value: t, label: t }))} />
             </Field>
             <Field label="Layout">
-              <BmSelect value={form.layout} onChange={(e) => setForm({ ...form, layout: e.target.value })} options={PAGE_LAYOUTS.map((t) => ({ value: t, label: t }))} />
+              <BmSelect value={form.layout} onChange={(value) => setForm({ ...form, layout: value })} options={PAGE_LAYOUTS.map((t) => ({ value: t, label: t }))} />
             </Field>
             <Field label="Visibilité">
-              <BmSelect value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })} options={PAGE_VISIBILITIES.map((t) => ({ value: t, label: t }))} />
+              <BmSelect value={form.visibility} onChange={(value) => setForm({ ...form, visibility: value })} options={PAGE_VISIBILITIES.map((t) => ({ value: t, label: t }))} />
             </Field>
             <Field label="Description">
               <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Optionnel" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />
@@ -171,7 +171,7 @@ function PagesBody() {
       <BmCard
         title={`Pages (${pages.length})`}
         subtitle="Ordre, routes et visibilité de la version"
-        headerExtra={<div className="w-56"><BmSearchInput value={search} onChange={(e) => setSearch(e.target.value)} /></div>}
+        headerExtra={<div className="w-56"><BmSearchInput value={search} onChange={setSearch} /></div>}
       >
         {filtered.length === 0 ? (
           <BmEmptyState icon={FileText} title={pages.length ? 'Aucun résultat' : 'Aucune page'} description={pages.length ? 'Ajustez la recherche.' : 'Créez la première page ci-dessus.'} />

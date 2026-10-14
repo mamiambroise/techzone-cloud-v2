@@ -55,7 +55,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="tz-page">
       {/* Header matching Screenshot 3 */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -66,6 +66,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
         </div>
 
         <button
+          type="button"
           id="overview-refresh-btn"
           onClick={handleRefresh}
           className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition-colors shadow-2xs cursor-pointer"
@@ -161,10 +162,11 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
       {/* 2-Column Section: Applications récentes & Journal d'audit (récent) matching Screenshot 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Applications récentes */}
-        <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-2xs space-y-4">
+        <div className="lg:col-span-6 tz-surface p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-slate-900">Applications récentes</h2>
             <button
+              type="button"
               onClick={() => navigate(routeForTab('applications'))}
               className="text-xs text-blue-600 hover:underline font-medium inline-flex items-center gap-1"
             >
@@ -174,7 +176,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           <div className="space-y-3">
             {/* Recent App 1: Boutique Mode & Accessoires */}
-            <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-between gap-3">
+            <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 shrink-0">
                   <ShoppingBag className="w-4 h-4" />
@@ -197,19 +199,20 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
+                  type="button"
                   onClick={() => handleOpenApp('app-0003')}
                   className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg text-xs font-semibold transition-colors"
                 >
                   Ouvrir
                 </button>
-                <button className="p-1 text-slate-400 hover:text-slate-600">
+                <button type="button" aria-label="Actions pour Boutique Mode & Accessoires" title="Actions pour Boutique Mode & Accessoires" className="p-1 text-slate-400 hover:text-slate-600">
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Recent App 2: Le Bistro Gourmand */}
-            <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-between gap-3">
+            <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shrink-0">
                   <Utensils className="w-4 h-4" />
@@ -232,19 +235,20 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
+                  type="button"
                   onClick={() => handleOpenApp('app-0002')}
                   className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg text-xs font-semibold transition-colors"
                 >
                   Ouvrir
                 </button>
-                <button className="p-1 text-slate-400 hover:text-slate-600">
+                <button type="button" aria-label="Actions pour Le Bistro Gourmand" title="Actions pour Le Bistro Gourmand" className="p-1 text-slate-400 hover:text-slate-600">
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Recent App 3: Auto Express Services */}
-            <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-between gap-3">
+            <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 shrink-0">
                   <Car className="w-4 h-4" />
@@ -267,12 +271,13 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
+                  type="button"
                   onClick={() => handleOpenApp('app-0001')}
                   className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg text-xs font-semibold transition-colors"
                 >
                   Ouvrir
                 </button>
-                <button className="p-1 text-slate-400 hover:text-slate-600">
+                <button type="button" aria-label="Actions pour Auto Express Services" title="Actions pour Auto Express Services" className="p-1 text-slate-400 hover:text-slate-600">
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
@@ -281,10 +286,11 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
         </div>
 
         {/* Right Column: Journal d'audit (récent) matching Screenshot 3 */}
-        <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-2xs space-y-4">
+        <div className="lg:col-span-6 tz-surface p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-slate-900">Journal d'audit (récent)</h2>
             <button
+              type="button"
               onClick={() => onOpenAuditLogs && onOpenAuditLogs()}
               className="text-xs text-blue-600 hover:underline font-medium inline-flex items-center gap-1"
             >
@@ -377,7 +383,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
       </div>
 
       {/* Middle Stepper: Cycle de vie (toutes applications) matching Screenshot 3 */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-2xs space-y-4">
+      <div className="tz-surface p-4 sm:p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h2 className="text-base font-bold text-slate-900">Cycle de vie (toutes applications)</h2>
           <span className="text-xs text-slate-500">6 étapes de qualification</span>
@@ -441,8 +447,9 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
           {/* Action 1: Nouvelle application */}
           <button
+            type="button"
             onClick={() => onOpenNewApp && onOpenNewApp()}
-            className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
+            className="tz-surface tz-surface-interactive p-4 text-left space-y-2 group"
           >
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <Plus className="w-4 h-4" />
@@ -457,6 +464,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 2: Explorer les modèles */}
           <button
+            type="button"
             onClick={() =>
               dispatch(
                 addToast({
@@ -466,7 +474,7 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
                 })
               )
             }
-            className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
+            className="tz-surface tz-surface-interactive p-4 text-left space-y-2 group"
           >
             <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <Compass className="w-4 h-4" />
@@ -481,8 +489,9 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 3: Banc d'homologation */}
           <button
+            type="button"
             onClick={() => navigate(routeForTab('validation'))}
-            className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
+            className="tz-surface tz-surface-interactive p-4 text-left space-y-2 group"
           >
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
               <CheckCircle className="w-4 h-4" />
@@ -497,8 +506,9 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 4: Voir le journal d'audit */}
           <button
+            type="button"
             onClick={() => onOpenAuditLogs && onOpenAuditLogs()}
-            className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
+            className="tz-surface tz-surface-interactive p-4 text-left space-y-2 group"
           >
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
               <Clock className="w-4 h-4" />
@@ -513,8 +523,9 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 5: Environnements */}
           <button
+            type="button"
             onClick={() => navigate(routeForTab('environments'))}
-            className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
+            className="tz-surface tz-surface-interactive p-4 text-left space-y-2 group"
           >
             <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-colors">
               <Server className="w-4 h-4" />
@@ -527,8 +538,9 @@ export default function GeneralOverviewView({ onOpenNewApp, onOpenAuditLogs }) {
 
           {/* Action 6: Paramètres P0.1 */}
           <button
+            type="button"
             onClick={() => navigate(routeForTab('config'))}
-            className="p-4 rounded-xl border border-slate-200/80 bg-white hover:border-blue-300 hover:shadow-xs transition-all text-left space-y-2 group cursor-pointer"
+            className="tz-surface tz-surface-interactive p-4 text-left space-y-2 group"
           >
             <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-colors">
               <Sliders className="w-4 h-4" />

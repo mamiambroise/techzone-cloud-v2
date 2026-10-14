@@ -21,6 +21,7 @@ import {
   navigationSections,
   effectiveNavigation,
   activeNavigation,
+  navigationStatus,
 } from "../app/navigationConfig.js";
 import { useAuth } from "../auth/AuthProvider.jsx";
 import { useTenant } from "../contexts/TenantProvider.jsx";
@@ -55,7 +56,7 @@ function SidebarGroup({
     children = group.hasChildren ?? group.entries.length > 1;
   const activeGroup = active?.group === group.id,
     planned = group.entries.every((e) => !e.implemented);
-  const common = `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors duration-200 motion-reduce:transition-none ${focusClass} ${activeGroup ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"} ${collapsed ? "justify-center" : ""}`;
+  const common = `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors duration-200 motion-reduce:transition-none ${focusClass} ${activeGroup ? "bg-blue-500/20 text-white shadow-sm" : "text-slate-300 hover:bg-white/10 hover:text-white"} ${collapsed ? "justify-center" : ""}`;
   const contents = (
     <>
       <Icon size={19} className="shrink-0" aria-hidden="true" />
@@ -63,7 +64,7 @@ function SidebarGroup({
         <>
           <span className="min-w-0 flex-1 text-left">{group.label}</span>
           {planned ? (
-            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-500">
+            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] text-slate-300">
               Bientôt
             </span>
           ) : null}
@@ -91,6 +92,7 @@ function SidebarGroup({
     >
       {children ? (
         <button
+          type="button"
           className={common}
           aria-label={group.label}
           aria-expanded={!collapsed && expanded}
@@ -125,7 +127,7 @@ function SidebarGroup({
           <div className="overflow-hidden">
             <ul
               id={`submenu-${group.id}`}
-              className="my-1 ml-5 space-y-0.5 border-l border-slate-200 pl-3"
+              className="my-1 ml-5 space-y-0.5 border-l border-white/10 pl-3"
             >
               {group.entries.map((entry) => (
                 <li key={entry.id}>
@@ -133,7 +135,7 @@ function SidebarGroup({
                     to={entry.route}
                     onClick={onNavigate}
                     aria-current={active?.id === entry.id ? "page" : undefined}
-                    className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs transition-colors duration-200 motion-reduce:transition-none ${focusClass} ${active?.id === entry.id ? "bg-blue-50 font-semibold text-blue-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}
+                    className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs transition-colors duration-200 motion-reduce:transition-none ${focusClass} ${active?.id === entry.id ? "bg-blue-500/20 font-semibold text-white" : "text-slate-400 hover:bg-white/10 hover:text-white"}`}
                   >
                     <span>{entry.label}</span>
                     {!entry.implemented && !planned && (
@@ -164,10 +166,12 @@ export default function Sidebar({ isOpen, onClose }) {
     [tooltip, setTooltip] = useState(null);
   const panel = useRef(null),
     collapsed = storedCollapsed && !isOpen;
+  const tenantId = activeTenant?.id;
+  const navigationState = navigationStatus({ tenantId, loading, error });
   const groups = useMemo(
     () =>
-      effectiveNavigation(user, { tenantId: activeTenant?.id, loading, error }),
-    [user, activeTenant?.id, loading, error],
+      effectiveNavigation(user, { tenantId, loading, error }),
+    [user, tenantId, loading, error],
   );
   const query = search.trim().toLocaleLowerCase("fr");
   const filtered = useMemo(
@@ -202,7 +206,7 @@ export default function Sidebar({ isOpen, onClose }) {
   useEffect(() => {
     setSearch("");
     setTooltip(null);
-  }, [activeTenant?.id]);
+  }, [tenantId]);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
     const update = () => {
@@ -260,7 +264,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <div
           data-testid="sidebar-overlay"
           onClick={close}
-          className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] lg:hidden"
           aria-hidden="true"
         />
       )}
@@ -270,7 +274,7 @@ export default function Sidebar({ isOpen, onClose }) {
         aria-label="Navigation principale"
         role={isOpen ? "dialog" : undefined}
         aria-modal={isOpen ? true : undefined}
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white transition-[width,transform] duration-200 motion-reduce:transition-none lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-20" : "w-72"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/10 bg-[var(--color-sidebar)] text-white shadow-xl transition-[width,transform] duration-200 motion-reduce:transition-none lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-20" : "w-[260px]"}`}
       >
         <div className="shrink-0 px-4 pb-4 pt-5">
           <div className="flex items-center gap-2">
@@ -293,9 +297,10 @@ export default function Sidebar({ isOpen, onClose }) {
               )}
             </Link>
             <button
+              type="button"
               id="sidebar-collapse-toggle"
               onClick={() => dispatch(setSidebarCollapsed(!storedCollapsed))}
-              className={`hidden rounded p-1 text-slate-400 hover:bg-slate-100 lg:block ${focusClass}`}
+              className={`hidden rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white lg:block ${focusClass}`}
               aria-label={collapsed ? "Agrandir le menu" : "Réduire le menu"}
             >
               {collapsed ? (
@@ -305,14 +310,15 @@ export default function Sidebar({ isOpen, onClose }) {
               )}
             </button>
             <button
+              type="button"
               onClick={close}
-              className={`rounded p-1 text-slate-500 lg:hidden ${focusClass}`}
+              className={`rounded p-1 text-slate-300 hover:bg-white/10 lg:hidden ${focusClass}`}
               aria-label="Fermer le menu"
             >
               <X size={20} />
             </button>
           </div>
-          {!collapsed && (
+          {!collapsed && navigationState === "ready" && (
             <div className="relative mt-5">
               <Search
                 className="pointer-events-none absolute left-3 top-2.5 text-slate-400"
@@ -324,7 +330,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher un module…"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/60 py-2 pl-9 pr-3 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+                className="w-full rounded-lg border border-white/10 bg-white/10 py-2 pl-9 pr-3 text-xs text-white outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
               />
             </div>
           )}
@@ -338,7 +344,7 @@ export default function Sidebar({ isOpen, onClose }) {
             return items.length ? (
               <section key={section.id} aria-label={section.label}>
                 <h2
-                  className={`mb-2 px-3 text-[10px] font-semibold tracking-wider text-slate-400 ${collapsed ? "sr-only" : ""}`}
+                  className={`mb-2 px-3 text-[10px] font-semibold tracking-wider text-slate-500 ${collapsed ? "sr-only" : ""}`}
                 >
                   {section.label}
                 </h2>
@@ -367,23 +373,29 @@ export default function Sidebar({ isOpen, onClose }) {
           {!filtered.length && (
             <p className="px-3 text-xs text-slate-500">Aucun résultat.</p>
           )}
+          {navigationState === "fallback" && !collapsed && (
+            <p role="status" className="px-3 text-xs text-amber-200">
+              Navigation limitée : contexte entreprise indisponible.
+            </p>
+          )}
         </nav>
-        <div className="flex shrink-0 items-center gap-2.5 border-t border-slate-100 p-4">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700">
+        <div className="flex shrink-0 items-center gap-2.5 border-t border-white/10 p-4">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-xs font-semibold text-blue-100">
             {name.slice(0, 2).toUpperCase()}
           </span>
           {!collapsed && (
             <>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold">{name}</p>
-                <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                <p className="mt-0.5 truncate text-[10px] text-slate-400">
                   {user?.isAdmin ? "Administrateur" : "Utilisateur"}
                 </p>
               </div>
               <button
                 aria-label="Se déconnecter"
+                type="button"
                 onClick={logout}
-                className={`rounded p-1 text-slate-400 hover:text-slate-700 ${focusClass}`}
+                className={`rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white ${focusClass}`}
               >
                 <LogOut size={16} />
               </button>
@@ -394,7 +406,7 @@ export default function Sidebar({ isOpen, onClose }) {
       {tooltip && collapsed && (
         <div
           role="tooltip"
-          className="fixed left-[88px] z-[60] rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-lg"
+          className="fixed left-[88px] z-[60] rounded-lg bg-[var(--color-sidebar-2)] px-3 py-2 text-xs text-white shadow-lg"
           style={{ top: tooltip.top }}
         >
           {tooltip.label}
@@ -402,7 +414,7 @@ export default function Sidebar({ isOpen, onClose }) {
       )}
       <div
         aria-hidden="true"
-        className={`hidden shrink-0 transition-[width] duration-200 motion-reduce:transition-none lg:block ${storedCollapsed ? "w-20" : "w-72"}`}
+        className={`hidden shrink-0 transition-[width] duration-200 motion-reduce:transition-none lg:block ${storedCollapsed ? "w-20" : "w-[260px]"}`}
       />
     </>
   );

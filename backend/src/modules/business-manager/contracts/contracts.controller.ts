@@ -18,7 +18,7 @@ import { TenantGuard } from '../../../iam/tenant.guard';
 
 import { CreateContractDto, UpdateContractDto } from './dto/create-contract.dto';
 
-@TenantResource({ table: 'bm_contracts', idParam: 'contractId' })
+@TenantResource({ table: 'bmBusinessContract', idParam: 'contractId' })
 @UseGuards(BmTenantGuard, TenantGuard)
 @Controller('api/business-manager/contracts')
 export class ContractsController {

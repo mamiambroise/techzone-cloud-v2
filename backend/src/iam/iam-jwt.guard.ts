@@ -55,6 +55,14 @@ export class IamJwtGuard implements CanActivate {
       throw new IamError('Session introuvable', 401, 'SESSION_NOT_FOUND');
     }
 
+    // LOT 5 — binding : un token signé ne vaut rien hors de sa session. Le
+    // couple (userId, sessionId) du JWT doit correspondre EXACTEMENT à la
+    // session persistée, sinon refus (fixation/collision de session).
+    if (session.userId !== decoded.userId) {
+      IamLogger.authFailure(request, 'SESSION_IDENTITY_MISMATCH', 'Token/Session incompatibles');
+      throw new IamError('Session invalide', 401, 'SESSION_MISMATCH');
+    }
+
     await this.authService.assertSessionUsable(session);
 
     await this.prisma.iamSession.update({

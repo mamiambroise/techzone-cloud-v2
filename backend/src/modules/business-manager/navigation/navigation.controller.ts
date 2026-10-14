@@ -25,7 +25,7 @@ import {
   ResolveNavigationDto,
 } from './dto/create-navigation.dto';
 
-@TenantResource({ table: 'bm_menu', idParam: 'menuId' })
+@TenantResource({ table: 'bmMenu', idParam: 'menuId' })
 @UseGuards(BmTenantGuard, TenantGuard)
 @Controller('api/business-manager/navigation')
 export class NavigationController {

@@ -10,6 +10,12 @@ export type TenantResourceConfig = {
   idParam?: string;
   idColumn?: string;
   tenantColumn?: string;
+  /**
+   * Une ressource explicitement « plateforme » (tenantId null) peut être
+   * marquée allowNullTenant. Défaut : le tenant NULL sur une ressource
+   * ciblée est un DENY (fail-closed).
+   */
+  allowNullTenant?: boolean;
 };
 
 export const TenantResource = (config: TenantResourceConfig) =>

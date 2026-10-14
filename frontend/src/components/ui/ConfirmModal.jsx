@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function ConfirmModal({
@@ -12,6 +12,22 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }) {
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const previous = document.activeElement;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape' && !loading) onCancel?.();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    requestAnimationFrame(() => dialogRef.current?.focus());
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      previous?.focus?.();
+    };
+  }, [loading, onCancel, open]);
+
   if (!open) return null;
 
   return (
@@ -21,18 +37,21 @@ export default function ConfirmModal({
       onClick={loading ? undefined : onCancel}
     >
       <div
-        className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 toast-enter"
+        ref={dialogRef}
+        className="w-full max-w-md bg-[var(--color-surface)] rounded-[var(--radius-xl)] shadow-2xl border border-[var(--color-border)] p-6 toast-enter"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby="confirm-modal-title"
+        aria-describedby={message ? 'confirm-modal-message' : undefined}
+        tabIndex={-1}
       >
         <div className="flex items-start gap-4">
           <div
             className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
               danger
-                ? 'bg-red-100 dark:bg-red-900/40 text-red-500 dark:text-red-400'
-                : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
+                ? 'bg-red-100 text-red-500'
+                : 'bg-slate-100 text-slate-500'
             }`}
           >
             {danger ? (
@@ -42,8 +61,8 @@ export default function ConfirmModal({
             )}
           </div>
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h3>
-            {message && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{message}</p>}
+            <h3 id="confirm-modal-title" className="text-lg font-bold text-[var(--color-text)]">{title}</h3>
+            {message && <p id="confirm-modal-message" className="mt-1 text-sm text-[var(--color-text-muted)] leading-relaxed">{message}</p>}
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-3">
@@ -51,7 +70,7 @@ export default function ConfirmModal({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-[var(--radius-lg)] text-sm font-medium text-[var(--color-text-muted)] bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
           >
             {cancelLabel}
           </button>
@@ -59,11 +78,11 @@ export default function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 inline-flex items-center gap-2 shadow-md ${
+            className={`px-4 py-2 rounded-[var(--radius-lg)] text-sm font-semibold text-white transition-all disabled:opacity-50 inline-flex items-center gap-2 shadow-md ${
               danger
-                ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
-                : 'bg-[#5469D4] hover:bg-[#4A5EC7] shadow-[#5469D4]/30'
-            }`}
+                ? 'bg-[var(--color-error)] hover:bg-red-600 shadow-red-600/30'
+                : 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--color-primary)]/30'
+            } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]`}
           >
             {loading && <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />}
             {confirmLabel}

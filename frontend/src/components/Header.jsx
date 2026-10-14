@@ -19,7 +19,7 @@ import { useTenant } from "../contexts/TenantProvider.jsx";
 import { useDashboard, alertKeys } from "./dashboard/DashboardContext.jsx";
 import GlobalSearch from "./GlobalSearch.jsx";
 const iconButton =
-  "rounded-lg p-2 text-slate-500 transition-colors duration-200 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-blue-600 motion-reduce:transition-none";
+  "rounded-[var(--radius-lg)] p-2 text-[var(--color-text-muted)] transition-colors duration-200 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
 export default function Header({ mobileOpen, onToggleMobileSidebar }) {
   const { user, logout } = useAuth(),
     { activeTenant, tenants, switchTenant, hasMultipleTenants, loading } =
@@ -69,11 +69,12 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
   return (
     <header
       ref={root}
-      className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm"
+      className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-white/95 shadow-[0_1px_0_rgb(15_23_42_/_0.02)] backdrop-blur-sm"
     >
       <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <button
+            type="button"
             id="mobile-menu-toggle-btn"
             aria-label="Ouvrir le menu"
             aria-expanded={mobileOpen}
@@ -93,7 +94,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
                   ? "/dashboard"
                   : groupDestination(group?.id) || "/dashboard"
               }
-              className="hidden shrink-0 text-slate-500 hover:text-blue-600 sm:inline"
+              className="hidden shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] sm:inline"
             >
               {entry?.group === "dashboard"
                 ? "Accueil"
@@ -105,7 +106,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             />
             <span
               aria-current="page"
-              className="truncate font-medium text-slate-800"
+              className="truncate font-medium text-[var(--color-text)]"
             >
               {entry?.label || "Page introuvable"}
             </span>
@@ -128,7 +129,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
                   setSwitchError(true);
                 }
               }}
-              className="max-w-28 rounded-lg border border-slate-200 bg-white p-2 text-xs sm:max-w-40"
+              className="max-w-28 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-2 text-xs text-[var(--color-text)] sm:max-w-40"
             >
               <option value="" disabled>
                 Choisir un tenant
@@ -141,6 +142,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             </select>
           )}
           <button
+            type="button"
             aria-label="Rechercher"
             onClick={() => setMobileSearch((v) => !v)}
             className={`${iconButton} md:hidden`}
@@ -149,6 +151,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
           </button>
           <div className="relative">
             <button
+              type="button"
               aria-label="Notifications"
               aria-expanded={panel === "alerts"}
               onClick={(e) => {
@@ -165,7 +168,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             {panel === "alerts" && (
               <section
                 aria-label="Notifications récentes"
-                className="absolute right-0 top-full mt-3 w-[min(21rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-4 shadow-lg"
+                className="absolute right-0 top-full mt-3 w-[min(21rem,calc(100vw-2rem))] rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card-hover)]"
               >
                 <h2 className="mb-3 text-sm font-semibold">Alertes récentes</h2>
                 {dashboardLoading ? (
@@ -182,7 +185,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
                       key={a.id}
                       to={a.targetRoute}
                       onClick={() => setPanel(null)}
-                      className="block rounded-lg border-b border-slate-100 px-2 py-3 text-xs [overflow-wrap:anywhere] hover:bg-slate-50"
+                      className="block rounded-[var(--radius-sm)] border-b border-slate-100 px-2 py-3 text-xs [overflow-wrap:anywhere] hover:bg-slate-50"
                     >
                       {a.message}
                     </Link>
@@ -202,13 +205,14 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
           </div>
           <div className="relative">
             <button
+              type="button"
               aria-label="Menu utilisateur"
               aria-expanded={panel === "user"}
               onClick={(e) => {
                 toggle.current = e.currentTarget;
                 setPanel(panel === "user" ? null : "user");
               }}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 p-1.5 focus-visible:outline-2 focus-visible:outline-blue-600"
+              className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-border)] p-1.5 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-xs font-semibold text-white">
                 {name.slice(0, 1).toUpperCase()}
@@ -219,14 +223,15 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
               <ChevronDown size={12} className="text-slate-400" />
             </button>
             {panel === "user" && (
-              <div className="absolute right-0 top-full mt-3 w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+              <div className="absolute right-0 top-full mt-3 w-56 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-card-hover)]">
                 <p className="truncate text-sm font-medium">{name}</p>
                 <p className="mt-1 truncate text-xs text-slate-500">
                   {activeTenant?.name || "Aucun tenant actif"}
                 </p>
                 <button
+                  type="button"
                   onClick={logout}
-                  className="mt-3 flex w-full items-center gap-2 rounded-lg p-2 text-xs hover:bg-slate-50"
+                  className="mt-3 flex w-full items-center gap-2 rounded-[var(--radius-sm)] p-2 text-xs hover:bg-slate-50"
                 >
                   <LogOut size={14} />
                   Se déconnecter
@@ -242,9 +247,10 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
         </p>
       )}
       {mobileSearch && (
-        <div className="flex items-center gap-2 border-t border-slate-100 p-3 md:hidden">
+        <div className="flex items-center gap-2 border-t border-[var(--color-border)] p-3 md:hidden">
           <GlobalSearch onCloseMobile={() => setMobileSearch(false)} />
           <button
+            type="button"
             aria-label="Fermer la recherche"
             className={iconButton}
             onClick={() => setMobileSearch(false)}

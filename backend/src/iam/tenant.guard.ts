@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 
 import { Reflector } from '@nestjs/core';
@@ -59,15 +60,33 @@ export class TenantGuard implements CanActivate {
       return true;
     }
 
-    const resourceTenantId = await this.resolveResourceTenantId(
+    const resolved = await this.resolveResourceTenantId(
       request,
       resourceConfig,
     );
 
-    if (resourceTenantId === null || resourceTenantId === undefined) {
+    if (!resolved.targeted) {
+      // Pas de ressource ciblée : la frontière tenant de cette requête est
+      // le principal lui-même.
       return true;
     }
 
+    // fail-closed : une ressource ciblée dont le tenant est inconnu est un
+    // DENY. Elle est soit introuvable (404), soit marquée explicitement
+    // ressource de plateforme via allowNullTenant.
+    if (resolved.tenantId === null) {
+      if (!resolved.exists) {
+        IamLogger.tenantDeny(request, principal, undefined, 'RESOURCE_NOT_FOUND');
+        throw new NotFoundException('Resource not found');
+      }
+      if (!resourceConfig.allowNullTenant) {
+        IamLogger.tenantDeny(request, principal, undefined, 'NO_TENANT_ON_RESOURCE');
+        throw new ForbiddenException('Access denied: resource has no tenant context');
+      }
+      return true;
+    }
+
+    const resourceTenantId = resolved.tenantId;
     if (resourceTenantId !== principal.tenantId) {
       IamLogger.tenantDeny(
         request,
@@ -84,19 +103,23 @@ export class TenantGuard implements CanActivate {
   private async resolveResourceTenantId(
     request: any,
     config: TenantResourceConfig,
-  ): Promise<string | null> {
+  ): Promise<
+    { targeted: false } | { targeted: true; exists: boolean; tenantId: string | null }
+  > {
+
     const params = request.params ?? {};
     const idParam = config.idParam ?? 'id';
     const resourceId = params[idParam];
-
-    if (!resourceId) {
-      return null;
-    }
 
     // Un identifiant malformé est une requête invalide, pas une panne. Les
     // guards s'exécutent AVANT les pipes de paramètre : sans cette validation,
     // `GET /applications/pas-un-uuid` atteindrait Prisma et remonterait en 500
     // au lieu du 400 rendu par `ParseUUIDPipe` sur les routes qui en déclarent un.
+    if (!resourceId) {
+      // Aucune ressource ciblée (list/plateforme) : le binding tenant
+      // s'applique au principal et aux requêtes directement.
+      return { targeted: false };
+    }
     if (!isUuid(resourceId)) {
       throw new BadRequestException(
         `Identifiant de ressource invalide pour ${config.idParam ?? 'id'}`,
@@ -114,19 +137,28 @@ export class TenantGuard implements CanActivate {
       };
 
       const modelDelegate = (this.prisma as any)[table];
-      if (!modelDelegate) {
-        return null;
+      if (!modelDelegate || typeof modelDelegate.findUnique !== 'function') {
+        // fail-closed : metadata de sécurité inconnue = DENY. Une table
+        // referencée par @TenantResource doit toujours exister côté client :
+        // si elle manque, on refuse l'accès plutôt que d'ouvrir la route.
+        IamLogger.tenantDeny(request, { userId: 'unknown', tenantId: null }, undefined, 'UNKNOWN_TENANT_METADATA');
+        throw new InternalServerErrorException(
+          `Unknown tenant metadata for resource ${table}`,
+        );
       }
 
       const result = await modelDelegate.findUnique(query);
       if (!result) {
-        return null;
+        return { targeted: true, exists: false, tenantId: null };
       }
 
       const tenantValue = (result as Record<string, unknown>)[tenantColumn];
-      return tenantValue !== null && tenantValue !== undefined
-        ? String(tenantValue)
-        : null;
+      return {
+        targeted: true,
+        exists: true,
+        tenantId:
+          tenantValue !== null && tenantValue !== undefined ? String(tenantValue) : null,
+      };
     } catch (err) {
       // L'identifiant est désormais validé : ce qui reste ici est une panne
       // réelle (schéma, connexion, modèle absent). On la remonte en 500 en

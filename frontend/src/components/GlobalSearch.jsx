@@ -81,7 +81,7 @@ export default function GlobalSearch({ onCloseMobile }) {
     environments: "Environnements",
   };
   return (
-    <div ref={box} className="relative w-full">
+    <div ref={box} className="relative w-full" role="search">
       <label className="relative block">
         <Search
           size={16}
@@ -92,6 +92,7 @@ export default function GlobalSearch({ onCloseMobile }) {
           aria-label="Recherche globale"
           aria-expanded={open}
           aria-controls={resultsId}
+          aria-busy={state.loading}
           type="search"
           value={query}
           onChange={(e) => {
@@ -100,7 +101,7 @@ export default function GlobalSearch({ onCloseMobile }) {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Applications, packs, environnements…"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50/70 py-2 pl-9 pr-10 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-2)] py-2 pl-9 pr-10 text-xs text-[var(--color-text)] outline-none transition-colors placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
         />
         <span className="pointer-events-none absolute right-2 top-2 text-[10px] text-slate-400">
           ⌘ K
@@ -109,7 +110,9 @@ export default function GlobalSearch({ onCloseMobile }) {
       {open && (
         <div
           id={resultsId}
-          className="absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+          role="region"
+          aria-label="Résultats de la recherche globale"
+          className="absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-[var(--shadow-card-hover)]"
         >
           {state.loading ? (
             <p role="status" className="p-3 text-xs text-slate-500">
@@ -136,7 +139,7 @@ export default function GlobalSearch({ onCloseMobile }) {
                   setOpen(false);
                   onCloseMobile?.();
                 }}
-                className="flex items-center gap-2 rounded-lg p-2.5 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
+                className="flex items-center gap-2 rounded-[var(--radius-md)] p-2.5 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xs font-medium">
