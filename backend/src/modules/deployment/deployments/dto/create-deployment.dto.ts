@@ -1,4 +1,10 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export enum DeploymentStrategy {
   STANDARD = 'STANDARD',
@@ -22,6 +28,7 @@ export class CreateDeploymentDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(113)
   idempotencyKey?: string;
 
   @IsString()

@@ -42,20 +42,20 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
   });
 
   it('should list all environment deployment statuses', async () => {
-    const list = await service.findAll();
+    const list = await service.findAll(fixture.tenant.id);
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThan(0);
   });
 
   it('should get detailed environment status and drift check', async () => {
     const environments = [fixture.environment];
-    const status = await service.getStatus(environments[0].id);
+    const status = await service.getStatus(environments[0].id, fixture.tenant.id);
     expect(status).toHaveProperty('environment');
     expect(status).toHaveProperty('deployments');
 
-    const drift = await service.detectDrift(environments[0].id);
-    expect(drift).toHaveProperty('isSynchronized');
-    expect(drift.isSynchronized).toBe(true);
+    await expect(
+      service.detectDrift(environments[0].id, fixture.tenant.id),
+    ).rejects.toMatchObject({ status: 503 });
   });
 
   it('should lock and unlock an environment', async () => {
@@ -65,10 +65,14 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
     const lockResult = await service.lock(envId, {
       reason: 'Scheduled infrastructure maintenance window',
       lockedBy: 'ops-lead',
-    });
+    }, fixture.tenant.id, 'authenticated-test-user');
     expect(lockResult.status).toBe('LOCKED');
 
-    const unlockResult = await service.unlock(envId, 'ops-lead');
+    const unlockResult = await service.unlock(
+      envId,
+      fixture.tenant.id,
+      'authenticated-test-user',
+    );
     expect(unlockResult.status).toBe('ACTIVE');
   });
 });

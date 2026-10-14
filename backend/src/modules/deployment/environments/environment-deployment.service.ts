@@ -1,4 +1,8 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PromoteReleaseDto } from './dto/promote-release.dto';
 import { LockEnvironmentDto } from './dto/lock-environment.dto';
@@ -15,8 +19,9 @@ export class EnvironmentDeploymentService {
     private readonly deploymentService: DeploymentService,
   ) {}
 
-  async findAll() {
+  async findAll(tenantId: string) {
     return this.prisma.environmentDeployment.findMany({
+      where: { tenantId },
       include: {
         environment: true,
         application: true,
@@ -27,9 +32,9 @@ export class EnvironmentDeploymentService {
     });
   }
 
-  async getStatus(environmentId: string) {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async getStatus(environmentId: string, tenantId: string) {
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -41,7 +46,7 @@ export class EnvironmentDeploymentService {
     }
 
     const deployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
+      where: { environmentId, tenantId },
       include: {
         application: true,
         currentRelease: {
@@ -61,6 +66,7 @@ export class EnvironmentDeploymentService {
     const activeDeployments = await this.prisma.deployment.findMany({
       where: {
         environmentId,
+        tenantId,
         status: { in: ['PENDING', 'RUNNING', 'VERIFYING'] },
       },
       include: {
@@ -81,10 +87,10 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async promote(dto: PromoteReleaseDto) {
+  async promote(dto: PromoteReleaseDto, tenantId: string, actorId: string) {
     // 1. Trouver la release
-    const release = await this.prisma.release.findUnique({
-      where: { id: dto.releaseId },
+    const release = await this.prisma.release.findFirst({
+      where: { id: dto.releaseId, tenantId },
       include: {
         application: true,
       },
@@ -99,8 +105,8 @@ export class EnvironmentDeploymentService {
     }
 
     // 2. Trouver l'environnement cible
-    const targetEnv = await this.prisma.environment.findUnique({
-      where: { id: dto.targetEnvironmentId },
+    const targetEnv = await this.prisma.environment.findFirst({
+      where: { id: dto.targetEnvironmentId, tenantId },
     });
 
     if (!targetEnv) {
@@ -115,7 +121,7 @@ export class EnvironmentDeploymentService {
     if (targetEnv.type === 'PRODUCTION') {
       // Pour aller en PRODUCTION, la release doit avoir été déployée avec succès en STAGING
       const stagingEnv = await this.prisma.environment.findFirst({
-        where: { type: 'STAGING' },
+        where: { type: 'STAGING', tenantId },
       });
 
       if (stagingEnv) {
@@ -123,6 +129,7 @@ export class EnvironmentDeploymentService {
           where: {
             releaseId: release.id,
             environmentId: stagingEnv.id,
+            tenantId,
             status: 'SUCCEEDED',
           },
         });
@@ -142,9 +149,9 @@ export class EnvironmentDeploymentService {
       releaseId: release.id,
       environmentId: targetEnv.id,
       strategy: (dto.strategy as DeploymentStrategy) ?? DeploymentStrategy.STANDARD,
-      startedBy: dto.startedBy,
+      startedBy: actorId,
       idempotencyKey: `promote-${release.id}-${targetEnv.id}-${Date.now()}`,
-    });
+    }, tenantId, actorId);
 
     return {
       message: `Release ${release.code}:${release.version} successfully promoted to ${targetEnv.code} (${targetEnv.type})`,
@@ -152,9 +159,9 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async lock(environmentId: string, dto: LockEnvironmentDto) {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async lock(environmentId: string, dto: LockEnvironmentDto, tenantId: string, actorId: string) {
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -166,12 +173,12 @@ export class EnvironmentDeploymentService {
     }
 
     const envDeployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
+      where: { environmentId, tenantId },
     });
 
     for (const ed of envDeployments) {
-      await this.prisma.environmentDeployment.update({
-        where: { id: ed.id },
+      await this.prisma.environmentDeployment.updateMany({
+        where: { id: ed.id, tenantId },
         data: {
           status: 'LOCKED',
         },
@@ -181,10 +188,11 @@ export class EnvironmentDeploymentService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-lock-${randomUUID().slice(0, 8)}`,
+        tenantId,
         environmentId,
         action: 'FAILED',
         status: 'LOCKED',
-        actor: dto.lockedBy || 'environment-admin',
+        actor: actorId,
         metadata: {
           reason: dto.reason,
           lockedAt: new Date().toISOString(),
@@ -200,9 +208,9 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async unlock(environmentId: string, actor: string = 'environment-admin') {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async unlock(environmentId: string, tenantId: string, actorId: string) {
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -214,12 +222,12 @@ export class EnvironmentDeploymentService {
     }
 
     const envDeployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
+      where: { environmentId, tenantId },
     });
 
     for (const ed of envDeployments) {
-      await this.prisma.environmentDeployment.update({
-        where: { id: ed.id },
+      await this.prisma.environmentDeployment.updateMany({
+        where: { id: ed.id, tenantId },
         data: {
           status: 'ACTIVE',
         },
@@ -229,10 +237,11 @@ export class EnvironmentDeploymentService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-unlk-${randomUUID().slice(0, 8)}`,
+        tenantId,
         environmentId,
         action: 'SUCCEEDED',
         status: 'ACTIVE',
-        actor,
+        actor: actorId,
         metadata: {
           unlockedAt: new Date().toISOString(),
         },
@@ -246,9 +255,9 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async detectDrift(environmentId: string) {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async detectDrift(environmentId: string, tenantId: string) {
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -259,45 +268,8 @@ export class EnvironmentDeploymentService {
       );
     }
 
-    const envDeployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
-      include: {
-        currentRelease: {
-          include: {
-            snapshot: true,
-          },
-        },
-        application: true,
-      },
-    });
-
-    const driftResults = envDeployments.map((ed: any) => {
-      const release = ed.currentRelease;
-      const snapshot = release?.snapshot;
-      const expectedHash = snapshot?.hash ?? 'snap-hash-001';
-      // In live environment, drift occurs if active cluster configuration diverges from snapshot
-      const currentLiveHash = expectedHash; // In-memory simulated clean synchronization
-      const hasDrift = false;
-
-      return {
-        applicationId: ed.applicationId,
-        applicationCode: ed.application?.code,
-        currentReleaseId: ed.currentReleaseId,
-        releaseVersion: release?.version,
-        expectedSnapshotHash: expectedHash,
-        currentLiveHash,
-        hasDrift,
-        status: hasDrift ? 'DRIFTED' : 'IN_SYNC',
-        differences: [],
-      };
-    });
-
-    return {
-      environmentId: environment.id,
-      environmentCode: environment.code,
-      checkedAt: new Date(),
-      isSynchronized: driftResults.every((r: any) => !r.hasDrift),
-      reports: driftResults,
-    };
+    throw new ServiceUnavailableException(
+      `Live drift detection is not configured for environment ${environment.code}`,
+    );
   }
 }
