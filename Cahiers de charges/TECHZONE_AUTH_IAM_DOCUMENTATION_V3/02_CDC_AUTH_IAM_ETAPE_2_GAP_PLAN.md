@@ -7,6 +7,24 @@
 **Commit canonique identifié :** `d226cb52`  
 **Commits IAM notables :** `e59c073f` (MFA), `02cc221b` (TenantGuard)
 
+> ## Mise à jour vérifiée — 14 octobre 2026
+>
+> Les constats historiques ci-dessous sont conservés pour la traçabilité, mais ne
+> décrivent plus entièrement l’état du code. Vérification réalisée sur `mami` :
+>
+> | Domaine | Statut vérifié | Preuve |
+> |---|---|---|
+> | MFA backend (challenge lié au login, TOTP, anti-rejeu) | **DONE** | `iam-mfa.security.spec.ts`, 129 tests IAM ciblés réussis |
+> | Membership avant session, rate-limit/lockout, guards fail-closed, JWT/session | **DONE** | suites IAM ciblées réussies |
+> | Parcours MFA frontend | **DONE** | challenge en mémoire, écran six chiffres, tests UI ciblés réussis |
+> | Administration IAM Users/Roles/Policies/Tenants/Sessions/Identities | **PARTIAL** | APIs réelles utilisées ; couverture UI et détail fonctionnel restent à compléter |
+> | E2E PostgreSQL et matrice cross-tenant réelle | **MISSING** | le runner E2E fonctionne, mais le seul scénario existant est un test de santé sans données PostgreSQL |
+>
+> Le test E2E `backend/test/app.e2e-spec.ts` démarre désormais avec la
+> configuration ESM correcte. Aucun statut **DONE** n’est attribué aux scénarios
+> cross-tenant tant qu’ils ne créent pas et ne vérifient pas des données dans une
+> base PostgreSQL de test.
+
 ---
 
 # 1. Verdict actuel
