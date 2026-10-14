@@ -18,7 +18,7 @@
 > | Membership avant session, rate-limit/lockout, guards fail-closed, JWT/session | **DONE** | suites IAM ciblées réussies |
 > | Parcours MFA frontend | **DONE** | challenge en mémoire, écran six chiffres, tests UI ciblés réussis |
 > | Administration IAM Users/Roles/Policies/Tenants/Sessions/Identities | **PARTIAL** | APIs réelles utilisées ; couverture UI et détail fonctionnel restent à compléter |
-> | E2E PostgreSQL et matrice cross-tenant réelle | **MISSING** | le runner E2E fonctionne, mais le seul scénario existant est un test de santé sans données PostgreSQL |
+> | E2E PostgreSQL et matrice cross-tenant réelle | **BLOCKED** | `TEST_DATABASE_URL` est requise et absente localement ; le runner refuse désormais tout repli vers `DATABASE_URL` |
 >
 > Le test E2E `backend/test/app.e2e-spec.ts` démarre désormais avec la
 > configuration ESM correcte. Aucun statut **DONE** n’est attribué aux scénarios

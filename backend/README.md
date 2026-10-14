@@ -93,6 +93,22 @@ L'API démarre par défaut sur le port configuré (port `3000`).
 npm test
 ```
 
+### IAM PostgreSQL E2E
+
+IAM E2E never falls back to `DATABASE_URL`. Configure `TEST_DATABASE_URL` with
+an isolated PostgreSQL database whose name contains `test` or `e2e`, apply the
+migrations to that database, then run:
+
+```bash
+TEST_DATABASE_URL="postgresql://.../techzone_test?schema=business_manager" npx prisma migrate deploy
+TEST_DATABASE_URL="postgresql://.../techzone_test?schema=business_manager" npm run test:e2e
+```
+
+The runner stops with an explicit error when the variable is missing, equal to
+`DATABASE_URL` outside CI, malformed, or not clearly a test database. Fixtures
+must be cleaned up by suite identifier; a global reset is not permitted outside
+ephemeral CI.
+
 ### Linter le projet
 ```bash
 npm run lint
