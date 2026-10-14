@@ -1,5 +1,11 @@
 import 'dotenv/config';
 import { spawn } from 'node:child_process';
+import { config as loadEnv } from 'dotenv';
+
+// Le profil local porte les secrets JWT/MFA mais ne doit jamais remplacer la
+// cible DB : DATABASE_URL est explicitement forcée vers TEST_DATABASE_URL plus
+// bas, pour le seul processus Jest.
+loadEnv({ path: '.env.local', override: false, quiet: true });
 
 function fail(message) {
   process.stderr.write(`IAM E2E blocked: ${message}\n`);

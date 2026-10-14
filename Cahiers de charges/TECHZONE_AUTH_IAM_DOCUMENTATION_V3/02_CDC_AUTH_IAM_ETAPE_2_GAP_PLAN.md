@@ -18,20 +18,32 @@
 > | Membership avant session, rate-limit/lockout, guards fail-closed, JWT/session | **DONE** | suites IAM ciblées réussies |
 > | Parcours MFA frontend | **DONE** | challenge en mémoire, écran six chiffres, tests UI ciblés réussis |
 > | Administration IAM Users/Roles/Policies/Tenants/Sessions/Identities | **PARTIAL** | APIs réelles utilisées ; couverture UI et détail fonctionnel restent à compléter |
-> | E2E PostgreSQL et matrice cross-tenant réelle | **BLOCKED** | `TEST_DATABASE_URL` est requise et absente localement ; le runner refuse désormais tout repli vers `DATABASE_URL` |
+> | E2E PostgreSQL et matrice cross-tenant réelle | **DONE** | `backend/test/iam-cross-tenant.e2e-spec.ts` : 15 scénarios réels réussis sur `techzone_test`, lancé par un runner qui force `DATABASE_URL = TEST_DATABASE_URL` |
 >
-> Le test E2E `backend/test/app.e2e-spec.ts` démarre désormais avec la
-> configuration ESM correcte. Aucun statut **DONE** n’est attribué aux scénarios
-> cross-tenant tant qu’ils ne créent pas et ne vérifient pas des données dans une
-> base PostgreSQL de test.
+> Le test E2E `backend/test/app.e2e-spec.ts` démarre avec la configuration ESM
+> correcte. Le seeder déterministe `backend/test/iam-cross-tenant.seed.ts` crée,
+> exclusivement dans `techzone_test`, les tenants A/B, utilisateurs, memberships,
+> rôles, permissions, sessions et ressources UI Builder ; son nettoyage cible
+> uniquement ces fixtures. La suite passe par les APIs Nest, les guards, JWT,
+> sessions, RBAC et Prisma réels — aucun mock n’est utilisé pour ses décisions.
+
+> ## Mise à jour E2E vérifiée — 14 octobre 2026
+>
+> `npm run test:e2e` a réussi sur `TEST_DATABASE_URL` : 2 suites, 16 tests.
+> La matrice vérifie A→A et B→B (GET autorisés), A→B et B→A (GET/UPDATE/DELETE
+> refusés), tenantId falsifié (body, query, header et login), token malformé ou
+> absent, ressource inconnue, permission/role insuffisants, session révoquée,
+> membership révoquée après expiration du cache, MFA TOTP invalide/autre identité,
+> challenge expiré et challenge rejoué. Les statuts **DONE** ci-dessus reposent
+> désormais sur cette exécution PostgreSQL réelle.
 
 ---
 
 # 1. Verdict actuel
 
 ```text
-ÉTAT GLOBAL : 🔴 NON ACCEPTABLE POUR EXPOSITION PRODUCTION
-PRIORITÉ : P0
+ÉTAT AUTH / IAM / CONTEXT : 🟢 DONE (périmètre vérifié)
+PREUVE : IAM unitaires/intégration + E2E PostgreSQL cross-tenant + MFA + guards
 ```
 
 Le module n’est pas vide ni à réécrire.
