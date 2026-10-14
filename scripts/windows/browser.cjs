@@ -40,7 +40,8 @@ catch { try { ({ chromium } = require(root+'/logs/browser-tools/node_modules/pla
       result.routes.push({ route, rendered: true, comingSoon: !!await page.getByTestId('coming-soon').count() });
       await page.screenshot({ path: root+'/.runtime/'+route.replaceAll('/','_')+'.png', fullPage:true });
     }
-    const links = await page.locator('#main-sidebar [data-navigation-group] > div > a').evaluateAll(es => es.map(e => e.getAttribute('href')));
+    const links = await page.locator('#main-sidebar [data-navigation-group] a[href]').evaluateAll(es => [...new Set(es.map(e => e.getAttribute('href')).filter(Boolean))]);
+    if (!links.length) throw new Error('Sidebar navigation unavailable');
     for (const href of links) {
       const link = page.locator('#main-sidebar a[href="'+href+'"]').first();
       if (!await link.count()) throw new Error('Sidebar route missing: '+href);
