@@ -21,6 +21,7 @@ import {
   navigationSections,
   effectiveNavigation,
   activeNavigation,
+  navigationStatus,
 } from "../app/navigationConfig.js";
 import { useAuth } from "../auth/AuthProvider.jsx";
 import { useTenant } from "../contexts/TenantProvider.jsx";
@@ -165,10 +166,12 @@ export default function Sidebar({ isOpen, onClose }) {
     [tooltip, setTooltip] = useState(null);
   const panel = useRef(null),
     collapsed = storedCollapsed && !isOpen;
+  const tenantId = activeTenant?.id;
+  const navigationState = navigationStatus({ tenantId, loading, error });
   const groups = useMemo(
     () =>
-      effectiveNavigation(user, { tenantId: activeTenant?.id, loading, error }),
-    [user, activeTenant?.id, loading, error],
+      effectiveNavigation(user, { tenantId, loading, error }),
+    [user, tenantId, loading, error],
   );
   const query = search.trim().toLocaleLowerCase("fr");
   const filtered = useMemo(
@@ -203,7 +206,7 @@ export default function Sidebar({ isOpen, onClose }) {
   useEffect(() => {
     setSearch("");
     setTooltip(null);
-  }, [activeTenant?.id]);
+  }, [tenantId]);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
     const update = () => {
@@ -315,7 +318,7 @@ export default function Sidebar({ isOpen, onClose }) {
               <X size={20} />
             </button>
           </div>
-          {!collapsed && (
+          {!collapsed && navigationState === "ready" && (
             <div className="relative mt-5">
               <Search
                 className="pointer-events-none absolute left-3 top-2.5 text-slate-400"
@@ -369,6 +372,11 @@ export default function Sidebar({ isOpen, onClose }) {
           })}
           {!filtered.length && (
             <p className="px-3 text-xs text-slate-500">Aucun résultat.</p>
+          )}
+          {navigationState === "fallback" && !collapsed && (
+            <p role="status" className="px-3 text-xs text-amber-200">
+              Navigation limitée : contexte entreprise indisponible.
+            </p>
           )}
         </nav>
         <div className="flex shrink-0 items-center gap-2.5 border-t border-white/10 p-4">
