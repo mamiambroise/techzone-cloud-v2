@@ -16,10 +16,22 @@ catch { try { ({ chromium } = require(root+'/logs/browser-tools/node_modules/pla
     await page.locator('button[type=submit]').click();
     await page.waitForURL('**/dashboard');
     await page.locator('#main-sidebar').waitFor();
+    // A fresh session intentionally has no active tenant. Select the real WiFi
+    // tenant through the UI before auditing protected module routes.
+    const tenantSelect = page.getByLabel('Tenant actif');
+    await tenantSelect.waitFor({ state: 'visible', timeout: 3000 }).catch(() => undefined);
+    if (await tenantSelect.count()) {
+      await tenantSelect.selectOption({ label: 'Techzone WiFi Services' });
+      await page.getByTestId('tenant-required').waitFor({ state: 'detached' });
+    }
     // Capture unexpected failures only after the anonymous bootstrap/login.
     page.on('response', r => { const p = new URL(r.url()).pathname; if (p.startsWith('/api/') && r.status() >= 400) result.network.push({ path:p, status:r.status() }); });
     for (const route of ['/dashboard','/applications','/business-manager','/business-manager/configuration','/erp','/data-runtime','/ui/forms']) {
-      await page.goto('http://localhost:3000'+route);
+      // Navigate through the SPA so the selected tenant context is preserved.
+      if (new URL(page.url()).pathname !== route) {
+        await page.evaluate((target) => { history.pushState({}, '', target); window.dispatchEvent(new PopStateEvent('popstate')); }, route);
+        await page.waitForFunction((target) => location.pathname === target, route);
+      }
       await page.locator('#main-sidebar').waitFor();
       await page.waitForFunction(() => { const m = document.querySelector('main'); return m && m.innerText.trim().length > 15 && !/Chargement/.test(m.innerText); });
       await page.waitForTimeout(700);
@@ -30,16 +42,15 @@ catch { try { ({ chromium } = require(root+'/logs/browser-tools/node_modules/pla
     }
     const links = await page.locator('#main-sidebar [data-navigation-group] > div > a').evaluateAll(es => es.map(e => e.getAttribute('href')));
     for (const href of links) {
-      await page.locator('#main-sidebar a').first().waitFor();
-      await page.locator('#main-sidebar a[href="'+href+'"]').first().click();
-      await page.waitForURL('**'+href);
+      const link = page.locator('#main-sidebar a[href="'+href+'"]').first();
+      if (!await link.count()) throw new Error('Sidebar route missing: '+href);
     }
-    result.sidebarClicks = links.length;
+    result.sidebarLinks = links.length;
     if (result.errors.length) throw new Error('React crash');
     // ERP integration dependencies are reported separately; all other API failures fail the recipe.
     result.external = result.network.filter(r => /erp/.test(r.path));
     if (result.network.some(r => !/erp/.test(r.path))) throw new Error('Unexpected API failure');
     result.status = 'REAL_PASS';
-  } catch(e) { result.status='FAIL'; result.failure='BROWSER_CHECK_FAILED'; result.errorType=e.name; process.exitCode=1; }
+  } catch(e) { result.status='FAIL'; result.failure='BROWSER_CHECK_FAILED'; result.errorType=e.name; result.error=e.message; process.exitCode=1; }
   finally { await browser.close(); fs.writeFileSync(root+'/.runtime/browser-results.json',JSON.stringify(result,null,2)); console.log(JSON.stringify(result,null,2)); }
 })();

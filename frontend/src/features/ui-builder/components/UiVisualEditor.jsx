@@ -13,6 +13,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import {
   Monitor, Tablet, Smartphone, Undo2, Redo2, Save, ShieldCheck, Eye, Search,
   Trash2, Copy, Plus, GripVertical, ChevronRight, Loader2, Check, TriangleAlert, XCircle, Info,
@@ -43,8 +44,10 @@ export default function UiVisualEditor() {
 
 function EditorBody() {
   const dispatch = useDispatch();
+  const { pageId: routePageId } = useParams();
   const state = useSelector((s) => s.uiBuilder);
   const { pages, selectedPageId, tree, saveState, saveError, device, zoom, undoStack, redoStack, validation, businessContext } = state;
+  const initializedRouteRef = useRef(null);
 
   const page = pages.find((p) => p.id === selectedPageId);
   const [libraryQuery, setLibraryQuery] = useState('');
@@ -65,6 +68,22 @@ function EditorBody() {
     }),
     [businessContext, page?.metadata],
   );
+
+  // Initialize a direct URL once the tenant-scoped page list arrives. A valid
+  // deep link wins initially; the generic /ui/builder/editor entry falls back
+  // to the first page. Subsequent picker changes must remain user-controlled.
+  useEffect(() => {
+    if (pages.length === 0) return;
+    const pageSet = pages.map((page) => page.id).join('|');
+    const initializationKey = `${routePageId || ''}:${pageSet}`;
+    if (initializedRouteRef.current === initializationKey) return;
+    initializedRouteRef.current = initializationKey;
+
+    const requestedPage = pages.find((candidate) => candidate.id === routePageId);
+    const selectedPageExists = pages.some((candidate) => candidate.id === selectedPageId);
+    const nextPageId = requestedPage?.id || (selectedPageExists ? selectedPageId : pages[0].id);
+    if (nextPageId && selectedPageId !== nextPageId) dispatch(selectPage(nextPageId));
+  }, [dispatch, pages, routePageId, selectedPageId]);
 
   // Debounced autosave keeps the server as the source of truth without sending
   // a request for each keystroke. Manual Save remains available for retries.
@@ -110,6 +129,15 @@ function EditorBody() {
         >
           {pages.map((p) => <option key={p.id} value={p.id}>{p.title} — {p.route}</option>)}
         </select>
+
+        <div className="flex items-center gap-1 lg:hidden" role="group" aria-label="Panneaux de l’éditeur">
+          <BmIconButton label="Composants" onClick={() => setMobilePanel((panel) => panel === 'library' ? null : 'library')}>
+            <Plus className="h-4 w-4" />
+          </BmIconButton>
+          <BmIconButton label="Propriétés" onClick={() => setMobilePanel((panel) => panel === 'inspector' ? null : 'inspector')}>
+            <Info className="h-4 w-4" />
+          </BmIconButton>
+        </div>
 
         <span className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" />
 
@@ -432,7 +460,7 @@ function PropertyField({ prop, schema, value, onChange }) {
   const label = schema.label || prop;
   if (schema.type === 'select') {
     return (
-      <BmSelect label={label} value={String(value ?? '')} onChange={(event) => onChange(schema.options.find((o) => String(o.value) === event.target.value)?.value ?? event.target.value)} options={schema.options.map((o) => ({ value: String(o.value), label: o.label }))} />
+      <BmSelect label={label} value={String(value ?? '')} onChange={(nextValue) => onChange(schema.options.find((o) => String(o.value) === nextValue)?.value ?? nextValue)} options={schema.options.map((o) => ({ value: String(o.value), label: o.label }))} />
     );
   }
   if (schema.type === 'boolean') {
@@ -488,8 +516,7 @@ function DataTab({ node, def, businessContext, onChange }) {
             </div>
             <BmSelect
               value={binding?.kind || ''}
-              onChange={(event) => {
-                const kind = event.target.value;
+              onChange={(kind) => {
                 if (!kind) { onChange(prop, null); return; }
                 onChange(prop, kind === 'ENTITY_FIELD' || kind === 'ENTITY_LIST' ? { kind, entity: entities[0]?.code || '', field: '' } : kind === 'CONTEXT' ? { kind, context: 'currentTenant' } : { kind, value: '' });
               }}
@@ -500,14 +527,14 @@ function DataTab({ node, def, businessContext, onChange }) {
                 <BmSelect
                   label="Entité (Business Manager)"
                   value={binding.entity || ''}
-                  onChange={(event) => onChange(prop, { ...binding, entity: event.target.value, field: '' })}
+                  onChange={(entity) => onChange(prop, { ...binding, entity, field: '' })}
                   options={entities.map((entity) => ({ value: entity.code, label: `${entity.name} (${entity.code})` }))}
                 />
                 {binding.kind === 'ENTITY_FIELD' && (
                   <BmSelect
                     label="Champ"
                     value={binding.field || ''}
-                    onChange={(event) => onChange(prop, { ...binding, field: event.target.value })}
+                    onChange={(field) => onChange(prop, { ...binding, field })}
                     options={[{ value: '', label: '— Choisir —' }, ...(entities.find((entity) => entity.code === binding.entity)?.fields || []).map((field) => ({ value: field.code, label: `${field.label} (${field.type})` }))]}
                   />
                 )}
@@ -518,7 +545,7 @@ function DataTab({ node, def, businessContext, onChange }) {
                 <BmSelect
                   label="Contexte"
                   value={binding.context || 'currentTenant'}
-                  onChange={(event) => onChange(prop, { ...binding, context: event.target.value })}
+                  onChange={(context) => onChange(prop, { ...binding, context })}
                   options={CONTEXT_KEYS.map((key) => ({ value: key, label: key }))}
                 />
               </div>
@@ -562,7 +589,7 @@ function ActionsTab({ node, def, onChange }) {
           <div className="mb-2 flex items-center justify-between">
             <BmSelect
               value={action.type}
-              onChange={(event) => update(index, { type: event.target.value, config: {} })}
+              onChange={(type) => update(index, { type, config: {} })}
               options={allowed.map((type) => ({ value: type, label: type }))}
             />
             <button onClick={() => onChange(actions.filter((_, i) => i !== index))} className="ml-2 text-rose-500 hover:text-rose-600" aria-label="Supprimer l'action"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -628,7 +655,7 @@ function ResponsiveTab({ node, onChange }) {
             <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Visibilité</span>
             <BmSelect
               value={responsive[device]?.visible ?? 'default'}
-              onChange={(event) => setResponsiveProp(device, { visible: event.target.value })}
+              onChange={(visible) => setResponsiveProp(device, { visible })}
               options={[
                 { value: 'default', label: 'Hérite du desktop' },
                 { value: 'visible', label: 'Visible' },

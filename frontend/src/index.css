@@ -5,47 +5,42 @@
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  background-color: #F8FAFC;
-  color: #0F172A;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Bento custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* ============================================
-   Business Manager — Design System (BM UI)
-   Canvas slate très clair, surfaces blanches,
-   accent bleu Techzone, radius 10-12px,
-   ombres discrètes, micro-animations 150-180ms.
-   ============================================ */
-
 :root {
+  --color-bg: #F5F8FD;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F8FAFC;
+  --color-border: #E2E8F0;
+  --color-text: #0F172A;
+  --color-text-muted: #64748B;
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-indigo: #4F46E5;
+  --color-violet: #7C3AED;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #06B6D4;
+  --color-sidebar: #0B1730;
+  --color-sidebar-2: #142747;
+  --color-header: #FFFFFF;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 14px rgb(15 23 42 / 0.05);
+  --shadow-card-hover: 0 10px 24px rgb(15 23 42 / 0.10);
+  --focus-ring: 0 0 0 3px rgb(37 99 235 / 0.28);
+
+  /* Existing Business Manager aliases remain the source-compatible bridge. */
   --bm-canvas: #f8fafc;
   --bm-surface: #ffffff;
   --bm-border: #e2e8f0;
@@ -56,61 +51,163 @@ body {
   --bm-radius: 12px;
 }
 
-/* Focus ring bleu léger, uniforme pour tout BM */
+html {
+  min-width: 320px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  scroll-behavior: smooth;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* Shared page primitives for new and migrated modules. */
+.tz-page {
+  width: min(100%, 1600px);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-5);
+}
+
+.tz-surface {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.tz-surface-interactive {
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out;
+}
+
+.tz-surface-interactive:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+.tz-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+/* Compact scrollbars keep dense SaaS workspaces usable without visual noise. */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background: #CBD5E1;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+  background-clip: padding-box;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Business Manager and shared-builder affordances. */
 .bm-focus:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 0 0 2px #fff, var(--focus-ring);
 }
+
 .bm-focus {
   transition: box-shadow 150ms ease-out, background-color 150ms ease-out,
     border-color 150ms ease-out, color 150ms ease-out;
 }
 
-/* Cards : hover très léger (150-180ms ease-out, -1px) */
 .bm-hover-lift {
   transition: transform 160ms ease-out, box-shadow 160ms ease-out,
     border-color 160ms ease-out;
 }
+
 .bm-hover-lift:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-card-hover);
 }
 
-/* Skeleton discret (utilisé par Loaders.jsx et les états BM) */
 .skeleton {
   position: relative;
   overflow: hidden;
+  border-radius: var(--radius-sm);
   background: #e2e8f0;
-  border-radius: 8px;
 }
+
 .skeleton::after {
-  content: '';
   position: absolute;
   inset: 0;
+  content: '';
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.6),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
   animation: bm-shimmer 1.4s ease-in-out infinite;
 }
+
 @keyframes bm-shimmer {
   100% {
     transform: translateX(100%);
   }
 }
 
-/* Chevrons / accordéons : rotation douce */
 .bm-chevron {
   transition: transform 200ms ease-out;
 }
+
 .bm-chevron-open {
   transform: rotate(180deg);
 }
 
-/* Fondu discret à l'entrée des panneaux */
 @keyframes bm-fade-in {
   from {
     opacity: 0;
@@ -121,17 +218,23 @@ body {
     transform: translateY(0);
   }
 }
+
 .bm-fade-in {
   animation: bm-fade-in 160ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bm-hover-lift,
-  .bm-focus,
-  .bm-chevron,
-  .bm-fade-in,
-  .skeleton::after {
-    animation: none;
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .tz-surface-interactive:hover,
+  .bm-hover-lift:hover {
+    transform: none;
   }
 }

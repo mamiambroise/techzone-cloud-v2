@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { addToast as addToastAction } from '../store/platformSlice.js';
 
 export function useToast() {
   const dispatch = useDispatch();
-  return {
+  return useMemo(() => ({
     toast: {
       success: (message, title = 'Succès') =>
         dispatch(addToastAction({ type: 'success', title, message })),
@@ -14,5 +15,5 @@ export function useToast() {
       warning: (message, title = 'Attention') =>
         dispatch(addToastAction({ type: 'warning', title, message })),
     },
-  };
+  }), [dispatch]);
 }

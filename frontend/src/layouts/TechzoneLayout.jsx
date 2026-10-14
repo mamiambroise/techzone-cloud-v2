@@ -15,7 +15,7 @@ function Layout() {
   const close = useCallback(() => setMobileOpen(false), []);
   const { modals, closeModal } = useModal();
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
+    <div className="flex min-h-screen bg-[var(--color-bg)] font-sans text-[var(--color-text)] antialiased selection:bg-blue-600 selection:text-white">
       <a
         href="#main-content"
         className="fixed left-4 top-2 z-[70] -translate-y-20 rounded bg-white p-3 text-sm shadow focus:translate-y-0"
@@ -38,7 +38,7 @@ function Layout() {
           <ApiErrorBanner />
           <Outlet />
         </main>
-        <footer className="flex flex-wrap justify-between gap-2 px-4 pb-5 text-[10px] text-slate-400 sm:px-6 lg:px-8">
+        <footer className="flex flex-wrap justify-between gap-2 px-4 pb-5 text-[10px] text-[var(--color-text-muted)] sm:px-6 lg:px-8">
           <span>Techzone Cloud</span>
           <span>Construction · Publication · Exécution</span>
         </footer>

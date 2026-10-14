@@ -57,3 +57,12 @@ npm test                    # Run unit tests
 - Never commit secrets; use `.env.local`
 - PostgreSQL may be intermittently unavailable → classify as DATABASE_UNAVAILABLE
 - Do not rebuild BM-CDC-09, Form Builder, Dashboard Builder, or AI Layer
+
+
+## DESIGN SYSTEM UI/UX (Techzone Cloud)
+- Use official palette & tokens from docs/DESIGN_SYSTEM.md
+- Prefer shared components/layout (TechzoneLayout, Sidebar, Header)
+- Apply consistent radius (8-16px), spacing (4-32px), shadows
+- WCAG AA, focus-visible, responsive
+- Never change backend/API/contracts/routes/business logic
+- Document new UI patterns in docs/DESIGN_SYSTEM.md

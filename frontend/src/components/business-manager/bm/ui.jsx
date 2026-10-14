@@ -11,8 +11,8 @@ import { ChevronRight, ChevronDown, Inbox, AlertTriangle, Ban, SearchX, Loader2,
 
 // ---------- Layout ----------
 
-export function BmPage({ children }) {
-  return <div className="space-y-5">{children}</div>;
+export function BmPage({ children, className = '' }) {
+  return <div className={`tz-page space-y-5 ${className}`}>{children}</div>;
 }
 
 export function BmBreadcrumb({ items }) {
@@ -153,6 +153,38 @@ export function BmSelect({ label, value, onChange, options, className = '' }) {
         <option key={option.value} value={option.value}>{option.label}</option>
       ))}
     </select>
+  );
+}
+
+// ---------- Formulaires ----------
+
+/** Champ de formulaire cohérent, lisible au clavier et réutilisable BM/UI Builder. */
+export function BmField({ label, htmlFor, hint, error, required = false, children, className = '' }) {
+  return (
+    <div className={`min-w-0 space-y-1 ${className}`}>
+      {label && (
+        <label
+          htmlFor={htmlFor}
+          className={`block text-xs font-semibold text-slate-700 ${required ? "after:ml-1 after:text-rose-600 after:content-['*']" : ''}`}
+        >
+          {label}
+        </label>
+      )}
+      {children}
+      {hint && !error && <p className="text-xs leading-5 text-slate-500">{hint}</p>}
+      {error && <p role="alert" className="text-xs font-medium text-rose-700">{error}</p>}
+    </div>
+  );
+}
+
+/** Section compacte pour éviter les longs formulaires sans hiérarchie. */
+export function BmFormSection({ title, description, children, className = '' }) {
+  return (
+    <fieldset className={`rounded-lg border border-slate-200 bg-slate-50/60 p-4 ${className}`}>
+      <legend className="px-1 text-xs font-bold uppercase tracking-wide text-slate-500">{title}</legend>
+      {description && <p className="mb-3 text-xs text-slate-500">{description}</p>}
+      {children}
+    </fieldset>
   );
 }
 

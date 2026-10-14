@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  Bell,
   AlertCircle,
   ArrowDown,
   ArrowLeft,

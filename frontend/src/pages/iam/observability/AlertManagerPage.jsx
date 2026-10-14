@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Search,
   RefreshCw,
@@ -10,7 +10,7 @@ import {
   SortDesc,
 } from 'lucide-react';
 import { iamObservabilityService } from '../../../services/apiClient.js';
-import { obsAlertRules, obsAlertInstances, obsAlertSources } from './mockData.js';
+import { obsAlertSources } from './mockData.js';
 import { ModernSpinner } from '../../../components/Loaders.jsx';
 import ConfirmModal from '../../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../../hooks/useToast.js';
@@ -74,39 +74,45 @@ function AlertManagerPage() {
   const [detailItem, setDetailItem] = useState(null);
   const [actionTarget, setActionTarget] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const detailCloseRef = useRef(null);
 
   const loadRules = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await iamObservabilityService.alertRules();
       const data = response.data;
       setRules(Array.isArray(data) ? data : (data?.rules ?? data?.data ?? []));
     } catch {
       {
+        setLoadError("Impossible de charger les règles d'alerte.");
         toast.error('Erreur lors du chargement des règles d\'alerte.');
         setRules([]);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const loadInstances = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await iamObservabilityService.alertInstances();
       const data = response.data;
       setInstances(Array.isArray(data) ? data : (data?.instances ?? data?.data ?? []));
     } catch {
       {
+        setLoadError("Impossible de charger les instances d'alerte.");
         toast.error('Erreur lors du chargement des instances d\'alerte.');
         setInstances([]);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     loadRules();
@@ -117,7 +123,33 @@ function AlertManagerPage() {
     setPage(1);
   }, [search, severityFilter, statusFilter, sourceFilter, enabledFilter, sortKey, sortDir, activeTab]);
 
+  useEffect(() => {
+    if (!detailItem) return undefined;
+
+    const previousElement = document.activeElement;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setDetailItem(null);
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    requestAnimationFrame(() => detailCloseRef.current?.focus());
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      previousElement?.focus?.();
+    };
+  }, [detailItem]);
+
   const isCritical = (status, severity) => status === 'OPEN' && severity === 'CRITICAL';
+
+  const openDetails = (item) => setDetailItem(item);
+
+  const handleDetailRowKeyDown = (event, item) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openDetails(item);
+    }
+  };
 
   const filteredRules = useMemo(() => {
     let list = rules.map((r) => ({ ...r }));
@@ -264,11 +296,28 @@ function AlertManagerPage() {
         <p className="text-sm text-slate-500 mt-1">Gérez les règles et les instances d'alertes.</p>
       </div>
 
-      <div className="flex gap-1 border-b border-slate-200 mb-4">
+      {loadError && (
+        <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <span>{loadError}</span>
+          <button
+            type="button"
+            onClick={() => { loadRules(); loadInstances(); }}
+            className="rounded-md border border-red-300 bg-white px-3 py-1.5 font-medium text-red-700 hover:bg-red-100"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      <div role="tablist" aria-label="Alertes" className="flex gap-1 border-b border-slate-200 mb-4">
         {RULE_TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
+            id={`alert-tab-${tab.key}`}
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            aria-controls="alert-results"
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.key ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
             onClick={() => setActiveTab(tab.key)}
           >
@@ -281,6 +330,7 @@ function AlertManagerPage() {
         <div className="relative flex-1 min-w-64">
           <input
             type="text"
+            aria-label="Rechercher une alerte"
             placeholder="Rechercher un code, une condition, un scope..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -288,23 +338,23 @@ function AlertManagerPage() {
           />
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
         </div>
-        <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+        <select aria-label="Filtrer par sévérité" value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
           {SEVERITY_OPTIONS.map((s) => <option key={s} value={s}>{s === 'ALL' ? 'Toutes sév.' : s}</option>)}
         </select>
         {activeTab === 'instances' && (
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+          <select aria-label="Filtrer par statut" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
             {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s === 'ALL' ? 'Tous statuts' : s}</option>)}
           </select>
         )}
-        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+        <select aria-label="Filtrer par source" value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
           {SOURCE_OPTIONS.map((s) => <option key={s} value={s}>{s === 'ALL' ? 'Toutes sources' : s}</option>)}
         </select>
         {activeTab === 'rules' && (
-          <select value={enabledFilter} onChange={(e) => setEnabledFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+          <select aria-label="Filtrer par activation" value={enabledFilter} onChange={(e) => setEnabledFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
             {ENABLED_OPTIONS.map((e) => <option key={e} value={e}>{e === 'ALL' ? 'Tous' : e === 'true' ? 'Activées' : 'Désactivées'}</option>)}
           </select>
         )}
-        <select value={sortKey} onChange={(e) => setSortKey(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+        <select aria-label="Trier par" value={sortKey} onChange={(e) => setSortKey(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
           {activeTab === 'rules' ? (
             <>
               <option value="severity">Sévérité</option>
@@ -326,17 +376,17 @@ function AlertManagerPage() {
             </>
           )}
         </select>
-        <select value={sortDir} onChange={(e) => setSortDir(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+        <select aria-label="Sens du tri" value={sortDir} onChange={(e) => setSortDir(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
           <option value="asc">Croissant</option>
           <option value="desc">Décroissant</option>
         </select>
-        <button onClick={handleRefresh} disabled={loading} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">
+        <button type="button" onClick={handleRefresh} disabled={loading} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">
           <RefreshCw className="w-4 h-4 inline mr-1" />Actualiser
         </button>
-        <button onClick={handleResetFilters} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">Réinitialiser</button>
+        <button type="button" onClick={handleResetFilters} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">Réinitialiser</button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div id="alert-results" role="tabpanel" aria-labelledby={`alert-tab-${activeTab}`} className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
@@ -369,7 +419,15 @@ function AlertManagerPage() {
               <tr><td colSpan={activeTab === 'rules' ? 8 : 7} className="px-4 py-8 text-center text-slate-500">Aucune donnée à afficher.</td></tr>
             )}
             {pageItems.map((item) => (
-              <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => setDetailItem(item)}>
+              <tr
+                key={item.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Voir le détail de ${item.code}`}
+                className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer focus:outline-none focus-visible:bg-blue-50"
+                onClick={() => openDetails(item)}
+                onKeyDown={(event) => handleDetailRowKeyDown(event, item)}
+              >
                 <td className="px-4 py-3 text-slate-900 font-medium">{item.code}</td>
                 <td className="px-4 py-3 text-slate-600">{item.sourceType}</td>
                 <td className="px-4 py-3"><SeverityBadge severity={item.severity} /></td>
@@ -403,23 +461,29 @@ function AlertManagerPage() {
         <div className="flex items-center justify-between mt-4 px-4 py-3 text-sm text-slate-600">
           <span>Page {page} / {totalPages}</span>
           <div className="flex items-center gap-2">
-            <button type="button" className="p-1 text-slate-500 hover:bg-slate-100 rounded disabled:opacity-50" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="w-4 h-4" /></button>
+            <button type="button" aria-label="Page précédente" className="p-1 text-slate-500 hover:bg-slate-100 rounded disabled:opacity-50" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="w-4 h-4" /></button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button key={p} type="button" className={`px-3 py-1 rounded-lg text-sm font-medium ${p === page ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`} onClick={() => setPage(p)}>{p}</button>
+              <button key={p} type="button" aria-current={p === page ? 'page' : undefined} className={`px-3 py-1 rounded-lg text-sm font-medium ${p === page ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`} onClick={() => setPage(p)}>{p}</button>
             ))}
-            <button type="button" className="p-1 text-slate-500 hover:bg-slate-100 rounded disabled:opacity-50" disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight className="w-4 h-4" /></button>
+            <button type="button" aria-label="Page suivante" className="p-1 text-slate-500 hover:bg-slate-100 rounded disabled:opacity-50" disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
       {detailItem && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setDetailItem(null)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-2xl mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetailItem(null)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="alert-detail-title"
+            className="w-full max-w-2xl rounded-[var(--radius-xl)] bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
+              <h2 id="alert-detail-title" className="text-lg font-semibold text-slate-900">
                 {activeTab === 'rules' ? 'Détail de la règle' : 'Détail de l\'instance'}
               </h2>
-              <button onClick={() => setDetailItem(null)} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
+              <button ref={detailCloseRef} type="button" aria-label="Fermer le détail" onClick={() => setDetailItem(null)} className="rounded-md p-1 text-xl text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-blue-600">×</button>
             </div>
             <div className="p-5 space-y-3">
               <div className="grid grid-cols-2 gap-4">

@@ -74,7 +74,7 @@ function FormsBody() {
               <BmSelect
                 label="Entité métier"
                 value={selectedEntity}
-                onChange={(event) => setSelectedEntity(event.target.value)}
+                onChange={setSelectedEntity}
                 options={[{ value: '', label: '— Choisir une entité —' }, ...entities.map((e) => ({ value: e.code, label: `${e.name} (${e.fields.length} champ(s))` }))]}
               />
             </div>
@@ -82,7 +82,7 @@ function FormsBody() {
               <BmSelect
                 label="Page FORM cible"
                 value={selectedPageId}
-                onChange={(event) => setSelectedPageId(event.target.value)}
+                onChange={setSelectedPageId}
                 options={[{ value: '', label: '— Choisir une page —' }, ...formPages.map((page) => ({ value: page.id, label: `${page.title} (${page.route})` }))]}
               />
             </div>
