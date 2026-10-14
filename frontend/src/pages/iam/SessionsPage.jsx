@@ -10,10 +10,15 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { iamAdminService } from '../../services/apiClient.js';
-import { iamSessionStatusConfig } from './mockData.js';
 import { ModernSpinner } from '../../components/Loaders.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../hooks/useToast.js';
+
+const SESSION_STATUS_CONFIG = {
+  ACTIVE: { color: '#10b981', label: 'Actif', bg: '#dcfce7', text: '#166534' },
+  EXPIRED: { color: '#f59e0b', label: 'Expiré', bg: '#fef3c7', text: '#92400e' },
+  REVOKED: { color: '#ef4444', label: 'Révoqué', bg: '#fef2f2', text: '#991b1b' },
+};
 
 const SESSION_STATUS_OPTIONS = ['ALL', 'ACTIVE', 'EXPIRED', 'REVOKED'];
 const SESSION_STATUS_LABELS = { ALL: 'Tous', ACTIVE: 'Actif', EXPIRED: 'Expiré', REVOKED: 'Révoqué' };
@@ -98,7 +103,7 @@ function ActionMenu({ session, onRevoke, onView }) {
 
 function SessionDetailModal({ open, session, onClose }) {
   if (!open || !session) return null;
-  const status = iamSessionStatusConfig[session.status] || iamSessionStatusConfig.ACTIVE;
+  const status = SESSION_STATUS_CONFIG[session.status] || SESSION_STATUS_CONFIG.ACTIVE;
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4" onClick={(e) => e.stopPropagation()}>
@@ -335,7 +340,7 @@ export default function SessionsPage() {
               </tr>
             )}
             {filteredSessions.map((session) => {
-              const status = iamSessionStatusConfig[session.status] || iamSessionStatusConfig.ACTIVE;
+              const status = SESSION_STATUS_CONFIG[session.status] || SESSION_STATUS_CONFIG.ACTIVE;
               return (
                 <tr key={session.id} className={`border-b border-slate-100 ${session.isCurrent ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
                   <td className="px-4 py-3">

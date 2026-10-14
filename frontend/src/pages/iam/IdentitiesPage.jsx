@@ -18,7 +18,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { iamAdminService } from '../../services/apiClient.js';
-import { iamIdentitiesPageMock } from './mockData.js';
 import { ModernSpinner } from '../../components/Loaders.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../hooks/useToast.js';
@@ -299,6 +298,12 @@ export default function IdentitiesPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const identityStats = [
+    { icon: Users, label: 'Identités totales', value: identities.length, color: '#2563eb' },
+    { icon: UserCheck, label: 'Identités principales', value: identities.filter((item) => item.isPrimary).length, color: '#10b981' },
+    { icon: Link2, label: 'Identités liées', value: identities.filter((item) => item.erpLink).length, color: '#7c3aed' },
+    { icon: Link2Off, label: 'Non liées à ERP', value: identities.filter((item) => !item.erpLink).length, color: '#f59e0b' },
+  ];
 
   const handleCreate = async (form) => {
     try {
@@ -307,11 +312,7 @@ export default function IdentitiesPage() {
       setFormOpen(false);
       loadIdentities();
     } catch {
-      {
-        toast.error("Erreur lors de la création de l'identité.");
-      }
-      toast.success('Identité créée avec succès.');
-      setFormOpen(false);
+      toast.error("Erreur lors de la création de l'identité.");
     }
   };
 
@@ -322,11 +323,7 @@ export default function IdentitiesPage() {
       setFormOpen(false);
       loadIdentities();
     } catch {
-      {
-        toast.error("Erreur lors de la mise à jour de l'identité.");
-      }
-      toast.success('Identité mise à jour.');
-      setFormOpen(false);
+      toast.error("Erreur lors de la mise à jour de l'identité.");
     }
   };
 
@@ -403,10 +400,7 @@ export default function IdentitiesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-        <StatCard icon={Users} label="Identités totales" value="—" context="Indicateur non connecté" color={iamIdentitiesPageMock.stats[0].color} />
-        <StatCard icon={UserCheck} label="Identités principales" value="—" context="Indicateur non connecté" color={iamIdentitiesPageMock.stats[1].color} />
-        <StatCard icon={Link2} label="Identités liées" value="—" context="Indicateur non connecté" color={iamIdentitiesPageMock.stats[2].color} />
-        <StatCard icon={Link2Off} label="Non liées à ERP" value="—" context="Indicateur non connecté" color={iamIdentitiesPageMock.stats[3].color} />
+        {identityStats.map((stat) => <StatCard key={stat.label} {...stat} context="Source IAM" />)}
       </div>
 
       <div className="flex flex-wrap gap-1 mb-4 border-b border-slate-200">

@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../app/routes.js';
 import { useAuth } from '../auth/AuthProvider.jsx';
+import MfaChallenge from '../auth/MfaChallenge.jsx';
 
 export default function LoginPage() {
   const location = useLocation();
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, isAuthenticated, sessionExpired } = useAuth();
+  const { login, verifyMfa, cancelMfa, isAuthenticated, sessionExpired, authState, mfaChallenge } = useAuth();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -27,10 +28,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const result = await login(identifier, password);
-      if (result?.mfaRequired) {
-        setError('Ce compte exige une vérification MFA. Utilisez le parcours MFA existant ; cette console ne le prend pas encore en charge.');
-      }
+      await login(identifier, password);
     } catch (err) {
       if (err?.normalized?.code === 'INVALID_CREDENTIALS') {
         setError('Identifiants invalides.');
@@ -84,7 +82,10 @@ export default function LoginPage() {
 
       <section className="flex items-center justify-center px-5 py-12 sm:px-10 lg:py-16">
         <div className="w-full max-w-md rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-card)] sm:p-9">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-primary)]">Bienvenue</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-primary)]">{authState === 'MFA_REQUIRED' ? 'Sécurité' : 'Bienvenue'}</p>
+          {authState === 'MFA_REQUIRED' ? (
+            <MfaChallenge challenge={mfaChallenge} onVerify={verifyMfa} onBack={cancelMfa} />
+          ) : <>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-text)]">Connexion à votre espace</h1>
           <p className="mb-8 mt-2 text-sm text-[var(--color-text-muted)]">Utilisez votre compte Techzone Cloud.</p>
 
@@ -158,6 +159,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400"><ShieldCheck size={14} />Accès à votre organisation</p>
+          </>}
         </div>
       </section>
     </main>

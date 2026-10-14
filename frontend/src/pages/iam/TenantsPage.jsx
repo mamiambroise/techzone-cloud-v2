@@ -19,10 +19,16 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { iamAdminService } from '../../services/apiClient.js';
-import { iamTenantsPageMock, iamTenantStatusConfig } from './mockData.js';
 import { ModernSpinner } from '../../components/Loaders.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../hooks/useToast.js';
+
+const TENANT_STATUS_CONFIG = {
+  ACTIVE: { color: '#10b981', label: 'Actif', bg: '#dcfce7', text: '#166534' },
+  SUSPENDED: { color: '#f59e0b', label: 'Suspendu', bg: '#fef3c7', text: '#92400e' },
+  PENDING: { color: '#3b82f6', label: 'En attente', bg: '#dbeafe', text: '#1e40af' },
+  DISABLED: { color: '#64748b', label: 'Désactivé', bg: '#f1f5f9', text: '#334155' },
+};
 
 function TenantForm({ open, tenant, onClose, onSubmit, title }) {
   const [form, setForm] = useState({ name: '', code: '', domain: '', status: 'ACTIVE', isDefault: false });
@@ -74,7 +80,7 @@ function TenantForm({ open, tenant, onClose, onSubmit, title }) {
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Statut</label>
             <select value={form.status} onChange={(e) => update('status', e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-              {Object.entries(iamTenantStatusConfig).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
+              {Object.entries(TENANT_STATUS_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -315,7 +321,7 @@ export default function TenantsPage() {
               <tr><td colSpan={10} className="px-4 py-8 text-center text-slate-500">Aucun tenant ne correspond aux filtres.</td></tr>
             )}
             {pageItems.map((tenant) => {
-              const colors = iamTenantStatusConfig[tenant.status] || iamTenantStatusConfig.ACTIVE;
+              const colors = TENANT_STATUS_CONFIG[tenant.status] || TENANT_STATUS_CONFIG.ACTIVE;
               return (
                 <tr key={tenant.id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3">

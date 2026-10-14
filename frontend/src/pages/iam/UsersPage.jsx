@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { iamAdminService } from '../../services/apiClient.js';
-import { iamUsersPageMock } from './mockData.js';
 import { ModernSpinner } from '../../components/Loaders.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../hooks/useToast.js';
