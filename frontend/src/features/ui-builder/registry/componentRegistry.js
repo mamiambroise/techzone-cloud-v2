@@ -363,6 +363,16 @@ export function isKnownComponent(key) {
   return byKey.has(key);
 }
 
+export function canAcceptChildren(parentType) {
+  const allowedChildren = byKey.get(parentType)?.allowedChildren;
+  return allowedChildren === '*' || (Array.isArray(allowedChildren) && allowedChildren.length > 0);
+}
+
+export function canContainComponent(parentType, childType) {
+  const allowedChildren = byKey.get(parentType)?.allowedChildren;
+  return allowedChildren === '*' || (Array.isArray(allowedChildren) && allowedChildren.includes(childType));
+}
+
 export function componentsByCategory() {
   return COMPONENT_CATEGORIES
     .map((category) => ({

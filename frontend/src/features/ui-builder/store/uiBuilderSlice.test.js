@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import reducer, {
   setContext, selectPage, selectComponent, addComponent, moveComponent,
-  updateComponentProps, updateComponentBinding, updateComponentActions, generateFormFromEntity,
+  updateComponentProps, updateComponentResponsive, updateComponentBinding, updateComponentActions, generateFormFromEntity,
   deleteComponent, updatePageSettings, undo, redo,
 } from './uiBuilderSlice.js';
 import { createDefaultTree } from '../model/uiDefinition.js';
@@ -68,6 +68,45 @@ describe('uiBuilderSlice — opérations canvas', () => {
 
     state = reducer(state, moveComponent({ nodeId: cardId, newParentId: sectionId }));
     expect(JSON.stringify(state.tree)).toBe(before);
+  });
+
+  it('moveComponent réordonne les frères et refuse les conteneurs incompatibles', () => {
+    state = reducer(state, addComponent({ type: 'Heading' }));
+    const headingId = state.selectedComponentId;
+    state = reducer(state, addComponent({ type: 'Text' }));
+    const textId = state.selectedComponentId;
+    state = reducer(state, addComponent({ type: 'Form' }));
+    const formId = state.selectedComponentId;
+
+    state = reducer(state, moveComponent({ nodeId: headingId, newParentId: 'root', index: 2 }));
+    expect(state.tree.nodes.root.children).toEqual([textId, headingId, formId]);
+
+    const before = JSON.stringify(state.tree);
+    state = reducer(state, moveComponent({ nodeId: headingId, newParentId: formId }));
+    expect(JSON.stringify(state.tree)).toBe(before);
+  });
+
+  it('addComponent refuse les types interdits par le registre du conteneur', () => {
+    state = reducer(state, addComponent({ type: 'Form' }));
+    const formId = state.selectedComponentId;
+    const before = JSON.stringify(state.tree);
+
+    state = reducer(state, addComponent({ type: 'Heading', parentId: formId }));
+
+    expect(JSON.stringify(state.tree)).toBe(before);
+  });
+
+  it('enregistre les overrides responsifs sur le nœud et les restaure avec undo', () => {
+    state = reducer(state, addComponent({ type: 'Heading' }));
+    const headingId = state.selectedComponentId;
+
+    state = reducer(state, updateComponentResponsive({ nodeId: headingId, device: 'MOBILE', patch: { visible: 'hidden' } }));
+
+    expect(state.tree.nodes[headingId].responsive).toEqual({ MOBILE: { visible: 'hidden' } });
+    expect(state.tree.nodes[headingId].props.MOBILE).toBeUndefined();
+    expect(state.saveState).toBe('DIRTY');
+    state = reducer(state, undo());
+    expect(state.tree.nodes[headingId].responsive).toEqual({});
   });
 
   it('updateComponentProps / Binding / Actions marquent DIRTY et empilent l’undo', () => {

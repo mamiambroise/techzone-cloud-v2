@@ -8,8 +8,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import * as uiBuilderApi from '../services/uiBuilderService.js';
-import { createDefaultTree, createNode } from '../model/uiDefinition.js';
-import { defaultProps, getComponentDefinition, isKnownComponent } from '../registry/componentRegistry.js';
+import { createDefaultTree, createNode, DEVICE_KINDS } from '../model/uiDefinition.js';
+import { canAcceptChildren, canContainComponent, defaultProps, getComponentDefinition, isKnownComponent } from '../registry/componentRegistry.js';
 
 const MAX_HISTORY = 50;
 
@@ -135,20 +135,22 @@ const uiBuilderSlice = createSlice({
     /* ----- Opérations canvas (undoables) ----- */
 
     addComponent(state, action) {
-      const { type, parentId } = action.payload;
+      const { type, parentId, index } = action.payload;
       if (!isKnownComponent(type)) return;
       // Le composant est ajouté dans la sélection si elle accepte des enfants,
       // sinon à la racine (comportement « ajouter à la sélection »).
       const selected = state.selectedComponentId ? state.tree.nodes[state.selectedComponentId] : null;
-      const selectedDef = selected ? getComponentDefinition(selected.type) : null;
-      const selectedAcceptsChildren = selected && (selectedDef?.allowedChildren === '*' || (selectedDef?.allowedChildren?.length || 0) > 0);
-      const parent = parentId || (selectedAcceptsChildren ? selected.id : state.tree.root);
-      if (!state.tree.nodes[parent]) return;
+      const selectedAcceptsComponent = selected && canContainComponent(selected.type, type);
+      const parent = parentId || (selectedAcceptsComponent ? selected.id : state.tree.root);
+      if (!state.tree.nodes[parent] || !canContainComponent(state.tree.nodes[parent].type, type)) return;
       const before = state.tree;
       const node = createNode(type, defaultProps(type));
       state.tree = withTree(state, (tree, nodes) => {
         nodes[node.id] = node;
-        nodes[parent] = { ...nodes[parent], children: [...(nodes[parent].children || []), node.id] };
+        const children = [...(nodes[parent].children || [])];
+        const at = typeof index === 'number' ? Math.max(0, Math.min(index, children.length)) : children.length;
+        children.splice(at, 0, node.id);
+        nodes[parent] = { ...nodes[parent], children };
       });
       state.selectedComponentId = node.id;
       pushHistory(state, { type: 'ADD_COMPONENT', doState: before });
@@ -161,7 +163,9 @@ const uiBuilderSlice = createSlice({
       if (!entity || !Array.isArray(fields)) return;
       const before = state.tree;
       const parentId = state.selectedComponentId && state.tree.nodes[state.selectedComponentId]
+        && canContainComponent(state.tree.nodes[state.selectedComponentId].type, 'Form')
         ? state.selectedComponentId : state.tree.root;
+      if (!canContainComponent(state.tree.nodes[parentId]?.type, 'Form')) return;
       const form = createNode('Form', { ...defaultProps('Form'), title: `Ajouter ${entity}` });
       const nodes = { ...state.tree.nodes, [form.id]: form };
       const parent = nodes[parentId];
@@ -185,18 +189,22 @@ const uiBuilderSlice = createSlice({
     moveComponent(state, action) {
       const { nodeId, newParentId, index } = action.payload;
       const nodes = state.tree.nodes;
-      if (!nodes[nodeId] || !nodes[newParentId]) return;
-      if (nodeId === newParentId) return;
+      if (!nodes[nodeId] || !nodes[newParentId] || nodeId === state.tree.root || nodeId === newParentId) return;
+      if (!canContainComponent(nodes[newParentId].type, nodes[nodeId].type)) return;
       // anti-cycle : le parent ne peut pas être un descendant du noeud déplacé
       if (collectDescendants(nodes, nodeId).includes(newParentId)) return;
       const before = state.tree;
       const oldParentId = Object.keys(nodes).find((id) => (nodes[id].children || []).includes(nodeId));
       state.tree = withTree(state, (tree, nextNodes) => {
+        const oldSiblings = [...(nextNodes[oldParentId]?.children || [])];
+        const oldIndex = oldSiblings.indexOf(nodeId);
         if (oldParentId) {
-          nextNodes[oldParentId] = { ...nextNodes[oldParentId], children: (nextNodes[oldParentId].children || []).filter((id) => id !== nodeId) };
+          nextNodes[oldParentId] = { ...nextNodes[oldParentId], children: oldSiblings.filter((id) => id !== nodeId) };
         }
         const siblings = [...(nextNodes[newParentId].children || [])];
-        const at = typeof index === 'number' ? Math.max(0, Math.min(index, siblings.length)) : siblings.length;
+        const requestedIndex = typeof index === 'number' ? index : siblings.length;
+        const adjustedIndex = oldParentId === newParentId && oldIndex < requestedIndex ? requestedIndex - 1 : requestedIndex;
+        const at = Math.max(0, Math.min(adjustedIndex, siblings.length));
         siblings.splice(at, 0, nodeId);
         nextNodes[newParentId] = { ...nextNodes[newParentId], children: siblings };
       });
@@ -213,6 +221,20 @@ const uiBuilderSlice = createSlice({
         nodes[nodeId] = { ...nodes[nodeId], props: { ...nodes[nodeId].props, ...props } };
       });
       pushHistory(state, { type: 'UPDATE_PROPS', doState: before });
+      state.saveState = 'DIRTY';
+      state.redoStack = [];
+    },
+
+    updateComponentResponsive(state, action) {
+      const { nodeId, device, patch } = action.payload;
+      if (!state.tree.nodes[nodeId] || !DEVICE_KINDS.includes(device) || !patch || typeof patch !== 'object') return;
+      const before = state.tree;
+      state.tree = withTree(state, (tree, nodes) => {
+        const responsive = { ...(nodes[nodeId].responsive || {}) };
+        responsive[device] = { ...(responsive[device] || {}), ...patch };
+        nodes[nodeId] = { ...nodes[nodeId], responsive };
+      });
+      pushHistory(state, { type: 'UPDATE_RESPONSIVE', doState: before });
       state.saveState = 'DIRTY';
       state.redoStack = [];
     },
@@ -399,6 +421,7 @@ export const {
   generateFormFromEntity,
   moveComponent,
   updateComponentProps,
+  updateComponentResponsive,
   updateComponentBinding,
   updateComponentActions,
   deleteComponent,

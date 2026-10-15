@@ -97,6 +97,7 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
 
 /** Rendu d'un composant selon son type (registry-driven). */
 function renderNode(node, ctx) {
+  if (node.responsive?.[ctx.device]?.visible === 'hidden') return null;
   const props = node.props || {};
   const childNodes = (node.children || []).map((childId) => ctx.nodes[childId]).filter(Boolean);
 
@@ -327,19 +328,37 @@ function RendererNode({ node, ctx }) {
  * Rendu racine d'une page.
  * resolveBinding(node, prop, fallback) : résolution structurée injectée.
  */
-export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate }) {
+function getViewportDevice() {
+  if (typeof window === 'undefined') return 'DESKTOP';
+  if (window.innerWidth <= 640) return 'MOBILE';
+  if (window.innerWidth <= 1024) return 'TABLET';
+  return 'DESKTOP';
+}
+
+export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate, device }) {
   const [dataRevision, setDataRevision] = useState(0);
+  const [viewportDevice, setViewportDevice] = useState(getViewportDevice);
+
+  useEffect(() => {
+    if (device) return undefined;
+    const updateDevice = () => setViewportDevice(getViewportDevice());
+    window.addEventListener('resize', updateDevice);
+    return () => window.removeEventListener('resize', updateDevice);
+  }, [device]);
+
+  const activeDevice = device || viewportDevice;
   const ctx = useMemo(() => ({
     nodes: tree?.nodes || {},
     businessContext,
     recordId,
     onNavigate,
     mode,
+    device: activeDevice,
     resolveBinding: resolveBinding || ((node, prop, fallback) => node.bindings?.[prop]?.kind === 'STATIC' ? node.bindings[prop].value : fallback),
     fieldSchemas: new Map(),
     dataRevision,
     refreshData: () => setDataRevision((value) => value + 1),
-  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate]);
+  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate, activeDevice]);
 
   const rootNode = ctx.nodes[tree?.root];
   if (!rootNode) {

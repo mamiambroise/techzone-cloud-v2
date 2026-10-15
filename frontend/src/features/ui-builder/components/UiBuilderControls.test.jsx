@@ -1,8 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import UiFormsBuilder from './UiFormsBuilder.jsx';
@@ -26,14 +26,22 @@ const PAGES = [
   { id: 'form-page', key: 'customer-form', title: 'Customer form', route: '/customers/new', type: 'FORM', layout: 'SIDEBAR', visibility: 'ALWAYS', order: 1, components: ROOT },
 ];
 
-function renderWithStore(ui, path = '/ui') {
+function renderWithStore(ui, path = '/ui', showLocation = false) {
   const store = configureStore({ reducer: { uiBuilder: uiBuilderReducer } });
   const view = render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
+        {ui}
+        {showLocation && <LocationDisplay />}
+      </MemoryRouter>
     </Provider>,
   );
   return { store, ...view };
+}
+
+function LocationDisplay() {
+  const location = useLocation();
+  return <output data-testid="current-path">{location.pathname}</output>;
 }
 
 function selectWithOption(value) {
@@ -67,10 +75,12 @@ describe('UI Builder callback regressions', () => {
     const { store } = renderWithStore(
       <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
       '/ui/builder/editor',
+      true,
     );
 
     await screen.findByTestId('ui-visual-editor');
     await waitFor(() => expect(store.getState().uiBuilder.selectedPageId).toBe('page-a'));
+    await waitFor(() => expect(screen.getByTestId('current-path')).toHaveTextContent('/ui/builder/page-a'));
   });
 
   it('keeps a manual picker choice after resolving a deep-link page', async () => {
@@ -78,12 +88,120 @@ describe('UI Builder callback regressions', () => {
     const { store } = renderWithStore(
       <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
       '/ui/builder/page-a',
+      true,
     );
 
     await screen.findByTestId('ui-visual-editor');
     await user.selectOptions(screen.getByLabelText("Page en cours d'édition"), 'form-page');
 
     await waitFor(() => expect(store.getState().uiBuilder.selectedPageId).toBe('form-page'));
+    await waitFor(() => expect(screen.getByTestId('current-path')).toHaveTextContent('/ui/builder/form-page'));
+  });
+
+  it('sélectionne une page depuis le panneau Pages et synchronise le deep link', async () => {
+    const user = userEvent.setup();
+    const { store } = renderWithStore(
+      <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
+      '/ui/builder/page-a',
+      true,
+    );
+
+    await screen.findByTestId('ui-visual-editor');
+    await user.click(screen.getByRole('tab', { name: 'Pages' }));
+    await user.click(screen.getByRole('button', { name: /Customer form/ }));
+
+    expect(store.getState().uiBuilder.selectedPageId).toBe('form-page');
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/ui/builder/form-page');
+  });
+
+  it('sélectionne un composant depuis l’arborescence des calques', async () => {
+    const user = userEvent.setup();
+    const { store } = renderWithStore(
+      <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
+      '/ui/builder/page-a',
+    );
+
+    await screen.findByTestId('ui-visual-editor');
+    await user.click(screen.getByRole('button', { name: 'Typographie' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter Titre à la sélection' }));
+    const headingId = store.getState().uiBuilder.selectedComponentId;
+
+    await user.click(screen.getByRole('tab', { name: 'Calques' }));
+    await user.click(screen.getByRole('treeitem', { name: 'Conteneur' }));
+    await user.click(screen.getByRole('treeitem', { name: 'Titre' }));
+
+    expect(store.getState().uiBuilder.selectedComponentId).toBe(headingId);
+  });
+
+  it('propose de créer une page quand la version ne contient aucune page', async () => {
+    api.get.mockImplementation(async (url) => {
+      if (url === '/business-manager/applications') return { data: [{ id: 'app-a', name: 'Application A' }] };
+      if (url === '/business-manager/applications/app-a/versions') return { data: [{ id: 'version-a', version: '1.0.0', status: 'DRAFT' }] };
+      if (url === '/ui-builder/pages/version-a') return { data: [] };
+      if (url === '/ui-builder/overview/version-a') return { data: { applicationVersion: { editable: true } } };
+      if (url === '/ui-builder/business-context/version-a') return { data: { entities: [] } };
+      return { data: [] };
+    });
+
+    renderWithStore(
+      <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
+      '/ui/builder/editor',
+    );
+
+    expect(await screen.findByRole('link', { name: 'Créer une page' })).toHaveAttribute('href', '/ui/pages');
+  });
+
+  it('sauvegarde la visibilité responsive dans la configuration responsive du composant', async () => {
+    const user = userEvent.setup();
+    const { store } = renderWithStore(
+      <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
+      '/ui/builder/page-a',
+    );
+
+    await screen.findByTestId('ui-visual-editor');
+    await user.click(screen.getByRole('button', { name: 'Typographie' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter Titre à la sélection' }));
+    await user.click(screen.getByRole('tab', { name: 'Responsive' }));
+    const visibilityControls = screen.getAllByLabelText('Visibilité');
+    await user.selectOptions(visibilityControls[2], 'hidden');
+
+    const selectedId = store.getState().uiBuilder.selectedComponentId;
+    expect(store.getState().uiBuilder.tree.nodes[selectedId].responsive.MOBILE.visible).toBe('hidden');
+    expect(store.getState().uiBuilder.tree.nodes[selectedId].props.MOBILE).toBeUndefined();
+  });
+
+  it('ajoute un composant par glisser-déposer et réordonne un composant existant', async () => {
+    const user = userEvent.setup();
+    const { store } = renderWithStore(
+      <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
+      '/ui/builder/page-a',
+    );
+
+    await screen.findByTestId('ui-visual-editor');
+    await user.click(screen.getByRole('button', { name: 'Typographie' }));
+
+    const dataTransfer = () => {
+      const values = new Map();
+      return {
+        effectAllowed: '',
+        setData: (type, value) => values.set(type, value),
+        getData: (type) => values.get(type) || '',
+      };
+    };
+    const headingTransfer = dataTransfer();
+    fireEvent.dragStart(screen.getByText('Titre').closest('li'), { dataTransfer: headingTransfer });
+    fireEvent.drop(screen.getByRole('button', { name: 'Composant Container' }), { dataTransfer: headingTransfer });
+    const headingId = store.getState().uiBuilder.tree.nodes.root.children[0];
+    expect(store.getState().uiBuilder.tree.nodes[headingId].type).toBe('Heading');
+
+    await user.click(screen.getByRole('button', { name: 'Ajouter Texte à la sélection' }));
+    const textId = store.getState().uiBuilder.tree.nodes.root.children[1];
+    const moveTransfer = dataTransfer();
+    fireEvent.dragStart(screen.getByRole('button', { name: 'Composant Text' }), { dataTransfer: moveTransfer });
+    moveTransfer.setData('text/ui-component-id', textId);
+    fireEvent.drop(screen.getByRole('button', { name: 'Composant Heading' }), { dataTransfer: moveTransfer });
+
+    expect(store.getState().uiBuilder.tree.nodes.root.children).toEqual([textId, headingId]);
   });
 
   it('updates an inspector select using the BmSelect value callback', async () => {

@@ -113,7 +113,7 @@ function PreviewBody() {
               {page && (
                 <div className="mx-auto rounded-xl border border-slate-200 bg-[#f1f5f9] p-4" style={{ maxWidth: DEVICE_WIDTHS[device] }}>
                   <div className="rounded-lg bg-white p-4 shadow-sm">
-                    <UiRenderer tree={page.components} resolveBinding={resolveBinding} businessContext={businessContext} mode="preview" />
+                    <UiRenderer tree={page.components} resolveBinding={resolveBinding} businessContext={businessContext} mode="preview" device={device} />
                   </div>
                 </div>
               )}
