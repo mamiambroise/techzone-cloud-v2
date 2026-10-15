@@ -85,7 +85,7 @@ export class DataModelService {
   }
 
   async createEntity(applicationVersionId: string, dto: CreateEntityDto, tenantId: string | null) {
-    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const code = dto.code.trim().toLowerCase();
 
@@ -104,11 +104,6 @@ export class DataModelService {
         HttpStatus.CONFLICT,
       );
     }
-
-    const appVersion = await this.prisma.applicationVersion.findUnique({
-      where: { id: applicationVersionId },
-      select: { applicationId: true },
-    });
 
     return this.prisma.bmEntity.create({
       data: {
@@ -189,7 +184,7 @@ export class DataModelService {
     }
 
     return this.prisma.bmEntity.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         name: dto.name,
         pluralName: dto.pluralName,
@@ -210,7 +205,7 @@ export class DataModelService {
     if (entity.status === BmEntityStatus.ARCHIVED) return entity;
 
     return this.prisma.bmEntity.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: { status: BmEntityStatus.ARCHIVED },
     });
   }
@@ -320,7 +315,7 @@ export class DataModelService {
     }
 
     return this.prisma.bmField.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         label: dto.label,
         description: dto.description,
@@ -352,7 +347,9 @@ export class DataModelService {
       );
     }
 
-    return this.prisma.bmField.delete({ where: { id } });
+    return this.prisma.bmField.delete({
+      where: { id, tenantId: tenantId ?? undefined },
+    });
   }
 
   // =====================================================================
@@ -453,6 +450,29 @@ async createRelation(applicationVersionId: string, dto: CreateRelationDto, tenan
       );
     }
 
+    if (dto.fieldIds) {
+      const uniqueFieldIds = new Set(dto.fieldIds);
+      const fields =
+        uniqueFieldIds.size === dto.fieldIds.length
+          ? await this.prisma.bmField.findMany({
+              where: {
+                id: { in: dto.fieldIds },
+                entityId,
+                tenantId: tenantId ?? undefined,
+              },
+              select: { id: true },
+            })
+          : [];
+
+      if (fields.length !== dto.fieldIds.length) {
+        throw new PlatformException(
+          PlatformErrorCode.APPLICATION_NOT_FOUND,
+          'Index fields must be distinct fields of this entity',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    }
+
     return this.prisma.bmIndex.create({
       data: {
         entityId,
@@ -513,7 +533,7 @@ async createFieldValidation(dto: CreateFieldValidationDto, tenantId: string | nu
   // =====================================================================
 
 async createComputedField(applicationVersionId: string, entityId: string, dto: CreateComputedFieldDto, tenantId: string | null) {
-    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
     await this.assertEntityVersionWritable(entityId, tenantId);
 
     const entity = await this.prisma.bmEntity.findFirst({
@@ -528,10 +548,31 @@ async createComputedField(applicationVersionId: string, entityId: string, dto: C
       );
     }
 
-    const appVersion = await this.prisma.applicationVersion.findUnique({
-      where: { id: applicationVersionId },
-      select: { applicationId: true },
-    });
+    if (entity.applicationVersionId !== applicationVersionId) {
+      throw new PlatformException(
+        PlatformErrorCode.VERSION_NOT_FOUND,
+        'Entity does not belong to this version',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (dto.targetFieldCode) {
+      const targetField = await this.prisma.bmField.findFirst({
+        where: {
+          entityId,
+          code: dto.targetFieldCode.trim().toLowerCase(),
+          tenantId: tenantId ?? undefined,
+        },
+        select: { id: true },
+      });
+      if (!targetField) {
+        throw new PlatformException(
+          PlatformErrorCode.APPLICATION_NOT_FOUND,
+          'Target field not found in this entity',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    }
 
     return this.prisma.bmComputedField.create({
       data: {
@@ -593,5 +634,3 @@ async createComputedField(applicationVersionId: string, entityId: string, dto: C
     };
   }
 }
-
-

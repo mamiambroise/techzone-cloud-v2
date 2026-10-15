@@ -6,6 +6,7 @@ import { PlatformErrorCode } from '../../../common/errors/platform-error-code.en
 import { PlatformException } from '../../../common/errors/platform.exception';
 import { BmNavigationStatus, BmRuntimeReadiness, BmContractStatus } from '../../../generated/prisma/enums';
 import { CreateRuntimeManifestDto, CreateRuntimeBindingDto, UpdateRuntimeBindingDto } from './dto/create-runtime.dto';
+import { assertVersionWritable } from '../version-mutability';
 
 @Injectable()
 export class RuntimeBridgeService {
@@ -75,15 +76,10 @@ export class RuntimeBridgeService {
   // =====================================================================
 
   async createManifest(applicationVersionId: string, dto: CreateRuntimeManifestDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const code = dto.code.trim().toLowerCase();
     const version = dto.version || '1.0.0';
-
-    const appVersion = await this.prisma.applicationVersion.findUnique({
-      where: { id: applicationVersionId },
-      include: { application: true },
-    });
 
     const existing = await this.prisma.bmRuntimeManifest.findFirst({
       where: {
@@ -156,6 +152,11 @@ export class RuntimeBridgeService {
 
   async updateManifest(id: string, dto: CreateRuntimeManifestDto, tenantId: string | null) {
     const manifest = await this.findOneManifest(id, tenantId);
+    await assertVersionWritable(
+      this.prisma,
+      manifest.applicationVersionId,
+      tenantId,
+    );
 
     if (manifest.status === BmNavigationStatus.ACTIVE) {
       throw new PlatformException(
@@ -166,7 +167,7 @@ export class RuntimeBridgeService {
     }
 
     return this.prisma.bmRuntimeManifest.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         code: dto.code?.trim().toLowerCase(),
         name: dto.name,
@@ -184,6 +185,11 @@ export class RuntimeBridgeService {
 
   async createBinding(manifestId: string, dto: CreateRuntimeBindingDto, tenantId: string | null) {
     const manifest = await this.findOneManifest(manifestId, tenantId);
+    await assertVersionWritable(
+      this.prisma,
+      manifest.applicationVersionId,
+      tenantId,
+    );
 
     const existing = await this.prisma.bmRuntimeBinding.findFirst({
       where: {
@@ -228,6 +234,9 @@ export class RuntimeBridgeService {
   async updateBinding(id: string, dto: UpdateRuntimeBindingDto, tenantId: string | null) {
     const binding = await this.prisma.bmRuntimeBinding.findFirst({
       where: { id, tenantId: tenantId ?? undefined },
+      include: {
+        manifest: { select: { applicationVersionId: true } },
+      },
     });
 
     if (!binding) {
@@ -238,8 +247,14 @@ export class RuntimeBridgeService {
       );
     }
 
+    await assertVersionWritable(
+      this.prisma,
+      binding.manifest.applicationVersionId,
+      tenantId,
+    );
+
     return this.prisma.bmRuntimeBinding.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         configuration: dto.configuration as any,
         status: dto.status,
@@ -395,5 +410,3 @@ export class RuntimeBridgeService {
     return Math.abs(hash).toString(36);
   }
 }
-
-

@@ -3,6 +3,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PlatformErrorCode } from '../../common/errors/platform-error-code.enum';
 import { PlatformException } from '../../common/errors/platform.exception';
+import { assertVersionWritable } from './version-mutability';
 
 export type CopyBusinessDefinitionResult = {
   entities: number;
@@ -71,6 +72,8 @@ export class BusinessDefinitionCopyService {
         HttpStatus.NOT_FOUND,
       );
     }
+
+    await assertVersionWritable(this.prisma, targetVersionId, tenantId);
 
     const applicationId = targetVersion.applicationId;
 

@@ -86,6 +86,8 @@ export const PERMISSIONS = {
   BM_WRITE: 'bm:write',
   BM_VALIDATE: 'bm:validate',
   BM_PUBLISH: 'bm:publish',
+  BM_CONTRACT_READ: 'bm.contract.read',
+  BM_CONTRACT_WRITE: 'bm.contract.write',
   // Subscription & Billing (CDC 15).
   //
   // Ces permissions autorisent un ACTEUR à agir sur la surface Billing.
@@ -133,6 +135,8 @@ export const UI_BUILDER_VALIDATE = PERMISSIONS.UI_BUILDER_VALIDATE;
 export const BM_READ = PERMISSIONS.BM_READ;
 export const BM_WRITE = PERMISSIONS.BM_WRITE;
 export const BM_VALIDATE = PERMISSIONS.BM_VALIDATE;
+export const BM_CONTRACT_READ = PERMISSIONS.BM_CONTRACT_READ;
+export const BM_CONTRACT_WRITE = PERMISSIONS.BM_CONTRACT_WRITE;
 export const BM_PUBLISH = PERMISSIONS.BM_PUBLISH;
 export const BILLING_READ = PERMISSIONS.BILLING_READ;
 export const BILLING_MANAGE = PERMISSIONS.BILLING_MANAGE;
