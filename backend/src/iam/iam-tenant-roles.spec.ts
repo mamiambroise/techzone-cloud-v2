@@ -100,6 +100,7 @@ describe('tenant role catalogue', () => {
     expect(permissions).toContain(PERMISSIONS.BM_WRITE);
     expect(permissions).toContain(PERMISSIONS.BM_VALIDATE);
     expect(permissions).toContain(PERMISSIONS.BM_PUBLISH);
+    expect(permissions).toContain(PERMISSIONS.BM_CONTRACT_WRITE);
     // UI Builder
     expect(permissions).toContain(PERMISSIONS.UI_BUILDER_WRITE);
     expect(permissions).toContain(PERMISSIONS.UI_BUILDER_VALIDATE);
@@ -121,6 +122,7 @@ describe('tenant role catalogue', () => {
 
   it('keeps tenant_user read-only', () => {
     const permissions = effectiveSystemRolePermissions('tenant_user');
+    expect(permissions).toContain(PERMISSIONS.BM_CONTRACT_READ);
     for (const definition of PERMISSION_DEFINITIONS) {
       const isWrite = /(write|create|update|delete|disable|publish|execute|attach|restore|archive|validate|generate|record|refund|manage|probe|invalidate|export|cancel|retry|rollback)/.test(
         definition.action,

@@ -39,7 +39,7 @@ export class NavigationService {
   // =====================================================================
 
 async createMenu(applicationVersionId: string, dto: CreateMenuDto, tenantId: string | null) {
-    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const code = dto.code.trim().toLowerCase();
 
@@ -58,11 +58,6 @@ async createMenu(applicationVersionId: string, dto: CreateMenuDto, tenantId: str
         HttpStatus.CONFLICT,
       );
     }
-
-    const appVersion = await this.prisma.applicationVersion.findUnique({
-      where: { id: applicationVersionId },
-      include: { application: true },
-    });
 
     return this.prisma.bmMenu.create({
       data: {
@@ -130,7 +125,7 @@ async updateMenu(id: string, dto: CreateMenuDto, tenantId: string | null) {
     }
 
     return this.prisma.bmMenu.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         code: dto.code?.trim().toLowerCase(),
         name: dto.name,
@@ -200,7 +195,7 @@ async updateMenuItem(id: string, dto: UpdateMenuItemDto, tenantId: string | null
     await assertVersionWritable(this.prisma, item.menu.applicationVersionId, tenantId);
 
     return this.prisma.bmNavigationItem.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         label: dto.label,
         routePath: dto.routePath,
@@ -321,5 +316,3 @@ const menu = await this.findOneMenu(menuId, tenantId);
     };
   }
 }
-
-

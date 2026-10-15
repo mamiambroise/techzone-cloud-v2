@@ -1,5 +1,4 @@
 import { jest } from '@jest/globals';
-import { HttpStatus } from '@nestjs/common';
 import { DataModelService } from './data-model.service';
 import { PlatformException } from '../../../common/errors/platform.exception';
 import { BmEntityStatus } from '../../../generated/prisma/enums';
@@ -9,6 +8,16 @@ function createMockPrisma() {
     applicationVersion: {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
+    },
+    bmField: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+    },
+    bmIndex: {
+      create: jest.fn(),
+    },
+    bmComputedField: {
+      create: jest.fn(),
     },
     bmEntity: {
       findFirst: jest.fn(),
@@ -216,6 +225,180 @@ describe('DataModelService (TENANT-ISOLATION)', () => {
         entities: [],
         relations: [],
         features: [],
+      });
+    });
+
+    describe('reference validation', () => {
+      beforeEach(() => {
+        prisma.applicationVersion.findFirst.mockResolvedValue({
+          id: 'av-1',
+          applicationId: 'app-1',
+          status: 'CONFIGURING',
+          version: '1.0.0',
+        });
+        prisma.bmEntity.findFirst.mockResolvedValue({
+          id: 'entity-1',
+          applicationVersionId: 'av-1',
+        });
+      });
+
+      it('rejects index fields that do not all belong to the selected entity', async () => {
+        prisma.bmField.findMany.mockResolvedValue([{ id: 'field-1' }]);
+
+        await expect(
+          service.createIndex(
+            'entity-1',
+            { code: 'search', fieldIds: ['field-1', 'field-2'] } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmField.findMany).toHaveBeenCalledWith({
+          where: {
+            id: { in: ['field-1', 'field-2'] },
+            entityId: 'entity-1',
+            tenantId: 'tenant-123',
+          },
+          select: { id: true },
+        });
+        expect(prisma.bmIndex.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects duplicate field references in an index', async () => {
+        await expect(
+          service.createIndex(
+            'entity-1',
+            { code: 'search', fieldIds: ['field-1', 'field-1'] } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmField.findMany).not.toHaveBeenCalled();
+        expect(prisma.bmIndex.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects an entity from another version when creating a computed field', async () => {
+        prisma.bmEntity.findFirst.mockResolvedValue({
+          id: 'entity-2',
+          applicationVersionId: 'av-2',
+        });
+
+        await expect(
+          service.createComputedField(
+            'av-1',
+            'entity-2',
+            { code: 'calculated', name: 'Calculated' } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmComputedField.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects a computed field with a missing target field', async () => {
+        prisma.bmField.findFirst.mockResolvedValue(null);
+
+        await expect(
+          service.createComputedField(
+            'av-1',
+            'entity-1',
+            {
+              code: 'calculated',
+              name: 'Calculated',
+              targetFieldCode: 'missing',
+            } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmComputedField.create).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('reference validation', () => {
+      beforeEach(() => {
+        prisma.applicationVersion.findFirst.mockResolvedValue({
+          id: 'av-1',
+          applicationId: 'app-1',
+          status: 'CONFIGURING',
+          version: '1.0.0',
+        });
+        prisma.bmEntity.findFirst.mockResolvedValue({
+          id: 'entity-1',
+          applicationVersionId: 'av-1',
+        });
+      });
+
+      it('rejects index fields that do not all belong to the selected entity', async () => {
+        prisma.bmField.findMany.mockResolvedValue([{ id: 'field-1' }]);
+
+        await expect(
+          service.createIndex(
+            'entity-1',
+            { code: 'search', fieldIds: ['field-1', 'field-2'] } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmField.findMany).toHaveBeenCalledWith({
+          where: {
+            id: { in: ['field-1', 'field-2'] },
+            entityId: 'entity-1',
+            tenantId: 'tenant-123',
+          },
+          select: { id: true },
+        });
+        expect(prisma.bmIndex.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects duplicate field references in an index', async () => {
+        await expect(
+          service.createIndex(
+            'entity-1',
+            { code: 'search', fieldIds: ['field-1', 'field-1'] } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmField.findMany).not.toHaveBeenCalled();
+        expect(prisma.bmIndex.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects an entity from another version when creating a computed field', async () => {
+        prisma.bmEntity.findFirst.mockResolvedValue({
+          id: 'entity-2',
+          applicationVersionId: 'av-2',
+        });
+
+        await expect(
+          service.createComputedField(
+            'av-1',
+            'entity-2',
+            { code: 'calculated', name: 'Calculated' } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmComputedField.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects a computed field with a missing target field', async () => {
+        prisma.bmField.findFirst.mockResolvedValue(null);
+
+        await expect(
+          service.createComputedField(
+            'av-1',
+            'entity-1',
+            {
+              code: 'calculated',
+              name: 'Calculated',
+              targetFieldCode: 'missing',
+            } as any,
+            'tenant-123',
+          ),
+        ).rejects.toThrow(PlatformException);
+
+        expect(prisma.bmComputedField.create).not.toHaveBeenCalled();
       });
     });
   });

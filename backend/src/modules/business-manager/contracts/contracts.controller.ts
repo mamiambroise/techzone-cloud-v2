@@ -15,6 +15,8 @@ import { CurrentPrincipal } from '../../../iam/principal.decorator';
 import type { IamPrincipal } from '../../../iam/principal.decorator';
 import { TenantResource } from '../../../iam/tenant-resource.decorator';
 import { TenantGuard } from '../../../iam/tenant.guard';
+import { RequirePermission } from '../../../iam/permission.decorator';
+import { BM_CONTRACT_READ, BM_CONTRACT_WRITE } from '../../../iam/iam.constants';
 
 import { CreateContractDto, UpdateContractDto } from './dto/create-contract.dto';
 
@@ -24,6 +26,7 @@ import { CreateContractDto, UpdateContractDto } from './dto/create-contract.dto'
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 
+  @RequirePermission(BM_CONTRACT_READ)
   @Get('versions/:versionId')
   findAll(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -32,6 +35,7 @@ export class ContractsController {
     return this.contractsService.findAllContracts(versionId, principal.tenantId);
   }
 
+  @RequirePermission(BM_CONTRACT_WRITE)
   @Post('versions/:versionId')
   create(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,
@@ -41,6 +45,7 @@ export class ContractsController {
     return this.contractsService.createContract(versionId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_CONTRACT_READ)
   @Get('contract/:contractId')
   findOne(
     @Param('contractId', new ParseUUIDPipe()) contractId: string,
@@ -49,6 +54,7 @@ export class ContractsController {
     return this.contractsService.findOneContract(contractId, principal.tenantId);
   }
 
+  @RequirePermission(BM_CONTRACT_WRITE)
   @Patch('contract/:contractId')
   update(
     @Param('contractId', new ParseUUIDPipe()) contractId: string,
@@ -58,6 +64,7 @@ export class ContractsController {
     return this.contractsService.updateContract(contractId, dto, principal.tenantId);
   }
 
+  @RequirePermission(BM_CONTRACT_WRITE)
   @Post('contract/:contractId/validate')
   validate(
     @Param('contractId', new ParseUUIDPipe()) contractId: string,
@@ -66,6 +73,7 @@ export class ContractsController {
     return this.contractsService.validateContract(contractId, principal.tenantId);
   }
 
+  @RequirePermission(BM_CONTRACT_READ)
   @Get('contract/:contractId/compatibility/:targetContractId')
   checkCompatibility(
     @Param('contractId', new ParseUUIDPipe()) contractId: string,
@@ -75,6 +83,7 @@ export class ContractsController {
     return this.contractsService.checkCompatibility(contractId, targetContractId, principal.tenantId);
   }
 
+  @RequirePermission(BM_CONTRACT_READ)
   @Get(':versionId/assemble')
   assembleContracts(
     @Param('versionId', new ParseUUIDPipe()) versionId: string,

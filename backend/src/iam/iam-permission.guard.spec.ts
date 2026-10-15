@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { Reflector } from '@nestjs/core';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { IamPermissionGuard } from './iam-permission.guard';
 import { TenantGuard } from './tenant.guard';
 import { TENANT_RESOURCE_KEY, TENANT_OPTIONAL_KEY } from './tenant-resource.decorator';
@@ -61,6 +61,21 @@ describe('IAM guard contracts', () => {
       guard.canActivate(ctx({ tenantId: TENANT_A }, { id: 'res-1' })),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(mockModel.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when a TenantResource names an unknown Prisma delegate', async () => {
+    const reflector = {
+      getAllAndOverride: jest.fn((key) =>
+        key === TENANT_RESOURCE_KEY
+          ? { table: 'unknownDelegate', idParam: 'id' }
+          : undefined,
+      ),
+    } as unknown as Reflector;
+    const guard = new TenantGuard(reflector, {} as any);
+
+    await expect(
+      guard.canActivate(ctx({ tenantId: TENANT_A }, { id: RESOURCE })),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 
   it('allows access when resource tenant matches principal tenant', async () => {

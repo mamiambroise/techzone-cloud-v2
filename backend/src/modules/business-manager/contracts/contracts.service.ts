@@ -3,6 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { PlatformErrorCode } from '../../../common/errors/platform-error-code.enum';
 import { PlatformException } from '../../../common/errors/platform.exception';
 import { BmContractStatus } from '../../../generated/prisma/enums';
+import { assertVersionWritable } from '../version-mutability';
 import { CreateContractDto, UpdateContractDto } from './dto/create-contract.dto';
 
 @Injectable()
@@ -29,23 +30,10 @@ export class ContractsService {
   }
 
   async createContract(applicationVersionId: string, dto: CreateContractDto, tenantId: string | null) {
-    await this.ensureApplicationVersionExists(applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
 
     const code = dto.code.trim().toLowerCase();
     const version = dto.version || '1.0.0';
-
-    const appVersion = await this.prisma.applicationVersion.findUnique({
-      where: { id: applicationVersionId },
-      include: { application: true },
-    });
-
-    if (!appVersion) {
-      throw new PlatformException(
-        PlatformErrorCode.VERSION_NOT_FOUND,
-        `Application version "${applicationVersionId}" not found`,
-        HttpStatus.NOT_FOUND,
-      );
-    }
 
     const existing = await this.prisma.bmBusinessContract.findFirst({
       where: {
@@ -131,6 +119,7 @@ export class ContractsService {
 
   async updateContract(id: string, dto: UpdateContractDto, tenantId: string | null) {
     const contract = await this.findOneContract(id, tenantId);
+    await assertVersionWritable(this.prisma, contract.applicationVersionId, tenantId);
 
     if (contract.status === BmContractStatus.LOCKED || contract.status === BmContractStatus.ACTIVE) {
       throw new PlatformException(
@@ -141,7 +130,7 @@ export class ContractsService {
     }
 
     const updated = await this.prisma.bmBusinessContract.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         name: dto.name,
         description: dto.description,
@@ -155,6 +144,7 @@ export class ContractsService {
 
   async validateContract(id: string, tenantId: string | null) {
     const contract = await this.findOneContract(id, tenantId);
+    await assertVersionWritable(this.prisma, contract.applicationVersionId, tenantId);
 
     if (contract.status === BmContractStatus.LOCKED) {
       throw new PlatformException(
@@ -165,7 +155,7 @@ export class ContractsService {
     }
 
     return this.prisma.bmBusinessContract.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         status: BmContractStatus.LOCKED,
       },
