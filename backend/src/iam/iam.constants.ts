@@ -86,8 +86,17 @@ export const PERMISSIONS = {
   BM_WRITE: 'bm:write',
   BM_VALIDATE: 'bm:validate',
   BM_PUBLISH: 'bm:publish',
-  BM_CONTRACT_READ: 'bm.contract.read',
-  BM_CONTRACT_WRITE: 'bm.contract.write',
+  ENVIRONMENT_READ: 'environment.read',
+  ENVIRONMENT_CREATE: 'environment.create',
+  ENVIRONMENT_UPDATE: 'environment.update',
+  ENVIRONMENT_DISABLE: 'environment.disable',
+  DEPLOYMENT_READ: 'deployment.read',
+  DEPLOYMENT_CREATE: 'deployment.create',
+  DEPLOYMENT_EXECUTE: 'deployment.execute',
+  DEPLOYMENT_CANCEL: 'deployment.cancel',
+  DEPLOYMENT_RETRY: 'deployment.retry',
+  DEPLOYMENT_ROLLBACK: 'deployment.rollback',
+  DEPLOYMENT_DIAGNOSTICS: 'deployment.diagnostics',
   // Subscription & Billing (CDC 15).
   //
   // Ces permissions autorisent un ACTEUR à agir sur la surface Billing.

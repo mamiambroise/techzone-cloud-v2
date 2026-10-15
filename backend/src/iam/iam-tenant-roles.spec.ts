@@ -111,13 +111,20 @@ describe('tenant role catalogue', () => {
     expect(permissions).toContain(PERMISSIONS.PACK_VERSION_PUBLISH);
     // Pack Runtime
     expect(permissions).toContain(PERMISSIONS.RUNTIME_RESOLVE);
+    // Environment & Deployment
+    expect(permissions).toContain(PERMISSIONS.ENVIRONMENT_READ);
+    expect(permissions).toContain(PERMISSIONS.ENVIRONMENT_CREATE);
+    expect(permissions).toContain(PERMISSIONS.DEPLOYMENT_READ);
+    expect(permissions).toContain(PERMISSIONS.DEPLOYMENT_EXECUTE);
+    expect(permissions).toContain(PERMISSIONS.DEPLOYMENT_ROLLBACK);
+    expect(permissions).toContain(PERMISSIONS.DEPLOYMENT_DIAGNOSTICS);
   });
 
   it('keeps tenant_user read-only', () => {
     const permissions = effectiveSystemRolePermissions('tenant_user');
     expect(permissions).toContain(PERMISSIONS.BM_CONTRACT_READ);
     for (const definition of PERMISSION_DEFINITIONS) {
-      const isWrite = /(write|create|update|delete|publish|execute|attach|restore|archive|validate|generate|record|refund|manage|probe|invalidate|export)/.test(
+      const isWrite = /(write|create|update|delete|disable|publish|execute|attach|restore|archive|validate|generate|record|refund|manage|probe|invalidate|export|cancel|retry|rollback)/.test(
         definition.action,
       );
       if (isWrite) {
