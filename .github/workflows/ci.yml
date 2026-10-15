@@ -36,8 +36,24 @@ jobs:
         working-directory: frontend
 
   backend:
-    name: Backend — prisma generate, nest build
+    name: Backend — Prisma, Nest and IAM E2E
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: techzone
+          POSTGRES_PASSWORD: techzone_test_password
+          POSTGRES_DB: techzone_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U techzone -d techzone_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql://techzone:techzone_test_password@localhost:5432/techzone_test?schema=business_manager
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +70,16 @@ jobs:
 
       - name: Prisma generate
         run: npx prisma generate
+        working-directory: backend
+
+      - name: Apply isolated test migrations
+        run: npx prisma migrate deploy
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+
+      - name: IAM E2E (isolated PostgreSQL)
+        run: npm run test:e2e -- --runInBand
         working-directory: backend
 
       - name: Build (NestJS)
