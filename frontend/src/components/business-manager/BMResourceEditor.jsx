@@ -31,7 +31,7 @@ export function BMResourceEditor({ fields, initial = {}, onSave, onCancel, onFie
         else body[f.key] = value;
       }
       await onSave(body);
-    } catch { setError(bmError); } finally { setBusy(false); }
+    } catch (error) { setError(error?.normalized?.message || error?.message || bmError); } finally { setBusy(false); }
   }
   return <form onSubmit={submit} className="my-4 rounded-lg border bg-slate-50 p-4 space-y-4">
     <div className="grid gap-4 md:grid-cols-2">{fields.map(f => <label key={f.key} className="text-sm space-y-1"><span>{f.label}</span>

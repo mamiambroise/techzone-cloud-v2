@@ -9,7 +9,7 @@ export function versionFields(applications, applicationVersions, loadingApplicat
   }));
   const versionOptions = applicationVersions.map(applicationVersion => ({
     value:applicationVersion.id,
-    label:`${applicationVersion.version} · ${applicationVersion.status}${applicationVersion.createdAt ? ` · ${new Date(applicationVersion.createdAt).toLocaleDateString()}` : ''}`,
+    label:`${applicationVersion.version} · ${applicationVersion.status}${applicationVersion.validationStatus ? ` · Validation ${applicationVersion.validationStatus}` : ''}${applicationVersion.updatedAt ? ` · ${new Date(applicationVersion.updatedAt).toLocaleDateString()}` : applicationVersion.createdAt ? ` · ${new Date(applicationVersion.createdAt).toLocaleDateString()}` : ''}`,
   }));
   return [
     choice('applicationId','Application',applicationOptions,{ required:true,submit:false,clearOnChange:['applicationVersionId'] }),
