@@ -15,6 +15,7 @@ import type { IamPrincipal as Actor } from '../../iam/principal.decorator';
 type Input = Record<string, unknown>;
 
 const hash = contractHash;
+const ALLOWED_APPLICATION_VERSION_STATUSES = new Set(['DRAFT', 'CONFIGURING', 'READY', 'ACTIVE']);
 
 const RUNTIME_RULE_FIELD =
   /^(tenant\.id|application\.(id|version)|environment\.code|subscription\.(plan|status)|entitlements|permissions|capabilities|featureFlags\.[\w.-]+|locale|timezone)$/;
@@ -93,7 +94,8 @@ export class PackManagerService {
       include: include
         ? {
             pack: true,
-            modules: true,
+          applicationVersion: { include: { application: true } },
+          modules: true,
             features: {
               include: { capabilities: { include: { capability: true } } },
             },
@@ -202,7 +204,7 @@ export class PackManagerService {
     this.tenant(actor);
     const pack = await this.db.pack.findFirst({
       where: { id, tenantId: this.tenant(actor) },
-      include: { versions: { orderBy: { createdAt: 'desc' } } },
+      include: { versions: { orderBy: { createdAt: 'desc' }, include: { applicationVersion: { include: { application: true } } } } },
     });
     if (!pack) throw new NotFoundException('PACK_NOT_FOUND');
     return pack;
@@ -305,9 +307,25 @@ export class PackManagerService {
     if (input.sourceVersionId) { const source = await this.version(String(input.sourceVersionId), actor); if (source.packId !== packId) throw new BadRequestException('SOURCE_VERSION_PACK_MISMATCH'); }
     const versionNumber = this.text(input, 'versionNumber', true)!;
     const applicationVersionId = this.text(input, 'applicationVersionId', true)!;
-    await this.applicationVersion(applicationVersionId, actor);
     if (!valid(versionNumber))
       throw new BadRequestException('PACK_VERSION_SEMVER_INVALID');
+    const applicationVersion = await this.applicationVersion(applicationVersionId, actor);
+    if (!ALLOWED_APPLICATION_VERSION_STATUSES.has(applicationVersion.status))
+      throw new BadRequestException('APPLICATION_VERSION_STATUS_NOT_ALLOWED');
+    if (pack.applicationId && pack.applicationId !== applicationVersion.applicationId)
+      throw new BadRequestException('PACK_APPLICATION_MISMATCH');
+    if (!pack.applicationId) {
+      const existingVersions = await this.db.packVersion.findMany({
+        where: { tenantId: this.tenant(actor), packId },
+        select: { applicationVersion: { select: { applicationId: true } } },
+      });
+      if (existingVersions.some(version => version.applicationVersion && version.applicationVersion.applicationId !== applicationVersion.applicationId))
+        throw new BadRequestException('PACK_APPLICATION_MISMATCH');
+      await this.db.pack.update({
+        where: { id: packId },
+        data: { applicationId: applicationVersion.applicationId, updatedBy: actor.userId, rowVersion: { increment: 1 } },
+      });
+    }
     return this.db.packVersion.create({
       data: {
         tenantId: this.tenant(actor),
@@ -935,7 +953,8 @@ export class PackManagerService {
 
   async cloneVersion(id: string, input: Input, actor: Actor) {
     const source: any = await this.version(id, actor, true);
-    const target = await this.createVersion(source.packId, { ...input, sourceVersionId: id, applicationVersionId: input.applicationVersionId ?? source.applicationVersionId }, actor);
+    const applicationVersionId = this.text(input, 'applicationVersionId', true)!;
+    const target = await this.createVersion(source.packId, { ...input, sourceVersionId: id, applicationVersionId }, actor);
     const ids = new Map<string, string>();
     for (const m of source.modules.filter((m: any) => !m.archivedAt)) {
       const copy = await this.addModule(target.id, m, actor); ids.set(m.id, copy.id);

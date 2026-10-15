@@ -1,5 +1,14 @@
 # Consolidation Business Manager / Pack Manager / Runtime
 
+## Addendum — Pack Manager V3 (15 octobre 2026, branche `jasmina`)
+
+- Le formulaire de création et de clonage charge les Applications et leurs ApplicationVersions depuis les API Business Manager tenant-scoped ; une ApplicationVersion admissible est requise et son ID est envoyé au backend.
+- `Pack.applicationId` est ajouté par migration additive. Les anciennes versions rattachées à une seule application sont backfillées ; les packs historiques ambigus restent non associés plutôt que d'être devinés.
+- Le backend refuse les ApplicationVersions d'un autre tenant, d'une autre application ou d'un statut non admissible. Le clone demande explicitement sa version cible et conserve l'association de l'application du pack.
+- Les recettes API et navigateur incluent désormais le nouveau payload et la création UI d'une PackVersion liée à une ApplicationVersion.
+- Vérifications : tests Pack Manager backend (10/10), tests frontend complets précédents (275 réussis, 8 ignorés) et nouveau test ciblé (1/1), build NestJS, build Vite, syntaxe des scripts d'acceptance et `git diff --check` réussis.
+- La migration et les recettes API/navigateur réelles n'ont pas été exécutées ici ; la migration doit être appliquée dans l'environnement de déploiement et les scripts d'acceptance nécessitent leurs fixtures locales et créent des données de test.
+
 ## État initial et matrice avant implémentation
 
 Base observée : `10bf388f`, main, workspace propre. Aucun commit, push ou merge autorisé pour cette mission.
