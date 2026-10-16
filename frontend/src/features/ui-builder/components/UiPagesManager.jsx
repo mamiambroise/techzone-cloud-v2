@@ -73,6 +73,8 @@ function PagesBody() {
     return '';
   };
 
+  const routeError = form.route ? (!ROUTE_RE.test(form.route) ? 'La route doit commencer par / et contenir uniquement des caractères autorisés.' : pages.some((page) => page.route === form.route) ? 'Cette route est déjà utilisée.' : '') : '';
+
   const handleCreate = async (event) => {
     event.preventDefault();
     const validationError = validateForm();
@@ -143,7 +145,8 @@ function PagesBody() {
               <input value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value.toLocaleLowerCase() })} placeholder="customers-list" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />
             </Field>
             <Field label="Route *">
-              <input value={form.route} onChange={(e) => setForm({ ...form, route: e.target.value })} placeholder="/customers" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />
+              <input aria-invalid={Boolean(routeError)} aria-describedby="uib-route-feedback" value={form.route} onChange={(e) => setForm({ ...form, route: e.target.value })} placeholder="/customers" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />
+            <p id="uib-route-feedback" aria-live="polite" className={`text-xs ${routeError ? 'text-rose-700' : 'text-slate-600'}`}>{routeError || (form.route ? 'Route disponible' : 'Exemple : /customers')}</p>
             </Field>
             <Field label="Titre *" >
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Liste des clients" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50" />

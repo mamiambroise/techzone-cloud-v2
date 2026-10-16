@@ -312,3 +312,25 @@ describe('UI Builder — isolation et sauvegarde asynchrone', () => {
     expect(state.saveState).toBe('CLEAN');
   });
 });
+
+describe('optimistic save conflict recovery', () => {
+  it('keeps local edits and blocks writes until server reload is explicit', async () => {
+    let state = initial();
+    state = reducer(state, fetchPages.pending('pages', 'v1'));
+    const serverPage = { id: 'p', key: 'page', updatedAt: '2026-10-16T10:00:00.000Z', components: createDefaultTree() };
+    state = reducer(state, fetchPages.fulfilled([serverPage], 'pages', 'v1'));
+    state = reducer(state, selectPage('p'));
+    state = reducer(state, addComponent({ type: 'Text' }));
+    const local = state.tree;
+    state = reducer(state, saveCurrentPage.pending('save'));
+    state = reducer(state, saveCurrentPage.rejected(null, 'save', undefined, { code: 'UI_SAVE_CONFLICT', serverPage, message: 'Conflit' }));
+    expect(state.saveState).toBe('CONFLICT');
+    expect(state.tree).toEqual(local);
+    const store = configureStore({ reducer: { uiBuilder: reducer }, preloadedState: { uiBuilder: state } });
+    expect((await store.dispatch(saveCurrentPage())).meta.condition).toBe(true);
+    state = reducer(state, { type: 'uiBuilder/reloadConflictingPage' });
+    expect(state.tree).toEqual(serverPage.components);
+    expect(state.saveConflict).toBeNull();
+    expect(state.saveState).toBe('CLEAN');
+  });
+});

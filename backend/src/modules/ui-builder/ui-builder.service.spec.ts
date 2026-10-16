@@ -562,11 +562,35 @@ describe('UI Builder V3 — sécurité et intégrations', () => {
     expect(result.issues.map(i => i.code)).toEqual(expect.arrayContaining(['ACTION_INVALID', 'UI_AUTOMATION_REFERENCE_UNKNOWN', 'ACTION_UNKNOWN']));
   });
   it('résout la référence vers le registry Automation existant sans lancer le workflow', async () => {
-    const workflows = { getWorkflow: jest.fn().mockReturnValue({ code: 'registered' }) };
+    const workflows = { getWorkflow: jest.fn().mockReturnValue({ code: 'registered', tenantId: TENANT_A }) };
     const withAutomation = new UiBuilderService(prisma as any, workflows as any);
     prisma.uiPage.findMany.mockResolvedValue([page(root({ type: 'Button', actions: [{ type: 'TRIGGER_AUTOMATION', config: { workflowCode: 'registered' } }] }))]);
     expect((await withAutomation.validate(VERSION_ID, TENANT_A)).status).toBe('VALID');
     expect(workflows.getWorkflow).toHaveBeenCalledWith('registered');
+  });
+  it('SEC-UI-070 rejects a workflow explicitly owned by another tenant', async () => {
+    const workflows = { getWorkflow: jest.fn().mockReturnValue({ code: 'foreign', tenantId: TENANT_B }) };
+    const scoped = new UiBuilderService(prisma as any, workflows as any);
+    prisma.uiPage.findMany.mockResolvedValue([page(root({ type: 'Button', actions: [{ type: 'TRIGGER_AUTOMATION', config: { workflowCode: 'foreign' } }] }))]);
+    expect((await scoped.validate(VERSION_ID, TENANT_A)).issues).toContainEqual(expect.objectContaining({ code: 'UI_AUTOMATION_REFERENCE_UNKNOWN' }));
+  });
+  it('SEC-UI-070 rejects a workflow whose ownership cannot be established', async () => {
+    const workflows = { getWorkflow: jest.fn().mockReturnValue({ code: 'unscoped' }) };
+    const scoped = new UiBuilderService(prisma as any, workflows as any);
+    prisma.uiPage.findMany.mockResolvedValue([page(root({ type: 'Button', actions: [{ type: 'TRIGGER_AUTOMATION', config: { workflowCode: 'unscoped' } }] }))]);
+    expect((await scoped.validate(VERSION_ID, TENANT_A)).issues).toContainEqual(expect.objectContaining({ code: 'UI_AUTOMATION_REFERENCE_UNKNOWN' }));
+  });
+  it('SEC-UI-130 never returns legacy stored credentials in UI Definition or theme', async () => {
+    prisma.uiPage.findMany.mockResolvedValue([{ ...page(), metadata: { apiKey: 'synthetic-secret' } }]);
+    await expect(service.getUiDefinition(VERSION_ID, TENANT_A)).rejects.toMatchObject({ status: 400 });
+    prisma.uiThemeSetting.findFirst.mockResolvedValue({ tokens: { typography: { clientSecret: 'synthetic-secret' } } });
+    await expect(service.getTheme(VERSION_ID, TENANT_A)).rejects.toMatchObject({ status: 400 });
+  });
+  it('SEC-UI-050 rejects an entity absent from the tenant-scoped registry', async () => {
+    prisma.bmEntity.findMany.mockResolvedValue([]);
+    prisma.uiPage.findMany.mockResolvedValue([page(root({ bindings: { text: { kind: 'ENTITY_FIELD', entity: 'foreign-product', field: 'name' } } }))]);
+    expect((await service.validate(VERSION_ID, TENANT_A)).issues).toContainEqual(expect.objectContaining({ code: 'ENTITY_UNKNOWN' }));
+    expect(prisma.bmEntity.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { applicationVersionId: VERSION_ID, tenantId: TENANT_A } }));
   });
   it('vérifie les références IAM actives depuis le registry réel', async () => {
     const permission = { findMany: jest.fn<any>().mockResolvedValue([{ code: 'known.read' }]) };
@@ -579,5 +603,39 @@ describe('UI Builder V3 — sécurité et intégrations', () => {
   it('détecte une page hors ApplicationVersion même si le stockage renvoie une ligne incohérente', async () => {
     prisma.uiPage.findMany.mockResolvedValue([{ ...page(), applicationVersionId: 'other-version' }]);
     expect((await service.validate(VERSION_ID, TENANT_A)).issues).toContainEqual(expect.objectContaining({ code: 'UI_APPLICATION_VERSION_MISMATCH' }));
+  });
+});
+
+describe('UiBuilderService optimistic page saves', () => {
+  it('checks the revision and tenant atomically in the database write', async () => {
+    const prisma = createMockPrisma();
+    const updatedAt = '2026-10-16T10:00:00.000Z';
+    prisma.uiPage.findFirst.mockResolvedValue({ id: 'page-a', tenantId: TENANT_A, applicationVersionId: VERSION_ID, key: 'clients' });
+    prisma.applicationVersion.findFirst.mockResolvedValue({ id: VERSION_ID, status: 'DRAFT' });
+    prisma.uiPage.update.mockResolvedValue({ id: 'page-a', key: 'clients' });
+    await makeService(prisma).updatePage('page-a', { title: 'Clients', expectedUpdatedAt: updatedAt }, TENANT_A, 'user-a');
+    expect(prisma.uiPage.update).toHaveBeenCalledWith(expect.objectContaining({ where: {
+      id: 'page-a', tenantId: TENANT_A, applicationVersionId: VERSION_ID, updatedAt: new Date(updatedAt),
+    } }));
+  });
+  it('returns UI_SAVE_CONFLICT without retrying or auditing a stale save', async () => {
+    const prisma = createMockPrisma();
+    prisma.uiPage.findFirst.mockResolvedValue({ id: 'page-a', tenantId: TENANT_A, applicationVersionId: VERSION_ID });
+    prisma.applicationVersion.findFirst.mockResolvedValue({ id: VERSION_ID, status: 'DRAFT' });
+    prisma.uiPage.update.mockRejectedValue({ code: 'P2025' });
+    await expect(makeService(prisma).updatePage('page-a', { expectedUpdatedAt: '2026-10-16T10:00:00.000Z' }, TENANT_A, 'user-a')).rejects.toMatchObject({ status: 409, response: { code: 'UI_SAVE_CONFLICT' } });
+    expect(prisma.uiPage.update).toHaveBeenCalledTimes(1);
+    expect(prisma.auditEvent.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('page route uniqueness under concurrent creation', () => {
+  it('maps the database uniqueness violation to the existing route error contract', async () => {
+    const prisma = createMockPrisma();
+    prisma.applicationVersion.findFirst.mockResolvedValue({ id: VERSION_ID, applicationId: 'app', status: 'DRAFT' });
+    prisma.uiPage.findFirst.mockResolvedValue(null);
+    prisma.uiPage.create.mockRejectedValue({ code: 'P2002', meta: { target: ['tenantId', 'applicationVersionId', 'route'] } });
+    await expect(makeService(prisma).createPage({ applicationVersionId: VERSION_ID, key: 'clients', route: '/clients', title: 'Clients' }, TENANT_A, 'user-a')).rejects.toMatchObject({ status: 409, response: { code: 'UI_PAGE_ROUTE_EXISTS' } });
+    expect(prisma.auditEvent.create).not.toHaveBeenCalled();
   });
 });

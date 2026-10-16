@@ -322,7 +322,8 @@ function describeActions(actions) {
 }
 
 function RendererNode({ node, ctx }) {
-  return renderNode(node, ctx);
+  const content = renderNode(node, ctx);
+  return ctx.decorateNode ? ctx.decorateNode(node, content) : content;
 }
 
 /**
@@ -336,7 +337,7 @@ function getViewportDevice() {
   return 'DESKTOP';
 }
 
-export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate, device }) {
+export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate, device, decorateNode }) {
   const [dataRevision, setDataRevision] = useState(0);
   const [viewportDevice, setViewportDevice] = useState(getViewportDevice);
 
@@ -350,6 +351,7 @@ export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'prev
   const activeDevice = device || viewportDevice;
   const ctx = useMemo(() => ({
     nodes: tree?.nodes || {},
+    decorateNode,
     businessContext,
     recordId,
     onNavigate,
@@ -359,7 +361,7 @@ export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'prev
     fieldSchemas: new Map(),
     dataRevision,
     refreshData: () => setDataRevision((value) => value + 1),
-  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate, activeDevice]);
+  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate, activeDevice, decorateNode]);
 
   const treeError = tree ? rendererTreeError(tree) : null;
   if (treeError) return <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{treeError}</p>;

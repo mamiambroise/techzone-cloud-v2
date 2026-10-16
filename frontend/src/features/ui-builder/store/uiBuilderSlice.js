@@ -27,11 +27,13 @@ export const submitReorder = createAsyncThunk('uiBuilder/submitReorder', async (
 export const submitTheme = createAsyncThunk('uiBuilder/submitTheme', async ({ applicationVersionId, tokens }) => uiBuilderApi.saveTheme(applicationVersionId, tokens));
 
 /** Sauvegarde de la page courante (composants + settings). */
-export const saveCurrentPage = createAsyncThunk('uiBuilder/saveCurrentPage', async (_, { getState }) => {
+export const saveCurrentPage = createAsyncThunk('uiBuilder/saveCurrentPage', async (_, { getState, rejectWithValue }) => {
   const state = getState().uiBuilder;
   const page = state.pages.find((p) => p.id === state.selectedPageId);
   if (!page) throw new Error('Aucune page sélectionnée');
-  return uiBuilderApi.updatePage(page.id, {
+  try {
+  return await uiBuilderApi.updatePage(page.id, {
+    expectedUpdatedAt: page.updatedAt,
     key: draftKey(page),
     route: page.route,
     title: page.title,
@@ -44,9 +46,18 @@ export const saveCurrentPage = createAsyncThunk('uiBuilder/saveCurrentPage', asy
     components: state.tree,
     metadata: { ...(page.metadata || {}), icon: page.icon ?? null },
   });
+  } catch (error) {
+    const code = error.normalized?.code || error.response?.data?.code;
+    if (code === 'UI_SAVE_CONFLICT') {
+      let serverPage = null;
+      try { serverPage = (await uiBuilderApi.listPages(state.applicationVersionId)).find((candidate) => candidate.id === page.id) || null; } catch { /* local edits remain available when reload fails */ }
+      return rejectWithValue({ code, message: 'Conflit de sauvegarde : rechargez la version serveur.', serverPage });
+    }
+    throw error;
+  }
 }, {
   // Serialize writes so an older request cannot overwrite a newer edit.
-  condition: (_, { getState }) => !getState().uiBuilder.pendingSave,
+  condition: (_, { getState }) => !getState().uiBuilder.pendingSave && !getState().uiBuilder.saveConflict,
 });
 
 function draftKey(page) {
@@ -89,6 +100,7 @@ const initialState = {
   zoom: 1,
   saveState: 'CLEAN',
   saveError: null,
+  saveConflict: null,
   validation: null,
   validationStatus: 'IDLE',
   themeStatus: 'IDLE',
@@ -114,9 +126,24 @@ const uiBuilderSlice = createSlice({
       const tree = page?.components && page.components.root ? page.components : createDefaultTree();
       state.tree = tree;
       state.saveState = 'CLEAN';
+      state.saveConflict = null;
       state.saveError = null;
       state.undoStack = [];
       state.redoStack = [];
+    },
+    reloadConflictingPage(state) {
+      const serverPage = state.saveConflict?.serverPage;
+      if (!serverPage || serverPage.id !== state.selectedPageId) return;
+      const index = state.pages.findIndex((page) => page.id === serverPage.id);
+      if (index === -1) return;
+      state.pages[index] = serverPage;
+      state.tree = serverPage.components || createDefaultTree();
+      state.selectedComponentId = state.tree.root;
+      state.undoStack = [];
+      state.redoStack = [];
+      state.saveConflict = null;
+      state.saveError = null;
+      state.saveState = 'CLEAN';
     },
     selectComponent(state, action) {
       state.selectedComponentId = action.payload;
@@ -411,7 +438,7 @@ const uiBuilderSlice = createSlice({
         const index = state.pages.findIndex((p) => p.id === saved.pageId);
         const pageChanged = index !== -1 && JSON.stringify(state.pages[index]) !== JSON.stringify(saved.page);
         if (action.payload && index !== -1) {
-          state.pages[index] = { ...state.pages[index], ...(pageChanged ? {} : action.payload), components: saved.tree };
+          state.pages[index] = { ...state.pages[index], ...(pageChanged ? {} : action.payload), components: saved.tree, ...(action.payload.updatedAt ? { updatedAt: action.payload.updatedAt } : {}) };
         }
         if (state.selectedPageId === saved.pageId) {
           state.saveState = !pageChanged && JSON.stringify(state.tree) === JSON.stringify(saved.tree) ? 'SAVED' : 'DIRTY';
@@ -421,8 +448,9 @@ const uiBuilderSlice = createSlice({
       .addCase(saveCurrentPage.rejected, (state, action) => {
         if (state.pendingSave?.requestId !== action.meta.requestId) return;
         if (state.selectedPageId === state.pendingSave.pageId) {
-          state.saveState = 'ERROR';
-          state.saveError = action.error?.message || 'Erreur d’enregistrement';
+          state.saveState = action.payload?.code === 'UI_SAVE_CONFLICT' ? 'CONFLICT' : 'ERROR';
+          state.saveConflict = action.payload?.code === 'UI_SAVE_CONFLICT' ? action.payload : null;
+          state.saveError = action.payload?.message || action.error?.message || 'Erreur d’enregistrement';
         }
         state.pendingSave = null;
       })
@@ -471,6 +499,7 @@ export const {
   undo,
   redo,
   clearActionError,
+  reloadConflictingPage,
 } = uiBuilderSlice.actions;
 
 export default uiBuilderSlice.reducer;

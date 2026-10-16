@@ -12,8 +12,9 @@ const definition = (version = 'version-a') => ({
   navigation: { items: [{ id: 'home', pageKey: 'home', label: 'Accueil' }, { id: 'detail', pageKey: 'detail', label: 'Détail' }] },
   pages: [{ key: 'home', components: tree('Contenu publié') }, { key: 'detail', components: tree('Détail publié') }],
 });
-const manifest = (ui = definition()) => ({ definition: { ui: { applicationVersionId: 'version-a', definition: ui } } });
-const renderPublished = () => render(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-a" />);
+const manifest = (ui = definition()) => ({ hash: 'hash-a', definition: { ui: { applicationVersionId: 'version-a', definition: ui } } });
+const gate = (tenantId = 'tenant-a') => ({ executable: true, status: 'RESOLVED', scope: { tenantId }, source: { packCode: 'test', packVersion: '1.0.0', manifestHash: 'hash-a' } });
+const renderPublished = () => render(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-a" effectiveManifest={gate()} />);
 beforeEach(() => api.get.mockResolvedValue({ data: manifest() }));
 
 describe('Published application — shared renderer and version isolation', () => {
@@ -45,10 +46,25 @@ describe('Published application — shared renderer and version isolation', () =
     let resolveOld;
     api.get.mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }));
     const view = renderPublished();
-    view.rerender(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-b" />);
+    view.rerender(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-b" effectiveManifest={gate('tenant-b')} />);
     await screen.findByText('Contenu publié');
     resolveOld({ data: manifest({ ...definition(), pages: [{ key: 'home', components: tree('Ancien tenant') }] }) });
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
     expect(screen.queryByText('Ancien tenant')).not.toBeInTheDocument();
+  });
+});
+
+describe('SEC-UI-121 Runtime gate', () => {
+  it.each([undefined, { ...gate(), executable: false }, { ...gate(), status: 'BLOCKED' }, gate('tenant-b')])('does not load or render a blocked or foreign runtime', (effectiveManifest) => {
+    api.get.mockClear();
+    render(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-a" effectiveManifest={effectiveManifest} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Interface bloquée');
+    expect(api.get).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Application publiée')).not.toBeInTheDocument();
+  });
+  it('SEC-UI-111 refuses a manifest different from the resolved hash', async () => {
+    api.get.mockResolvedValue({ data: { ...manifest(), hash: 'other-hash' } });
+    renderPublished();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Interface publiée indisponible');
   });
 });

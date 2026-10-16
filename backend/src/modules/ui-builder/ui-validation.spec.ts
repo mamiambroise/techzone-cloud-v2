@@ -51,3 +51,10 @@ describe('UI validation — declarative runtime contract', () => {
     expect(validateUiTheme({ colors: { primary: '#2563eb' }, radius: { md: 12 }, breakpoints: { mobile: 420, tablet: 834 } })).toEqual([]);
   });
 });
+
+describe('registry property whitelist', () => {
+  it('rejects unregistered DOM properties in a known component', () => {
+    const issues = validateUiTree({ root: 'root', nodes: { root: { id: 'root', type: 'Text', props: { text: 'Safe', style: { position: 'fixed' } }, children: [] } } });
+    expect(issues).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'COMPONENT_SCHEMA_INVALID', componentId: 'root' })]));
+  });
+});

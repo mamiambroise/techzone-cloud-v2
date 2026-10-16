@@ -95,12 +95,25 @@ export class UiBuilderService {
   // PAGES — CRUD
   // =====================================================================
 
+  private rethrowUniquePageError(error: unknown): void {
+    const known = error as { code?: string; meta?: { target?: string[] | string } };
+    if (known?.code !== 'P2002') return;
+    const target = known.meta?.target;
+    const route = Array.isArray(target) ? target.includes('route') : String(target || '').includes('route');
+    throw new PlatformException(route ? PlatformErrorCode.UI_PAGE_ROUTE_EXISTS : PlatformErrorCode.UI_PAGE_KEY_EXISTS,
+      route ? 'Cette route existe déjà dans cette version.' : 'Cette clé existe déjà dans cette version.', HttpStatus.CONFLICT);
+  }
+
   async listPages(applicationVersionId: string, tenantId: string | null) {
     await this.ensureVersion(applicationVersionId, tenantId);
-    return this.prisma.uiPage.findMany({
+    const pages = await this.prisma.uiPage.findMany({
       where: { applicationVersionId, tenantId: tenantId ?? undefined },
-      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
     });
+    if (pages.some(page => unsafeUiJson(page.components) || unsafeUiJson(page.metadata))) {
+      throw new PlatformException(PlatformErrorCode.UI_VALIDATION_FAILED, 'Définition UI non sûre.', HttpStatus.BAD_REQUEST);
+    }
+    return pages;
   }
 
   async createPage(dto: CreateUiPageDto, tenantId: string | null, userId: string) {
@@ -132,24 +145,31 @@ export class UiBuilderService {
       );
     }
 
-    const page = await this.prisma.uiPage.create({
-      data: {
-        applicationId: version.applicationId,
-        applicationVersionId: dto.applicationVersionId,
-        key,
-        route: dto.route,
-        title: dto.title,
-        description: dto.description,
-        type: (dto.type as never) ?? 'CUSTOM',
-        layout: (dto.layout as never) ?? 'SIDEBAR',
-        visibility: (dto.visibility as never) ?? 'ALWAYS',
-        order: dto.order ?? 0,
-        permissions: (dto.permissions ?? []) as unknown as Prisma.InputJsonValue,
-        components: (dto.components ?? { root: 'root', nodes: { root: { id: 'root', type: 'Container', props: {}, children: [] } } }) as unknown as Prisma.InputJsonValue,
-        metadata: (dto.metadata ?? {}) as unknown as Prisma.InputJsonValue,
-        tenantId,
-      },
-    });
+    let page: Awaited<ReturnType<PrismaService['uiPage']['update']>>;
+    try {
+      page = await this.prisma.uiPage.create({
+        data: {
+          applicationId: version.applicationId,
+          applicationVersionId: dto.applicationVersionId,
+          key,
+          route: dto.route,
+          title: dto.title,
+          description: dto.description,
+          type: (dto.type as never) ?? 'CUSTOM',
+          layout: (dto.layout as never) ?? 'SIDEBAR',
+          visibility: (dto.visibility as never) ?? 'ALWAYS',
+          order: dto.order ?? 0,
+          permissions: (dto.permissions ?? []) as unknown as Prisma.InputJsonValue,
+          components: (dto.components ?? { root: 'root', nodes: { root: { id: 'root', type: 'Container', props: {}, children: [] } } }) as unknown as Prisma.InputJsonValue,
+          metadata: (dto.metadata ?? {}) as unknown as Prisma.InputJsonValue,
+          tenantId,
+        },
+      });
+
+    } catch (error) {
+      this.rethrowUniquePageError(error);
+      throw error;
+    }
 
     await this.audit(tenantId, userId, 'ui.page.created', 'UiPage', page.id, { key: page.key, route: page.route });
     return page;
@@ -196,22 +216,40 @@ export class UiBuilderService {
       }
     }
 
-    const page = await this.prisma.uiPage.update({
-      where: { id: pageId },
-      data: {
-        key: dto.key,
-        route: dto.route,
-        title: dto.title,
-        description: dto.description,
-        type: dto.type as never,
-        layout: dto.layout as never,
-        visibility: dto.visibility as never,
-        order: dto.order,
-        permissions: dto.permissions,
-        components: dto.components as never,
-        metadata: dto.metadata as never,
-      },
-    });
+    let page: Awaited<ReturnType<PrismaService['uiPage']['update']>>;
+    try {
+      page = await this.prisma.uiPage.update({
+        where: {
+          id: pageId,
+          tenantId,
+          applicationVersionId: existing.applicationVersionId,
+          ...(dto.expectedUpdatedAt ? { updatedAt: new Date(dto.expectedUpdatedAt) } : existing.updatedAt ? { updatedAt: existing.updatedAt } : {}),
+        },
+        data: {
+          key: dto.key,
+          route: dto.route,
+          title: dto.title,
+          description: dto.description,
+          type: dto.type as never,
+          layout: dto.layout as never,
+          visibility: dto.visibility as never,
+          order: dto.order,
+          permissions: dto.permissions,
+          components: dto.components as never,
+          metadata: dto.metadata as never,
+        },
+      });
+
+    } catch (error) {
+      // Prisma checks updatedAt in the UPDATE itself: concurrent requests cannot
+      // both succeed against the same revision, even after the ownership read.
+      if ((dto.expectedUpdatedAt || existing.updatedAt) && (error as { code?: string }).code === 'P2025') {
+        throw new PlatformException(PlatformErrorCode.UI_SAVE_CONFLICT,
+          'La page a changé sur le serveur. Rechargez-la avant de réessayer.', HttpStatus.CONFLICT);
+      }
+      this.rethrowUniquePageError(error);
+      throw error;
+    }
 
     await this.audit(tenantId, userId, 'ui.page.updated', 'UiPage', page.id, { key: page.key });
     return page;
@@ -455,7 +493,12 @@ export class UiBuilderService {
             if (typeof code !== 'string' || !code) {
               issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `TRIGGER_AUTOMATION: workflowCode requis.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             } else {
-              try { if (!this.workflows) throw new Error('Registry unavailable'); this.workflows.getWorkflow(code); }
+              try {
+                if (!this.workflows) throw new Error('Registry unavailable');
+                const workflow = this.workflows.getWorkflow(code) as { tenantId?: string; applicationVersionId?: string };
+                if (workflow.tenantId !== tenantId
+                  || (workflow.applicationVersionId && workflow.applicationVersionId !== applicationVersionId)) throw new Error('Workflow outside current context');
+              }
               catch { issues.push({ level: 'ERROR', code: 'UI_AUTOMATION_REFERENCE_UNKNOWN', message: 'Workflow Automation non enregistré.', pageId: page.id, componentId: nodeId }); }
             }
           }
@@ -526,6 +569,7 @@ export class UiBuilderService {
         HttpStatus.NOT_FOUND,
       );
     }
+    if (unsafeUiJson(theme.tokens)) throw new PlatformException(PlatformErrorCode.UI_VALIDATION_FAILED, 'Thème UI non sûr.', HttpStatus.BAD_REQUEST);
     return theme;
   }
 

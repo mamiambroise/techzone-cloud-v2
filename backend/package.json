@@ -32,7 +32,8 @@
     "prisma:test:validate": "node ./test/with-test-database.mjs validate",
     "prisma:test:generate": "node ./test/with-test-database.mjs generate",
     "prisma:test:migrate": "node ./test/with-test-database.mjs migrate deploy",
-    "seed:bm": "tsx src/prisma/seed-bm.ts"
+    "seed:bm": "tsx src/prisma/seed-bm.ts",
+    "test:security:ui": "npm test -- --runInBand ui-builder ui-snapshot.integration pack-runtime.service.spec data-runtime.controller.spec validation.service.spec iam-permission.guard.spec"
   },
   "prisma": {
     "seed": "tsx src/prisma/seed.ts"

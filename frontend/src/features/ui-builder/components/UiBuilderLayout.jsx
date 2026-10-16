@@ -98,7 +98,7 @@ export default function UiBuilderLayout({ subTab, children }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="uib-workspace space-y-5">
       <header className="space-y-1">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5">
@@ -116,6 +116,20 @@ export default function UiBuilderLayout({ subTab, children }) {
           </div>
         </div>
       </header>
+
+      <section aria-label="Contexte UI Builder" className="uib-context sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          {[
+            ['Tenant', activeTenant.name || activeTenant.code || activeTenant.id],
+            ['Application', application?.name || application?.code || applicationId],
+            ['Version', version?.version || version?.versionNumber || versionId],
+            ['Page', uiBuilder.pages.find((page) => page.id === (params.pageId || uiBuilder.selectedPageId))?.title || 'Aucune page sélectionnée'],
+            ['Device', uiBuilder.device || 'DESKTOP'],
+            ['Statut', version?.status || '—'],
+          ].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-xs font-medium text-slate-500">{label}</dt><dd className="truncate text-sm font-semibold text-slate-900" title={String(value)}>{value}</dd></div>)}
+        </dl>
+        <p role="status" className="mt-2 text-xs text-slate-600">{({ CLEAN: 'Aucune modification', DIRTY: 'Modifications en attente', SAVING: 'Saving…', SAVED: 'Saved', ERROR: 'Save failed', CONFLICT: 'Conflict' })[uiBuilder.saveState] || 'Aucune modification'}</p>
+      </section>
 
       <nav aria-label="Sections UI Builder" className="flex gap-1 overflow-x-auto border-b border-slate-200 pb-px [scrollbar-width:thin]">
         {UIB_SUB_TABS.map((tab) => {

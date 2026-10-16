@@ -15,7 +15,7 @@ import { DEVICE_KINDS, DEVICE_WIDTHS } from '../model/uiDefinition.js';
 import { createBindingResolver } from '../renderer/bindingResolver.js';
 import { UiRenderer } from '../renderer/Renderer.jsx';
 import UiBuilderLayout from './UiBuilderLayout.jsx';
-import { BmCard, BmBadge, BmButton, BmEmptyState, BmLoading } from '../../../components/business-manager/bm/ui.jsx';
+import { BmCard, BmBadge, BmButton, BmEmptyState, BmLoading, BmErrorState } from '../../../components/business-manager/bm/ui.jsx';
 import { ROUTES } from '../../../app/routes.js';
 
 const LEVEL_STYLES = {
@@ -36,6 +36,7 @@ function PreviewBody() {
   const dispatch = useDispatch();
   const { pages, pagesStatus, validation, validationStatus, businessContext, device, applicationVersionId } = useSelector((state) => state.uiBuilder);
   const [previewPageId, setPreviewPageId] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!applicationVersionId) return undefined;
@@ -59,8 +60,11 @@ function PreviewBody() {
 
   if (pagesStatus === 'LOADING') return <BmLoading label="Préparation de l’aperçu…" />;
 
+  if (pagesStatus === 'ERROR') return <BmErrorState message="Aperçu indisponible." onRetry={() => dispatch(fetchPages(applicationVersionId))} />;
+
   return (
-    <div className="space-y-5">
+    <div className={expanded ? "fixed inset-0 z-50 overflow-auto bg-white p-4" : "space-y-5"}>
+      <div className="mb-3 flex items-center justify-between"><BmBadge tone="violet">PREVIEW</BmBadge><BmButton variant="secondary" onClick={() => setExpanded(!expanded)}>{expanded ? "Quitter le plein écran" : "Plein écran"}</BmButton></div>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         {/* ---------- Preview ---------- */}
         <BmCard
@@ -137,7 +141,7 @@ function PreviewBody() {
         >
           {validationStatus === 'LOADING' ? (
             <BmLoading label="Validation en cours…" />
-          ) : !validation ? (
+          ) : validationStatus === 'ERROR' ? <BmErrorState message="Validation indisponible." onRetry={() => dispatch(fetchValidation(applicationVersionId))} /> : !validation ? (
             <BmEmptyState icon={ShieldCheck} title="Validation non exécutée" description="Lancez une validation pour analyser l’UI Definition." />
           ) : (
             <div className="space-y-4">
@@ -178,7 +182,7 @@ function IssueList({ level, issues }) {
       <ul className="space-y-1.5">
         {issues.map((issue, index) => {
           const targetRoute = issue.pageId
-            ? ROUTES.uiBuilder.replace(':pageId', issue.pageId)
+            ? `${ROUTES.uiBuilder.replace(':pageId', issue.pageId)}${issue.componentId ? `?component=${encodeURIComponent(issue.componentId)}` : ''}`
             : ROUTES.uiPages;
           return (
             <li key={`${issue.code}-${index}`}>

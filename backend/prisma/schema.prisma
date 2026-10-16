@@ -4359,6 +4359,7 @@ model UiPage {
   updatedAt DateTime @updatedAt
 
   @@unique([tenantId, applicationVersionId, key])
+  @@unique([tenantId, applicationVersionId, route])
   @@index([applicationVersionId])
   @@index([tenantId])
   @@index([route])

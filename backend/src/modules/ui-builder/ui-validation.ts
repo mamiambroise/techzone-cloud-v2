@@ -1,4 +1,5 @@
 import { UI_COMPONENT_REGISTRY } from './ui-component-registry';
+import { UI_ACTION_TYPES } from './dto/ui-page.dto';
 
 export interface UiIssue { level: 'ERROR' | 'WARNING' | 'INFO'; code: string; message: string; componentId?: string }
 export const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -22,6 +23,7 @@ export function unsafeUiJson(value: unknown, depth = 0): boolean {
   if (typeof value === 'function' || typeof value === 'symbol') return true;
   if (!value || typeof value !== 'object') return false;
   return Object.entries(value).some(([key, child]) => /^(?:__proto__|prototype|constructor|dangerouslySetInnerHTML|innerHTML|srcDoc|on[A-Z].*)$/.test(key)
+    || /^(?:authorization|proxy-authorization|headers|password|passwd|secret|clientSecret|apiKey|api_key|accessToken|refreshToken|databaseUrl|database_url|privateKey)$/i.test(key)
     || /^on(?:click|load|error|submit|change|mouseover|focus)$/i.test(key) || unsafeUiJson(child, depth + 1));
 }
 
@@ -43,6 +45,9 @@ export function validateUiTree(value: unknown): UiIssue[] {
     if (!def) { error('COMPONENT_UNKNOWN', `Composant inconnu : ${node.type}.`, id); continue; }
     if (node.props !== undefined && !isRecord(node.props)) error('COMPONENT_SCHEMA_INVALID', 'Props invalides.', id);
     const props = isRecord(node.props) ? node.props : {};
+    for (const prop of Object.keys(props)) {
+      if (!Object.hasOwn(def.propertiesSchema, prop)) error('COMPONENT_SCHEMA_INVALID', `Propriété non enregistrée : ${prop}.`, id);
+    }
     for (const [prop, rule] of Object.entries(def.propertiesSchema)) {
       const v = props[prop];
       if (v === undefined || v === null || v === '') continue; // incomplete drafts remain editable
@@ -56,6 +61,12 @@ export function validateUiTree(value: unknown): UiIssue[] {
     if (node.type === 'Image' && props.src && !isUiUrl(props.src, true)) error('COMPONENT_SCHEMA_INVALID', 'URL d’image non autorisée.', id);
     if (node.bindings !== undefined && !isRecord(node.bindings)) error('BINDING_INVALID', 'Bindings invalides.', id);
     if (node.actions !== undefined && (!Array.isArray(node.actions) || node.actions.length > 20)) error('ACTION_INVALID', 'Liste d’actions invalide.', id);
+    for (const action of Array.isArray(node.actions) ? node.actions : []) {
+      if (!isRecord(action) || !(UI_ACTION_TYPES as readonly string[]).includes(action.type)
+        || (action.config !== undefined && !isRecord(action.config))) {
+        error('ACTION_INVALID', 'Action non enregistrée ou configuration invalide.', id);
+      }
+    }
     if (node.children !== undefined && (!Array.isArray(node.children) || node.children.some(child => typeof child !== 'string'))) error('COMPONENT_SCHEMA_INVALID', 'Liste d’enfants invalide.', id);
     for (const child of Array.isArray(node.children) ? node.children : []) {
       if (!Object.hasOwn(nodes, child)) error('REFERENCE_BROKEN', `Référence enfant cassée : ${child}.`, id);
