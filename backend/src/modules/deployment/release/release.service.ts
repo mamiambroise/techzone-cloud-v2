@@ -5,16 +5,31 @@ import { QueryReleaseDto } from './dto/query-release.dto';
 import { ApproveReleaseDto } from './dto/approve-release.dto';
 import { DeploymentErrorCode } from '../../../common/errors/deployment-error-code.enum';
 import { DeploymentException } from '../../../common/errors/deployment.exception';
+import { type IamAuthContext } from '../../../iam/decorators/current-user.decorator';
 import { randomUUID } from 'crypto';
 
 @Injectable()
 export class ReleaseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateReleaseDto) {
+  private requireTenant(principal: IamAuthContext): string {
+    const tenantId = principal?.tenantId;
+    if (!tenantId || tenantId === 'legacy') {
+      throw new DeploymentException(
+        DeploymentErrorCode.DEP_PERMISSION_DENIED,
+        'An active tenant context is required for release operations',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    return tenantId;
+  }
+
+  async create(dto: CreateReleaseDto, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const actor = principal.userId;
     // 1. Vérifier l'application
-    const application = await this.prisma.application.findUnique({
-      where: { id: dto.applicationId },
+    const application = await this.prisma.application.findFirst({
+      where: { id: dto.applicationId, tenantId },
     });
 
     if (!application) {
@@ -26,8 +41,12 @@ export class ReleaseService {
     }
 
     // 2. Vérifier la version de l'application
-    const applicationVersion = await this.prisma.applicationVersion.findUnique({
-      where: { id: dto.applicationVersionId },
+    const applicationVersion = await this.prisma.applicationVersion.findFirst({
+      where: {
+        id: dto.applicationVersionId,
+        applicationId: application.id,
+        tenantId,
+      },
     });
 
     if (!applicationVersion) {
@@ -39,8 +58,13 @@ export class ReleaseService {
     }
 
     // 3. Vérifier le snapshot
-    const snapshot = await this.prisma.snapshot.findUnique({
-      where: { id: dto.snapshotId },
+    const snapshot = await this.prisma.snapshot.findFirst({
+      where: {
+        id: dto.snapshotId,
+        applicationId: application.id,
+        applicationVersionId: applicationVersion.id,
+        tenantId,
+      },
     });
 
     if (!snapshot) {
@@ -54,7 +78,7 @@ export class ReleaseService {
     // 4. Vérifier l'unicité code + version + tenantId
     const existingRelease = await this.prisma.release.findFirst({
       where: {
-        tenantId: dto.tenantId ?? undefined,
+        tenantId,
         code: dto.code,
         version: dto.version,
       },
@@ -78,7 +102,7 @@ export class ReleaseService {
         applicationId: dto.applicationId,
         applicationVersionId: dto.applicationVersionId,
         snapshotId: dto.snapshotId,
-        tenantId: dto.tenantId ?? undefined,
+        tenantId,
         artifactRefs: (dto.artifactRefs ?? {
           containerImage: `registry.techzone.internal/${application.code}:${dto.version}`,
           digest: `sha256:${randomUUID().replace(/-/g, '')}`,
@@ -86,7 +110,7 @@ export class ReleaseService {
         contractVersions: (dto.contractVersions ?? {}) as any,
         configurationVersion: dto.configurationVersion,
         status: 'DRAFT',
-        createdBy: dto.createdBy,
+        createdBy: actor,
       },
     });
 
@@ -94,11 +118,12 @@ export class ReleaseService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId,
+        tenantId,
         releaseId: release.id,
         applicationId: release.applicationId,
         action: 'CREATED',
         status: 'DRAFT',
-        actor: dto.createdBy,
+        actor,
         metadata: {
           code: release.code,
           version: release.version,
@@ -110,8 +135,9 @@ export class ReleaseService {
     return release;
   }
 
-  async findAll(query?: QueryReleaseDto) {
-    const where: Record<string, any> = {};
+  async findAll(query: QueryReleaseDto | undefined, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const where: Record<string, any> = { tenantId };
 
     if (query?.applicationId) {
       where.applicationId = query.applicationId;
@@ -146,9 +172,10 @@ export class ReleaseService {
     return releases;
   }
 
-  async findOne(id: string) {
-    const release = await this.prisma.release.findUnique({
-      where: { id },
+  async findOne(id: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const release = await this.prisma.release.findFirst({
+      where: { id, tenantId },
       include: {
         application: true,
         applicationVersion: true,
@@ -168,8 +195,9 @@ export class ReleaseService {
     return release;
   }
 
-  async assemble(id: string) {
-    const release = await this.findOne(id);
+  async assemble(id: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const release = await this.findOne(id, principal);
 
     if (release.status !== 'DRAFT') {
       throw new DeploymentException(
@@ -205,11 +233,12 @@ export class ReleaseService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-asm-${randomUUID().slice(0, 8)}`,
+        tenantId,
         releaseId: id,
         applicationId: release.applicationId,
         action: 'VALIDATING',
         status: 'ASSEMBLING',
-        actor: release.createdBy,
+        actor: principal.userId,
         metadata: {
           assembledAt: new Date().toISOString(),
           contractsResolved: Object.keys(resolvedContractVersions).length,
@@ -220,8 +249,9 @@ export class ReleaseService {
     return updated;
   }
 
-  async validate(id: string) {
-    const release = await this.findOne(id);
+  async validate(id: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const release = await this.findOne(id, principal);
 
     if (release.status !== 'ASSEMBLING') {
       throw new DeploymentException(
@@ -252,11 +282,12 @@ export class ReleaseService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-val-${randomUUID().slice(0, 8)}`,
+        tenantId,
         releaseId: id,
         applicationId: release.applicationId,
         action: 'GATE_CHECK',
         status: 'READY',
-        actor: 'system-validator',
+        actor: principal.userId,
         metadata: {
           validatedAt: new Date().toISOString(),
           artifactsVerified: true,
@@ -267,8 +298,13 @@ export class ReleaseService {
     return updated;
   }
 
-  async approve(id: string, dto?: ApproveReleaseDto) {
-    const release = await this.findOne(id);
+  async approve(
+    id: string,
+    dto: ApproveReleaseDto | undefined,
+    principal: IamAuthContext,
+  ) {
+    const tenantId = this.requireTenant(principal);
+    const release = await this.findOne(id, principal);
 
     if (release.status !== 'READY') {
       throw new DeploymentException(
@@ -278,7 +314,7 @@ export class ReleaseService {
       );
     }
 
-    const approver = dto?.approvedBy || 'release-manager@techzone.io';
+    const approver = principal.userId;
 
     const updated = await this.prisma.release.update({
       where: { id },
@@ -291,6 +327,7 @@ export class ReleaseService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-appr-${randomUUID().slice(0, 8)}`,
+        tenantId,
         releaseId: id,
         applicationId: release.applicationId,
         action: 'GATE_CHECK',
@@ -306,8 +343,9 @@ export class ReleaseService {
     return updated;
   }
 
-  async publish(id: string) {
-    const release = await this.findOne(id);
+  async publish(id: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const release = await this.findOne(id, principal);
 
     if (release.status !== 'APPROVED') {
       throw new DeploymentException(
@@ -328,11 +366,12 @@ export class ReleaseService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-pub-${randomUUID().slice(0, 8)}`,
+        tenantId,
         releaseId: id,
         applicationId: release.applicationId,
         action: 'SUCCEEDED',
         status: 'RELEASED',
-        actor: 'release-publisher',
+        actor: principal.userId,
         metadata: {
           releasedAt: new Date().toISOString(),
         },
@@ -342,8 +381,8 @@ export class ReleaseService {
     return updated;
   }
 
-  async archive(id: string) {
-    await this.findOne(id);
+  async archive(id: string, principal: IamAuthContext) {
+    await this.findOne(id, principal);
 
     return this.prisma.release.update({
       where: { id },
@@ -353,9 +392,9 @@ export class ReleaseService {
     });
   }
 
-  async compare(id1: string, id2: string) {
-    const r1 = await this.findOne(id1);
-    const r2 = await this.findOne(id2);
+  async compare(id1: string, id2: string, principal: IamAuthContext) {
+    const r1 = await this.findOne(id1, principal);
+    const r2 = await this.findOne(id2, principal);
 
     return {
       release1: {
@@ -391,12 +430,14 @@ export class ReleaseService {
     };
   }
 
-  async getHistory(id: string) {
-    await this.findOne(id);
+  async getHistory(id: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    await this.findOne(id, principal);
 
     return this.prisma.deploymentHistory.findMany({
       where: {
         releaseId: id,
+        tenantId,
       },
       orderBy: {
         createdAt: 'asc',

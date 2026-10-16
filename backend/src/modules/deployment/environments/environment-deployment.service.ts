@@ -6,6 +6,7 @@ import { DeploymentErrorCode } from '../../../common/errors/deployment-error-cod
 import { DeploymentException } from '../../../common/errors/deployment.exception';
 import { DeploymentService } from '../deployments/deployment.service';
 import { DeploymentStrategy } from '../deployments/dto/create-deployment.dto';
+import { type IamAuthContext } from '../../../iam/decorators/current-user.decorator';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -15,8 +16,22 @@ export class EnvironmentDeploymentService {
     private readonly deploymentService: DeploymentService,
   ) {}
 
-  async findAll() {
+  private requireTenant(principal: IamAuthContext): string {
+    const tenantId = principal?.tenantId;
+    if (!tenantId || tenantId === 'legacy') {
+      throw new DeploymentException(
+        DeploymentErrorCode.DEP_PERMISSION_DENIED,
+        'An active tenant context is required for environment operations',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    return tenantId;
+  }
+
+  async findAll(principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
     return this.prisma.environmentDeployment.findMany({
+      where: { tenantId },
       include: {
         environment: true,
         application: true,
@@ -27,9 +42,10 @@ export class EnvironmentDeploymentService {
     });
   }
 
-  async getStatus(environmentId: string) {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async getStatus(environmentId: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -41,7 +57,7 @@ export class EnvironmentDeploymentService {
     }
 
     const deployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
+      where: { environmentId, tenantId },
       include: {
         application: true,
         currentRelease: {
@@ -61,6 +77,7 @@ export class EnvironmentDeploymentService {
     const activeDeployments = await this.prisma.deployment.findMany({
       where: {
         environmentId,
+        tenantId,
         status: { in: ['PENDING', 'RUNNING', 'VERIFYING'] },
       },
       include: {
@@ -81,10 +98,11 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async promote(dto: PromoteReleaseDto) {
+  async promote(dto: PromoteReleaseDto, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
     // 1. Trouver la release
-    const release = await this.prisma.release.findUnique({
-      where: { id: dto.releaseId },
+    const release = await this.prisma.release.findFirst({
+      where: { id: dto.releaseId, tenantId },
       include: {
         application: true,
       },
@@ -99,8 +117,8 @@ export class EnvironmentDeploymentService {
     }
 
     // 2. Trouver l'environnement cible
-    const targetEnv = await this.prisma.environment.findUnique({
-      where: { id: dto.targetEnvironmentId },
+    const targetEnv = await this.prisma.environment.findFirst({
+      where: { id: dto.targetEnvironmentId, tenantId },
     });
 
     if (!targetEnv) {
@@ -115,7 +133,7 @@ export class EnvironmentDeploymentService {
     if (targetEnv.type === 'PRODUCTION') {
       // Pour aller en PRODUCTION, la release doit avoir été déployée avec succès en STAGING
       const stagingEnv = await this.prisma.environment.findFirst({
-        where: { type: 'STAGING' },
+        where: { type: 'STAGING', tenantId },
       });
 
       if (stagingEnv) {
@@ -123,6 +141,7 @@ export class EnvironmentDeploymentService {
           where: {
             releaseId: release.id,
             environmentId: stagingEnv.id,
+            tenantId,
             status: 'SUCCEEDED',
           },
         });
@@ -138,13 +157,15 @@ export class EnvironmentDeploymentService {
     }
 
     // 4. Déclencher le déploiement sur l'environnement cible
-    const deployment = await this.deploymentService.create({
-      releaseId: release.id,
-      environmentId: targetEnv.id,
-      strategy: (dto.strategy as DeploymentStrategy) ?? DeploymentStrategy.STANDARD,
-      startedBy: dto.startedBy,
-      idempotencyKey: `promote-${release.id}-${targetEnv.id}-${Date.now()}`,
-    });
+    const deployment = await this.deploymentService.create(
+      {
+        releaseId: release.id,
+        environmentId: targetEnv.id,
+        strategy: (dto.strategy as DeploymentStrategy) ?? DeploymentStrategy.STANDARD,
+        idempotencyKey: `promote-${release.id}-${targetEnv.id}-${Date.now()}`,
+      },
+      principal,
+    );
 
     return {
       message: `Release ${release.code}:${release.version} successfully promoted to ${targetEnv.code} (${targetEnv.type})`,
@@ -152,9 +173,14 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async lock(environmentId: string, dto: LockEnvironmentDto) {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async lock(
+    environmentId: string,
+    dto: LockEnvironmentDto,
+    principal: IamAuthContext,
+  ) {
+    const tenantId = this.requireTenant(principal);
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -166,7 +192,7 @@ export class EnvironmentDeploymentService {
     }
 
     const envDeployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
+      where: { environmentId, tenantId },
     });
 
     for (const ed of envDeployments) {
@@ -181,10 +207,11 @@ export class EnvironmentDeploymentService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-lock-${randomUUID().slice(0, 8)}`,
+        tenantId,
         environmentId,
         action: 'FAILED',
         status: 'LOCKED',
-        actor: dto.lockedBy || 'environment-admin',
+        actor: principal.userId,
         metadata: {
           reason: dto.reason,
           lockedAt: new Date().toISOString(),
@@ -200,9 +227,10 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async unlock(environmentId: string, actor: string = 'environment-admin') {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async unlock(environmentId: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -214,7 +242,7 @@ export class EnvironmentDeploymentService {
     }
 
     const envDeployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
+      where: { environmentId, tenantId },
     });
 
     for (const ed of envDeployments) {
@@ -229,10 +257,11 @@ export class EnvironmentDeploymentService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId: `trc-unlk-${randomUUID().slice(0, 8)}`,
+        tenantId,
         environmentId,
         action: 'SUCCEEDED',
         status: 'ACTIVE',
-        actor,
+        actor: principal.userId,
         metadata: {
           unlockedAt: new Date().toISOString(),
         },
@@ -246,9 +275,10 @@ export class EnvironmentDeploymentService {
     };
   }
 
-  async detectDrift(environmentId: string) {
-    const environment = await this.prisma.environment.findUnique({
-      where: { id: environmentId },
+  async detectDrift(environmentId: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId, tenantId },
     });
 
     if (!environment) {
@@ -260,7 +290,7 @@ export class EnvironmentDeploymentService {
     }
 
     const envDeployments = await this.prisma.environmentDeployment.findMany({
-      where: { environmentId },
+      where: { environmentId, tenantId },
       include: {
         currentRelease: {
           include: {

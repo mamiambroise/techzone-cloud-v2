@@ -1,12 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { type IamAuthContext } from '../../../iam/decorators/current-user.decorator';
+import { DeploymentErrorCode } from '../../../common/errors/deployment-error-code.enum';
+import { DeploymentException } from '../../../common/errors/deployment.exception';
 
 @Injectable()
 export class CockpitService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboard() {
+  private requireTenant(principal: IamAuthContext): string {
+    const tenantId = principal?.tenantId;
+    if (!tenantId || tenantId === 'legacy') {
+      throw new DeploymentException(
+        DeploymentErrorCode.DEP_PERMISSION_DENIED,
+        'An active tenant context is required for deployment cockpit operations',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    return tenantId;
+  }
+
+  async getDashboard(principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
     const releases = await this.prisma.release.findMany({
+      where: { tenantId },
       include: {
         application: true,
       },
@@ -16,6 +33,7 @@ export class CockpitService {
     });
 
     const deployments = await this.prisma.deployment.findMany({
+      where: { tenantId },
       include: {
         release: {
           include: {
@@ -31,6 +49,7 @@ export class CockpitService {
     });
 
     const envDeployments = await this.prisma.environmentDeployment.findMany({
+      where: { tenantId },
       include: {
         environment: true,
         application: true,
@@ -39,6 +58,7 @@ export class CockpitService {
     });
 
     const rollbacks = await this.prisma.rollback.findMany({
+      where: { deployment: { is: { tenantId } } },
       include: {
         deployment: {
           include: {
@@ -54,6 +74,7 @@ export class CockpitService {
     });
 
     const recentEvents = await this.prisma.deploymentHistory.findMany({
+      where: { tenantId },
       include: {
         application: true,
         environment: true,
@@ -150,8 +171,10 @@ export class CockpitService {
     };
   }
 
-  async getRecentReleases(limit: number = 10) {
+  async getRecentReleases(principal: IamAuthContext, limit: number = 10) {
+    const tenantId = this.requireTenant(principal);
     return this.prisma.release.findMany({
+      where: { tenantId },
       include: {
         application: true,
         applicationVersion: true,
@@ -164,9 +187,11 @@ export class CockpitService {
     });
   }
 
-  async getRunningDeployments() {
+  async getRunningDeployments(principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
     return this.prisma.deployment.findMany({
       where: {
+        tenantId,
         status: { in: ['PENDING', 'RUNNING', 'VERIFYING'] },
       },
       include: {
@@ -184,8 +209,10 @@ export class CockpitService {
     });
   }
 
-  async getActivity(limit: number = 20) {
+  async getActivity(principal: IamAuthContext, limit: number = 20) {
+    const tenantId = this.requireTenant(principal);
     return this.prisma.deploymentHistory.findMany({
+      where: { tenantId },
       include: {
         application: true,
         environment: true,
@@ -199,9 +226,13 @@ export class CockpitService {
     });
   }
 
-  async getHealth() {
-    const environments = await this.prisma.environment.findMany();
+  async getHealth(principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const environments = await this.prisma.environment.findMany({
+      where: { tenantId },
+    });
     const envDeployments = await this.prisma.environmentDeployment.findMany({
+      where: { tenantId },
       include: {
         environment: true,
         application: true,

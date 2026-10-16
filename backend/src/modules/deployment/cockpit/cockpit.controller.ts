@@ -1,4 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { RequirePermission } from '../../../iam/permission.decorator';
+import { PERMISSIONS } from '../../../iam/iam.constants';
+import {
+  CurrentUser,
+  type IamAuthContext,
+} from '../../../iam/decorators/current-user.decorator';
 import { CockpitService } from './cockpit.service';
 
 @Controller()
@@ -6,34 +12,47 @@ export class CockpitController {
   constructor(private readonly cockpitService: CockpitService) {}
 
   @Get('api/deployment/dashboard')
-  getDashboard() {
-    return this.cockpitService.getDashboard();
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
+  getDashboard(@CurrentUser() principal: IamAuthContext) {
+    return this.cockpitService.getDashboard(principal);
   }
 
   @Get('api/deployment/cockpit')
-  getCockpit() {
-    return this.cockpitService.getDashboard();
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
+  getCockpit(@CurrentUser() principal: IamAuthContext) {
+    return this.cockpitService.getDashboard(principal);
   }
 
   @Get('api/releases/recent')
-  getRecentReleases(@Query('limit') limit?: string) {
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
+  getRecentReleases(
+    @Query('limit') limit: string | undefined,
+    @CurrentUser() principal: IamAuthContext,
+  ) {
     return this.cockpitService.getRecentReleases(
+      principal,
       limit ? parseInt(limit, 10) : 10,
     );
   }
 
   @Get('api/deployments/running')
-  getRunningDeployments() {
-    return this.cockpitService.getRunningDeployments();
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
+  getRunningDeployments(@CurrentUser() principal: IamAuthContext) {
+    return this.cockpitService.getRunningDeployments(principal);
   }
 
   @Get('api/deployments/activity')
-  getActivity(@Query('limit') limit?: string) {
-    return this.cockpitService.getActivity(limit ? parseInt(limit, 10) : 20);
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
+  getActivity(
+    @Query('limit') limit: string | undefined,
+    @CurrentUser() principal: IamAuthContext,
+  ) {
+    return this.cockpitService.getActivity(principal, limit ? parseInt(limit, 10) : 20);
   }
 
   @Get('api/deployment/health')
-  getHealth() {
-    return this.cockpitService.getHealth();
+  @RequirePermission(PERMISSIONS.DEPLOYMENT_DIAGNOSTICS)
+  getHealth(@CurrentUser() principal: IamAuthContext) {
+    return this.cockpitService.getHealth(principal);
   }
 }

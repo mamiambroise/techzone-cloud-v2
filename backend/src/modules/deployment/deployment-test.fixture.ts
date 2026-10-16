@@ -19,7 +19,13 @@ export async function createDeploymentFixture(prisma: PrismaService) {
       },
     });
     const environment = await tx.environment.create({
-      data: { code, name: code, type: 'TEST', tenantId: tenant.id },
+      data: {
+        code,
+        name: code,
+        type: 'TEST',
+        tenantId: tenant.id,
+        baseUrl: 'https://runtime.test.invalid',
+      },
     });
     const snapshot = await tx.snapshot.create({
       data: {
@@ -27,7 +33,7 @@ export async function createDeploymentFixture(prisma: PrismaService) {
         applicationVersionId: version.id,
         environmentId: environment.id,
         tenantId: tenant.id,
-        contracts: [],
+        contracts: [{ contractCode: 'core', contractVersion: '1.0.0' }],
         configuration: {},
         hash: randomUUID(),
         createdBy: 'isolated-test',
@@ -43,8 +49,11 @@ export async function createDeploymentFixture(prisma: PrismaService) {
         snapshotId: snapshot.id,
         tenantId: tenant.id,
         configurationVersion: '1.0.0',
-        artifactRefs: [],
-        contractVersions: [],
+        artifactRefs: {
+          containerImage: 'registry.test.invalid/deployment-fixture:1.0.0',
+          digest: `sha256:${randomUUID().replace(/-/g, '')}`,
+        },
+        contractVersions: { core: '1.0.0' },
         createdBy: 'isolated-test',
         status: 'RELEASED',
       },

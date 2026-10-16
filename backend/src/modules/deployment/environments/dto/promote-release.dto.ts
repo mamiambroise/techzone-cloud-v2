@@ -9,9 +9,13 @@ export class PromoteReleaseDto {
   @IsNotEmpty()
   targetEnvironmentId: string;
 
+  /**
+   * Deprecated compatibility field. Promotion audit data is always taken from
+   * the authenticated principal by the service.
+   */
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  startedBy: string;
+  startedBy?: string;
 
   @IsOptional()
   @IsString()
