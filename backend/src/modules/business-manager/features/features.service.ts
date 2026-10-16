@@ -40,7 +40,11 @@ export class FeatureCapabilityService {
   // =====================================================================
 
   async createFeature(applicationVersionId: string, dto: CreateFeatureDto, tenantId: string | null) {
-    await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(
+      this.prisma,
+      applicationVersionId,
+      tenantId,
+    );
 
     const code = dto.code.trim().toLowerCase();
 
@@ -60,14 +64,9 @@ export class FeatureCapabilityService {
       );
     }
 
-    const appVersion = await this.prisma.applicationVersion.findUnique({
-      where: { id: applicationVersionId },
-      select: { applicationId: true },
-    });
-
     return this.prisma.bmFeature.create({
       data: {
-        applicationId: appVersion?.applicationId ?? '',
+        applicationId: appVersion.applicationId,
         applicationVersionId,
         code,
         name: dto.name,
@@ -136,7 +135,7 @@ export class FeatureCapabilityService {
     }
 
     return this.prisma.bmFeature.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: {
         name: dto.name,
         description: dto.description,
@@ -156,7 +155,7 @@ export class FeatureCapabilityService {
     if (feature.status === BmFeatureStatus.ARCHIVED) return feature;
 
     return this.prisma.bmFeature.update({
-      where: { id },
+      where: { id, tenantId: tenantId ?? undefined },
       data: { status: BmFeatureStatus.ARCHIVED },
     });
   }
@@ -236,7 +235,7 @@ export class FeatureCapabilityService {
 
     if (existing) {
       return this.prisma.bmVersionFeature.update({
-        where: { id: existing.id },
+        where: { id: existing.id, tenantId: tenantId ?? undefined },
         data: {
           enabled: dto.enabled ?? true,
           activationStrategy: dto.activationStrategy,
@@ -341,7 +340,7 @@ export class FeatureCapabilityService {
     if (feature.status === BmFeatureStatus.ARCHIVED || capability.status === BmCapabilityStatus.ARCHIVED) {
       throw new PlatformException(PlatformErrorCode.APPLICATION_ARCHIVED, 'Archived capability cannot be modified', HttpStatus.CONFLICT);
     }
-    return this.prisma.bmFeatureCapability.update({ where: { id }, data: archive ? {status: BmCapabilityStatus.ARCHIVED} : {
+    return this.prisma.bmFeatureCapability.update({ where: { id, tenantId: tenantId ?? undefined }, data: archive ? {status: BmCapabilityStatus.ARCHIVED} : {
       name: dto.name, description: dto.description, required: dto.required,
       requiredEntities: dto.requiredEntities, configuration: dto.configuration as any,
     } });

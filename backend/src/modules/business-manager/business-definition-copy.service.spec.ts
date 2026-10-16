@@ -277,4 +277,28 @@ describe('BusinessDefinitionCopyService (COLONNES PRISES EN CHARGE)', () => {
 
     await expect(service.copy(SOURCE_VERSION_ID, TARGET_VERSION_ID, TENANT_ID)).rejects.toThrow(PlatformException);
   });
+
+  it('refuse de copier la définition vers une version publiée', async () => {
+    prisma.applicationVersion.findFirst
+      .mockResolvedValueOnce({
+        id: SOURCE_VERSION_ID,
+        applicationId: APPLICATION_ID,
+        version: '1.0.0',
+      })
+      .mockResolvedValueOnce({
+        id: TARGET_VERSION_ID,
+        applicationId: APPLICATION_ID,
+      })
+      .mockResolvedValueOnce({
+        id: TARGET_VERSION_ID,
+        applicationId: APPLICATION_ID,
+        status: 'ACTIVE',
+        version: '1.0.1',
+      });
+
+    await expect(
+      service.copy(SOURCE_VERSION_ID, TARGET_VERSION_ID, TENANT_ID),
+    ).rejects.toThrow(PlatformException);
+    expect(prisma.bmEntity.findMany).not.toHaveBeenCalled();
+  });
 });

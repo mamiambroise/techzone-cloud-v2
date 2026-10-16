@@ -261,7 +261,9 @@ export class QualityEngineService {
 
     // Les problèmes d'une exécution précédente sur le même rapport sont
     // remplacés : le rapport reflète toujours l'état actuel de la version.
-    await this.prisma.bmqQualityIssue.deleteMany({ where: { runId: run.id } });
+    await this.prisma.bmqQualityIssue.deleteMany({
+      where: { runId: run.id, tenantId: tenantId ?? undefined },
+    });
 
     const report = await this.prisma.bmqQualityReport.upsert({
       where: {
@@ -296,8 +298,12 @@ export class QualityEngineService {
       },
     });
 
-    await this.prisma.bmqQualityIssue.deleteMany({ where: { reportId: report.id } });
-    await this.prisma.bmqQualityMetric.deleteMany({ where: { reportId: report.id } });
+    await this.prisma.bmqQualityIssue.deleteMany({
+      where: { reportId: report.id, tenantId: tenantId ?? undefined },
+    });
+    await this.prisma.bmqQualityMetric.deleteMany({
+      where: { reportId: report.id, tenantId: tenantId ?? undefined },
+    });
 
     if (issues.length > 0) {
       await this.prisma.bmqQualityIssue.createMany({
@@ -335,7 +341,7 @@ export class QualityEngineService {
     });
 
     await this.prisma.bmqValidationCampaign.update({
-      where: { id: campaign.id },
+      where: { id: campaign.id, tenantId: tenantId ?? undefined },
       data: { status, completedAt: new Date() },
     });
 
@@ -422,7 +428,7 @@ export class QualityEngineService {
 
     if (existing) {
       return this.prisma.bmqQualityGate.update({
-        where: { id: existing.id },
+        where: { id: existing.id, tenantId: tenantId ?? undefined },
         data: {
           name: dto.name,
           description: dto.description,
