@@ -55,7 +55,10 @@ describe('Local IAM cookie contract', () => {
       iamSession: { findUnique: jest.fn().mockResolvedValue({ id: 'session', userId: 'user', status: 'ACTIVE' }), update: jest.fn().mockResolvedValue({}) },
       iamUser: { findUnique: jest.fn().mockResolvedValue({ id: 'user', isAdmin: false }) },
     };
-    const auth = { assertSessionUsable: jest.fn().mockResolvedValue(undefined) };
+    const auth = {
+      assertSessionUsable: jest.fn().mockResolvedValue(undefined),
+      assertUserIsActive: jest.fn(),
+    };
     const localGuard = new IamJwtGuard(refStub, prisma as any, auth as any, authorizationStub());
     const { request, context } = makeContext(token);
     await expect(localGuard.canActivate(context)).resolves.toBe(true);
@@ -71,7 +74,10 @@ describe('Local IAM cookie contract', () => {
       iamSession: { findUnique: jest.fn().mockResolvedValue({ id: 'session', userId: 'user', status: 'ACTIVE', tenantId: 'tenant-1' }), update: jest.fn().mockResolvedValue({}) },
       iamUser: { findUnique: jest.fn().mockResolvedValue({ id: 'user', isAdmin: false }) },
     };
-    const auth = { assertSessionUsable: jest.fn().mockResolvedValue(undefined) };
+    const auth = {
+      assertSessionUsable: jest.fn().mockResolvedValue(undefined),
+      assertUserIsActive: jest.fn(),
+    };
     const authorization = authorizationStub({
       ...EMPTY_AUTHORIZATION,
       tenantId: 'tenant-1',
@@ -96,7 +102,10 @@ describe('Local IAM cookie contract', () => {
     const revokedGuard = new IamJwtGuard(
       refStub,
       { iamSession: { findUnique: jest.fn().mockResolvedValue({ id: 'revoked', userId: 'user' }) } } as any,
-      { assertSessionUsable: jest.fn().mockRejectedValue(new Error('Session revoked')) } as any,
+      {
+        assertSessionUsable: jest.fn().mockRejectedValue(new Error('Session revoked')),
+        assertUserIsActive: jest.fn(),
+      } as any,
       authorizationStub(),
     );
     await expect(revokedGuard.canActivate(makeContext(token).context)).rejects.toThrow('Session revoked');
@@ -118,7 +127,10 @@ describe('Local IAM cookie contract', () => {
       iamSession: { findUnique: jest.fn().mockResolvedValue({ id: 'session', userId: 'user', status: 'ACTIVE', tenantId: 'session-tenant' }), update: jest.fn().mockResolvedValue({}) },
       iamUser: { findUnique: jest.fn().mockResolvedValue({ id: 'user', isAdmin: true }) },
     };
-    const auth = { assertSessionUsable: jest.fn().mockResolvedValue(undefined) };
+    const auth = {
+      assertSessionUsable: jest.fn().mockResolvedValue(undefined),
+      assertUserIsActive: jest.fn(),
+    };
     const localGuard = new IamJwtGuard(
       refStub,
       prisma as any,
@@ -135,5 +147,47 @@ describe('Local IAM cookie contract', () => {
     await expect(localGuard.canActivate(context)).resolves.toBe(true);
     expect(request.iamAuth.tenantId).toBe('session-tenant');
     expect(request.iamAuth.isSuperAdmin).toBe(true);
+  });
+
+  it('refuses a suspended user even when the persisted session is active', async () => {
+    const token = signAccess({ userId: 'user', sessionId: 'session' });
+    const userStatusError = new Error('Account suspended');
+    const prisma = {
+      iamSession: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'session',
+          userId: 'user',
+          status: 'ACTIVE',
+        }),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      iamUser: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'user',
+          isAdmin: false,
+          status: 'SUSPENDED',
+        }),
+      },
+    };
+    const auth = {
+      assertSessionUsable: jest.fn().mockResolvedValue(undefined),
+      assertUserIsActive: jest.fn(() => {
+        throw userStatusError;
+      }),
+    };
+    const guard = new IamJwtGuard(
+      refStub,
+      prisma as any,
+      auth as any,
+      authorizationStub(),
+    );
+
+    await expect(guard.canActivate(makeContext(token).context)).rejects.toThrow(
+      'Account suspended',
+    );
+    expect(auth.assertUserIsActive).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'SUSPENDED' }),
+    );
+    expect(prisma.iamSession.update).not.toHaveBeenCalled();
   });
 });
