@@ -31,6 +31,7 @@
     "setup:test-db": "node ./test/setup-test-database.mjs",
     "prisma:test:validate": "node ./test/with-test-database.mjs validate",
     "prisma:test:generate": "node ./test/with-test-database.mjs generate",
+    "prisma:test:status": "node ./test/with-test-database.mjs migrate status",
     "prisma:test:migrate": "node ./test/with-test-database.mjs migrate deploy",
     "seed:bm": "tsx src/prisma/seed-bm.ts"
   },
