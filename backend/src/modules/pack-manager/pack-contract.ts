@@ -11,10 +11,21 @@ export const canonical = (value: any): string => Array.isArray(value)
 export const contractHash = (value: unknown) => 'sha256:' + createHash('sha256').update(canonical(value)).digest('hex');
 const fields = /^(tenant\.id|application\.(id|version)|environment\.code|permissions|capabilities|locale|timezone|featureFlags\.[a-zA-Z0-9_.-]+)$/;
 const operators = ['EQ', 'NEQ', 'IN', 'NOT_IN', 'CONTAINS', 'EXISTS', 'GT', 'GTE', 'LT', 'LTE'];
+const secretValues = [
+  /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/i,
+  /\beyJ[\w-]{10,}\.eyJ[\w-]{10,}\.[\w-]{10,}\b/,
+  /\bAKIA[0-9A-Z]{16}\b/,
+  /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
+  /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/,
+  /\bBearer\s+[A-Za-z0-9._~+/-]{12,}/i,
+  /\b(?:password|passwd|secret|token|api[_-]?key)\s*[:=]\s*["']?[^\s"'&,;]{8,}/i,
+];
 
 /** Reject executable content and secrets instead of silently publishing a redacted definition. */
 export function publicJson(value: unknown, depth = 0): void {
   if (depth > 20) throw new BadRequestException('JSON_DEPTH_EXCEEDED');
+  if (typeof value === 'string' && secretValues.some(pattern => pattern.test(value)))
+    throw new BadRequestException('PRIVATE_CONFIGURATION_FORBIDDEN');
   if (value && typeof value === 'object') for (const [key, child] of Object.entries(value)) {
     if (/password|secret|token|credential|private.?key|__proto__|constructor|prototype/i.test(key))
       throw new BadRequestException('PRIVATE_CONFIGURATION_FORBIDDEN');

@@ -158,7 +158,10 @@ function Workspace({ tenant }) {
           Créer {section === 'packs' ? 'un pack' : section === 'versions' ? 'une version' : 'un élément'}
         </BmButton>}
     />
-    {error && <BmErrorState message={error} onRetry={refresh}/>}
+    {error?.startsWith('Accès refusé') ? <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-rose-900">
+      <h2 className="font-semibold">403 — Permission refusée</h2>
+      <p className="mt-1 text-sm">{error}</p>
+    </div> : error && <BmErrorState message={error} onRetry={refresh}/>}
     {!data ? (!error && <BmLoading/>) : <>
       <BmContextBar items={[
         { label:'Pack',value:pack?.name },
@@ -183,9 +186,10 @@ function Workspace({ tenant }) {
           <Link className="rounded-lg px-3 py-2 font-medium text-blue-700 hover:bg-white" to={`/runtime/context?pack=${encodeURIComponent(pack.code)}&packVersion=${encodeURIComponent(version.versionNumber)}`}>Ouvrir dans Runtime</Link>
         </div>
       </div>}
-      {editor && ['version','clone'].includes(editor.kind) && selectedApplicationId && <p role="status" className="text-sm text-slate-600">
+      {editor && ['version','clone'].includes(editor.kind) && selectedApplicationId && (loadingApplicationVersions || applicationVersions.length > 0 || !error) && <p role="status" className="text-sm text-slate-600">
         {loadingApplicationVersions ? 'Chargement des versions applicatives…' : applicationVersions.length ? `${applicationVersions.length} version(s) applicative(s) admissible(s).` : 'Aucune ApplicationVersion admissible pour cette application.'}
       </p>}
+      {editor && ['version','clone'].includes(editor.kind) && selectedApplicationId && !error && !loadingApplicationVersions && !applicationVersions.length && <Link className="-mt-3 inline-block text-sm font-semibold text-blue-700" to="/business-manager/applications">Ouvrir Business Manager pour préparer une ApplicationVersion →</Link>}
       {editor && <BMResourceEditor
         key={editor.kind + (editor.row?.id ?? '')}
         fields={fields.map(field => field.key === 'expression'
@@ -210,6 +214,7 @@ function Workspace({ tenant }) {
           <BmKpiCard label="Versions publiées" value={data.dashboard.counters.published} icon={createElement(Rocket,{ size:22 })}/>
           <BmKpiCard label="Erreurs de validation" value={data.dashboard.counters.attention} icon={createElement(ShieldCheck,{ size:22 })}/>
         </div>
+        <IntegrationFlow version={version} pack={pack}/>
         {pack ? <BmCard title={`Workspace — ${pack.name}`} subtitle={pack.description || `Pack ${pack.code}`}>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryValue label="Application" value={pack.applicationId ?? 'Associée à la première version'}/>
@@ -347,13 +352,23 @@ function Workspace({ tenant }) {
         </div>}
       </BmCard> : <BmEmptyState title="Sélectionnez une version"/> )}
 
-      {section === 'history' && (version ? <BmCard title="Historique de la version" subtitle="Événements issus des horodatages et de l’activité récente disponible pour le tenant.">
-        {historyEvents.length ? <ol className="space-y-4">{historyEvents.map((item,index) => <li key={`${item.id ?? item.action}-${item.createdAt}-${index}`} className="flex gap-3 text-sm">
-          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-500" aria-hidden="true"/>
-          <div><strong>{item.action}</strong><time className="mt-1 block text-xs text-slate-500">{new Date(item.createdAt).toLocaleString()}</time>{item.targetId && <p className="mt-1 break-all text-xs text-slate-500">Référence : {item.targetId}</p>}</div>
-        </li>)}</ol> : <BmEmptyState title="Aucun événement disponible"/>}
-        <p className="mt-4 text-xs text-slate-500">L’activité affichée est limitée aux événements récents renvoyés par le service Pack Manager.</p>
-      </BmCard> : <BmEmptyState title="Sélectionnez une version"/> )}
+      {section === 'history' && (version ? <div className="space-y-5">
+        <BmCard title="Historique des publications" subtitle="Versions publiées du pack, avec leur auteur, leur date et leur empreinte.">
+          {publishedVersions.length ? <div className="space-y-3">{publishedVersions.map(item => <div key={item.id} className="grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3 text-sm sm:grid-cols-4">
+            <span><strong>{item.versionNumber}</strong> · <BmStatusBadge value={item.status}/></span>
+            <span>{item.publishedBy ?? 'Auteur indisponible'}</span>
+            <time>{item.publishedAt ? new Date(item.publishedAt).toLocaleString() : 'Date indisponible'}</time>
+            <span className="break-all font-mono text-xs">{item.manifestHash ?? 'Hash indisponible'}</span>
+          </div>)}</div> : <BmEmptyState title="Aucune publication enregistrée"/>}
+        </BmCard>
+        <BmCard title="Historique de la version" subtitle="Événements issus des horodatages et de l’activité récente disponible pour le tenant.">
+          {historyEvents.length ? <ol className="space-y-4">{historyEvents.map((item,index) => <li key={`${item.id ?? item.action}-${item.createdAt}-${index}`} className="flex gap-3 text-sm">
+            <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-500" aria-hidden="true"/>
+            <div><strong>{item.action}</strong><time className="mt-1 block text-xs text-slate-500">{new Date(item.createdAt).toLocaleString()}</time>{item.targetId && <p className="mt-1 break-all text-xs text-slate-500">Référence : {item.targetId}</p>}</div>
+          </li>)}</ol> : <BmEmptyState title="Aucun événement disponible"/>}
+          <p className="mt-4 text-xs text-slate-500">L’activité affichée est limitée aux événements récents renvoyés par le service Pack Manager.</p>
+        </BmCard>
+      </div> : <BmEmptyState title="Sélectionnez une version"/> )}
 
       {['modules','features','capabilities','dependencies','rules','registry'].includes(section) && <>
         {section !== 'registry' && !version && !['capabilities'].includes(section) ? <BmEmptyState title="Sélectionnez une version"/> : <>
@@ -377,6 +392,27 @@ function Workspace({ tenant }) {
 
 function SummaryValue({ label,value }) {
   return <div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p><div className="mt-1 break-all text-sm font-medium text-slate-800">{value ?? '—'}</div></div>;
+}
+
+function IntegrationFlow({ version,pack }) {
+  const definition = version?.snapshot?.content ?? version?.manifest?.content?.definition ?? {};
+  const published = version?.status === 'PUBLISHED';
+  const steps = [
+    { name:'Business Manager',status:version?.applicationVersion?.status ?? 'NON SÉLECTIONNÉ',detail:version?.applicationVersion ? `${version.applicationVersion.application?.name ?? pack?.applicationId ?? 'Application'} · ${version.applicationVersion.version}` : 'Aucune ApplicationVersion sélectionnée' },
+    { name:'UI Builder',status:definition.ui ? 'INCLUS AU SNAPSHOT' : 'NON DÉCLARÉ',detail:definition.ui?.applicationVersionId ?? 'Aucune définition UI embarquée' },
+    { name:'Automation',status:definition.automation ? 'INCLUS AU SNAPSHOT' : 'NON DÉCLARÉ',detail:definition.automation ? 'Définition incluse dans le snapshot' : 'Aucune définition Automation déclarée' },
+    { name:'Pack Manager',status:version?.status ?? 'EN ATTENTE',detail:version ? `Version ${version.versionNumber} · validation ${version.validationStatus}` : 'Sélectionnez une version pour consulter son état' },
+    { name:'Deployment',status:published ? 'PUBLICATION DISPONIBLE' : 'NON PUBLIÉ',detail:published ? 'Une version immuable est prête au déploiement' : 'La publication est nécessaire avant le déploiement' },
+    { name:'Runtime',status:published ? 'MANIFEST PUBLIÉ' : 'EN ATTENTE',detail:published ? version.manifestHash ?? 'Manifest publié' : 'Aucun manifest publié pour cette version' },
+  ];
+  return <BmCard title="Flux d’intégration" subtitle="Vue en lecture seule des sources et de la publication ; les états non déclarés ne sont pas simulés.">
+    <ol aria-label="Étapes du flux d’intégration" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {steps.map((step,index) => <li key={step.name} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2"><strong>{index + 1}. {step.name}</strong><BmStatusBadge value={step.status}/></div>
+        <p className="mt-2 break-words text-xs text-slate-600">{step.detail}</p>
+      </li>)}
+    </ol>
+  </BmCard>;
 }
 
 export function ApplicationVersionSelect({ value,onChange,versions,loading }) {

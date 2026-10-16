@@ -1,4 +1,4 @@
-import { render,screen } from '@testing-library/react';
+import { render,screen,within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach,describe,expect,it,vi } from 'vitest';
 import { MemoryRouter,Route,Routes } from 'react-router-dom';
@@ -75,5 +75,20 @@ describe('PackManagerPage',() => {
     await user.click(screen.getByRole('tab',{ name:'JSON' }));
     expect(screen.getByText(/techzone\.pack-manifest/)).toBeInTheDocument();
     expect(screen.getAllByText(/sha256:snapshot/).length).toBeGreaterThan(0);
+  });
+
+  it('shows the source-to-runtime integration flow without inventing undeclared statuses',async () => {
+    render(
+      <MemoryRouter initialEntries={['/packs?pack=pack-a&version=version-a']}>
+        <Routes><Route path="/packs/:section?" element={<PackManagerPage/>}/></Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Flux d’intégration')).toBeInTheDocument();
+    const flow = within(screen.getByRole('list',{ name:'Étapes du flux d’intégration' }));
+    for (const step of ['Business Manager','UI Builder','Automation','Pack Manager','Deployment','Runtime']) {
+      expect(flow.getByText(new RegExp(`^\\d+\\. ${step}$`))).toBeInTheDocument();
+    }
+    expect(screen.getAllByText('NON DÉCLARÉ')).toHaveLength(2);
   });
 });
