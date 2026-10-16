@@ -133,7 +133,7 @@ export function BmSearchInput({ value, onChange, placeholder = 'Rechercher…', 
     <input
       type="search"
       aria-label={label}
-      value={value}
+      value={value ?? ''}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       className="w-full min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 bm-focus focus:border-blue-400 sm:max-w-xs"
@@ -145,7 +145,7 @@ export function BmSelect({ label, value, onChange, options, className = '' }) {
   return (
     <select
       aria-label={label}
-      value={value}
+      value={value ?? ''}
       onChange={(event) => onChange(event.target.value)}
       className={`rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 bm-focus ${className}`}
     >

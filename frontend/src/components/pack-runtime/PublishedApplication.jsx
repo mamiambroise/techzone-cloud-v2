@@ -15,8 +15,14 @@ function PublishedWorkspace({ packCode, packVersion }) {
     api.get(`/runtime/manifests/${encodeURIComponent(packCode)}/${encodeURIComponent(packVersion)}`)
       .then(response => {
         const manifest = response.data;
-        const ui = manifest.definition?.ui?.definition;
-        if (!ui?.pages || !ui.businessContext || ui.applicationVersionId !== ui.businessContext.applicationVersionId) throw new Error('Published UI metadata missing');
+        const artifact = manifest.definition?.ui;
+        const ui = artifact?.definition;
+        if (!Array.isArray(ui?.pages) || !Array.isArray(ui.navigation?.items) || !ui.businessContext
+          || !['1.0', '1.1'].includes(ui.schemaVersion)
+          || !ui.applicationVersionId || artifact.applicationVersionId !== ui.applicationVersionId
+          || ui.applicationVersionId !== ui.businessContext.applicationVersionId
+          || ui.pages.some(page => !page || typeof page.key !== 'string' || !page.components)
+          || ui.navigation.items.some(item => !item || !ui.pages.some(page => page.key === item.pageKey))) throw new Error('Published UI metadata missing or inconsistent');
         if (active) setDefinition(ui);
       }).catch(() => active && setError('Interface publiée indisponible pour ce tenant.'));
     return () => { active = false; };

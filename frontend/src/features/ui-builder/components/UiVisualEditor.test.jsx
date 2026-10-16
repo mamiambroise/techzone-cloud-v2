@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { configure, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
@@ -8,6 +8,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import UiVisualEditor from './UiVisualEditor.jsx';
 import uiBuilderReducer from '../store/uiBuilderSlice.js';
 import { api } from '../../../services/apiClient.js';
+
+// Context loading includes several effects and API responses before the canvas mounts.
+configure({ asyncUtilTimeout: 5000 });
 
 vi.mock('../../../services/apiClient.js', () => ({ api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('../../../contexts/TenantProvider.jsx', () => ({ useTenant: () => ({ activeTenant: { id: 'tenant-a', name: 'Tenant A' } }) }));

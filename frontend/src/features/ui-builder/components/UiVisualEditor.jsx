@@ -95,12 +95,12 @@ function EditorBody() {
   // a request for each keystroke. Manual Save remains available for retries.
   const autosaveTimer = useRef(null);
   useEffect(() => {
-    if (saveState !== 'DIRTY' || !selectedPageId) return undefined;
+    if (saveState !== 'DIRTY' || !selectedPageId || state.pendingSave) return undefined;
     autosaveTimer.current = window.setTimeout(() => {
       dispatch(saveCurrentPage());
     }, 750);
     return () => window.clearTimeout(autosaveTimer.current);
-  }, [dispatch, saveState, selectedPageId, tree]);
+  }, [dispatch, saveState, selectedPageId, tree, state.pendingSave]);
 
   if (pagesStatus === 'LOADING' || pagesStatus === 'IDLE') {
     return <BmLoading label="Chargement des pages…" />;

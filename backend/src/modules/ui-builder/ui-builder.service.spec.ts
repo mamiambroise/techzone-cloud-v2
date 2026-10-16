@@ -242,7 +242,7 @@ describe('UiBuilderService — VALIDATION ENGINE', () => {
             root: {
               id: 'root',
               type: 'Text',
-              bindings: { value: { kind: 'ENTITY_FIELD', entity: 'customer', field: 'email' } },
+              bindings: { text: { kind: 'ENTITY_FIELD', entity: 'customer', field: 'email' } },
               children: [],
             },
           },
@@ -508,5 +508,76 @@ describe('UiBuilderService — UI DEFINITION + THEME', () => {
     expect(overview.progression).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: 'validation', status: 'IN_PROGRESS' })]),
     );
+  });
+});
+
+describe('UI Builder V3 — sécurité et intégrations', () => {
+  let prisma: ReturnType<typeof createMockPrisma>;
+  let service: UiBuilderService;
+  const root = (extra = {}) => ({ root: 'root', nodes: { root: { id: 'root', type: 'Text', children: [], ...extra } } });
+  const page = (components = root()) => ({ id: 'p-1', key: 'products', route: '/products', applicationVersionId: VERSION_ID, tenantId: TENANT_A, components });
+  beforeEach(() => {
+    prisma = createMockPrisma(); service = makeService(prisma);
+    prisma.applicationVersion.findFirst.mockResolvedValue({ id: VERSION_ID, applicationId: 'app-1', status: 'DRAFT' });
+    prisma.uiPage.findMany.mockResolvedValue([page()]);
+  });
+  it.each([null, 'legacy'])('refuse un contexte tenant absent (%s), même en appel direct du service', async tenant => {
+    await expect(service.listPages(VERSION_ID, tenant)).rejects.toMatchObject({ status: 403 });
+    await expect(service.getPage('p-1', tenant)).rejects.toMatchObject({ status: 403 });
+    expect(prisma.uiPage.findMany).not.toHaveBeenCalled();
+    expect(prisma.uiPage.findFirst).not.toHaveBeenCalled();
+  });
+  it.each(['getUiDefinition', 'getTheme', 'getBusinessContext', 'validate'] as const)('refuse une version forgée via %s', async method => {
+    prisma.applicationVersion.findFirst.mockResolvedValue(null);
+    await expect(service[method](VERSION_ID, TENANT_B)).rejects.toMatchObject({ status: 404 });
+    expect(prisma.uiPage.findMany).not.toHaveBeenCalled();
+    expect(prisma.uiThemeSetting.findFirst).not.toHaveBeenCalled();
+    expect(prisma.bmEntity.findMany).not.toHaveBeenCalled();
+  });
+  it('refuse une page malveillante avant toute écriture', async () => {
+    await expect(service.createPage({ applicationVersionId: VERSION_ID, key: 'evil', title: 'Evil', route: '//evil.test', components: root({ props: { onClick: 'alert(1)' } }) } as any, TENANT_A, 'user')).rejects.toMatchObject({ status: 400 });
+    expect(prisma.uiPage.create).not.toHaveBeenCalled();
+  });
+  it('refuse un thème CSS arbitraire sans écrire', async () => {
+    await expect(service.upsertTheme({ applicationVersionId: VERSION_ID, tokens: { colors: { primary: 'url(https://evil.test)' } } }, TENANT_A, 'user')).rejects.toMatchObject({ status: 400 });
+    expect(prisma.uiThemeSetting.create).not.toHaveBeenCalled();
+  });
+  it('ne masque pas une panne du stockage du thème pendant le snapshot', async () => {
+    prisma.uiThemeSetting.findFirst.mockRejectedValue(new Error('DATABASE_UNAVAILABLE'));
+    await expect(service.getUiDefinition(VERSION_ID, TENANT_A)).rejects.toThrow('DATABASE_UNAVAILABLE');
+  });
+  it('détecte un champ manquant et un binding hors contrat', async () => {
+    prisma.bmEntity.findMany.mockResolvedValue([{ code: 'product', fields: [{ code: 'name' }] }]);
+    prisma.uiPage.findMany.mockResolvedValue([page(root({ bindings: { text: { kind: 'ENTITY_FIELD', entity: 'product' }, other: { kind: 'SQL', value: 'select 1' } } }))]);
+    const result = await service.validate(VERSION_ID, TENANT_A);
+    expect(result.issues.map(i => i.code)).toEqual(expect.arrayContaining(['FIELD_UNKNOWN', 'BINDING_INVALID']));
+  });
+  it('refuse un workflow inconnu, une route absente et CALL_API arbitraire', async () => {
+    prisma.uiPage.findMany.mockResolvedValue([page(root({ type: 'Button', actions: [
+      { type: 'NAVIGATE', config: { route: '/deleted' } },
+      { type: 'TRIGGER_AUTOMATION', config: { workflowCode: 'missing' } },
+      { type: 'CALL_API', config: { url: 'https://evil.test' } },
+    ] }))]);
+    const result = await service.validate(VERSION_ID, TENANT_A);
+    expect(result.issues.map(i => i.code)).toEqual(expect.arrayContaining(['ACTION_INVALID', 'UI_AUTOMATION_REFERENCE_UNKNOWN', 'ACTION_UNKNOWN']));
+  });
+  it('résout la référence vers le registry Automation existant sans lancer le workflow', async () => {
+    const workflows = { getWorkflow: jest.fn().mockReturnValue({ code: 'registered' }) };
+    const withAutomation = new UiBuilderService(prisma as any, workflows as any);
+    prisma.uiPage.findMany.mockResolvedValue([page(root({ type: 'Button', actions: [{ type: 'TRIGGER_AUTOMATION', config: { workflowCode: 'registered' } }] }))]);
+    expect((await withAutomation.validate(VERSION_ID, TENANT_A)).status).toBe('VALID');
+    expect(workflows.getWorkflow).toHaveBeenCalledWith('registered');
+  });
+  it('vérifie les références IAM actives depuis le registry réel', async () => {
+    const permission = { findMany: jest.fn<any>().mockResolvedValue([{ code: 'known.read' }]) };
+    Object.assign(prisma, { permission });
+    prisma.uiPage.findMany.mockResolvedValue([{ ...page(), permissions: ['known.read', 'missing.write'] }]);
+    const result = await service.validate(VERSION_ID, TENANT_A);
+    expect(result.issues).toContainEqual(expect.objectContaining({ code: 'UI_PERMISSION_REFERENCE_UNKNOWN', message: expect.stringContaining('missing.write') }));
+    expect(permission.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { code: { in: ['known.read', 'missing.write'] }, active: true } }));
+  });
+  it('détecte une page hors ApplicationVersion même si le stockage renvoie une ligne incohérente', async () => {
+    prisma.uiPage.findMany.mockResolvedValue([{ ...page(), applicationVersionId: 'other-version' }]);
+    expect((await service.validate(VERSION_ID, TENANT_A)).issues).toContainEqual(expect.objectContaining({ code: 'UI_APPLICATION_VERSION_MISMATCH' }));
   });
 });

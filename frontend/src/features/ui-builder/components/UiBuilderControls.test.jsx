@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { configure, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
@@ -10,6 +10,9 @@ import UiPagesManager from './UiPagesManager.jsx';
 import UiVisualEditor from './UiVisualEditor.jsx';
 import uiBuilderReducer from '../store/uiBuilderSlice.js';
 import { api } from '../../../services/apiClient.js';
+
+// Context loading includes several effects and API responses before the canvas mounts.
+configure({ asyncUtilTimeout: 5000 });
 
 vi.mock('../../../services/apiClient.js', () => ({ api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('../../../contexts/TenantProvider.jsx', () => ({ useTenant: () => ({ activeTenant: { id: 'tenant-a', name: 'Tenant A' } }) }));
@@ -67,7 +70,9 @@ beforeEach(() => {
   api.post.mockResolvedValue({
     data: { ...PAGES[0], id: 'created-page', key: 'orders', title: 'Orders', route: '/orders', type: 'FORM' },
   });
-  api.patch.mockResolvedValue({ data: PAGES[1] });
+  api.patch.mockImplementation(async (url, body) => ({
+    data: { ...PAGES.find((page) => url.endsWith(`/${page.id}`)), ...body },
+  }));
 });
 
 describe('UI Builder callback regressions', () => {
@@ -81,6 +86,16 @@ describe('UI Builder callback regressions', () => {
     await screen.findByTestId('ui-visual-editor');
     await waitFor(() => expect(store.getState().uiBuilder.selectedPageId).toBe('page-a'));
     await waitFor(() => expect(screen.getByTestId('current-path')).toHaveTextContent('/ui/builder/page-a'));
+  });
+
+  it('redirige un deep link inconnu vers une page existante', async () => {
+    const { store } = renderWithStore(
+      <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>,
+      '/ui/builder/deleted-page', true,
+    );
+    await screen.findByTestId('ui-visual-editor');
+    await waitFor(() => expect(store.getState().uiBuilder.selectedPageId).toBe('page-a'));
+    expect(screen.getByTestId('current-path')).toHaveTextContent('/ui/builder/page-a');
   });
 
   it('keeps a manual picker choice after resolving a deep-link page', async () => {

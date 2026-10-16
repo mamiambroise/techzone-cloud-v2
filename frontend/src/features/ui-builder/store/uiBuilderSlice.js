@@ -44,6 +44,9 @@ export const saveCurrentPage = createAsyncThunk('uiBuilder/saveCurrentPage', asy
     components: state.tree,
     metadata: { ...(page.metadata || {}), icon: page.icon ?? null },
   });
+}, {
+  // Serialize writes so an older request cannot overwrite a newer edit.
+  condition: (_, { getState }) => !getState().uiBuilder.pendingSave,
 });
 
 function draftKey(page) {
@@ -71,6 +74,9 @@ function collectDescendants(nodes, nodeId, accumulator = []) {
 
 const initialState = {
   applicationVersionId: null,
+  tenantId: null,
+  requests: {},
+  pendingSave: null,
   overview: null,
   businessContext: { entities: [] },
   pages: [],
@@ -96,24 +102,15 @@ const uiBuilderSlice = createSlice({
   initialState,
   reducers: {
     setContext(state, action) {
-      const { applicationVersionId } = action.payload;
-      if (state.applicationVersionId !== applicationVersionId) {
-        state.applicationVersionId = applicationVersionId;
-        state.overview = null;
-        state.pages = [];
-        state.selectedPageId = null;
-        state.selectedComponentId = null;
-        state.tree = createDefaultTree();
-        state.saveState = 'CLEAN';
-        state.validation = null;
-        state.undoStack = [];
-        state.redoStack = [];
+      const { applicationVersionId, tenantId = null } = action.payload;
+      if (state.applicationVersionId !== applicationVersionId || state.tenantId !== tenantId) {
+        Object.assign(state, initialState, { applicationVersionId, tenantId });
       }
     },
     selectPage(state, action) {
       const page = state.pages.find((p) => p.id === action.payload);
       state.selectedPageId = page ? page.id : null;
-      state.selectedComponentId = page ? state.tree.root : null;
+      state.selectedComponentId = page ? (page.components?.root || 'root') : null;
       const tree = page?.components && page.components.root ? page.components : createDefaultTree();
       state.tree = tree;
       state.saveState = 'CLEAN';
@@ -347,12 +344,17 @@ const uiBuilderSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchOverview.pending, (state) => { state.overviewStatus = 'LOADING'; })
-      .addCase(fetchOverview.fulfilled, (state, action) => { state.overviewStatus = 'LOADED'; state.overview = action.payload; })
-      .addCase(fetchOverview.rejected, (state, action) => { state.overviewStatus = 'ERROR'; state.lastActionError = action.error?.message || 'Erreur'; })
+      .addCase(fetchOverview.pending, (state, action) => { state.requests.fetchOverview = action.meta.requestId; state.overviewStatus = 'LOADING'; })
+      .addCase(fetchOverview.fulfilled, (state, action) => {
+        if (state.requests.fetchOverview !== action.meta.requestId) return;
+        state.overviewStatus = 'LOADED'; state.overview = action.payload; })
+      .addCase(fetchOverview.rejected, (state, action) => {
+        if (state.requests.fetchOverview !== action.meta.requestId) return;
+        state.overviewStatus = 'ERROR'; state.lastActionError = action.error?.message || 'Erreur'; })
 
-      .addCase(fetchPages.pending, (state) => { state.pagesStatus = 'LOADING'; })
+      .addCase(fetchPages.pending, (state, action) => { state.requests.fetchPages = action.meta.requestId; state.pagesStatus = 'LOADING'; })
       .addCase(fetchPages.fulfilled, (state, action) => {
+        if (state.requests.fetchPages !== action.meta.requestId) return;
         state.pagesStatus = 'LOADED';
         state.pages = action.payload;
         if (state.selectedPageId && !action.payload.some((p) => p.id === state.selectedPageId)) {
@@ -360,19 +362,37 @@ const uiBuilderSlice = createSlice({
           state.tree = createDefaultTree();
         }
       })
-      .addCase(fetchPages.rejected, (state) => { state.pagesStatus = 'ERROR'; })
+      .addCase(fetchPages.rejected, (state, action) => {
+        if (state.requests.fetchPages !== action.meta.requestId) return;
+        state.pagesStatus = 'ERROR'; })
 
-      .addCase(fetchBusinessContext.fulfilled, (state, action) => { state.businessContext = action.payload; })
-      .addCase(fetchValidation.pending, (state) => { state.validationStatus = 'LOADING'; })
-      .addCase(fetchValidation.fulfilled, (state, action) => { state.validationStatus = 'LOADED'; state.validation = action.payload; })
-      .addCase(fetchValidation.rejected, (state) => { state.validationStatus = 'ERROR'; })
+      .addCase(fetchBusinessContext.pending, (state, action) => { state.requests.fetchBusinessContext = action.meta.requestId; })
+      .addCase(fetchBusinessContext.fulfilled, (state, action) => {
+        if (state.requests.fetchBusinessContext !== action.meta.requestId) return;
+        state.businessContext = action.payload; })
+      .addCase(fetchValidation.pending, (state, action) => { state.requests.fetchValidation = action.meta.requestId; state.validationStatus = 'LOADING'; })
+      .addCase(fetchValidation.fulfilled, (state, action) => {
+        if (state.requests.fetchValidation !== action.meta.requestId) return;
+        state.validationStatus = 'LOADED'; state.validation = action.payload; })
+      .addCase(fetchValidation.rejected, (state, action) => {
+        if (state.requests.fetchValidation !== action.meta.requestId) return;
+        state.validationStatus = 'ERROR'; })
 
+      .addCase(submitCreatePage.pending, (state, action) => { state.requests[action.meta.requestId] = true; })
       .addCase(submitCreatePage.fulfilled, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
         state.pages.push(action.payload);
         state.lastActionError = null;
       })
-      .addCase(submitCreatePage.rejected, (state, action) => { state.lastActionError = action.error?.message || 'Création impossible'; })
+      .addCase(submitCreatePage.rejected, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
+        state.lastActionError = action.error?.message || 'Création impossible'; })
+      .addCase(submitDeletePage.pending, (state, action) => { state.requests[action.meta.requestId] = true; })
       .addCase(submitDeletePage.fulfilled, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
         state.pages = state.pages.filter((p) => p.id !== action.meta.arg);
         if (state.selectedPageId === action.meta.arg) {
           state.selectedPageId = null;
@@ -380,21 +400,42 @@ const uiBuilderSlice = createSlice({
         }
       })
 
-      .addCase(saveCurrentPage.pending, (state) => { state.saveState = 'SAVING'; state.saveError = null; })
-      .addCase(saveCurrentPage.fulfilled, (state, action) => {
-        state.saveState = 'SAVED';
-        const index = state.pages.findIndex((p) => p.id === action.meta.arg?.id || p.id === action.payload?.id);
-        if (action.payload && index !== -1) {
-          state.pages[index] = { ...state.pages[index], ...action.payload, components: state.tree };
-        }
-        state.undoStack = [];
-        state.redoStack = [];
+      .addCase(saveCurrentPage.pending, (state, action) => {
+        state.pendingSave = { requestId: action.meta.requestId, pageId: state.selectedPageId, tree: state.tree, page: state.pages.find((p) => p.id === state.selectedPageId) };
+        state.saveState = 'SAVING';
+        state.saveError = null;
       })
-      .addCase(saveCurrentPage.rejected, (state, action) => { state.saveState = 'ERROR'; state.saveError = action.error?.message || 'Erreur d’enregistrement'; })
+      .addCase(saveCurrentPage.fulfilled, (state, action) => {
+        const saved = state.pendingSave;
+        if (!saved || saved.requestId !== action.meta.requestId) return;
+        const index = state.pages.findIndex((p) => p.id === saved.pageId);
+        const pageChanged = index !== -1 && JSON.stringify(state.pages[index]) !== JSON.stringify(saved.page);
+        if (action.payload && index !== -1) {
+          state.pages[index] = { ...state.pages[index], ...(pageChanged ? {} : action.payload), components: saved.tree };
+        }
+        if (state.selectedPageId === saved.pageId) {
+          state.saveState = !pageChanged && JSON.stringify(state.tree) === JSON.stringify(saved.tree) ? 'SAVED' : 'DIRTY';
+        }
+        state.pendingSave = null;
+      })
+      .addCase(saveCurrentPage.rejected, (state, action) => {
+        if (state.pendingSave?.requestId !== action.meta.requestId) return;
+        if (state.selectedPageId === state.pendingSave.pageId) {
+          state.saveState = 'ERROR';
+          state.saveError = action.error?.message || 'Erreur d’enregistrement';
+        }
+        state.pendingSave = null;
+      })
 
-      .addCase(submitTheme.pending, (state) => { state.themeStatus = 'SAVING'; })
-      .addCase(submitTheme.fulfilled, (state) => { state.themeStatus = 'SAVED'; })
-      .addCase(submitTheme.rejected, (state) => { state.themeStatus = 'ERROR'; });
+      .addCase(submitTheme.pending, (state, action) => { state.requests[action.meta.requestId] = true; state.themeStatus = 'SAVING'; })
+      .addCase(submitTheme.fulfilled, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
+        state.themeStatus = 'SAVED'; })
+      .addCase(submitTheme.rejected, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
+        state.themeStatus = 'ERROR'; });
   },
 });
 

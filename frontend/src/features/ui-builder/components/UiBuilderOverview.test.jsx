@@ -5,7 +5,7 @@
  * `GET /api/ui-builder/overview/:applicationVersionId` : KPI, progression,
  * pages récentes, validation, CTA principale et accès rapides.
  */
-import { render, screen, within } from '@testing-library/react';
+import { configure, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
@@ -15,6 +15,9 @@ import UiBuilderOverview from './UiBuilderOverview.jsx';
 import uiBuilderReducer from '../store/uiBuilderSlice.js';
 import { ROUTES } from '../../../app/routes.js';
 import { api } from '../../../services/apiClient.js';
+
+// Context loading includes several effects and API responses before the canvas mounts.
+configure({ asyncUtilTimeout: 5000 });
 
 vi.mock('../../../services/apiClient.js', () => ({ api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('../../../contexts/TenantProvider.jsx', () => ({ useTenant: () => ({ activeTenant: { id: 'tenant-a', name: 'Tenant A' } }) }));

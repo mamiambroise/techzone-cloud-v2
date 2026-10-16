@@ -53,13 +53,13 @@ export default function UiBuilderLayout({ subTab, children }) {
   const { applicationId, versionId, application, version, versionsStatus } = context;
 
   useEffect(() => {
+    dispatch(setContext({ applicationVersionId: versionId || null, tenantId: activeTenant?.id || null }));
     if (versionId) {
-      dispatch(setContext({ applicationVersionId: versionId }));
       dispatch(fetchOverview(versionId));
       dispatch(fetchPages(versionId));
       dispatch(fetchBusinessContext(versionId));
     }
-  }, [versionId, dispatch]);
+  }, [versionId, activeTenant?.id, dispatch]);
 
   if (!activeTenant) {
     return (
