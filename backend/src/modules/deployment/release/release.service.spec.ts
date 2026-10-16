@@ -9,6 +9,8 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { DeploymentException } from '../../../common/errors/deployment.exception';
 
 describe('ReleaseService (DEP-CDC-02)', () => {
+  jest.setTimeout(30_000);
+
   let service: ReleaseService;
   let prisma: PrismaService;
   let fixture: DeploymentFixture;

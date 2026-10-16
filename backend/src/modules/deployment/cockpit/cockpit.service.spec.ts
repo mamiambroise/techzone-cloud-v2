@@ -4,6 +4,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 
 describe('CockpitService (DEP-CDC-01)', () => {
   let service: CockpitService;
+  let prisma: PrismaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -11,6 +12,11 @@ describe('CockpitService (DEP-CDC-01)', () => {
     }).compile();
 
     service = module.get<CockpitService>(CockpitService);
+    prisma = module.get<PrismaService>(PrismaService);
+  });
+
+  afterEach(async () => {
+    await prisma.$disconnect();
   });
 
   it('should be defined', () => {

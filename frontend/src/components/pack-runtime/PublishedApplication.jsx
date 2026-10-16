@@ -3,24 +3,39 @@ import { api } from '../../services/apiClient.js';
 import { UiRenderer } from '../../features/ui-builder/renderer/Renderer.jsx';
 
 /** Loads only the immutable published manifest. No working-UI endpoint. */
-export default function PublishedApplication({ packCode, packVersion, tenantId }) {
-  const identity = `${tenantId}:${packCode}:${packVersion}`;
-  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} />;
+export default function PublishedApplication({ packCode, packVersion, tenantId, resolutionId, effectiveManifest }) {
+  const identity = `${tenantId}:${packCode}:${packVersion}:${resolutionId ?? 'none'}`;
+  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} resolutionId={resolutionId} effectiveManifest={effectiveManifest} />;
 }
-function PublishedWorkspace({ packCode, packVersion }) {
+function PublishedWorkspace({ packCode, packVersion, resolutionId, effectiveManifest }) {
   const [definition, setDefinition] = useState(null), [error, setError] = useState('');
   const [selection, setSelection] = useState({ key: null, recordId: null });
   useEffect(() => {
     let active = true;
+    const manifestContent = effectiveManifest?.content ?? effectiveManifest;
+    const isExecutable = Boolean(resolutionId) && manifestContent?.status === 'EXECUTABLE' && manifestContent?.executable !== false;
+    if (!resolutionId || !manifestContent || !isExecutable) {
+      setDefinition(null);
+      setError('Runtime bloqué : aucune résolution exécutable n’est active pour cette application.');
+      return () => { active = false; };
+    }
+    if (manifestContent?.ui?.definition) {
+      const ui = manifestContent.ui.definition;
+      if (ui?.pages && ui?.businessContext) {
+        setError('');
+        setDefinition(ui);
+        return () => { active = false; };
+      }
+    }
     api.get(`/runtime/manifests/${encodeURIComponent(packCode)}/${encodeURIComponent(packVersion)}`)
       .then(response => {
         const manifest = response.data;
         const ui = manifest.definition?.ui?.definition;
         if (!ui?.pages || !ui.businessContext || ui.applicationVersionId !== ui.businessContext.applicationVersionId) throw new Error('Published UI metadata missing');
-        if (active) setDefinition(ui);
+        if (active) { setError(''); setDefinition(ui); }
       }).catch(() => active && setError('Interface publiée indisponible pour ce tenant.'));
     return () => { active = false; };
-  }, [packCode, packVersion]);
+  }, [effectiveManifest, packCode, packVersion, resolutionId]);
   if (error) return <p role="alert">{error}</p>;
   if (!definition) return <p role="status">Chargement de l’application publiée…</p>;
   const page = definition.pages.find(p => p.key === selection.key) || definition.pages[0];

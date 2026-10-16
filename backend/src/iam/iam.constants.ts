@@ -84,21 +84,21 @@ export const PERMISSIONS = {
   // autorisation, le backend reste l'autorité de sécurité.
   BM_READ: 'bm:read',
   BM_WRITE: 'bm:write',
-  BM_CONTRACT_READ: 'bm:contract:read',
-  BM_CONTRACT_WRITE: 'bm:contract:write',
   BM_VALIDATE: 'bm:validate',
   BM_PUBLISH: 'bm:publish',
-  ENVIRONMENT_READ: 'environment.read',
-  ENVIRONMENT_CREATE: 'environment.create',
-  ENVIRONMENT_UPDATE: 'environment.update',
-  ENVIRONMENT_DISABLE: 'environment.disable',
-  DEPLOYMENT_READ: 'deployment.read',
-  DEPLOYMENT_CREATE: 'deployment.create',
-  DEPLOYMENT_EXECUTE: 'deployment.execute',
-  DEPLOYMENT_CANCEL: 'deployment.cancel',
-  DEPLOYMENT_RETRY: 'deployment.retry',
-  DEPLOYMENT_ROLLBACK: 'deployment.rollback',
-  DEPLOYMENT_DIAGNOSTICS: 'deployment.diagnostics',
+  BM_CONTRACT_READ: 'bm:contract:read',
+  BM_CONTRACT_WRITE: 'bm:contract:write',
+  ENVIRONMENT_READ: 'environment:read',
+  ENVIRONMENT_CREATE: 'environment:create',
+  ENVIRONMENT_UPDATE: 'environment:update',
+  ENVIRONMENT_DISABLE: 'environment:disable',
+  DEPLOYMENT_READ: 'deployment:read',
+  DEPLOYMENT_CREATE: 'deployment:create',
+  DEPLOYMENT_EXECUTE: 'deployment:execute',
+  DEPLOYMENT_CANCEL: 'deployment:cancel',
+  DEPLOYMENT_RETRY: 'deployment:retry',
+  DEPLOYMENT_ROLLBACK: 'deployment:rollback',
+  DEPLOYMENT_DIAGNOSTICS: 'deployment:diagnostics',
   // Subscription & Billing (CDC 15).
   //
   // Ces permissions autorisent un ACTEUR à agir sur la surface Billing.
@@ -146,9 +146,20 @@ export const UI_BUILDER_VALIDATE = PERMISSIONS.UI_BUILDER_VALIDATE;
 export const BM_READ = PERMISSIONS.BM_READ;
 export const BM_WRITE = PERMISSIONS.BM_WRITE;
 export const BM_VALIDATE = PERMISSIONS.BM_VALIDATE;
+export const BM_PUBLISH = PERMISSIONS.BM_PUBLISH;
 export const BM_CONTRACT_READ = PERMISSIONS.BM_CONTRACT_READ;
 export const BM_CONTRACT_WRITE = PERMISSIONS.BM_CONTRACT_WRITE;
-export const BM_PUBLISH = PERMISSIONS.BM_PUBLISH;
+export const ENVIRONMENT_READ = PERMISSIONS.ENVIRONMENT_READ;
+export const ENVIRONMENT_CREATE = PERMISSIONS.ENVIRONMENT_CREATE;
+export const ENVIRONMENT_UPDATE = PERMISSIONS.ENVIRONMENT_UPDATE;
+export const ENVIRONMENT_DISABLE = PERMISSIONS.ENVIRONMENT_DISABLE;
+export const DEPLOYMENT_READ = PERMISSIONS.DEPLOYMENT_READ;
+export const DEPLOYMENT_CREATE = PERMISSIONS.DEPLOYMENT_CREATE;
+export const DEPLOYMENT_EXECUTE = PERMISSIONS.DEPLOYMENT_EXECUTE;
+export const DEPLOYMENT_CANCEL = PERMISSIONS.DEPLOYMENT_CANCEL;
+export const DEPLOYMENT_RETRY = PERMISSIONS.DEPLOYMENT_RETRY;
+export const DEPLOYMENT_ROLLBACK = PERMISSIONS.DEPLOYMENT_ROLLBACK;
+export const DEPLOYMENT_DIAGNOSTICS = PERMISSIONS.DEPLOYMENT_DIAGNOSTICS;
 export const BILLING_READ = PERMISSIONS.BILLING_READ;
 export const BILLING_MANAGE = PERMISSIONS.BILLING_MANAGE;
 export const BILLING_PLAN_READ = PERMISSIONS.BILLING_PLAN_READ;

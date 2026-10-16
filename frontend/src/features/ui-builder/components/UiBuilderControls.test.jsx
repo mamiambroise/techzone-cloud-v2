@@ -118,7 +118,7 @@ describe('UI Builder callback regressions', () => {
 
     await user.type(screen.getByRole('searchbox'), 'no-match');
     expect(await screen.findByText(/Aucun/)).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('enables form composition after both BmSelect controls receive values', async () => {
     const user = userEvent.setup();

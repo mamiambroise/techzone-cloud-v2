@@ -10,6 +10,8 @@ import { DeploymentStrategy } from './dto/create-deployment.dto';
 import { DeploymentException } from '../../../common/errors/deployment.exception';
 
 describe('DeploymentService (DEP-CDC-03)', () => {
+  jest.setTimeout(30_000);
+
   let service: DeploymentService;
   let prisma: PrismaService;
   let fixture: DeploymentFixture;

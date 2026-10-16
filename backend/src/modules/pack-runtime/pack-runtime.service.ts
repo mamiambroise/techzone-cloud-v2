@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { IamPrincipal } from '../../iam/principal.decorator';
@@ -16,6 +16,30 @@ export class PackRuntimeService {
   publishedManifest(code: string, version: string, actor: IamPrincipal) { return this.packs.publishedManifest(code,version,actor); }
   private audit(actor: IamPrincipal, action: string, id: string, metadata: RecordValue = {}) { return this.db.auditEvent.create({ data: { tenantId: this.tenant(actor), actorId: actor.userId, traceId: randomUUID(), action, targetType: 'RUNTIME', targetId: id, result: 'SUCCESS', metadata } }); }
 
+  async assertExecutableResolution({ resolutionId, tenantId, applicationId, applicationVersionId, packVersionId, environmentId }: { resolutionId: string; tenantId: string; applicationId?: string; applicationVersionId?: string; packVersionId?: string; environmentId?: string }, actor?: IamPrincipal) {
+    if (!resolutionId) throw new BadRequestException('RUNTIME_RESOLUTION_ID_REQUIRED');
+    const targetTenant = tenantId || actor?.tenantId;
+    if (!targetTenant) throw new BadRequestException('TENANT_CONTEXT_REQUIRED');
+    const item = await this.db.runtimeResolution.findFirst({
+      where: { id: resolutionId, tenantId: targetTenant },
+      include: { effectiveManifest: true },
+    });
+    if (!item) throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND');
+    if (applicationId && item.applicationId !== applicationId) throw new BadRequestException('RUNTIME_APPLICATION_MISMATCH');
+    if (environmentId && item.environment !== environmentId) throw new BadRequestException('RUNTIME_ENVIRONMENT_MISMATCH');
+    if (packVersionId && item.packVersionId !== packVersionId) throw new BadRequestException('RUNTIME_PACK_VERSION_MISMATCH');
+    const effectiveContent = (item.effectiveManifest?.content as RecordValue | null) ?? null;
+    if (applicationVersionId) {
+      const observed = effectiveContent?.scope?.businessVersionId ?? effectiveContent?.businessConfiguration?.versionId ?? effectiveContent?.businessConfiguration?.applicationVersionId;
+      if (observed && String(observed) !== String(applicationVersionId)) throw new BadRequestException('RUNTIME_APPLICATION_VERSION_MISMATCH');
+    }
+    const status = item.status === 'RESOLVED' ? 'EXECUTABLE' : item.status;
+    if (status !== 'EXECUTABLE' || effectiveContent?.executable === false) {
+      throw new ConflictException('RUNTIME_RESOLUTION_BLOCKED');
+    }
+    return { ...item, status, effectiveManifest: item.effectiveManifest };
+  }
+
   async resolve(input: RecordValue, actor: IamPrincipal) {
     const tenantId = this.tenant(actor);
     if (input.tenantId && input.tenantId !== tenantId) throw new BadRequestException('TENANT_CONTEXT_MISMATCH');
@@ -23,6 +47,7 @@ export class PackRuntimeService {
     if (input.context && Object.keys(input.context).length) throw new BadRequestException('RUNTIME_CONTEXT_IS_SERVER_OWNED');
     const applicationId = this.text(input,'applicationId'), businessVersionId = this.text(input,'businessVersionId');
     const environment = this.text(input,'environment'), packCode = this.text(input,'packCode'), packVersion = this.text(input,'packVersion');
+    const requestedApplicationVersionId = typeof input.applicationVersionId === 'string' ? input.applicationVersionId.trim() : undefined;
     const [source, business, publications] = await Promise.all([
       this.packs.publishedManifest(packCode,packVersion,actor),
       this.bridge.applicationContext(applicationId,businessVersionId,environment,tenantId),
@@ -50,6 +75,14 @@ export class PackRuntimeService {
         }
       }
       if (business.readiness !== 'READY') issues.push({ code: business.reasonCode, severity: 'ERROR', message: 'Valider la version Business Manager avant la résolution.', path: 'businessVersionId' });
+      const sourceApplicationVersionId = typeof ui?.applicationVersionId === 'string' ? ui.applicationVersionId : undefined;
+      const expectedApplicationVersionId = business.application.versionId || businessVersionId;
+      if (requestedApplicationVersionId && expectedApplicationVersionId && requestedApplicationVersionId !== expectedApplicationVersionId) {
+        issues.push({ code: 'APPLICATION_VERSION_MISMATCH', severity: 'ERROR', message: 'Version d’application incohérente avec la résolution demandée.', path: 'applicationVersionId', details: { requested: requestedApplicationVersionId, expected: expectedApplicationVersionId } });
+      }
+      if (sourceApplicationVersionId && expectedApplicationVersionId && sourceApplicationVersionId !== expectedApplicationVersionId) {
+        issues.push({ code: 'APPLICATION_VERSION_MISMATCH', severity: 'ERROR', message: 'Pack publié associé à une autre version d’application.', path: 'packVersion', details: { packVersion: packVersion, expected: expectedApplicationVersionId, source: sourceApplicationVersionId } });
+      }
       const modules = definition.modules.map((m: RecordValue) => ({ ...m, state: m.enabled ? 'ACTIVE' : 'INACTIVE', reasonCode: m.enabled ? 'DECLARED_ENABLED' : 'DECLARED_DISABLED' }));
       const features = definition.features.map((f: RecordValue) => ({ ...f, state: f.enabled && f.defaultEnabled !== false ? 'ACTIVE' : 'INACTIVE', reasonCode: f.enabled ? 'DECLARED_ENABLED' : 'DECLARED_DISABLED' }));
       const resources = [...modules,...features];
@@ -77,7 +110,7 @@ export class PackRuntimeService {
       const finalDefinition = { ...definition, modules: modules.map((r: RecordValue) => ({ ...r, enabled: r.state === 'ACTIVE' })), features: features.map((r: RecordValue) => ({ ...r, enabled: r.state === 'ACTIVE' })) };
       issues.push(...dependencyIssues(finalDefinition, publications).filter(i => !issues.some(existing => existing.code === i.code && existing.path === i.path)));
       const executable = issues.length === 0 && !resources.some(r => r.state === 'BLOCKED');
-      const status = executable ? 'RESOLVED' : 'BLOCKED';
+      const status = executable ? 'EXECUTABLE' : 'BLOCKED';
       const effective = { contract: 'techzone.effective-runtime-manifest', contractVersion: '1.0.0', source: { packCode, packVersion, manifestHash: source.hash, packManifestId: source.id }, scope: { tenantId, applicationId, businessVersionId, environment }, status, executable, modules, features, capabilities: [...provided].sort(), dependencies: definition.dependencies, ui, ruleDecisions: decisions, businessConfiguration: business, configuration: business.configuration };
       const functionalHash = contractHash(effective);
       const stages = [ ['manifest.load', { manifestId: source.id }], ['manifest.validate', { hash: source.hash }], ['context.resolve', { revision: business.revision }], ['module_feature.resolve', { modules: modules.length, features: features.length }], ['capability_dependency.resolve', { issues }], ['rules.evaluate', { decisions }], ['effective_manifest.build', { functionalHash, executable }] ] as const;
@@ -90,10 +123,16 @@ export class PackRuntimeService {
         return { resolutionId: resolution.id, effectiveManifestId: manifest.id, status, traceId };
       });
       this.cache.set(key,result,{ tenantId, applicationId, packCode, provider: 'PACK_MANIFEST_STORE' },source.hash);
-      return { ...result, cache: 'MISS' };
+      return { ...result, status, cache: 'MISS', executable, effectiveManifest: effective };
     });
   }
   async resolution(id: string, actor: IamPrincipal) { const item = await this.db.runtimeResolution.findFirst({ where: { id, tenantId: this.tenant(actor) }, include: { steps: { orderBy: { displayOrder: 'asc' } }, effectiveManifest: true } }); if (!item) throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND'); return item; }
+  async activate(id: string, actor: IamPrincipal) {
+    const tenantId = this.tenant(actor);
+    const resolution = await this.resolution(id, actor);
+    await this.assertExecutableResolution({ resolutionId: id, tenantId, applicationId: resolution.applicationId, environmentId: resolution.environment }, actor);
+    return { resolutionId: id, status: 'ACTIVE', tenantId, applicationId: resolution.applicationId, environment: resolution.environment, activatedBy: actor.userId };
+  }
   resolutions(actor: IamPrincipal) { return this.db.runtimeResolution.findMany({ where: { tenantId: this.tenant(actor) }, orderBy: { startedAt: 'desc' }, take: 100, include: { effectiveManifest: true } }); }
   async effective(id: string, actor: IamPrincipal) { const r = await this.resolution(id,actor); if (!r.effectiveManifest) throw new NotFoundException('EFFECTIVE_MANIFEST_NOT_FOUND'); return r.effectiveManifest; }
   async effectiveById(id: string, actor: IamPrincipal) { const item = await this.db.runtimeEffectiveManifest.findFirst({ where: { id, tenantId: this.tenant(actor) } }); if (!item) throw new NotFoundException('EFFECTIVE_MANIFEST_NOT_FOUND'); return item; }
@@ -108,5 +147,5 @@ export class PackRuntimeService {
   async probeProvider(provider: string, actor: IamPrincipal) { const item = (await this.providersHealth(actor)).providers.find(p => p.code === provider); if (!item) throw new NotFoundException('PROVIDER_NOT_FOUND'); return item; }
   resilienceStatus(actor: IamPrincipal) { this.tenant(actor); return { mode: 'LOCAL_PROCESS', singleFlight: true, staleIfError: false, retries: { enabled: false, reason: 'LOCAL_TRANSACTIONAL_PROVIDERS' }, remoteProviders: false }; }
   async reresolve(id: string, actor: IamPrincipal) { const previous = await this.effective(id,actor); const c = previous.content as RecordValue; return this.resolve({ applicationId: c.scope.applicationId, businessVersionId: c.scope.businessVersionId, environment: c.scope.environment, packCode: c.source.packCode, packVersion: c.source.packVersion, forceRevision: true },actor); }
-  async dashboard(actor: IamPrincipal) { const tenantId = this.tenant(actor); const [total,resolved,blocked,recent] = await Promise.all([this.db.runtimeResolution.count({ where: { tenantId } }),this.db.runtimeResolution.count({ where: { tenantId,status: 'RESOLVED' } }),this.db.runtimeResolution.count({ where: { tenantId,status: 'BLOCKED' } }),this.resolutions(actor)]); return { counters: { total,resolved,blocked }, recent: recent.slice(0,20) }; }
+  async dashboard(actor: IamPrincipal) { const tenantId = this.tenant(actor); const [total,resolved,blocked,recent] = await Promise.all([this.db.runtimeResolution.count({ where: { tenantId } }),this.db.runtimeResolution.count({ where: { tenantId,status: { in: ['EXECUTABLE','RESOLVED'] } } }),this.db.runtimeResolution.count({ where: { tenantId,status: 'BLOCKED' } }),this.resolutions(actor)]); return { counters: { total,resolved,blocked }, recent: recent.slice(0,20) }; }
 }

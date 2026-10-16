@@ -32,10 +32,13 @@ function Workspace({ tenant }) {
   const change = values => setContext(c => { const next = { ...c,...values }; sessionStorage.setItem(key,JSON.stringify(next)); return next; });
   async function run(path,body) { if (busy) return; setBusy(true); setError(''); try { const result = (await api.post('/runtime'+path,body)).data; if (result.resolutionId) setQuery({ resolution:result.resolutionId }); refresh(); } catch(e) { setError(e.normalized?.message || 'Opération refusée'); } finally { setBusy(false); } }
   const effective = detail?.resolution.effectiveManifest?.content;
+  const selectedResolution = detail?.resolution;
+  const canRenderRuntime = Boolean(selectedResolution?.id && selectedResolution?.status === 'EXECUTABLE' && selectedResolution?.effectiveManifest?.executable !== false);
   const app = data?.applications.find(a => a.id === context.applicationId);
   return <BmPage><BmBreadcrumb items={[{ label:'Runtime',to:'/runtime' },{ label:titles[section] }]}/><BmPageHeader title={titles[section] ?? 'Runtime'} subtitle="Résolution de packs publiés dans un contexte métier vérifié."/>
     {error && <BmErrorState message={error} onRetry={refresh}/>}
-    {context.packCode && context.packVersion && <PublishedApplication packCode={context.packCode} packVersion={context.packVersion} tenantId={tenant?.id} />}
+    {context.packCode && context.packVersion && canRenderRuntime && <PublishedApplication packCode={context.packCode} packVersion={context.packVersion} tenantId={tenant?.id} resolutionId={selectedResolution.id} effectiveManifest={selectedResolution.effectiveManifest?.content ?? selectedResolution.effectiveManifest} />}
+    {context.packCode && context.packVersion && !canRenderRuntime && !error && <BmCard title="Runtime bloqué" subtitle="Aucune résolution exécutable n’est active pour ce pack."><p className="text-sm text-amber-700">Le rendu de l’application est refusé tant qu’une résolution exécutables et validée n’a pas été activée.</p></BmCard>}
     {!data ? !error && <BmLoading/> : <>
       <BmContextBar items={[{ label:'Application',value:effective?.businessConfiguration?.application?.name ?? app?.name },{ label:'Pack',value:effective?.source?.packCode ?? context.packCode },{ label:'Version',value:effective?.source?.packVersion ?? context.packVersion },{ label:'Tenant',value:tenant?.name ?? tenant?.id },{ label:'Environnement',value:effective?.scope?.environment ?? context.environment }]}/>
       {['overview','context','resolver'].includes(section) && <BmCard title="Contexte de résolution" subtitle="L’identité, les permissions et la configuration sont déterminées par le serveur."><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
