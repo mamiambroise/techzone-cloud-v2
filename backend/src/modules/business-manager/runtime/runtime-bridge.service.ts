@@ -76,7 +76,11 @@ export class RuntimeBridgeService {
   // =====================================================================
 
   async createManifest(applicationVersionId: string, dto: CreateRuntimeManifestDto, tenantId: string | null) {
-    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(
+      this.prisma,
+      applicationVersionId,
+      tenantId,
+    );
 
     const code = dto.code.trim().toLowerCase();
     const version = dto.version || '1.0.0';
@@ -100,7 +104,7 @@ export class RuntimeBridgeService {
 
     return this.prisma.bmRuntimeManifest.create({
       data: {
-        applicationId: appVersion?.applicationId ?? '',
+        applicationId: appVersion.applicationId,
         applicationVersionId,
         code,
         name: dto.name,
@@ -410,3 +414,4 @@ export class RuntimeBridgeService {
     return Math.abs(hash).toString(36);
   }
 }
+

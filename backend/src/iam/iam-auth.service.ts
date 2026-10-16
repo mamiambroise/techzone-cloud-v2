@@ -88,7 +88,14 @@ export class IamAuthService {
     };
   }
 
-  private assertUserIsActive(user: { status: string }): void {
+  /**
+   * Enforce the persisted account state at every token issuance/use boundary.
+   * Do not allow an unknown future status to mint or use credentials.
+   */
+  assertUserIsActive(user: { status: string }): void {
+    if (user.status === 'ACTIVE') {
+      return;
+    }
     if (user.status === 'SUSPENDED') {
       throw new IamError('Compte suspendu', 403, 'USER_SUSPENDED');
     }
@@ -101,6 +108,7 @@ export class IamAuthService {
     if (user.status === 'PENDING') {
       throw new IamError('Compte en attente de validation', 403, 'USER_PENDING');
     }
+    throw new IamError('Compte non actif', 403, 'USER_DISABLED');
   }
 
   private validatePasswordStrength(password: string): void {
@@ -593,11 +601,19 @@ export class IamAuthService {
   }
 
   async switchTenant(ctx: IamAuthContext, tenantId: string) {
-    await this.contextService.switchTenant(ctx.userId, tenantId);
+    const resolvedContext = await this.contextService.switchTenant(ctx.userId, tenantId);
 
     await this.prisma.iamSession.update({
       where: { id: ctx.sessionId },
-      data: { tenantId, lastActivityAt: new Date() },
+      data: {
+        tenantId: resolvedContext.tenantId,
+        organizationId: resolvedContext.organizationId,
+        siteId: resolvedContext.siteId,
+        // An application context is tenant-scoped and must never survive a
+        // tenant switch.
+        applicationId: null,
+        lastActivityAt: new Date(),
+      },
     });
 
     // Le tenant actif change : les permissions précédentes ne doivent pas
@@ -809,8 +825,12 @@ async buildAccessToken(session: {
   }) {
     const user = await this.prisma.iamUser.findUnique({
       where: { id: session.userId },
-      select: { isAdmin: true },
+      select: { isAdmin: true, status: true },
     });
+    if (!user) {
+      throw new IamError('Utilisateur introuvable', 401, 'USER_NOT_FOUND');
+    }
+    this.assertUserIsActive(user);
 
     // Phase 8 : les claims du JWT restent une photographie informative. Le
     // guard ne s'y fie jamais — il ré résout depuis la base à chaque requête,
@@ -901,6 +921,18 @@ async buildAccessToken(session: {
       throw new IamError('Session introuvable', 401, 'SESSION_NOT_FOUND');
     }
     await this.assertSessionUsable(session);
+
+    // Refresh tokens are long-lived credentials. Re-read the user immediately
+    // before rotating so a suspension/disable cannot mint a new token pair.
+    const user = await this.prisma.iamUser.findUnique({
+      where: { id: session.userId },
+      select: { status: true },
+    });
+    if (!user) {
+      throw new IamError('Utilisateur introuvable', 401, 'USER_NOT_FOUND');
+    }
+    this.assertUserIsActive(user);
+
     await this.prisma.iamSession.update({
       where: { id: session.id },
       data: { lastActivityAt: new Date() },

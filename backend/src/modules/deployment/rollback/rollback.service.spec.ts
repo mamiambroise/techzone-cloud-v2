@@ -7,6 +7,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RollbackService } from './rollback.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RollbackTypeDto } from './dto/create-rollback.dto';
+import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
+
+const principalFor = (tenantId: string, userId = 'rollback-test-user'): IamAuthContext => ({
+  userId,
+  sessionId: 'rollback-test-session',
+  tenantId,
+  organizationId: null,
+  siteId: null,
+  authenticationLevel: 'PASSWORD',
+  roles: [],
+  permissions: [],
+  isSuperAdmin: false,
+});
 
 describe('RollbackService (DEP-CDC-06)', () => {
   let service: RollbackService;
@@ -61,10 +74,29 @@ describe('RollbackService (DEP-CDC-06)', () => {
       reason: 'Critical bug detected in production payment flow',
       toReleaseId: priorRelease.id,
       startedBy: 'sre-engineer@techzone.io',
-    });
+    }, principalFor(fixture.tenant.id, 'sre-user'));
 
     expect(rollback.status).toBe('SUCCEEDED');
     expect(rollback.fromReleaseId).toBe(dep.releaseId);
     expect(rollback.toReleaseId).toBe(priorRelease.id);
+  });
+
+  it('rejects a rollback request for another tenant deployment', async () => {
+    const other = await createDeploymentFixture(prisma);
+    try {
+      await expect(
+        service.rollbackDeployment(
+          other.deployment.id,
+          {
+            type: RollbackTypeDto.MANUAL_ROLLBACK,
+            reason: 'Tenant isolation test',
+            startedBy: 'forged-actor',
+          },
+          principalFor(fixture.tenant.id),
+        ),
+      ).rejects.toThrow();
+    } finally {
+      await removeDeploymentFixture(prisma, other);
+    }
   });
 });

@@ -6,7 +6,6 @@ function createMockPrisma() {
   return {
     applicationVersion: {
       findFirst: jest.fn(),
-      findUnique: jest.fn(),
     },
     bmRuntimeManifest: {
       findFirst: jest.fn(),
@@ -15,8 +14,10 @@ function createMockPrisma() {
       update: jest.fn(),
     },
     bmRuntimeBinding: {
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
   };
 }
@@ -39,7 +40,6 @@ describe('RuntimeBridgeService (TENANT-ISOLATION)', () => {
         version: '1.0.0',
       });
       prisma.bmRuntimeManifest.findFirst.mockResolvedValue(null);
-      prisma.applicationVersion.findUnique.mockResolvedValue({ applicationId: 'app-1' });
       prisma.bmRuntimeManifest.create.mockResolvedValue({ id: 'rm-1', code: 'manifest1', name: 'Manifest 1' });
 
       const result = await service.createManifest(
@@ -73,7 +73,6 @@ describe('RuntimeBridgeService (TENANT-ISOLATION)', () => {
         version: '1.0.0',
       });
       prisma.bmRuntimeManifest.findFirst.mockResolvedValue(null);
-      prisma.applicationVersion.findUnique.mockResolvedValue({ applicationId: 'app-1' });
       prisma.bmRuntimeManifest.create.mockResolvedValue({ id: 'rm-1', code: 'manifest1', name: 'Manifest 1' });
 
       await service.createManifest('av-1', { code: 'MANIFEST1', name: 'Manifest 1' } as any, null);
@@ -94,6 +93,7 @@ describe('RuntimeBridgeService (TENANT-ISOLATION)', () => {
       });
       prisma.applicationVersion.findFirst.mockResolvedValue({
         id: 'av-1',
+        applicationId: 'app-1',
         status: 'ACTIVE',
         version: '1.0.0',
       });

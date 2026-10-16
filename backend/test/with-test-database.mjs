@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 const allowedCommands = new Map([
   ['validate', ['validate']],
   ['generate', ['generate']],
+  ['migrate status', ['migrate', 'status']],
   ['migrate deploy', ['migrate', 'deploy']],
 ]);
 

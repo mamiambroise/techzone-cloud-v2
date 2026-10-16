@@ -24,7 +24,11 @@ export class CreateDeploymentDto {
   @IsString()
   idempotencyKey?: string;
 
+  /**
+   * Deprecated compatibility field. The server records the authenticated
+   * principal as the deployment actor and never trusts this body value.
+   */
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  startedBy: string;
+  startedBy?: string;
 }

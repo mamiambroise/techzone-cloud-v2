@@ -1,7 +1,7 @@
 # Inventaire Prisma / PostgreSQL — Tenant Foundation
 
-Date de relevé : 2026-10-14  
-Branche : `jasmina`  
+Date de relevé : 2026-10-14
+Branche : `jasmina`
 Portée : audit en lecture seule de la base configurée localement, du schéma Prisma et des migrations. Les identifiants et secrets ne sont pas reproduits.
 
 | Section | Résultat |

@@ -86,6 +86,11 @@ export const PERMISSIONS = {
   BM_WRITE: 'bm:write',
   BM_VALIDATE: 'bm:validate',
   BM_PUBLISH: 'bm:publish',
+  BM_CONTRACT_READ: 'bm.contract.read',
+  BM_CONTRACT_WRITE: 'bm.contract.write',
+  // Environment and deployment lifecycle. These are intentionally separate
+  // from business-definition permissions: executing or rolling back a
+  // deployment is an operational action, not a Business Manager edit.
   ENVIRONMENT_READ: 'environment.read',
   ENVIRONMENT_CREATE: 'environment.create',
   ENVIRONMENT_UPDATE: 'environment.update',

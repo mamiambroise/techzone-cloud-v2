@@ -1,44 +1,80 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { CockpitService } from './cockpit.service';
-import { PrismaService } from '../../../prisma/prisma.service';
+import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
 
-describe('CockpitService (DEP-CDC-01)', () => {
-  let service: CockpitService;
+const principal: IamAuthContext = {
+  userId: 'cockpit-user',
+  sessionId: 'cockpit-session',
+  tenantId: 'tenant-a',
+  organizationId: null,
+  siteId: null,
+  authenticationLevel: 'PASSWORD',
+  roles: [],
+  permissions: [],
+  isSuperAdmin: false,
+};
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [CockpitService, PrismaService],
-    }).compile();
+describe('CockpitService tenant isolation', () => {
+  const prisma = {
+    release: { findMany: jest.fn().mockResolvedValue([]) },
+    deployment: { findMany: jest.fn().mockResolvedValue([]) },
+    environmentDeployment: { findMany: jest.fn().mockResolvedValue([]) },
+    rollback: { findMany: jest.fn().mockResolvedValue([]) },
+    deploymentHistory: { findMany: jest.fn().mockResolvedValue([]) },
+    environment: { findMany: jest.fn().mockResolvedValue([]) },
+  };
+  const service = new CockpitService(prisma as any);
 
-    service = module.get<CockpitService>(CockpitService);
+  beforeEach(() => jest.clearAllMocks());
+
+  it('scopes dashboard aggregates and records to the authenticated tenant', async () => {
+    await service.getDashboard(principal);
+
+    expect(prisma.release.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { tenantId: 'tenant-a' } }),
+    );
+    expect(prisma.deployment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { tenantId: 'tenant-a' } }),
+    );
+    expect(prisma.environmentDeployment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { tenantId: 'tenant-a' } }),
+    );
+    expect(prisma.rollback.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { deployment: { is: { tenantId: 'tenant-a' } } } }),
+    );
+    expect(prisma.deploymentHistory.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { tenantId: 'tenant-a' } }),
+    );
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('scopes every list endpoint to the authenticated tenant', async () => {
+    await service.getRecentReleases(principal, 5);
+    await service.getRunningDeployments(principal);
+    await service.getActivity(principal, 5);
+    await service.getHealth(principal);
+
+    expect(prisma.release.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { tenantId: 'tenant-a' } }),
+    );
+    expect(prisma.deployment.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: {
+          tenantId: 'tenant-a',
+          status: { in: ['PENDING', 'RUNNING', 'VERIFYING'] },
+        },
+      }),
+    );
+    expect(prisma.deploymentHistory.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { tenantId: 'tenant-a' } }),
+    );
+    expect(prisma.environment.findMany).toHaveBeenLastCalledWith({
+      where: { tenantId: 'tenant-a' },
+    });
   });
 
-  it('should return complete cockpit dashboard with KPIs and sections', async () => {
-    const dashboard = await service.getDashboard();
-
-    expect(dashboard).toHaveProperty('kpis');
-    expect(dashboard.kpis).toHaveProperty('releasesReady');
-    expect(dashboard.kpis).toHaveProperty('deploymentsRunning');
-    expect(dashboard.kpis).toHaveProperty('deploymentsToday');
-    expect(dashboard.kpis).toHaveProperty('successRate');
-    expect(dashboard.kpis).toHaveProperty('productionStatus');
-    expect(dashboard.kpis).toHaveProperty('attentionRequired');
-
-    expect(dashboard).toHaveProperty('recentReleases');
-    expect(dashboard).toHaveProperty('environments');
-    expect(dashboard).toHaveProperty('gatesSummary');
-    expect(dashboard).toHaveProperty('productionHealth');
-    expect(dashboard).toHaveProperty('activity');
-  });
-
-  it('should return environment health checklist', async () => {
-    const health = await service.getHealth();
-    expect(health).toHaveProperty('status');
-    expect(health).toHaveProperty('environments');
-    expect(Array.isArray(health.environments)).toBe(true);
+  it('rejects a missing tenant context before querying deployment records', async () => {
+    await expect(
+      service.getDashboard({ ...principal, tenantId: null }),
+    ).rejects.toThrow('active tenant context');
+    expect(prisma.release.findMany).not.toHaveBeenCalled();
   });
 });
