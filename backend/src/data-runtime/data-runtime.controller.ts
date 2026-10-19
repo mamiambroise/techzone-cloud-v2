@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Logger, Req, ConflictException, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { QueryEngine } from './query-engine/query-engine';
@@ -15,6 +15,7 @@ import {
 import { CurrentUser } from '../iam/decorators/current-user.decorator';
 import type { IamAuthContext } from '../iam/decorators/current-user.decorator';
 import { Permissions } from '../iam/iam-permissions.guard';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   DATA_RUNTIME_EXECUTE,
   DATA_RUNTIME_QUERY,
@@ -34,6 +35,7 @@ export class DataRuntimeController {
     private readonly bindingService: DataBindingService,
     private readonly historyService: HistoryService,
     private readonly validationService: ValidationService,
+    private readonly prisma: PrismaService = null as any,
   ) {}
 
   // === CONTRACT ===
@@ -66,6 +68,7 @@ export class DataRuntimeController {
     @Body() query: QueryContractDto,
   ) {
     this.logger.log(`POST /data-runtime/query resource=${query.resource}`);
+    await this.assertPublishedRuntimeGuard(req, principal, query as Record<string, any>);
     const context = this.buildContext(query.resource, principal, req);
     return this.queryEngine.execute(query, context);
   }
@@ -78,6 +81,7 @@ export class DataRuntimeController {
     @Param('resource') resource: string,
     @Param('id') id: string,
   ) {
+    await this.assertPublishedRuntimeGuard(req, principal, { resource, id, applicationId: (req as any)?.body?.applicationId });
     const ctx = this.buildContext(resource, principal, req);
     return this.dataAccess.get(resource, id, ctx);
   }
@@ -90,6 +94,7 @@ export class DataRuntimeController {
     @CurrentUser() principal: IamAuthContext,
     @Param('resource') resource: string,
   ) {
+    await this.assertPublishedRuntimeGuard(req, principal, { resource, applicationId: (req as any)?.body?.applicationId });
     const ctx = this.buildContext(resource, principal, req);
     return this.dataAccess.list(resource, ctx);
   }
@@ -103,6 +108,7 @@ export class DataRuntimeController {
   @ApiResponse({ status: 201, description: 'Resultat de laction' })
   async executeOperation(@Req() req: Request, @CurrentUser() principal: IamAuthContext, @Body() request: ExecutionRequestDto) {
     this.logger.log(`POST /data-runtime/execute ${request.operation} ${request.resource}`);
+    await this.assertPublishedRuntimeGuard(req, principal, request as Record<string, any>);
     const ctx = this.buildContext(request.resource, principal, req);
     return this.executionEngine.execute(request, ctx);
   }
@@ -159,6 +165,7 @@ export class DataRuntimeController {
     @CurrentUser() principal: IamAuthContext,
     @Param('bindingId') bindingId: string,
   ) {
+    await this.assertPublishedRuntimeGuard(req, principal, { bindingId, applicationId: (req as any)?.body?.applicationId });
     const context = this.buildContext('default', principal, req);
     return this.bindingService.resolve(bindingId, context);
   }
@@ -168,6 +175,42 @@ export class DataRuntimeController {
   @ApiOperation({ summary: 'Etat dun binding' })
   async getBindingState(@Param('bindingId') bindingId: string) {
     return { state: this.bindingService.getBindingState(bindingId) };
+  }
+
+  private async assertPublishedRuntimeGuard(req: Request | undefined, principal: IamAuthContext, payload: Record<string, any> = {}) {
+    if (!principal?.tenantId) {
+      throw new ForbiddenException('TENANT_REQUIRED');
+    }
+    const resolutionId = payload.resolutionId || (req as any)?.body?.resolutionId || (req as any)?.query?.resolutionId || (req as any)?.headers?.['x-runtime-resolution-id'];
+    if (!resolutionId) return;
+    if (!this.prisma?.runtimeResolution) {
+      throw new ForbiddenException('RUNTIME_RESOLUTION_GUARD_UNAVAILABLE');
+    }
+    const item = await this.prisma.runtimeResolution.findFirst({
+      where: { id: String(resolutionId), tenantId: principal.tenantId },
+      include: { effectiveManifest: true },
+    });
+    if (!item) {
+      throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND');
+    }
+    const runtimeStatus = item.status === 'RESOLVED' ? 'EXECUTABLE' : item.status;
+    if (runtimeStatus !== 'EXECUTABLE' || item.effectiveManifest?.executable !== true) {
+      throw new ConflictException('RUNTIME_RESOLUTION_BLOCKED');
+    }
+    if (payload.applicationId && item.applicationId !== String(payload.applicationId)) {
+      throw new BadRequestException('RUNTIME_APPLICATION_MISMATCH');
+    }
+    if (payload.environmentId && item.environment !== String(payload.environmentId)) {
+      throw new BadRequestException('RUNTIME_ENVIRONMENT_MISMATCH');
+    }
+    if (payload.applicationVersionId) {
+      const effective = item.effectiveManifest?.content as Record<string, any> | null;
+      const observed = effective?.scope?.businessVersionId ?? effective?.businessConfiguration?.versionId ?? effective?.businessConfiguration?.applicationVersionId;
+      if (observed && String(observed) !== String(payload.applicationVersionId)) {
+        throw new BadRequestException('RUNTIME_APPLICATION_VERSION_MISMATCH');
+      }
+    }
+    return item;
   }
 
   private buildContext(resource: string, principal: IamAuthContext, req?: Request): RuntimeContextDto {

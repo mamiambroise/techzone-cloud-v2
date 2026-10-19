@@ -29,6 +29,10 @@ describe('GateService (DEP-CDC-05)', () => {
     prisma = module.get<PrismaService>(PrismaService);
   });
 
+  afterEach(async () => {
+    await prisma.$disconnect();
+  });
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });

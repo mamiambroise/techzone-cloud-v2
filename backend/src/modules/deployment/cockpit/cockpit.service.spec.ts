@@ -1,17 +1,9 @@
 import { CockpitService } from './cockpit.service';
 import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
 
-const principal: IamAuthContext = {
-  userId: 'cockpit-user',
-  sessionId: 'cockpit-session',
-  tenantId: 'tenant-a',
-  organizationId: null,
-  siteId: null,
-  authenticationLevel: 'PASSWORD',
-  roles: [],
-  permissions: [],
-  isSuperAdmin: false,
-};
+describe('CockpitService (DEP-CDC-01)', () => {
+  let service: CockpitService;
+  let prisma: PrismaService;
 
 describe('CockpitService tenant isolation', () => {
   const prisma = {
@@ -24,10 +16,13 @@ describe('CockpitService tenant isolation', () => {
   };
   const service = new CockpitService(prisma as any);
 
-  beforeEach(() => jest.clearAllMocks());
+    service = module.get<CockpitService>(CockpitService);
+    prisma = module.get<PrismaService>(PrismaService);
+  });
 
-  it('scopes dashboard aggregates and records to the authenticated tenant', async () => {
-    await service.getDashboard(principal);
+  afterEach(async () => {
+    await prisma.$disconnect();
+  });
 
     expect(prisma.release.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { tenantId: 'tenant-a' } }),

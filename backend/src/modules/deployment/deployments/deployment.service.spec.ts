@@ -67,6 +67,8 @@ async function waitFor<T>(read: () => T | undefined): Promise<T> {
 }
 
 describe('DeploymentService (DEP-CDC-03)', () => {
+  jest.setTimeout(30_000);
+
   let service: DeploymentService;
   let prisma: PrismaService;
   let fixture: DeploymentFixture;

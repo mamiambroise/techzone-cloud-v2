@@ -3,7 +3,7 @@ import { DataRuntimeController } from './data-runtime.controller';
 import { ROLES } from '../iam/iam.constants';
 
 describe('Data Runtime authenticated BM context', () => {
-  const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, null as any, null as any);
+  const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, null as any, null as any, { runtimeResolution: { findFirst: jest.fn() } } as any);
   it('supports dynamic capabilities for authenticated IAM administrators', () => {
     const ctx = (controller as any).buildContext('bm:version:record', { tenantId:'a',userId:'admin',roles:[ROLES.ADMIN],permissions:['data-runtime:query'] });
     expect(ctx.tenantId).toBe('a');

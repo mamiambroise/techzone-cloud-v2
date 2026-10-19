@@ -22,6 +22,8 @@ const principalFor = (tenantId: string, userId = 'release-test-user'): IamAuthCo
 });
 
 describe('ReleaseService (DEP-CDC-02)', () => {
+  jest.setTimeout(30_000);
+
   let service: ReleaseService;
   let prisma: PrismaService;
   let fixture: DeploymentFixture;

@@ -100,13 +100,20 @@ describe('BillingLifecycleService', () => {
 
   it('bascule en PAST_DUE puis en grace apres un echec de paiement', async () => {
     const { service, subs, audit, entitlements } = build({}, InvoiceStatus.OPEN);
-    await service.onPaymentFailure('tenant-a', 'inv-1', 'pay-1', 'user-1');
-    expect(subs.transition).toHaveBeenCalledWith('sub-1', SubscriptionStatus.PAST_DUE, 'user-1', expect.any(Object));
-    expect(subs.suspend).not.toHaveBeenCalled();
-    expect(audit.emit).toHaveBeenCalledWith(
-      expect.objectContaining({ eventType: 'subscription.grace_started' }),
-    );
-    expect(entitlements.invalidate).toHaveBeenCalled();
+    const previousGraceDays = process.env.BILLING_GRACE_DAYS;
+    delete process.env.BILLING_GRACE_DAYS;
+    try {
+      await service.onPaymentFailure('tenant-a', 'inv-1', 'pay-1', 'user-1');
+      expect(subs.transition).toHaveBeenCalledWith('sub-1', SubscriptionStatus.PAST_DUE, 'user-1', expect.any(Object));
+      expect(subs.suspend).not.toHaveBeenCalled();
+      expect(audit.emit).toHaveBeenCalledWith(
+        expect.objectContaining({ eventType: 'subscription.grace_started' }),
+      );
+      expect(entitlements.invalidate).toHaveBeenCalled();
+    } finally {
+      if (previousGraceDays === undefined) delete process.env.BILLING_GRACE_DAYS;
+      else process.env.BILLING_GRACE_DAYS = previousGraceDays;
+    }
   });
 
   it('suspend immediatement quand aucune grace n est configuree', async () => {
