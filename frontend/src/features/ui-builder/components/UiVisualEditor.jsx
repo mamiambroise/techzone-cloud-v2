@@ -13,22 +13,25 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Monitor, Tablet, Smartphone, Undo2, Redo2, Save, ShieldCheck, Eye, Search,
-  Trash2, Copy, Plus, GripVertical, ChevronRight, Loader2, Check, TriangleAlert, XCircle, Info,
+  Trash2, Copy, Plus, GripVertical, ChevronRight, Loader2, Check, TriangleAlert, XCircle, Info, ArrowUp, ArrowDown,
 } from 'lucide-react';
 
 import {
   selectPage, selectComponent, setDevice, setZoom, addComponent, moveComponent,
-  updateComponentProps, updateComponentBinding, updateComponentActions,
-  deleteComponent, duplicateComponent, undo, redo, saveCurrentPage, fetchValidation,
+  updateComponentProps, updateComponentResponsive, updateComponentBinding, updateComponentActions,
+  deleteComponent, duplicateComponent, undo, redo, saveCurrentPage, fetchValidation, reloadConflictingPage,
 } from '../store/uiBuilderSlice.js';
 import { DEVICE_KINDS, DEVICE_WIDTHS, BINDING_KINDS, CONTEXT_KEYS, ACTION_TYPES, describeError } from '../model/uiDefinition.js';
-import { componentsByCategory, getComponentDefinition } from '../registry/componentRegistry.js';
+import { canAcceptChildren, canContainComponent, componentsByCategory, getComponentDefinition } from '../registry/componentRegistry.js';
 import { createBindingResolver } from '../renderer/bindingResolver.js';
+import { UiRenderer } from '../renderer/Renderer.jsx';
 import UiBuilderLayout from './UiBuilderLayout.jsx';
-import { BmButton, BmIconButton, BmBadge, BmEmptyState, BmSelect } from '../../../components/business-manager/bm/ui.jsx';
+import { resolveEditorPage } from '../model/resolveEditorPage.js';
+import { BmButton, BmIconButton, BmBadge, BmEmptyState, BmErrorState, BmLoading, BmSelect } from '../../../components/business-manager/bm/ui.jsx';
+import { ROUTES } from '../../../app/routes.js';
 
 /* ============================================================
    Composant racine
@@ -45,12 +48,15 @@ export default function UiVisualEditor() {
 function EditorBody() {
   const dispatch = useDispatch();
   const { pageId: routePageId } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const state = useSelector((s) => s.uiBuilder);
-  const { pages, selectedPageId, tree, saveState, saveError, device, zoom, undoStack, redoStack, validation, businessContext } = state;
+  const { pages, pagesStatus, selectedPageId, tree, saveState, saveError, device, zoom, undoStack, redoStack, validation, businessContext } = state;
   const initializedRouteRef = useRef(null);
 
   const page = pages.find((p) => p.id === selectedPageId);
   const [libraryQuery, setLibraryQuery] = useState('');
+  const [leftTab, setLeftTab] = useState('COMPONENTS');
   const [inspectorTab, setInspectorTab] = useState('CONTENT');
   const [mobilePanel, setMobilePanel] = useState(null); // 'library' | 'inspector' | null
 
@@ -73,37 +79,57 @@ function EditorBody() {
   // deep link wins initially; the generic /ui/builder/editor entry falls back
   // to the first page. Subsequent picker changes must remain user-controlled.
   useEffect(() => {
-    if (pages.length === 0) return;
+    if (pagesStatus !== 'LOADED' || pages.length === 0) return;
     const pageSet = pages.map((page) => page.id).join('|');
     const initializationKey = `${routePageId || ''}:${pageSet}`;
     if (initializedRouteRef.current === initializationKey) return;
     initializedRouteRef.current = initializationKey;
 
-    const requestedPage = pages.find((candidate) => candidate.id === routePageId);
-    const selectedPageExists = pages.some((candidate) => candidate.id === selectedPageId);
-    const nextPageId = requestedPage?.id || (selectedPageExists ? selectedPageId : pages[0].id);
+    const nextPageId = resolveEditorPage({ routePageId, pages, selectedPageId })?.id;
     if (nextPageId && selectedPageId !== nextPageId) dispatch(selectPage(nextPageId));
-  }, [dispatch, pages, routePageId, selectedPageId]);
+    if (nextPageId && routePageId !== nextPageId) {
+      navigate(ROUTES.uiBuilder.replace(':pageId', nextPageId), { replace: true });
+    }
+  }, [dispatch, navigate, pages, pagesStatus, routePageId, selectedPageId]);
+
+  useEffect(() => {
+    const componentId = searchParams.get('component');
+    if (page?.id === routePageId && componentId && tree.nodes[componentId]) dispatch(selectComponent(componentId));
+  }, [dispatch, searchParams, page?.id, routePageId, tree.nodes]);
 
   // Debounced autosave keeps the server as the source of truth without sending
   // a request for each keystroke. Manual Save remains available for retries.
   const autosaveTimer = useRef(null);
   useEffect(() => {
-    if (saveState !== 'DIRTY' || !selectedPageId) return undefined;
+    if (saveState !== 'DIRTY' || !selectedPageId || state.pendingSave || state.saveConflict) return undefined;
     autosaveTimer.current = window.setTimeout(() => {
       dispatch(saveCurrentPage());
     }, 750);
     return () => window.clearTimeout(autosaveTimer.current);
-  }, [dispatch, saveState, selectedPageId, tree]);
+  }, [dispatch, saveState, selectedPageId, tree, state.pendingSave, state.saveConflict]);
 
-  if (!page) {
+  if (pagesStatus === 'LOADING' || pagesStatus === 'IDLE') {
+    return <BmLoading label="Chargement des pages…" />;
+  }
+  if (pagesStatus === 'ERROR') {
+    return <BmErrorState message="Les pages de cette version sont indisponibles." />;
+  }
+  if (!page && pages.length === 0) {
     return (
       <BmEmptyState
-        title="Aucune page sélectionnée"
-        description="Choisissez ou créez une page dans l'écran Pages pour ouvrir l'éditeur visuel."
+        title="Aucune page"
+        description="Créez votre première page avant de commencer la conception visuelle."
+        action={<Link to={ROUTES.uiPages} className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700">Créer une page</Link>}
       />
     );
   }
+  if (!page) return <BmLoading label="Ouverture de la page…" />;
+
+  const handleSelectPage = (pageId) => {
+    dispatch(selectPage(pageId));
+    navigate(ROUTES.uiBuilder.replace(':pageId', pageId));
+    setMobilePanel(null);
+  };
 
   const handleSave = async () => {
     try {
@@ -124,14 +150,14 @@ function EditorBody() {
         <select
           aria-label="Page en cours d'édition"
           value={selectedPageId || ''}
-          onChange={(event) => dispatch(selectPage(event.target.value))}
+          onChange={(event) => handleSelectPage(event.target.value)}
           className="max-w-[220px] rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400"
         >
           {pages.map((p) => <option key={p.id} value={p.id}>{p.title} — {p.route}</option>)}
         </select>
 
         <div className="flex items-center gap-1 lg:hidden" role="group" aria-label="Panneaux de l’éditeur">
-          <BmIconButton label="Composants" onClick={() => setMobilePanel((panel) => panel === 'library' ? null : 'library')}>
+          <BmIconButton label="Composants" onClick={() => { setLeftTab('COMPONENTS'); setMobilePanel((panel) => panel === 'library' ? null : 'library'); }}>
             <Plus className="h-4 w-4" />
           </BmIconButton>
           <BmIconButton label="Propriétés" onClick={() => setMobilePanel((panel) => panel === 'inspector' ? null : 'inspector')}>
@@ -177,26 +203,65 @@ function EditorBody() {
         <BmButton variant="secondary" size="sm" icon={<ShieldCheck className="h-3.5 w-3.5" />} onClick={handleValidate}>
           Valider
         </BmButton>
-        <SaveButton saveState={saveState} onClick={handleSave} />
+        <Link to={ROUTES.uiPreview} className="bm-focus inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-indigo-700"><Eye className="h-4 w-4" />Aperçu</Link>
+        <SaveButton saveState={state.saveConflict ? 'CONFLICT' : saveState} onClick={handleSave} />
       </div>
 
+      {state.saveConflict && <section role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <h2 className="font-semibold">Conflit de sauvegarde</h2>
+        <p>Votre travail local est conservé. Comparez les versions avant de recharger.</p>
+        <p className="mt-2 text-xs">Révision locale : {page.updatedAt || '—'} · Révision serveur : {state.saveConflict.serverPage?.updatedAt || 'indisponible'}</p>
+        <details className="my-3"><summary className="cursor-pointer font-medium">Comparer les définitions</summary><div className="grid gap-3 md:grid-cols-2"><pre className="max-h-64 overflow-auto text-xs">{JSON.stringify(tree, null, 2)}</pre><pre className="max-h-64 overflow-auto text-xs">{JSON.stringify(state.saveConflict.serverPage?.components || null, null, 2)}</pre></div></details>
+        <BmButton variant="secondary" disabled={!state.saveConflict.serverPage} onClick={() => { if (window.confirm('Remplacer les modifications locales par la version serveur ?')) dispatch(reloadConflictingPage()); }}>Recharger la version serveur</BmButton>
+      </section>}
       {/* ------- 3 panneaux ------- */}
       <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
         {/* LEFT : Component Library */}
         <aside className={`rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'library' ? '' : 'hidden lg:block'}`} aria-label="Bibliothèque de composants">
-          <div className="border-b border-slate-100 p-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-              <input
-                value={libraryQuery}
-                onChange={(event) => setLibraryQuery(event.target.value)}
-                placeholder="Rechercher un composant…"
-                aria-label="Rechercher un composant"
-                className="w-full rounded-lg border border-slate-200 py-2 pl-8 pr-3 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
-              />
-            </div>
-          </div>
-          <ComponentLibrary query={libraryQuery} onAdd={(type) => dispatch(addComponent({ type }))} />
+          <nav role="tablist" aria-label="Navigation du panneau éditeur" className="flex border-b border-slate-100 p-1">
+            {[
+              { id: 'PAGES', label: 'Pages' },
+              { id: 'COMPONENTS', label: 'Composants' },
+              { id: 'LAYERS', label: 'Calques' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={leftTab === tab.id}
+                onClick={() => setLeftTab(tab.id)}
+                className={`flex-1 rounded-md px-2 py-2 text-[10px] font-bold transition-colors ${leftTab === tab.id ? 'bg-violet-50 text-violet-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+          {leftTab === 'PAGES' && (
+            <PageList pages={pages} selectedPageId={selectedPageId} onSelect={handleSelectPage} />
+          )}
+          {leftTab === 'COMPONENTS' && (
+            <>
+              <div className="border-b border-slate-100 p-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    value={libraryQuery}
+                    onChange={(event) => setLibraryQuery(event.target.value)}
+                    placeholder="Rechercher un composant…"
+                    aria-label="Rechercher un composant"
+                    className="w-full rounded-lg border border-slate-200 py-2 pl-8 pr-3 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+                  />
+                </div>
+              </div>
+              <ComponentLibrary query={libraryQuery} onAdd={(type) => dispatch(addComponent({ type }))} />
+            </>
+          )}
+          {leftTab === 'LAYERS' && (
+            <LayerTree
+              tree={tree}
+              selectedComponentId={state.selectedComponentId}
+              onSelect={(nodeId) => { dispatch(selectComponent(nodeId)); setMobilePanel(null); }}
+            />
+          )}
         </aside>
 
         {/* CENTER : Canvas */}
@@ -207,7 +272,11 @@ function EditorBody() {
               <span className="text-[10px] text-slate-400">{page.layout}</span>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <CanvasNode nodeId={tree.root} />
+              <UiRenderer tree={tree} resolveBinding={resolveBinding} businessContext={businessContext} mode="preview" device={device} decorateNode={(node, content) => {
+                const parentId = Object.keys(tree.nodes).find((id) => tree.nodes[id].children?.includes(node.id)) || null;
+                const index = parentId ? tree.nodes[parentId].children.indexOf(node.id) : null;
+                return <CanvasNode nodeId={node.id} parentId={parentId} index={index} content={content} />;
+              }} />
             </div>
           </div>
         </section>
@@ -238,56 +307,55 @@ function EditorBody() {
   );
 
   /* ----- Canvas récursif : rendu + overlays d'édition ----- */
-  function CanvasNode({ nodeId }) {
+  function CanvasNode({ nodeId, parentId = null, index = null, content }) {
     const node = tree.nodes[nodeId];
     if (!node) return null;
     const isSelected = state.selectedComponentId === nodeId;
     const def = getComponentDefinition(node.type);
     const childNodes = (node.children || []).map((id) => tree.nodes[id]).filter(Boolean);
-    const isContainer = (def?.allowedChildren === '*') || (def?.allowedChildren?.length || 0) > 0 || childNodes.length > 0;
+    const siblings = parentId ? tree.nodes[parentId]?.children || [] : [];
+    const siblingIndex = siblings.indexOf(nodeId);
+    const isContainer = canAcceptChildren(node.type);
+    const isHidden = node.responsive?.[device]?.visible === 'hidden';
 
     return (
       <div
         role="button"
         tabIndex={0}
+        draggable={nodeId !== tree.root}
         aria-selected={isSelected}
         aria-label={`Composant ${node.type}`}
         onClick={(event) => { event.stopPropagation(); dispatch(selectComponent(nodeId)); }}
-        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.stopPropagation(); dispatch(selectComponent(nodeId)); } }}
-        className={`relative rounded-lg transition-[box-shadow,outline] duration-150 ${isSelected ? 'outline outline-2 outline-blue-500 outline-offset-2' : 'outline outline-1 outline-dashed outline-transparent hover:outline-slate-300'}`}
+        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); dispatch(selectComponent(nodeId)); } }}
+        onDragStart={(event) => {
+          if (nodeId === tree.root) { event.preventDefault(); return; }
+          event.dataTransfer.setData('text/ui-component-id', nodeId);
+          event.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={handleCanvasDrop({ nodeId, parentId, index })}
+        className={`relative rounded-lg transition-[box-shadow,outline] duration-150 ${isSelected ? 'outline outline-2 outline-blue-500 outline-offset-2' : 'outline outline-1 outline-dashed outline-transparent hover:outline-slate-300'} ${isHidden ? 'opacity-40' : ''}`}
       >
         {isSelected && (
           <span className="absolute -top-2 left-2 z-10 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
-            {node.type}
+            {node.type}{isHidden ? ' · Masqué' : ''}
           </span>
         )}
-        {isSelected && !isContainer && (
+        {isSelected && nodeId !== tree.root && (
           <span className="absolute -top-2.5 right-1 z-10 flex gap-0.5">
+            <CanvasAction label="Déplacer vers le haut" disabled={siblingIndex <= 0} onClick={() => dispatch(moveComponent({ nodeId, newParentId: parentId, index: siblingIndex - 1 }))}><ArrowUp className="h-3 w-3" /></CanvasAction>
+            <CanvasAction label="Déplacer vers le bas" disabled={siblingIndex < 0 || siblingIndex >= siblings.length - 1} onClick={() => dispatch(moveComponent({ nodeId, newParentId: parentId, index: siblingIndex + 2 }))}><ArrowDown className="h-3 w-3" /></CanvasAction>
             <CanvasAction label="Dupliquer" onClick={() => dispatch(duplicateComponent(nodeId))}><Copy className="h-3 w-3" /></CanvasAction>
             <CanvasAction label="Supprimer" disabled={nodeId === tree.root} onClick={() => dispatch(deleteComponent(nodeId))}><Trash2 className="h-3 w-3" /></CanvasAction>
           </span>
         )}
-        <div onDragOver={(event) => isContainer && event.preventDefault()} onDrop={handleCanvasDrop(nodeId)}>
+        <div onDragOver={(event) => event.preventDefault()} onDrop={handleCanvasDrop({ nodeId, parentId, index })}>
           {childNodes.length === 0 && isContainer ? (
             <EmptyDropZone parentId={nodeId} />
           ) : (
-            <EditorTree node={node} childNodes={childNodes} parentId={nodeId} />
+            content
           )}
         </div>
-      </div>
-    );
-  }
-
-  function EditorTree({ node, childNodes, parentId }) {
-    const def = getComponentDefinition(node.type);
-    // Les types feuilles rendent via UiRenderer-like simple : on réutilise
-    // le rendu Shared Renderer pour les feuilles sans enfants éditables.
-    if (childNodes.length === 0 && !def?.allowedChildren?.length && def?.allowedChildren !== '*') {
-      return <LeafPreview node={node} resolveBinding={resolveBinding} />;
-    }
-    return (
-      <div className="flex flex-col" style={{ gap: '0.75rem' }}>
-        {childNodes.map((child) => <CanvasNode key={child.id} nodeId={child.id} />)}
       </div>
     );
   }
@@ -297,7 +365,7 @@ function EditorBody() {
       <div
         onDragOver={(event) => { event.preventDefault(); event.currentTarget.dataset.over = 'true'; event.currentTarget.classList.add('border-blue-400', 'bg-blue-50/40'); }}
         onDragLeave={(event) => { event.currentTarget.classList.remove('border-blue-400', 'bg-blue-50/40'); }}
-        onDrop={(event) => { handleCanvasDrop(parentId)(event); }}
+        onDrop={handleCanvasDrop({ nodeId: parentId })}
         className="flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 text-center transition-colors duration-150 hover:border-slate-300"
         onClick={(event) => { event.stopPropagation(); dispatch(selectComponent(parentId)); }}
       >
@@ -307,15 +375,32 @@ function EditorBody() {
     );
   }
 
-  function handleCanvasDrop(parentId) {
+  function handleCanvasDrop(target) {
     return (event) => {
       event.preventDefault();
       event.stopPropagation();
       event.currentTarget.classList?.remove('border-blue-400', 'bg-blue-50/40');
       const type = event.dataTransfer.getData('text/ui-component');
       const sourceId = event.dataTransfer.getData('text/ui-component-id');
-      if (type) dispatch(addComponent({ type, parentId }));
-      else if (sourceId) dispatch(moveComponent({ nodeId: sourceId, newParentId: parentId }));
+      const targetNode = tree.nodes[target.nodeId];
+      if (sourceId) {
+        const sourceNode = tree.nodes[sourceId];
+        if (!sourceNode || sourceId === target.nodeId) return;
+        if (targetNode && canContainComponent(targetNode.type, sourceNode.type)) {
+          dispatch(moveComponent({ nodeId: sourceId, newParentId: target.nodeId }));
+        } else if (target.parentId && typeof target.index === 'number') {
+          dispatch(moveComponent({ nodeId: sourceId, newParentId: target.parentId, index: target.index }));
+        }
+        return;
+      }
+      if (!type) return;
+      if (targetNode && canContainComponent(targetNode.type, type)) {
+        dispatch(addComponent({ type, parentId: target.nodeId }));
+      } else if (target.parentId && typeof target.index === 'number') {
+        dispatch(addComponent({ type, parentId: target.parentId, index: target.index }));
+      } else if (canContainComponent(tree.nodes[tree.root]?.type, type)) {
+        dispatch(addComponent({ type, parentId: tree.root }));
+      }
     };
   }
 }
@@ -383,6 +468,70 @@ function ComponentLibrary({ query, onAdd }) {
   );
 }
 
+function PageList({ pages, selectedPageId, onSelect }) {
+  if (pages.length === 0) {
+    return <p className="p-4 text-center text-xs text-slate-400">Aucune page dans cette version.</p>;
+  }
+  return (
+    <ul aria-label="Pages de l’application" className="max-h-[520px] space-y-1 overflow-y-auto p-2 [scrollbar-width:thin]">
+      {[...pages].sort((a, b) => a.order - b.order).map((page) => (
+        <li key={page.id}>
+          <button
+            type="button"
+            aria-current={selectedPageId === page.id ? 'page' : undefined}
+            onClick={() => onSelect(page.id)}
+            className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${selectedPageId === page.id ? 'bg-violet-50 text-violet-800' : 'text-slate-700 hover:bg-slate-50'}`}
+          >
+            <span className="block truncate text-xs font-semibold">{page.title}</span>
+            <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-400">{page.route}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function LayerTree({ tree, selectedComponentId, onSelect }) {
+  const rootNode = tree.nodes[tree.root];
+  if (!rootNode) return <p className="p-4 text-center text-xs text-slate-400">Aucun composant sur cette page.</p>;
+  return (
+    <ul role="tree" aria-label="Arborescence des composants" className="max-h-[520px] overflow-y-auto p-2 [scrollbar-width:thin]">
+      <LayerTreeNode node={rootNode} tree={tree} selectedComponentId={selectedComponentId} onSelect={onSelect} depth={0} />
+    </ul>
+  );
+}
+
+function LayerTreeNode({ node, tree, selectedComponentId, onSelect, depth }) {
+  const definition = getComponentDefinition(node.type);
+  const children = (node.children || []).map((id) => tree.nodes[id]).filter(Boolean);
+  return (
+    <li role="treeitem" aria-label={definition?.label || node.type} aria-selected={selectedComponentId === node.id}>
+      <button
+        type="button"
+        onClick={() => onSelect(node.id)}
+        className={`w-full truncate rounded-md py-1.5 pr-2 text-left text-xs transition-colors ${selectedComponentId === node.id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+        style={{ paddingLeft: `${8 + depth * 14}px` }}
+      >
+        {definition?.label || node.type}
+      </button>
+      {children.length > 0 && (
+        <ul role="group">
+          {children.map((child) => (
+            <LayerTreeNode
+              key={child.id}
+              node={child}
+              tree={tree}
+              selectedComponentId={selectedComponentId}
+              onSelect={onSelect}
+              depth={depth + 1}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 /* ============================================================
    Inspector (droite) — généré depuis propertiesSchema
    ============================================================ */
@@ -396,7 +545,7 @@ function EmptyInspector() {
   );
 }
 
-const INSPECTOR_TABS = ['CONTENT', 'DATA', 'ACTIONS', 'RESPONSIVE'];
+const INSPECTOR_TABS = ['CONTENT', 'DATA', 'ACTIONS', 'VISIBILITY', 'RESPONSIVE', 'ADVANCED'];
 
 function Inspector({ node, tab, onTab }) {
   const dispatch = useDispatch();
@@ -409,7 +558,7 @@ function Inspector({ node, tab, onTab }) {
         <p className="text-sm font-bold text-slate-900">{def?.label || node.type}</p>
         <p className="mt-0.5 truncate font-mono text-[10px] text-slate-400">{node.id}</p>
       </div>
-      <div role="tablist" aria-label="Onglets Inspector" className="flex gap-0.5 border-b border-slate-100 px-2">
+      <div role="tablist" aria-label="Onglets Inspector" className="flex flex-wrap gap-0.5 border-b border-slate-100 px-2">
         {INSPECTOR_TABS.map((tabId) => (
           <button
             key={tabId}
@@ -418,7 +567,7 @@ function Inspector({ node, tab, onTab }) {
             onClick={() => onTab(tabId)}
             className={`rounded-t-lg px-2.5 py-2 text-[10px] font-bold transition-colors duration-150 ${tab === tabId ? 'border-b-2 border-violet-500 text-violet-700' : 'text-slate-400 hover:text-slate-600'}`}
           >
-            {tabId === 'CONTENT' ? 'Contenu' : tabId === 'DATA' ? 'Data' : tabId === 'ACTIONS' ? 'Actions' : 'Responsive'}
+            {({ CONTENT: 'Propriétés', DATA: 'Données', ACTIONS: 'Actions', VISIBILITY: 'Visibilité', RESPONSIVE: 'Responsive', ADVANCED: 'Avancé' })[tabId]}
           </button>
         ))}
       </div>
@@ -426,7 +575,9 @@ function Inspector({ node, tab, onTab }) {
         {tab === 'CONTENT' && <ContentTab node={node} def={def} onChange={(props) => dispatch(updateComponentProps({ nodeId: node.id, props }))} />}
         {tab === 'DATA' && <DataTab node={node} def={def} businessContext={businessContext} onChange={(prop, binding) => dispatch(updateComponentBinding({ nodeId: node.id, prop, binding }))} />}
         {tab === 'ACTIONS' && <ActionsTab node={node} def={def} onChange={(actions) => dispatch(updateComponentActions({ nodeId: node.id, actions }))} />}
-        {tab === 'RESPONSIVE' && <ResponsiveTab node={node} onChange={(props) => dispatch(updateComponentProps({ nodeId: node.id, props }))} />}
+        {tab === 'VISIBILITY' && <ResponsiveTab node={node} onChange={(device, patch) => dispatch(updateComponentResponsive({ nodeId: node.id, device, patch }))} />}
+        {tab === 'ADVANCED' && <div className="space-y-3"><p className="text-xs text-slate-600">Définition du composant en lecture seule.</p><pre className="max-h-96 overflow-auto rounded-lg bg-slate-50 p-3 text-xs">{JSON.stringify(node, null, 2)}</pre></div>}
+        {tab === 'RESPONSIVE' && <ResponsiveTab node={node} onChange={(device, patch) => dispatch(updateComponentResponsive({ nodeId: node.id, device, patch }))} />}
       </div>
       {node.id !== tree.root && (
         <div className="flex gap-2 border-t border-slate-100 p-3">
@@ -644,7 +795,7 @@ function ActionsTab({ node, def, onChange }) {
 
 function ResponsiveTab({ node, onChange }) {
   const responsive = node.responsive || {};
-  const setResponsiveProp = (device, patch) => onChange({ [`${device}`]: { ...(responsive[device] || {}), ...patch } });
+  const setResponsiveProp = (device, patch) => onChange(device, patch);
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-500">Propriétés structurées par device — sérialisées dans l'UI Definition.</p>
@@ -673,76 +824,6 @@ function ResponsiveTab({ node, onChange }) {
    Leaf preview (feuilles sans enfants éditables)
    ============================================================ */
 
-function LeafPreview({ node, resolveBinding }) {
-  const props = node.props || {};
-  switch (node.type) {
-    case 'Heading':
-      return <p className={`font-semibold text-slate-900 ${Number(props.level) === 1 ? 'text-xl' : 'text-base'}`}>{String(resolveBinding(node, 'text', props.text) ?? '')}</p>;
-    case 'Text':
-      return <p className={`text-sm ${props.tone === 'muted' ? 'text-slate-500' : props.tone === 'strong' ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>{String(resolveBinding(node, 'text', props.text) ?? '')}</p>;
-    case 'Button':
-      return (
-        <span className={`inline-flex w-fit cursor-pointer items-center rounded-lg px-4 py-2 text-xs font-semibold ${props.variant === 'secondary' ? 'border border-slate-200 bg-white text-slate-700' : props.variant === 'ghost' ? 'text-slate-600' : props.variant === 'danger' ? 'border border-rose-200 bg-white text-rose-600' : 'bg-blue-600 text-white'}`}>
-          {props.label || 'Bouton'}
-          {(node.actions || []).length > 0 && <span className="ml-1.5 rounded bg-black/10 px-1 text-[9px] font-bold">{node.actions[0].type}</span>}
-        </span>
-      );
-    case 'Badge':
-      return <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">{String(resolveBinding(node, 'text', props.text) ?? '')}</span>;
-    case 'Input':
-    case 'FormField':
-      return (
-        <label className="flex w-full flex-col gap-1">
-          <span className="text-xs font-medium text-slate-600">{props.label || 'Champ'}</span>
-          <span className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400">{props.placeholder || '—'}</span>
-        </label>
-      );
-    case 'Alert':
-      return <div className={`rounded-lg border px-3 py-2 text-xs ${props.tone === 'danger' ? 'border-rose-200 bg-rose-50 text-rose-700' : props.tone === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-700' : props.tone === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{String(resolveBinding(node, 'message', props.message) ?? '')}</div>;
-    case 'DataTable':
-      return (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-2 text-xs font-semibold text-slate-500">{props.title || 'Table de données'}{node.bindings?.rows && <span className="ml-2 font-mono text-[10px] text-blue-600">⌗ {node.bindings.rows.entity}</span>}</div>
-          <div className="flex min-h-[64px] items-center justify-center text-xs text-slate-300">{props.emptyMessage || 'Aucun enregistrement'}</div>
-        </div>
-      );
-    case 'Image':
-      return <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-300 text-xs text-slate-400">{props.alt || 'Image'}</div>;
-    case 'Link':
-      return <span className="text-sm font-medium text-blue-600 underline decoration-dotted">{String(resolveBinding(node, 'text', props.text) ?? '')}</span>;
-    case 'Checkbox':
-      return <span className="flex items-center gap-2 text-sm text-slate-700"><span className="h-4 w-4 rounded border border-slate-300" />{props.label}</span>;
-    case 'DatePicker':
-      return (
-        <label className="flex w-full flex-col gap-1">
-          <span className="text-xs font-medium text-slate-600">{props.label || 'Date'}</span>
-          <span className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400">jj/mm/aaaa</span>
-        </label>
-      );
-    case 'Spinner':
-      return <span className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin text-blue-500" />{props.label || 'Chargement…'}</span>;
-    case 'Select':
-    case 'Textarea':
-      return (
-        <label className="flex w-full flex-col gap-1">
-          <span className="text-xs font-medium text-slate-600">{props.label || 'Champ'}</span>
-          <span className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400">{props.placeholder || '—'}</span>
-        </label>
-      );
-    default:
-      return (
-        <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
-          <p className="text-xs font-medium text-slate-600">{props.label || node.type}</p>
-          {(node.bindings && Object.keys(node.bindings).length > 0) && (
-            <p className="mt-0.5 font-mono text-[10px] text-blue-600">
-              {Object.entries(node.bindings).map(([prop, binding]) => `⌗ ${prop}:${binding.entity ? `${binding.entity}.${binding.field || '*'}` : binding.context || binding.kind}`).join(' · ')}
-            </p>
-          )}
-        </div>
-      );
-  }
-}
-
 /* ============================================================
    Save state + petits utilitaires
    ============================================================ */
@@ -750,7 +831,7 @@ function LeafPreview({ node, resolveBinding }) {
 function SaveButton({ saveState, onClick }) {
   const label = saveState === 'SAVING' ? 'Enregistrement…' : saveState === 'SAVED' ? 'Enregistré' : saveState === 'ERROR' ? 'Réessayer' : 'Enregistrer';
   return (
-    <BmButton size="sm" onClick={onClick} disabled={saveState === 'SAVING' || saveState === 'CLEAN'} icon={saveState === 'SAVING' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === 'SAVED' ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}>
+    <BmButton size="sm" onClick={onClick} disabled={saveState === 'SAVING' || saveState === 'CLEAN' || saveState === 'CONFLICT'} icon={saveState === 'SAVING' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === 'SAVED' ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}>
       {label}
     </BmButton>
   );
@@ -763,6 +844,7 @@ function SaveStateBadge({ saveState, error }) {
     SAVING: { tone: 'blue', label: 'Enregistrement…' },
     SAVED: { tone: 'green', label: 'Enregistré' },
     ERROR: { tone: 'rose', label: error || 'Erreur d’enregistrement' },
+    CONFLICT: { tone: 'amber', label: 'Conflit de sauvegarde' },
   };
   const entry = map[saveState] || map.CLEAN;
   return <BmBadge tone={entry.tone} dot>{entry.label}</BmBadge>;

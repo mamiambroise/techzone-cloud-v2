@@ -84,6 +84,8 @@ export const PERMISSIONS = {
   // autorisation, le backend reste l'autorité de sécurité.
   BM_READ: 'bm:read',
   BM_WRITE: 'bm:write',
+  BM_CONTRACT_READ: 'bm:contract:read',
+  BM_CONTRACT_WRITE: 'bm:contract:write',
   BM_VALIDATE: 'bm:validate',
   BM_PUBLISH: 'bm:publish',
   BM_CONTRACT_READ: 'bm:contract:read',

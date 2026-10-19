@@ -7,28 +7,37 @@ export const buttonClass = 'rounded-lg border border-slate-200 bg-white px-3 py-
 export const bmError = 'Opération impossible. Vérifiez les valeurs, vos droits et la disponibilité du service, puis réessayez.';
 
 // Only declared DTO properties are submitted; server records never become request bodies.
-export function BMResourceEditor({ fields, initial = {}, onSave, onCancel }) {
+export function BMResourceEditor({ fields, initial = {}, onSave, onCancel, onFieldChange }) {
   const [values, setValues] = useState(() => Object.fromEntries(fields.map(f => [f.key, initial[f.key] ?? f.default ?? (f.type === 'checkbox' ? false : '')])));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  function updateField(field, value) {
+    setValues(current => {
+      const next = { ...current,[field.key]:value };
+      if (current[field.key] !== value) for (const key of field.clearOnChange ?? []) next[key] = '';
+      return next;
+    });
+    onFieldChange?.(field.key,value);
+  }
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError('');
     try {
       const body = {};
       for (const f of fields) {
+        if (f.submit === false) continue;
         const value = values[f.key];
         if (f.type === 'json') { if (value !== '') body[f.key] = typeof value === 'string' ? JSON.parse(value) : value; }
         else if (f.type === 'number') { if (value !== '') body[f.key] = Number(value); }
         else body[f.key] = value;
       }
       await onSave(body);
-    } catch { setError(bmError); } finally { setBusy(false); }
+    } catch (error) { setError(error?.normalized?.message || error?.message || bmError); } finally { setBusy(false); }
   }
   return <form onSubmit={submit} className="my-4 rounded-lg border bg-slate-50 p-4 space-y-4">
     <div className="grid gap-4 md:grid-cols-2">{fields.map(f => <label key={f.key} className="text-sm space-y-1"><span>{f.label}</span>
-      {f.render ? f.render({ value:values[f.key],onChange:value => setValues({...values,[f.key]:value}) }) : f.options ? <select aria-label={f.label} className={inputClass} required={f.required} value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})}><option value="">Sélectionner</option>{f.options.map(o => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}</select>
+      {f.render ? f.render({ value:values[f.key],onChange:value => updateField(f,value) }) : f.options ? <select aria-label={f.label} className={inputClass} required={f.required} disabled={f.disabled} value={values[f.key]} onChange={e => updateField(f,e.target.value)}><option value="">Sélectionner</option>{f.options.map(o => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}</select>
         : f.type === 'json' ? <textarea aria-label={f.label} className={inputClass} value={typeof values[f.key] === 'object' ? JSON.stringify(values[f.key], null, 2) : values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})} />
-          : <input aria-label={f.label} className={f.type === 'checkbox' ? 'ml-2' : inputClass} type={f.type || 'text'} required={f.required} maxLength={f.key === 'code' ? 100 : undefined} checked={f.type === 'checkbox' ? values[f.key] : undefined} value={f.type === 'checkbox' ? undefined : values[f.key]} onChange={e => setValues({...values, [f.key]: f.type === 'checkbox' ? e.target.checked : e.target.value})} />}
+          : <input aria-label={f.label} className={f.type === 'checkbox' ? 'ml-2' : inputClass} type={f.type || 'text'} required={f.required} disabled={f.disabled} maxLength={f.key === 'code' ? 100 : undefined} checked={f.type === 'checkbox' ? values[f.key] : undefined} value={f.type === 'checkbox' ? undefined : values[f.key]} onChange={e => updateField(f,f.type === 'checkbox' ? e.target.checked : e.target.value)} />}
     </label>)}</div>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     <button disabled={busy} className={buttonClass}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button>{' '}<button type="button" disabled={busy} onClick={onCancel} className={buttonClass}>Annuler</button>

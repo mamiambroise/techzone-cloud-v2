@@ -120,3 +120,16 @@ describe('bindingResolver', () => {
     expect(resolve(node({ text: { kind: 'WILDCARD', value: '<script>' } }), 'text')).toBeNull();
   });
 });
+
+// Both sides reject the same components/props without generating executable UI code.
+// Importing the pure declaration here creates no backend dependency in the app bundle.
+import { UI_COMPONENT_REGISTRY } from '../../../../../backend/src/modules/ui-builder/ui-component-registry.ts';
+it('keeps the backend validation registry aligned with the renderer/inspector registry', () => {
+  const expected = Object.fromEntries(componentRegistry.map(component => [component.key, {
+    propertiesSchema: component.propertiesSchema,
+    allowedChildren: component.allowedChildren,
+    bindingCapabilities: component.bindingCapabilities,
+    supportedActions: component.supportedActions,
+  }]));
+  expect(UI_COMPONENT_REGISTRY).toEqual(expected);
+});

@@ -8,6 +8,8 @@ describe('Pack contracts: fail closed and deterministic', () => {
   });
   it('rejects embedded secrets and executable object keys', () => {
     expect(() => publicJson({ config:{ apiToken:'private' } })).toThrow();
+    expect(() => publicJson({ config:'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature-value' })).toThrow('PRIVATE_CONFIGURATION_FORBIDDEN');
+    expect(() => publicJson({ config:'-----BEGIN PRIVATE KEY-----\nprivate-key-material\n-----END PRIVATE KEY-----' })).toThrow('PRIVATE_CONFIGURATION_FORBIDDEN');
     expect(() => publicJson(JSON.parse('{"__proto__":{"admin":true}}'))).toThrow();
   });
   it('validates typed rule expressions and denies missing context', () => {

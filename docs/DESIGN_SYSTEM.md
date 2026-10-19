@@ -55,3 +55,14 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 - Respecter `prefers-reduced-motion`
 - Ne pas supprimer fonctionnalités
 - Ne pas modifier backend/API
+
+## UI Builder — contexte et inspection
+
+- Barre de contexte commune : tenant, application, version, page, device et statut ; position sticky sur tablette/desktop, flux normal sur mobile pour préserver la place du canvas.
+- État de sauvegarde annoncé avec `role="status"` dans le contexte commun.
+- Inspecteur : Propriétés, Données, Actions, Visibilité, Responsive, Avancé ; définition avancée en lecture seule, sans saisie de code arbitraire.
+- Les liens de validation ciblent la page et `?component=<id>` ; seuls les composants présents dans l’arbre chargé sont sélectionnés.
+- Aperçu : badge PREVIEW et expansion plein écran, avec bouton explicite de retour.
+- La complétion est le ratio d’étapes READY parmi les étapes serveur ; sans étapes, afficher « — ».
+- Validation immédiate des routes : message textuel et `aria-invalid`, sans remplacer la validation serveur.
+- Conflit de sauvegarde : conserver l’arbre local, annoncer le conflit, afficher les révisions et une comparaison ; rechargement serveur après confirmation explicite. Bloquer autosave et sauvegarde manuelle tant que le conflit n’est pas résolu.

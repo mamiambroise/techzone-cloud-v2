@@ -24,6 +24,19 @@ const result = { routes:[],responsive:[],errors:[],network:[],authExpected:[],ac
     assert.ok(!/Insufficient permission|Opération impossible|Runtime indisponible/.test(text),route);
     result.routes.push({ route,title:await page.locator('main h1').innerText(),pass:true });
   }
+  await page.goto('http://localhost:3000/packs/versions?pack='+ids.pack.id+'&version='+ids.clone.id);
+  await page.getByRole('button',{ name:'Créer une version',exact:true }).click();
+  await page.getByLabel('Application',{ exact:true }).selectOption(ids.app.id);
+  await page.waitForFunction(id => {
+    const select = document.querySelector('select[aria-label="Application Version"]');
+    return select && !select.disabled && Array.from(select.options).some(option => option.value === id);
+  },ids.version.id);
+  await page.getByLabel('Application Version',{ exact:true }).selectOption(ids.version.id);
+  const uiPackVersion = '2.0.'+(Date.now()%100000);
+  await page.getByLabel('Version SemVer',{ exact:true }).fill(uiPackVersion);
+  await page.getByRole('button',{ name:'Enregistrer',exact:true }).click();
+  await page.getByText(uiPackVersion,{ exact:true }).waitFor();
+  result.actions.push('CREATE_PACK_VERSION_WITH_APPLICATION_VERSION_UI');
   // Real UI authoring, using the draft cloned version from the API recipe.
   await page.goto('http://localhost:3000/packs/modules?pack='+ids.pack.id+'&version='+ids.clone.id);
   await page.getByRole('button',{ name:'Créer un élément' }).click();

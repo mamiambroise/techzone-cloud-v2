@@ -11,7 +11,7 @@
  * Sécurité : aucune eval, aucune expression libre. Le lock de version empêche
  * la modification silencieuse d'une version publiée/active.
  */
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, Optional } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -23,7 +23,10 @@ import type {
   UpdateUiPageDto,
   UpsertUiThemeDto,
 } from './dto/ui-page.dto';
-import { UI_ACTION_TYPES } from './dto/ui-page.dto';
+import { UI_ACTION_TYPES, UI_BINDING_KINDS } from './dto/ui-page.dto';
+import { isRecord, isUiRoute, unsafeUiJson, validateUiTree, validateUiTheme } from './ui-validation';
+import { UI_COMPONENT_REGISTRY } from './ui-component-registry';
+import { WorkflowEngine } from '../../automation/workflow/workflow.engine';
 
 const RENDERABLE_COMPONENTS = new Set([
   'Container', 'Section', 'Card', 'Grid', 'Stack', 'Heading', 'Text',
@@ -44,13 +47,25 @@ type OverviewProgression = { status: 'TODO' | 'IN_PROGRESS' | 'READY'; detail: s
 export class UiBuilderService {
   private readonly logger = new Logger(UiBuilderService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, @Optional() private readonly workflows?: WorkflowEngine) {}
 
   // =====================================================================
   // VERSION RESOLUTION + LOCK
   // =====================================================================
 
+  private requireTenant(tenantId: string | null): asserts tenantId is string {
+    if (!tenantId || tenantId === 'legacy') throw new PlatformException(PlatformErrorCode.TENANT_VIOLATION, 'Tenant actif requis.', HttpStatus.FORBIDDEN);
+  }
+
+  private validatePageInput(dto: { route?: string; components?: unknown; metadata?: unknown }) {
+    const issues = dto.components === undefined ? [] : validateUiTree(dto.components);
+    if (dto.route !== undefined && !isUiRoute(dto.route)) issues.push({ level: 'ERROR', code: 'ROUTE_INVALID', message: 'Route interne invalide ou réservée.' });
+    if (unsafeUiJson(dto.metadata)) issues.push({ level: 'ERROR', code: 'COMPONENT_SCHEMA_INVALID', message: 'Métadonnées exécutables interdites.' });
+    if (issues.length) throw new PlatformException(PlatformErrorCode.UI_PAGE_INVALID, 'Page UI invalide.', HttpStatus.BAD_REQUEST, { issues });
+  }
+
   private async ensureVersion(applicationVersionId: string, tenantId: string | null) {
+    this.requireTenant(tenantId);
     const version = await this.prisma.applicationVersion.findFirst({
       where: { id: applicationVersionId, tenantId: tenantId ?? undefined },
     });
@@ -80,18 +95,32 @@ export class UiBuilderService {
   // PAGES — CRUD
   // =====================================================================
 
+  private rethrowUniquePageError(error: unknown): void {
+    const known = error as { code?: string; meta?: { target?: string[] | string } };
+    if (known?.code !== 'P2002') return;
+    const target = known.meta?.target;
+    const route = Array.isArray(target) ? target.includes('route') : String(target || '').includes('route');
+    throw new PlatformException(route ? PlatformErrorCode.UI_PAGE_ROUTE_EXISTS : PlatformErrorCode.UI_PAGE_KEY_EXISTS,
+      route ? 'Cette route existe déjà dans cette version.' : 'Cette clé existe déjà dans cette version.', HttpStatus.CONFLICT);
+  }
+
   async listPages(applicationVersionId: string, tenantId: string | null) {
     await this.ensureVersion(applicationVersionId, tenantId);
-    return this.prisma.uiPage.findMany({
+    const pages = await this.prisma.uiPage.findMany({
       where: { applicationVersionId, tenantId: tenantId ?? undefined },
-      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
     });
+    if (pages.some(page => unsafeUiJson(page.components) || unsafeUiJson(page.metadata))) {
+      throw new PlatformException(PlatformErrorCode.UI_VALIDATION_FAILED, 'Définition UI non sûre.', HttpStatus.BAD_REQUEST);
+    }
+    return pages;
   }
 
   async createPage(dto: CreateUiPageDto, tenantId: string | null, userId: string) {
     await this.ensureVersionEditable(dto.applicationVersionId, tenantId);
 
     const version = await this.ensureVersion(dto.applicationVersionId, tenantId);
+    this.validatePageInput(dto);
     const key = dto.key.trim().toLowerCase();
 
     const duplicateKey = await this.prisma.uiPage.findFirst({
@@ -116,24 +145,31 @@ export class UiBuilderService {
       );
     }
 
-    const page = await this.prisma.uiPage.create({
-      data: {
-        applicationId: version.applicationId,
-        applicationVersionId: dto.applicationVersionId,
-        key,
-        route: dto.route,
-        title: dto.title,
-        description: dto.description,
-        type: (dto.type as never) ?? 'CUSTOM',
-        layout: (dto.layout as never) ?? 'SIDEBAR',
-        visibility: (dto.visibility as never) ?? 'ALWAYS',
-        order: dto.order ?? 0,
-        permissions: (dto.permissions ?? []) as unknown as Prisma.InputJsonValue,
-        components: (dto.components ?? { root: 'root', nodes: { root: { id: 'root', type: 'Container', props: {}, children: [] } } }) as unknown as Prisma.InputJsonValue,
-        metadata: (dto.metadata ?? {}) as unknown as Prisma.InputJsonValue,
-        tenantId,
-      },
-    });
+    let page: Awaited<ReturnType<PrismaService['uiPage']['update']>>;
+    try {
+      page = await this.prisma.uiPage.create({
+        data: {
+          applicationId: version.applicationId,
+          applicationVersionId: dto.applicationVersionId,
+          key,
+          route: dto.route,
+          title: dto.title,
+          description: dto.description,
+          type: (dto.type as never) ?? 'CUSTOM',
+          layout: (dto.layout as never) ?? 'SIDEBAR',
+          visibility: (dto.visibility as never) ?? 'ALWAYS',
+          order: dto.order ?? 0,
+          permissions: (dto.permissions ?? []) as unknown as Prisma.InputJsonValue,
+          components: (dto.components ?? { root: 'root', nodes: { root: { id: 'root', type: 'Container', props: {}, children: [] } } }) as unknown as Prisma.InputJsonValue,
+          metadata: (dto.metadata ?? {}) as unknown as Prisma.InputJsonValue,
+          tenantId,
+        },
+      });
+
+    } catch (error) {
+      this.rethrowUniquePageError(error);
+      throw error;
+    }
 
     await this.audit(tenantId, userId, 'ui.page.created', 'UiPage', page.id, { key: page.key, route: page.route });
     return page;
@@ -142,6 +178,7 @@ export class UiBuilderService {
   async updatePage(pageId: string, dto: UpdateUiPageDto, tenantId: string | null, userId: string) {
     const existing = await this.getPageOwned(pageId, tenantId);
     await this.ensureVersionEditable(existing.applicationVersionId, tenantId);
+    this.validatePageInput(dto);
 
     if (dto.key && dto.key !== existing.key) {
       const duplicateKey = await this.prisma.uiPage.findFirst({
@@ -179,22 +216,40 @@ export class UiBuilderService {
       }
     }
 
-    const page = await this.prisma.uiPage.update({
-      where: { id: pageId },
-      data: {
-        key: dto.key,
-        route: dto.route,
-        title: dto.title,
-        description: dto.description,
-        type: dto.type as never,
-        layout: dto.layout as never,
-        visibility: dto.visibility as never,
-        order: dto.order,
-        permissions: dto.permissions,
-        components: dto.components as never,
-        metadata: dto.metadata as never,
-      },
-    });
+    let page: Awaited<ReturnType<PrismaService['uiPage']['update']>>;
+    try {
+      page = await this.prisma.uiPage.update({
+        where: {
+          id: pageId,
+          tenantId,
+          applicationVersionId: existing.applicationVersionId,
+          ...(dto.expectedUpdatedAt ? { updatedAt: new Date(dto.expectedUpdatedAt) } : existing.updatedAt ? { updatedAt: existing.updatedAt } : {}),
+        },
+        data: {
+          key: dto.key,
+          route: dto.route,
+          title: dto.title,
+          description: dto.description,
+          type: dto.type as never,
+          layout: dto.layout as never,
+          visibility: dto.visibility as never,
+          order: dto.order,
+          permissions: dto.permissions,
+          components: dto.components as never,
+          metadata: dto.metadata as never,
+        },
+      });
+
+    } catch (error) {
+      // Prisma checks updatedAt in the UPDATE itself: concurrent requests cannot
+      // both succeed against the same revision, even after the ownership read.
+      if ((dto.expectedUpdatedAt || existing.updatedAt) && (error as { code?: string }).code === 'P2025') {
+        throw new PlatformException(PlatformErrorCode.UI_SAVE_CONFLICT,
+          'La page a changé sur le serveur. Rechargez-la avant de réessayer.', HttpStatus.CONFLICT);
+      }
+      this.rethrowUniquePageError(error);
+      throw error;
+    }
 
     await this.audit(tenantId, userId, 'ui.page.updated', 'UiPage', page.id, { key: page.key });
     return page;
@@ -233,6 +288,7 @@ export class UiBuilderService {
   }
 
   private async getPageOwned(pageId: string, tenantId: string | null) {
+    this.requireTenant(tenantId);
     const page = await this.prisma.uiPage.findFirst({
       where: { id: pageId, tenantId: tenantId ?? undefined },
     });
@@ -258,7 +314,10 @@ export class UiBuilderService {
     const version = await this.ensureVersion(applicationVersionId, tenantId);
     const [pages, theme, businessContext] = await Promise.all([
       this.listPages(applicationVersionId, tenantId),
-      this.getTheme(applicationVersionId, tenantId).catch(() => null),
+      this.getTheme(applicationVersionId, tenantId).catch((error: unknown) => {
+        if (error instanceof PlatformException && (error.getResponse() as { code?: string }).code === PlatformErrorCode.UI_THEME_NOT_FOUND) return null;
+        throw error;
+      }),
       this.getBusinessContext(applicationVersionId, tenantId),
     ]);
 
@@ -278,7 +337,7 @@ export class UiBuilderService {
     return {
       schemaVersion: '1.1',
       projectId: applicationVersionId,
-      applicationId: pages[0]?.applicationId ?? null,
+      applicationId: version.applicationId,
       applicationVersionId,
       businessContext,
       theme: theme?.tokens ?? null,
@@ -318,7 +377,7 @@ export class UiBuilderService {
   async validate(applicationVersionId: string, tenantId: string | null, userId?: string) {
     await this.ensureVersion(applicationVersionId, tenantId);
 
-    const [pages, entities] = await Promise.all([
+    const [pages, entities, theme] = await Promise.all([
       this.prisma.uiPage.findMany({
         where: { applicationVersionId, tenantId: tenantId ?? undefined },
         orderBy: [{ order: 'asc' }],
@@ -327,17 +386,19 @@ export class UiBuilderService {
         where: { applicationVersionId, tenantId: tenantId ?? undefined },
         include: { fields: true },
       }),
+      this.prisma.uiThemeSetting.findFirst({ where: { applicationVersionId, tenantId } }),
     ]);
 
     const issues: Array<{ level: 'ERROR' | 'WARNING' | 'INFO'; code: string; message: string; pageId?: string; pageKey?: string; componentId?: string }> = [];
 
     const entityByCode = new Map(entities.map((e) => [e.code, e]));
+    if (theme) issues.push(...validateUiTheme(theme.tokens));
 
     // --- Routes / keys ---
     const routeSet = new Map<string, string>();
     const keySet = new Map<string, string>();
     for (const page of pages) {
-      if (!page.route?.startsWith('/')) {
+      if (!isUiRoute(page.route)) {
         issues.push({ level: 'ERROR', code: 'ROUTE_INVALID', message: `Route invalide : "${page.route}"`, pageId: page.id, pageKey: page.key });
       }
       if (routeSet.has(page.route)) {
@@ -357,6 +418,12 @@ export class UiBuilderService {
 
     // --- Composants / bindings / actions ---
     for (const page of pages) {
+      if ((page.applicationVersionId && page.applicationVersionId !== applicationVersionId) || (page.tenantId && page.tenantId !== tenantId)) {
+        issues.push({ level: 'ERROR', code: 'UI_APPLICATION_VERSION_MISMATCH', message: 'Page hors du contexte tenant/version.', pageId: page.id, pageKey: page.key });
+      }
+      const structuralIssues = validateUiTree(page.components);
+      issues.push(...structuralIssues.map(issue => ({ ...issue, pageId: page.id, pageKey: page.key })));
+      if (structuralIssues.some(issue => ['COMPONENT_SCHEMA_INVALID', 'ROOT_MISSING'].includes(issue.code))) continue;
       const tree = (page.components ?? { root: 'root', nodes: {} }) as {
         root?: string;
         nodes?: Record<string, { id?: string; type?: string; props?: Record<string, unknown>; bindings?: Record<string, unknown>; actions?: Array<{ type?: string; config?: Record<string, unknown> }>; children?: string[] }>;
@@ -378,7 +445,7 @@ export class UiBuilderService {
         // Bindings
         for (const [prop, binding] of Object.entries(node.bindings ?? {})) {
           const b = binding as { kind?: string; entity?: string; field?: string; context?: string; variable?: string };
-          if (!b?.kind) {
+          if (!b?.kind || !UI_BINDING_KINDS.includes(b.kind as never)) {
             issues.push({ level: 'ERROR', code: 'BINDING_INVALID', message: `Binding invalide sur "${prop}".`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             continue;
           }
@@ -386,7 +453,7 @@ export class UiBuilderService {
             const entity = b.entity ? entityByCode.get(b.entity) : undefined;
             if (!entity) {
               issues.push({ level: 'ERROR', code: 'ENTITY_UNKNOWN', message: `Entité inconnue "${b.entity}" (binding "${prop}").`, pageId: page.id, pageKey: page.key, componentId: nodeId });
-            } else if (b.kind === 'ENTITY_FIELD' && b.field && !entity.fields.some((f) => f.code === b.field)) {
+            } else if (b.kind === 'ENTITY_FIELD' && (!b.field || !entity.fields.some((f) => f.code === b.field))) {
               issues.push({ level: 'ERROR', code: 'FIELD_UNKNOWN', message: `Champ inconnu "${b.entity}.${b.field}" (binding "${prop}").`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             }
           } else if (b.kind === 'CONTEXT') {
@@ -399,6 +466,11 @@ export class UiBuilderService {
             }
           }
         }
+        // Registry compatibility: data bindings/actions must be renderable by this component.
+        const component = Object.hasOwn(UI_COMPONENT_REGISTRY, node.type) ? UI_COMPONENT_REGISTRY[node.type] : undefined;
+        for (const prop of Object.keys(node.bindings ?? {})) {
+          if (component && !component.bindingCapabilities.includes(prop)) issues.push({ level: 'ERROR', code: 'BINDING_INVALID', message: `Propriété non bindable : ${prop}.`, pageId: page.id, componentId: nodeId });
+        }
         // Actions
         for (const action of node.actions ?? []) {
           if (!action?.type) {
@@ -409,9 +481,10 @@ export class UiBuilderService {
             issues.push({ level: 'ERROR', code: 'ACTION_UNKNOWN', message: `Action non prise en charge : "${action.type}".`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             continue;
           }
+          if (component && !component.supportedActions.includes(action.type)) issues.push({ level: 'ERROR', code: 'UI_RUNTIME_INCOMPATIBLE', message: `Action non prise en charge par ${node.type}.`, pageId: page.id, componentId: nodeId });
           if (action.type === 'NAVIGATE') {
             const route = (action.config as { route?: unknown } | undefined)?.route;
-            if (typeof route !== 'string' || !route.startsWith('/') || route.includes('javascript:')) {
+            if (!isUiRoute(route) || !pages.some(target => target.route === route)) {
               issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `NAVIGATE: route interne requise.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             }
           }
@@ -419,11 +492,19 @@ export class UiBuilderService {
             const code = (action.config as { workflowCode?: unknown } | undefined)?.workflowCode;
             if (typeof code !== 'string' || !code) {
               issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `TRIGGER_AUTOMATION: workflowCode requis.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
+            } else {
+              try {
+                if (!this.workflows) throw new Error('Registry unavailable');
+                const workflow = this.workflows.getWorkflow(code) as { tenantId?: string; applicationVersionId?: string };
+                if (workflow.tenantId !== tenantId
+                  || (workflow.applicationVersionId && workflow.applicationVersionId !== applicationVersionId)) throw new Error('Workflow outside current context');
+              }
+              catch { issues.push({ level: 'ERROR', code: 'UI_AUTOMATION_REFERENCE_UNKNOWN', message: 'Workflow Automation non enregistré.', pageId: page.id, componentId: nodeId }); }
             }
           }
           if (['CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD'].includes(action.type)) {
             const resource = (action.config as { resource?: unknown } | undefined)?.resource;
-            if (typeof resource !== 'string' || !resource) {
+            if (typeof resource !== 'string' || !entities.some(entity => resource === entity.code || resource === `${applicationVersionId}:${entity.code}`)) {
               issues.push({ level: 'ERROR', code: 'ACTION_INVALID', message: `${action.type}: ressource Data Runtime requise.`, pageId: page.id, pageKey: page.key, componentId: nodeId });
             }
           }
@@ -435,6 +516,21 @@ export class UiBuilderService {
           }
         }
       }
+    }
+
+    const permissionRefs = new Set<string>();
+    for (const page of pages) {
+      for (const permission of Array.isArray(page.permissions) ? page.permissions : []) if (typeof permission === 'string') permissionRefs.add(permission);
+      const components: unknown = page.components;
+      const nodes = isRecord(components) && isRecord(components.nodes) ? Object.values(components.nodes) : [];
+      for (const node of nodes) if (isRecord(node) && Array.isArray(node.actions)) for (const action of node.actions) {
+        for (const permission of Array.isArray(action?.permissions) ? action.permissions : []) if (typeof permission === 'string') permissionRefs.add(permission);
+      }
+    }
+    if (permissionRefs.size) {
+      const registered = await this.prisma.permission.findMany({ where: { code: { in: [...permissionRefs] }, active: true }, select: { code: true } });
+      const known = new Set(registered.map(permission => permission.code));
+      for (const code of permissionRefs) if (!known.has(code)) issues.push({ level: 'ERROR', code: 'UI_PERMISSION_REFERENCE_UNKNOWN', message: `Permission non enregistrée : ${code}.` });
     }
 
     const errors = issues.filter((i) => i.level === 'ERROR').length;
@@ -462,6 +558,7 @@ export class UiBuilderService {
   // =====================================================================
 
   async getTheme(applicationVersionId: string, tenantId: string | null) {
+    await this.ensureVersion(applicationVersionId, tenantId);
     const theme = await this.prisma.uiThemeSetting.findFirst({
       where: { applicationVersionId, tenantId: tenantId ?? undefined },
     });
@@ -472,11 +569,14 @@ export class UiBuilderService {
         HttpStatus.NOT_FOUND,
       );
     }
+    if (unsafeUiJson(theme.tokens)) throw new PlatformException(PlatformErrorCode.UI_VALIDATION_FAILED, 'Thème UI non sûr.', HttpStatus.BAD_REQUEST);
     return theme;
   }
 
   async upsertTheme(dto: UpsertUiThemeDto, tenantId: string | null, userId: string) {
     await this.ensureVersionEditable(dto.applicationVersionId, tenantId);
+    const tokenIssues = validateUiTheme(dto.tokens);
+    if (tokenIssues.length) throw new PlatformException(PlatformErrorCode.UI_VALIDATION_FAILED, 'Thème UI invalide.', HttpStatus.BAD_REQUEST, { issues: tokenIssues });
     const version = await this.ensureVersion(dto.applicationVersionId, tenantId);
 
     const existing = await this.prisma.uiThemeSetting.findFirst({
