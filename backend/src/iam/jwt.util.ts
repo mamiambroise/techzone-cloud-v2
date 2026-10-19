@@ -40,6 +40,7 @@ export interface AccessTokenPayload {
   roles?: string[];
   permissions?: string[];
   iss?: string;
+  aud?: string;
 }
 
 export const IAM_AUDIENCE = 'techzone-cloud-api';

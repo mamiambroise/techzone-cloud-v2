@@ -53,7 +53,7 @@ export class IamThrottleService implements OnModuleDestroy {
     // The interval is only an opportunistic memory cleanup. It must not keep a
     // process alive on its own (notably for a graceful shutdown or a direct
     // service instance in a unit test).
-    this.gcTimer.unref?.();
+    this.gcTimer?.unref?.();
   }
 
   /**

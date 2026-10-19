@@ -4,6 +4,7 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 
 import { IamAdminGuard } from './iam-admin-guard';
 import { TenantGuard } from './tenant.guard';
+import type { PrismaService } from '../prisma/prisma.service';
 import { PERMISSIONS_KEY } from './iam-permissions.guard';
 import { TENANT_RESOURCE_KEY } from './tenant-resource.decorator';
 import {
@@ -59,9 +60,9 @@ function buildContext(principal: any, permissions?: string[], params: Record<str
 describe('IAM Admin Security â€” Cross-Tenant Isolation', () => {
   it('Tenant A resource is denied to Tenant B user (resource ownership guard)', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_A }),
+      findUnique: jest.fn<() => Promise<{ tenantId: string } | null>>().mockResolvedValue({ tenantId: TENANT_A }),
     };
-    const mockPrisma = { application: mockModel } as any;
+    const mockPrisma = { application: mockModel } as unknown as PrismaService;
 
     const reflector = {
       getAllAndOverride: jest.fn((key: string) => {
@@ -92,9 +93,9 @@ describe('IAM Admin Security â€” Cross-Tenant Isolation', () => {
 
   it('Tenant A resource is accessible to Tenant A user (resource ownership guard)', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_A }),
+      findUnique: jest.fn<() => Promise<{ tenantId: string } | null>>().mockResolvedValue({ tenantId: TENANT_A }),
     };
-    const mockPrisma = { application: mockModel } as any;
+    const mockPrisma = { application: mockModel } as unknown as PrismaService;
 
     const reflector = {
       getAllAndOverride: jest.fn((key: string) => {
