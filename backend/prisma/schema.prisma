@@ -1273,6 +1273,7 @@ model IamUser {
    devices         IamDevice[]
    sessions        IamSession[]
    mfaMethods      MfaMethod[]
+   mfaChallenges   MfaChallenge[]
    recoveryCodes   RecoveryCode[]
    identities      UserIdentity[]
    memberships     Membership[]
@@ -2167,6 +2168,27 @@ model MfaMethod {
   @@index([type])
   @@index([enabled])
   @@map("mfa_method")
+}
+
+model MfaChallenge {
+  id             String    @id @default(uuid())
+  userId         String
+  tokenHash      String    @unique
+  status         String    @default("PENDING")
+  attempts       Int       @default(0)
+  maxAttempts    Int       @default(5)
+  deviceId       String?
+  ipHash         String?
+  expiresAt      DateTime  @db.Timestamp(3)
+  consumedAt     DateTime? @db.Timestamp(3)
+  consumedReason String?
+  createdAt      DateTime  @default(now()) @db.Timestamp(3)
+
+  user IamUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("mfa_challenge")
 }
 
 model RecoveryCode {
