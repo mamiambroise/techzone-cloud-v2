@@ -15,6 +15,7 @@ import type { IamPrincipal as Actor } from '../../iam/principal.decorator';
 type Input = Record<string, unknown>;
 
 const hash = contractHash;
+const ALLOWED_APPLICATION_VERSION_STATUSES = new Set(['DRAFT', 'CONFIGURING', 'READY', 'ACTIVE']);
 
 const RUNTIME_RULE_FIELD =
   /^(tenant\.id|application\.(id|version)|environment\.code|subscription\.(plan|status)|entitlements|permissions|capabilities|featureFlags\.[\w.-]+|locale|timezone)$/;
@@ -93,7 +94,8 @@ export class PackManagerService {
       include: include
         ? {
             pack: true,
-            modules: true,
+          applicationVersion: { include: { application: true } },
+          modules: true,
             features: {
               include: { capabilities: { include: { capability: true } } },
             },
@@ -202,7 +204,7 @@ export class PackManagerService {
     this.tenant(actor);
     const pack = await this.db.pack.findFirst({
       where: { id, tenantId: this.tenant(actor) },
-      include: { versions: { orderBy: { createdAt: 'desc' } } },
+      include: { versions: { orderBy: { createdAt: 'desc' }, include: { applicationVersion: { include: { application: true } } } } },
     });
     if (!pack) throw new NotFoundException('PACK_NOT_FOUND');
     return pack;
@@ -295,8 +297,10 @@ export class PackManagerService {
     });
   }
 
-  getVersion(id: string, actor: Actor) {
-    return this.version(id, actor, true);
+  async getVersion(id: string, actor: Actor) {
+    const version: any = await this.version(id, actor, true);
+    if (version.status === 'PUBLISHED') this.assertPublicationIntegrity(version, actor, true);
+    return version;
   }
 
   async createVersion(packId: string, input: Input, actor: Actor) {
@@ -305,9 +309,25 @@ export class PackManagerService {
     if (input.sourceVersionId) { const source = await this.version(String(input.sourceVersionId), actor); if (source.packId !== packId) throw new BadRequestException('SOURCE_VERSION_PACK_MISMATCH'); }
     const versionNumber = this.text(input, 'versionNumber', true)!;
     const applicationVersionId = this.text(input, 'applicationVersionId', true)!;
-    await this.applicationVersion(applicationVersionId, actor);
     if (!valid(versionNumber))
       throw new BadRequestException('PACK_VERSION_SEMVER_INVALID');
+    const applicationVersion = await this.applicationVersion(applicationVersionId, actor);
+    if (!ALLOWED_APPLICATION_VERSION_STATUSES.has(applicationVersion.status))
+      throw new BadRequestException('APPLICATION_VERSION_STATUS_NOT_ALLOWED');
+    if (pack.applicationId && pack.applicationId !== applicationVersion.applicationId)
+      throw new BadRequestException('PACK_APPLICATION_MISMATCH');
+    if (!pack.applicationId) {
+      const existingVersions = await this.db.packVersion.findMany({
+        where: { tenantId: this.tenant(actor), packId },
+        select: { applicationVersion: { select: { applicationId: true } } },
+      });
+      if (existingVersions.some(version => version.applicationVersion && version.applicationVersion.applicationId !== applicationVersion.applicationId))
+        throw new BadRequestException('PACK_APPLICATION_MISMATCH');
+      await this.db.pack.update({
+        where: { id: packId },
+        data: { applicationId: applicationVersion.applicationId, updatedBy: actor.userId, rowVersion: { increment: 1 } },
+      });
+    }
     return this.db.packVersion.create({
       data: {
         tenantId: this.tenant(actor),
@@ -598,7 +618,42 @@ export class PackManagerService {
           severity: 'ERROR',
           message: 'Rule expression or effect is invalid',
         });
+    const sourceApplicationVersion = version.applicationVersion;
+    if (
+      !sourceApplicationVersion ||
+      sourceApplicationVersion.tenantId !== this.tenant(actor) ||
+      sourceApplicationVersion.application?.tenantId !== this.tenant(actor)
+    ) throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
+    if (sourceApplicationVersion.applicationId !== version.pack.applicationId)
+      issues.push({
+        code: 'PACK_APPLICATION_MISMATCH',
+        path: 'applicationVersionId',
+        severity: 'ERROR',
+        message: 'L’ApplicationVersion ne correspond pas à l’application du pack.',
+      });
     const snapshotContent = await this.definitionWithUi(version, actor, issues);
+    if (snapshotContent.ui?.applicationVersionId !== version.applicationVersionId)
+      issues.push({
+        code: 'SNAPSHOT_APPLICATION_VERSION_MISMATCH',
+        path: 'ui.applicationVersionId',
+        severity: 'ERROR',
+        message: 'Le snapshot UI doit référencer la même ApplicationVersion que le PackVersion.',
+      });
+    try {
+      publicJson(snapshotContent);
+    } catch (error) {
+      const code = error instanceof BadRequestException && error.message === 'PRIVATE_CONFIGURATION_FORBIDDEN'
+        ? 'MANIFEST_SECRET_DETECTED'
+        : 'MANIFEST_CONTENT_INVALID';
+      issues.push({
+        code,
+        path: 'manifest',
+        severity: 'ERROR',
+        message: code === 'MANIFEST_SECRET_DETECTED'
+          ? 'Une valeur sensible est présente dans le contenu destiné à la publication.'
+          : 'Le contenu destiné à la publication ne respecte pas le contrat JSON public.',
+      });
+    }
     issues.push(...await this.publicationDependencies(snapshotContent, actor));
     for (const rule of version.rules.filter((r: any) => !r.archivedAt && r.enabled)) {
       try { validateExpression(rule.expression); } catch { issues.push({ code: 'RULE_INVALID', path: rule.id, severity: 'ERROR', message: 'Expression invalide' }); }
@@ -761,6 +816,11 @@ export class PackManagerService {
       !version.snapshot
     )
       throw new ConflictException('PACK_VERSION_NOT_READY');
+    if (
+    version.snapshot.snapshotHash !== version.snapshotHash ||
+    hash(version.snapshot.content) !== version.snapshotHash
+    ) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
+    publicJson(version.snapshot.content);
     const content = {
       contract: 'techzone.pack-manifest',
       contractVersion: '1.0.0',
@@ -796,7 +856,10 @@ export class PackManagerService {
           include: { snapshot: true, manifest: true },
         });
         if (!version) throw new NotFoundException('PACK_VERSION_NOT_FOUND');
-        if (version.status === 'PUBLISHED') return version;
+        if (version.status === 'PUBLISHED') {
+          this.assertPublicationIntegrity(version, actor, true);
+          return version;
+        }
         if (
           version.status !== 'READY' ||
           version.validationStatus !== 'VALID' ||
@@ -807,8 +870,7 @@ export class PackManagerService {
           !version.manifestHash
         )
           throw new ConflictException('PACK_VERSION_PUBLICATION_BLOCKED');
-        if (hash(version.snapshot.content) !== version.snapshotHash || version.manifest.manifestHash !== version.manifestHash || hash(version.manifest.content) !== version.manifestHash)
-          throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
+        this.assertPublicationIntegrity(version, actor);
         const publicationIssues: Array<{ code: string; path: string; severity: string; message: string }> = [];
         const currentDefinition = await this.definitionWithUi(await this.version(id, actor, true), actor, publicationIssues);
         if (publicationIssues.length) throw new ConflictException('PACK_VALIDATION_OUTDATED');
@@ -898,13 +960,54 @@ export class PackManagerService {
 
   /** Contract boundary: Runtime consumes this publication, never PM authoring tables. */
   async publishedManifest(code: string, versionNumber: string, actor: Actor) {
-    const item = await this.db.packManifest.findFirst({ where: { tenantId: this.tenant(actor), status: 'PUBLISHED', packVersion: { versionNumber, status: 'PUBLISHED', pack: { code, archivedAt: null } } } });
+    const item = await this.db.packManifest.findFirst({
+      where: { tenantId: this.tenant(actor), status: 'PUBLISHED', packVersion: { versionNumber, status: 'PUBLISHED', pack: { code, archivedAt: null } } },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
+    });
     if (!item) throw new NotFoundException('PUBLISHED_PACK_MANIFEST_NOT_FOUND');
     const content = item.content as any;
     if (item.contractVersion !== '1.0.0' || content.contract !== 'techzone.pack-manifest' || content.tenantId !== actor.tenantId) throw new ConflictException('PACK_CONTRACT_INCOMPATIBLE');
-    if (hash(content) !== item.manifestHash) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
+    if (
+      hash(content) !== item.manifestHash ||
+      content.snapshotHash !== item.packVersion.snapshotHash ||
+      !item.packVersion.snapshot ||
+      item.packVersion.snapshot.snapshotHash !== item.packVersion.snapshotHash ||
+      hash(item.packVersion.snapshot.content) !== item.packVersion.snapshotHash
+    ) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
     publicJson(content);
     return { id: item.id, packVersionId: item.packVersionId, hash: item.manifestHash, definition: content.definition };
+  }
+
+  private assertPublicationIntegrity(
+    version: {
+      tenantId: string;
+      snapshotHash: string | null;
+      manifestHash: string | null;
+      snapshot: { snapshotHash: string; content: Prisma.JsonValue } | null;
+      manifest: { manifestHash: string; content: Prisma.JsonValue; status: string } | null;
+    },
+    actor: Actor,
+    requirePublishedManifest = false,
+  ): void {
+    const manifestContent = version.manifest?.content as any;
+    if (
+      !version.snapshot ||
+      !version.manifest ||
+      !version.snapshotHash ||
+      !version.manifestHash ||
+      version.tenantId !== this.tenant(actor) ||
+      version.snapshot.snapshotHash !== version.snapshotHash ||
+      hash(version.snapshot.content) !== version.snapshotHash ||
+      version.manifest.manifestHash !== version.manifestHash ||
+      hash(version.manifest.content) !== version.manifestHash ||
+      manifestContent?.contract !== 'techzone.pack-manifest' ||
+      manifestContent?.contractVersion !== '1.0.0' ||
+      manifestContent?.snapshotHash !== version.snapshotHash ||
+      manifestContent?.tenantId !== this.tenant(actor) ||
+      (requirePublishedManifest && version.manifest.status !== 'PUBLISHED')
+    ) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
+    publicJson(version.snapshot.content);
+    publicJson(version.manifest.content);
   }
 
   async updateResource(kind: string, id: string, input: Input, actor: Actor) {
@@ -939,7 +1042,8 @@ export class PackManagerService {
 
   async cloneVersion(id: string, input: Input, actor: Actor) {
     const source: any = await this.version(id, actor, true);
-    const target = await this.createVersion(source.packId, { ...input, sourceVersionId: id, applicationVersionId: input.applicationVersionId ?? source.applicationVersionId }, actor);
+    const applicationVersionId = this.text(input, 'applicationVersionId', true)!;
+    const target = await this.createVersion(source.packId, { ...input, sourceVersionId: id, applicationVersionId }, actor);
     const ids = new Map<string, string>();
     for (const m of source.modules.filter((m: any) => !m.archivedAt)) {
       const copy = await this.addModule(target.id, m, actor); ids.set(m.id, copy.id);
@@ -971,8 +1075,19 @@ export class PackManagerService {
     await this.version(id, actor);
     const item = await this.db.packManifest.findFirst({
       where: { tenantId: this.tenant(actor), packVersionId: id },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
     });
     if (!item) throw new NotFoundException('PACK_MANIFEST_NOT_FOUND');
+    if (
+      hash(item.content) !== item.manifestHash ||
+      (item.content as any)?.contract !== 'techzone.pack-manifest' ||
+      (item.content as any)?.tenantId !== this.tenant(actor) ||
+      item.content && typeof item.content === 'object' && (item.content as any).snapshotHash !== item.packVersion.snapshotHash ||
+      !item.packVersion.snapshot ||
+      item.packVersion.snapshot.snapshotHash !== item.packVersion.snapshotHash ||
+      hash(item.packVersion.snapshot.content) !== item.packVersion.snapshotHash
+    ) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
+    publicJson(item.content);
     return item;
   }
 }
