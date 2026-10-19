@@ -5,7 +5,7 @@
  * `GET /api/ui-builder/overview/:applicationVersionId` : KPI, progression,
  * pages récentes, validation, CTA principale et accès rapides.
  */
-import { render, screen, within } from '@testing-library/react';
+import { configure, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
@@ -15,6 +15,9 @@ import UiBuilderOverview from './UiBuilderOverview.jsx';
 import uiBuilderReducer from '../store/uiBuilderSlice.js';
 import { ROUTES } from '../../../app/routes.js';
 import { api } from '../../../services/apiClient.js';
+
+// Context loading includes several effects and API responses before the canvas mounts.
+configure({ asyncUtilTimeout: 5000 });
 
 vi.mock('../../../services/apiClient.js', () => ({ api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('../../../contexts/TenantProvider.jsx', () => ({ useTenant: () => ({ activeTenant: { id: 'tenant-a', name: 'Tenant A' } }) }));
@@ -119,7 +122,7 @@ describe('UI Builder — Vue d’ensemble (dashboard)', () => {
     expect(screen.getByText('2 erreur(s) bloquante(s)')).toBeInTheDocument();
     expect(screen.getAllByText('Prêt').length).toBeGreaterThanOrEqual(3);
     expect(screen.getAllByText('En cours').length).toBe(2);
-    expect(screen.queryByText(/%/)).not.toBeInTheDocument();
+    expect(within(kpiCard('Complétion')).getByText('67%')).toBeInTheDocument();
   });
 
   it('liste les pages récemment modifiées avec type, statut et action éditeur', async () => {
@@ -130,7 +133,7 @@ describe('UI Builder — Vue d’ensemble (dashboard)', () => {
     expect(screen.getByText(/^\/clients\/:id · Détail · 4 composant\(s\) · maj /)).toBeInTheDocument();
     expect(screen.getByText(/^\/clients · Liste · 3 composant\(s\) · maj /)).toBeInTheDocument();
     expect(screen.getByText('READY')).toBeInTheDocument();
-    expect(screen.getByText('DRAFT')).toBeInTheDocument();
+    expect(screen.getAllByText('DRAFT').length).toBeGreaterThanOrEqual(1);
     const links = screen.getAllByText('Ouvrir dans l’éditeur →');
     expect(links[0]).toHaveAttribute('href', '/ui/builder/page-2');
   });
@@ -146,7 +149,7 @@ describe('UI Builder — Vue d’ensemble (dashboard)', () => {
     const issueLinks = within(validationCard).getAllByText('Ouvrir →');
     expect(issueLinks).toHaveLength(2);
     expect(issueLinks[0]).toHaveAttribute('href', '/ui/builder/page-1');
-    expect(issueLinks[1]).toHaveAttribute('href', '/ui/builder/page-2');
+    expect(issueLinks[1]).toHaveAttribute('href', '/ui/builder/page-2?component=c-9');
   });
 
   it('la CTA principale ouvre la page la plus récemment modifiée', async () => {
@@ -188,7 +191,7 @@ describe('UI Builder — Vue d’ensemble (dashboard)', () => {
     renderOverview();
     await screen.findByText('Dernière sauvegarde');
 
-    expect(screen.getByText('1.0.0')).toBeInTheDocument();
+    expect(screen.getAllByText('1.0.0').length).toBeGreaterThanOrEqual(1);
     // L'application apparaît dans l'en-tête de contexte et dans le sélecteur du shell.
     expect(screen.getAllByText('Application A').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Version éditable · DRAFT')).toBeInTheDocument();

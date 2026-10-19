@@ -8,8 +8,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import * as uiBuilderApi from '../services/uiBuilderService.js';
-import { createDefaultTree, createNode } from '../model/uiDefinition.js';
-import { defaultProps, getComponentDefinition, isKnownComponent } from '../registry/componentRegistry.js';
+import { createDefaultTree, createNode, DEVICE_KINDS } from '../model/uiDefinition.js';
+import { canAcceptChildren, canContainComponent, defaultProps, getComponentDefinition, isKnownComponent } from '../registry/componentRegistry.js';
 
 const MAX_HISTORY = 50;
 
@@ -27,11 +27,13 @@ export const submitReorder = createAsyncThunk('uiBuilder/submitReorder', async (
 export const submitTheme = createAsyncThunk('uiBuilder/submitTheme', async ({ applicationVersionId, tokens }) => uiBuilderApi.saveTheme(applicationVersionId, tokens));
 
 /** Sauvegarde de la page courante (composants + settings). */
-export const saveCurrentPage = createAsyncThunk('uiBuilder/saveCurrentPage', async (_, { getState }) => {
+export const saveCurrentPage = createAsyncThunk('uiBuilder/saveCurrentPage', async (_, { getState, rejectWithValue }) => {
   const state = getState().uiBuilder;
   const page = state.pages.find((p) => p.id === state.selectedPageId);
   if (!page) throw new Error('Aucune page sélectionnée');
-  return uiBuilderApi.updatePage(page.id, {
+  try {
+  return await uiBuilderApi.updatePage(page.id, {
+    expectedUpdatedAt: page.updatedAt,
     key: draftKey(page),
     route: page.route,
     title: page.title,
@@ -44,6 +46,18 @@ export const saveCurrentPage = createAsyncThunk('uiBuilder/saveCurrentPage', asy
     components: state.tree,
     metadata: { ...(page.metadata || {}), icon: page.icon ?? null },
   });
+  } catch (error) {
+    const code = error.normalized?.code || error.response?.data?.code;
+    if (code === 'UI_SAVE_CONFLICT') {
+      let serverPage = null;
+      try { serverPage = (await uiBuilderApi.listPages(state.applicationVersionId)).find((candidate) => candidate.id === page.id) || null; } catch { /* local edits remain available when reload fails */ }
+      return rejectWithValue({ code, message: 'Conflit de sauvegarde : rechargez la version serveur.', serverPage });
+    }
+    throw error;
+  }
+}, {
+  // Serialize writes so an older request cannot overwrite a newer edit.
+  condition: (_, { getState }) => !getState().uiBuilder.pendingSave && !getState().uiBuilder.saveConflict,
 });
 
 function draftKey(page) {
@@ -71,6 +85,9 @@ function collectDescendants(nodes, nodeId, accumulator = []) {
 
 const initialState = {
   applicationVersionId: null,
+  tenantId: null,
+  requests: {},
+  pendingSave: null,
   overview: null,
   businessContext: { entities: [] },
   pages: [],
@@ -83,6 +100,7 @@ const initialState = {
   zoom: 1,
   saveState: 'CLEAN',
   saveError: null,
+  saveConflict: null,
   validation: null,
   validationStatus: 'IDLE',
   themeStatus: 'IDLE',
@@ -96,30 +114,36 @@ const uiBuilderSlice = createSlice({
   initialState,
   reducers: {
     setContext(state, action) {
-      const { applicationVersionId } = action.payload;
-      if (state.applicationVersionId !== applicationVersionId) {
-        state.applicationVersionId = applicationVersionId;
-        state.overview = null;
-        state.pages = [];
-        state.selectedPageId = null;
-        state.selectedComponentId = null;
-        state.tree = createDefaultTree();
-        state.saveState = 'CLEAN';
-        state.validation = null;
-        state.undoStack = [];
-        state.redoStack = [];
+      const { applicationVersionId, tenantId = null } = action.payload;
+      if (state.applicationVersionId !== applicationVersionId || state.tenantId !== tenantId) {
+        Object.assign(state, initialState, { applicationVersionId, tenantId });
       }
     },
     selectPage(state, action) {
       const page = state.pages.find((p) => p.id === action.payload);
       state.selectedPageId = page ? page.id : null;
-      state.selectedComponentId = page ? state.tree.root : null;
+      state.selectedComponentId = page ? (page.components?.root || 'root') : null;
       const tree = page?.components && page.components.root ? page.components : createDefaultTree();
       state.tree = tree;
       state.saveState = 'CLEAN';
+      state.saveConflict = null;
       state.saveError = null;
       state.undoStack = [];
       state.redoStack = [];
+    },
+    reloadConflictingPage(state) {
+      const serverPage = state.saveConflict?.serverPage;
+      if (!serverPage || serverPage.id !== state.selectedPageId) return;
+      const index = state.pages.findIndex((page) => page.id === serverPage.id);
+      if (index === -1) return;
+      state.pages[index] = serverPage;
+      state.tree = serverPage.components || createDefaultTree();
+      state.selectedComponentId = state.tree.root;
+      state.undoStack = [];
+      state.redoStack = [];
+      state.saveConflict = null;
+      state.saveError = null;
+      state.saveState = 'CLEAN';
     },
     selectComponent(state, action) {
       state.selectedComponentId = action.payload;
@@ -135,20 +159,22 @@ const uiBuilderSlice = createSlice({
     /* ----- Opérations canvas (undoables) ----- */
 
     addComponent(state, action) {
-      const { type, parentId } = action.payload;
+      const { type, parentId, index } = action.payload;
       if (!isKnownComponent(type)) return;
       // Le composant est ajouté dans la sélection si elle accepte des enfants,
       // sinon à la racine (comportement « ajouter à la sélection »).
       const selected = state.selectedComponentId ? state.tree.nodes[state.selectedComponentId] : null;
-      const selectedDef = selected ? getComponentDefinition(selected.type) : null;
-      const selectedAcceptsChildren = selected && (selectedDef?.allowedChildren === '*' || (selectedDef?.allowedChildren?.length || 0) > 0);
-      const parent = parentId || (selectedAcceptsChildren ? selected.id : state.tree.root);
-      if (!state.tree.nodes[parent]) return;
+      const selectedAcceptsComponent = selected && canContainComponent(selected.type, type);
+      const parent = parentId || (selectedAcceptsComponent ? selected.id : state.tree.root);
+      if (!state.tree.nodes[parent] || !canContainComponent(state.tree.nodes[parent].type, type)) return;
       const before = state.tree;
       const node = createNode(type, defaultProps(type));
       state.tree = withTree(state, (tree, nodes) => {
         nodes[node.id] = node;
-        nodes[parent] = { ...nodes[parent], children: [...(nodes[parent].children || []), node.id] };
+        const children = [...(nodes[parent].children || [])];
+        const at = typeof index === 'number' ? Math.max(0, Math.min(index, children.length)) : children.length;
+        children.splice(at, 0, node.id);
+        nodes[parent] = { ...nodes[parent], children };
       });
       state.selectedComponentId = node.id;
       pushHistory(state, { type: 'ADD_COMPONENT', doState: before });
@@ -161,7 +187,9 @@ const uiBuilderSlice = createSlice({
       if (!entity || !Array.isArray(fields)) return;
       const before = state.tree;
       const parentId = state.selectedComponentId && state.tree.nodes[state.selectedComponentId]
+        && canContainComponent(state.tree.nodes[state.selectedComponentId].type, 'Form')
         ? state.selectedComponentId : state.tree.root;
+      if (!canContainComponent(state.tree.nodes[parentId]?.type, 'Form')) return;
       const form = createNode('Form', { ...defaultProps('Form'), title: `Ajouter ${entity}` });
       const nodes = { ...state.tree.nodes, [form.id]: form };
       const parent = nodes[parentId];
@@ -185,18 +213,22 @@ const uiBuilderSlice = createSlice({
     moveComponent(state, action) {
       const { nodeId, newParentId, index } = action.payload;
       const nodes = state.tree.nodes;
-      if (!nodes[nodeId] || !nodes[newParentId]) return;
-      if (nodeId === newParentId) return;
+      if (!nodes[nodeId] || !nodes[newParentId] || nodeId === state.tree.root || nodeId === newParentId) return;
+      if (!canContainComponent(nodes[newParentId].type, nodes[nodeId].type)) return;
       // anti-cycle : le parent ne peut pas être un descendant du noeud déplacé
       if (collectDescendants(nodes, nodeId).includes(newParentId)) return;
       const before = state.tree;
       const oldParentId = Object.keys(nodes).find((id) => (nodes[id].children || []).includes(nodeId));
       state.tree = withTree(state, (tree, nextNodes) => {
+        const oldSiblings = [...(nextNodes[oldParentId]?.children || [])];
+        const oldIndex = oldSiblings.indexOf(nodeId);
         if (oldParentId) {
-          nextNodes[oldParentId] = { ...nextNodes[oldParentId], children: (nextNodes[oldParentId].children || []).filter((id) => id !== nodeId) };
+          nextNodes[oldParentId] = { ...nextNodes[oldParentId], children: oldSiblings.filter((id) => id !== nodeId) };
         }
         const siblings = [...(nextNodes[newParentId].children || [])];
-        const at = typeof index === 'number' ? Math.max(0, Math.min(index, siblings.length)) : siblings.length;
+        const requestedIndex = typeof index === 'number' ? index : siblings.length;
+        const adjustedIndex = oldParentId === newParentId && oldIndex < requestedIndex ? requestedIndex - 1 : requestedIndex;
+        const at = Math.max(0, Math.min(adjustedIndex, siblings.length));
         siblings.splice(at, 0, nodeId);
         nextNodes[newParentId] = { ...nextNodes[newParentId], children: siblings };
       });
@@ -213,6 +245,20 @@ const uiBuilderSlice = createSlice({
         nodes[nodeId] = { ...nodes[nodeId], props: { ...nodes[nodeId].props, ...props } };
       });
       pushHistory(state, { type: 'UPDATE_PROPS', doState: before });
+      state.saveState = 'DIRTY';
+      state.redoStack = [];
+    },
+
+    updateComponentResponsive(state, action) {
+      const { nodeId, device, patch } = action.payload;
+      if (!state.tree.nodes[nodeId] || !DEVICE_KINDS.includes(device) || !patch || typeof patch !== 'object') return;
+      const before = state.tree;
+      state.tree = withTree(state, (tree, nodes) => {
+        const responsive = { ...(nodes[nodeId].responsive || {}) };
+        responsive[device] = { ...(responsive[device] || {}), ...patch };
+        nodes[nodeId] = { ...nodes[nodeId], responsive };
+      });
+      pushHistory(state, { type: 'UPDATE_RESPONSIVE', doState: before });
       state.saveState = 'DIRTY';
       state.redoStack = [];
     },
@@ -325,12 +371,17 @@ const uiBuilderSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchOverview.pending, (state) => { state.overviewStatus = 'LOADING'; })
-      .addCase(fetchOverview.fulfilled, (state, action) => { state.overviewStatus = 'LOADED'; state.overview = action.payload; })
-      .addCase(fetchOverview.rejected, (state, action) => { state.overviewStatus = 'ERROR'; state.lastActionError = action.error?.message || 'Erreur'; })
+      .addCase(fetchOverview.pending, (state, action) => { state.requests.fetchOverview = action.meta.requestId; state.overviewStatus = 'LOADING'; })
+      .addCase(fetchOverview.fulfilled, (state, action) => {
+        if (state.requests.fetchOverview !== action.meta.requestId) return;
+        state.overviewStatus = 'LOADED'; state.overview = action.payload; })
+      .addCase(fetchOverview.rejected, (state, action) => {
+        if (state.requests.fetchOverview !== action.meta.requestId) return;
+        state.overviewStatus = 'ERROR'; state.lastActionError = action.error?.message || 'Erreur'; })
 
-      .addCase(fetchPages.pending, (state) => { state.pagesStatus = 'LOADING'; })
+      .addCase(fetchPages.pending, (state, action) => { state.requests.fetchPages = action.meta.requestId; state.pagesStatus = 'LOADING'; })
       .addCase(fetchPages.fulfilled, (state, action) => {
+        if (state.requests.fetchPages !== action.meta.requestId) return;
         state.pagesStatus = 'LOADED';
         state.pages = action.payload;
         if (state.selectedPageId && !action.payload.some((p) => p.id === state.selectedPageId)) {
@@ -338,19 +389,37 @@ const uiBuilderSlice = createSlice({
           state.tree = createDefaultTree();
         }
       })
-      .addCase(fetchPages.rejected, (state) => { state.pagesStatus = 'ERROR'; })
+      .addCase(fetchPages.rejected, (state, action) => {
+        if (state.requests.fetchPages !== action.meta.requestId) return;
+        state.pagesStatus = 'ERROR'; })
 
-      .addCase(fetchBusinessContext.fulfilled, (state, action) => { state.businessContext = action.payload; })
-      .addCase(fetchValidation.pending, (state) => { state.validationStatus = 'LOADING'; })
-      .addCase(fetchValidation.fulfilled, (state, action) => { state.validationStatus = 'LOADED'; state.validation = action.payload; })
-      .addCase(fetchValidation.rejected, (state) => { state.validationStatus = 'ERROR'; })
+      .addCase(fetchBusinessContext.pending, (state, action) => { state.requests.fetchBusinessContext = action.meta.requestId; })
+      .addCase(fetchBusinessContext.fulfilled, (state, action) => {
+        if (state.requests.fetchBusinessContext !== action.meta.requestId) return;
+        state.businessContext = action.payload; })
+      .addCase(fetchValidation.pending, (state, action) => { state.requests.fetchValidation = action.meta.requestId; state.validationStatus = 'LOADING'; })
+      .addCase(fetchValidation.fulfilled, (state, action) => {
+        if (state.requests.fetchValidation !== action.meta.requestId) return;
+        state.validationStatus = 'LOADED'; state.validation = action.payload; })
+      .addCase(fetchValidation.rejected, (state, action) => {
+        if (state.requests.fetchValidation !== action.meta.requestId) return;
+        state.validationStatus = 'ERROR'; })
 
+      .addCase(submitCreatePage.pending, (state, action) => { state.requests[action.meta.requestId] = true; })
       .addCase(submitCreatePage.fulfilled, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
         state.pages.push(action.payload);
         state.lastActionError = null;
       })
-      .addCase(submitCreatePage.rejected, (state, action) => { state.lastActionError = action.error?.message || 'Création impossible'; })
+      .addCase(submitCreatePage.rejected, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
+        state.lastActionError = action.error?.message || 'Création impossible'; })
+      .addCase(submitDeletePage.pending, (state, action) => { state.requests[action.meta.requestId] = true; })
       .addCase(submitDeletePage.fulfilled, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
         state.pages = state.pages.filter((p) => p.id !== action.meta.arg);
         if (state.selectedPageId === action.meta.arg) {
           state.selectedPageId = null;
@@ -358,21 +427,43 @@ const uiBuilderSlice = createSlice({
         }
       })
 
-      .addCase(saveCurrentPage.pending, (state) => { state.saveState = 'SAVING'; state.saveError = null; })
-      .addCase(saveCurrentPage.fulfilled, (state, action) => {
-        state.saveState = 'SAVED';
-        const index = state.pages.findIndex((p) => p.id === action.meta.arg?.id || p.id === action.payload?.id);
-        if (action.payload && index !== -1) {
-          state.pages[index] = { ...state.pages[index], ...action.payload, components: state.tree };
-        }
-        state.undoStack = [];
-        state.redoStack = [];
+      .addCase(saveCurrentPage.pending, (state, action) => {
+        state.pendingSave = { requestId: action.meta.requestId, pageId: state.selectedPageId, tree: state.tree, page: state.pages.find((p) => p.id === state.selectedPageId) };
+        state.saveState = 'SAVING';
+        state.saveError = null;
       })
-      .addCase(saveCurrentPage.rejected, (state, action) => { state.saveState = 'ERROR'; state.saveError = action.error?.message || 'Erreur d’enregistrement'; })
+      .addCase(saveCurrentPage.fulfilled, (state, action) => {
+        const saved = state.pendingSave;
+        if (!saved || saved.requestId !== action.meta.requestId) return;
+        const index = state.pages.findIndex((p) => p.id === saved.pageId);
+        const pageChanged = index !== -1 && JSON.stringify(state.pages[index]) !== JSON.stringify(saved.page);
+        if (action.payload && index !== -1) {
+          state.pages[index] = { ...state.pages[index], ...(pageChanged ? {} : action.payload), components: saved.tree, ...(action.payload.updatedAt ? { updatedAt: action.payload.updatedAt } : {}) };
+        }
+        if (state.selectedPageId === saved.pageId) {
+          state.saveState = !pageChanged && JSON.stringify(state.tree) === JSON.stringify(saved.tree) ? 'SAVED' : 'DIRTY';
+        }
+        state.pendingSave = null;
+      })
+      .addCase(saveCurrentPage.rejected, (state, action) => {
+        if (state.pendingSave?.requestId !== action.meta.requestId) return;
+        if (state.selectedPageId === state.pendingSave.pageId) {
+          state.saveState = action.payload?.code === 'UI_SAVE_CONFLICT' ? 'CONFLICT' : 'ERROR';
+          state.saveConflict = action.payload?.code === 'UI_SAVE_CONFLICT' ? action.payload : null;
+          state.saveError = action.payload?.message || action.error?.message || 'Erreur d’enregistrement';
+        }
+        state.pendingSave = null;
+      })
 
-      .addCase(submitTheme.pending, (state) => { state.themeStatus = 'SAVING'; })
-      .addCase(submitTheme.fulfilled, (state) => { state.themeStatus = 'SAVED'; })
-      .addCase(submitTheme.rejected, (state) => { state.themeStatus = 'ERROR'; });
+      .addCase(submitTheme.pending, (state, action) => { state.requests[action.meta.requestId] = true; state.themeStatus = 'SAVING'; })
+      .addCase(submitTheme.fulfilled, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
+        state.themeStatus = 'SAVED'; })
+      .addCase(submitTheme.rejected, (state, action) => {
+        if (!state.requests[action.meta.requestId]) return;
+        delete state.requests[action.meta.requestId];
+        state.themeStatus = 'ERROR'; });
   },
 });
 
@@ -399,6 +490,7 @@ export const {
   generateFormFromEntity,
   moveComponent,
   updateComponentProps,
+  updateComponentResponsive,
   updateComponentBinding,
   updateComponentActions,
   deleteComponent,
@@ -407,6 +499,7 @@ export const {
   undo,
   redo,
   clearActionError,
+  reloadConflictingPage,
 } = uiBuilderSlice.actions;
 
 export default uiBuilderSlice.reducer;

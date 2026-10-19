@@ -2,10 +2,11 @@
  * Tests UI Builder — slice Redux (opérations canvas, undo/redo, dirty states).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { configureStore } from '@reduxjs/toolkit';
 
 import reducer, {
-  setContext, selectPage, selectComponent, addComponent, moveComponent,
-  updateComponentProps, updateComponentBinding, updateComponentActions, generateFormFromEntity,
+  fetchPages, fetchBusinessContext, saveCurrentPage, submitCreatePage, submitDeletePage, submitTheme, setContext, selectPage, selectComponent, addComponent, moveComponent,
+  updateComponentProps, updateComponentResponsive, updateComponentBinding, updateComponentActions, generateFormFromEntity,
   deleteComponent, updatePageSettings, undo, redo,
 } from './uiBuilderSlice.js';
 import { createDefaultTree } from '../model/uiDefinition.js';
@@ -68,6 +69,45 @@ describe('uiBuilderSlice — opérations canvas', () => {
 
     state = reducer(state, moveComponent({ nodeId: cardId, newParentId: sectionId }));
     expect(JSON.stringify(state.tree)).toBe(before);
+  });
+
+  it('moveComponent réordonne les frères et refuse les conteneurs incompatibles', () => {
+    state = reducer(state, addComponent({ type: 'Heading' }));
+    const headingId = state.selectedComponentId;
+    state = reducer(state, addComponent({ type: 'Text' }));
+    const textId = state.selectedComponentId;
+    state = reducer(state, addComponent({ type: 'Form' }));
+    const formId = state.selectedComponentId;
+
+    state = reducer(state, moveComponent({ nodeId: headingId, newParentId: 'root', index: 2 }));
+    expect(state.tree.nodes.root.children).toEqual([textId, headingId, formId]);
+
+    const before = JSON.stringify(state.tree);
+    state = reducer(state, moveComponent({ nodeId: headingId, newParentId: formId }));
+    expect(JSON.stringify(state.tree)).toBe(before);
+  });
+
+  it('addComponent refuse les types interdits par le registre du conteneur', () => {
+    state = reducer(state, addComponent({ type: 'Form' }));
+    const formId = state.selectedComponentId;
+    const before = JSON.stringify(state.tree);
+
+    state = reducer(state, addComponent({ type: 'Heading', parentId: formId }));
+
+    expect(JSON.stringify(state.tree)).toBe(before);
+  });
+
+  it('enregistre les overrides responsifs sur le nœud et les restaure avec undo', () => {
+    state = reducer(state, addComponent({ type: 'Heading' }));
+    const headingId = state.selectedComponentId;
+
+    state = reducer(state, updateComponentResponsive({ nodeId: headingId, device: 'MOBILE', patch: { visible: 'hidden' } }));
+
+    expect(state.tree.nodes[headingId].responsive).toEqual({ MOBILE: { visible: 'hidden' } });
+    expect(state.tree.nodes[headingId].props.MOBILE).toBeUndefined();
+    expect(state.saveState).toBe('DIRTY');
+    state = reducer(state, undo());
+    expect(state.tree.nodes[headingId].responsive).toEqual({});
   });
 
   it('updateComponentProps / Binding / Actions marquent DIRTY et empilent l’undo', () => {
@@ -180,3 +220,117 @@ describe('uiBuilderSlice — selectPage', () => {
 function reducerHelperPage() {
   return (dispatchState) => dispatchState;
 }
+
+
+describe('UI Builder — isolation et sauvegarde asynchrone', () => {
+  const page = (id, root = 'root') => ({ id, components: { root, nodes: { [root]: { id: root, type: 'Container', props: {}, children: [] } } } });
+  function loaded() {
+    let state = reducer(initial(), setContext({ applicationVersionId: 'v1', tenantId: 'a' }));
+    state = reducer(state, fetchPages.pending('pages', 'v1'));
+    state = reducer(state, fetchPages.fulfilled([page('p1'), page('p2', 'other-root')], 'pages', 'v1'));
+    return reducer(state, selectPage('p1'));
+  }
+  it('ignore les réponses du contexte précédent', () => {
+    let state = loaded();
+    state = reducer(state, fetchBusinessContext.pending('business', 'v1'));
+    state = reducer(state, setContext({ applicationVersionId: 'v2', tenantId: 'b' }));
+    state = reducer(state, fetchPages.fulfilled([page('foreign')], 'pages', 'v1'));
+    state = reducer(state, fetchBusinessContext.fulfilled({ entities: [{ code: 'foreign' }] }, 'business', 'v1'));
+    expect(state.pages).toEqual([]);
+    expect(state.businessContext.entities).toEqual([]);
+    expect(state.pagesStatus).toBe('IDLE');
+  });
+  it('ignore une réponse dépassée dans la même version', () => {
+    let state = loaded();
+    state = reducer(state, fetchPages.pending('old', 'v1'));
+    state = reducer(state, fetchPages.pending('new', 'v1'));
+    state = reducer(state, fetchPages.fulfilled([page('current')], 'new', 'v1'));
+    state = reducer(state, fetchPages.fulfilled([page('obsolete')], 'old', 'v1'));
+    expect(state.pages[0].id).toBe('current');
+  });
+  it('conserve les modifications effectuées pendant une sauvegarde', () => {
+    let state = loaded();
+    const sentTree = state.tree;
+    state = reducer(state, saveCurrentPage.pending('save'));
+    state = reducer(state, addComponent({ type: 'Text' }));
+    state = reducer(state, saveCurrentPage.fulfilled(page('p1'), 'save'));
+    expect(state.saveState).toBe('DIRTY');
+    expect(state.tree.nodes.root.children).toHaveLength(1);
+    expect(state.pages[0].components).toEqual(sentTree);
+    expect(state.undoStack).toHaveLength(1);
+  });
+  it('ne copie pas le canvas de la page suivante dans la page sauvegardée', () => {
+    let state = loaded();
+    const sentTree = state.tree;
+    state = reducer(state, saveCurrentPage.pending('save'));
+    state = reducer(state, selectPage('p2'));
+    state = reducer(state, saveCurrentPage.fulfilled(page('p1'), 'save'));
+    expect(state.pages[0].components).toEqual(sentTree);
+    expect(state.tree.root).toBe('other-root');
+    expect(state.selectedComponentId).toBe('other-root');
+    expect(state.saveState).toBe('CLEAN');
+  });
+  it('refuse de lancer une deuxième sauvegarde pendant la première', async () => {
+    const state = reducer(loaded(), saveCurrentPage.pending('save'));
+    const store = configureStore({ reducer: { uiBuilder: reducer }, preloadedState: { uiBuilder: state } });
+    const result = await store.dispatch(saveCurrentPage());
+    expect(result.meta.condition).toBe(true);
+    expect(store.getState().uiBuilder.pendingSave.requestId).toBe('save');
+  });
+  it('préserve les paramètres de page modifiés pendant la sauvegarde', () => {
+    let state = loaded();
+    state = reducer(state, saveCurrentPage.pending('save'));
+    state = reducer(state, updatePageSettings({ pageId: 'p1', patch: { title: 'Titre récent' } }));
+    state = reducer(state, saveCurrentPage.fulfilled({ ...page('p1'), title: 'Ancien titre' }, 'save'));
+    expect(state.pages[0].title).toBe('Titre récent');
+    expect(state.saveState).toBe('DIRTY');
+  });
+  it('purge aussi le contexte quand seul le tenant change', () => {
+    let state = loaded();
+    state = reducer(state, setContext({ applicationVersionId: 'v1', tenantId: 'b' }));
+    expect(state.pages).toEqual([]);
+    expect(state.tenantId).toBe('b');
+  });
+  it('ignore les mutations terminées après un changement de contexte', () => {
+    let state = loaded();
+    state = reducer(state, submitCreatePage.pending('create', {}));
+    state = reducer(state, submitDeletePage.pending('delete', 'p1'));
+    state = reducer(state, submitTheme.pending('theme', {}));
+    state = reducer(state, setContext({ applicationVersionId: 'v2', tenantId: 'b' }));
+    state = reducer(state, submitCreatePage.fulfilled(page('foreign'), 'create', {}));
+    state = reducer(state, submitDeletePage.fulfilled({}, 'delete', 'p1'));
+    state = reducer(state, submitTheme.fulfilled({}, 'theme', {}));
+    expect(state.pages).toEqual([]);
+    expect(state.themeStatus).toBe('IDLE');
+  });
+  it('ignore une sauvegarde terminée après un changement de contexte', () => {
+    let state = loaded();
+    state = reducer(state, saveCurrentPage.pending('save'));
+    state = reducer(state, setContext({ applicationVersionId: 'v2' }));
+    state = reducer(state, saveCurrentPage.fulfilled(page('p1'), 'save'));
+    expect(state.pages).toEqual([]);
+    expect(state.saveState).toBe('CLEAN');
+  });
+});
+
+describe('optimistic save conflict recovery', () => {
+  it('keeps local edits and blocks writes until server reload is explicit', async () => {
+    let state = initial();
+    state = reducer(state, fetchPages.pending('pages', 'v1'));
+    const serverPage = { id: 'p', key: 'page', updatedAt: '2026-10-16T10:00:00.000Z', components: createDefaultTree() };
+    state = reducer(state, fetchPages.fulfilled([serverPage], 'pages', 'v1'));
+    state = reducer(state, selectPage('p'));
+    state = reducer(state, addComponent({ type: 'Text' }));
+    const local = state.tree;
+    state = reducer(state, saveCurrentPage.pending('save'));
+    state = reducer(state, saveCurrentPage.rejected(null, 'save', undefined, { code: 'UI_SAVE_CONFLICT', serverPage, message: 'Conflit' }));
+    expect(state.saveState).toBe('CONFLICT');
+    expect(state.tree).toEqual(local);
+    const store = configureStore({ reducer: { uiBuilder: reducer }, preloadedState: { uiBuilder: state } });
+    expect((await store.dispatch(saveCurrentPage())).meta.condition).toBe(true);
+    state = reducer(state, { type: 'uiBuilder/reloadConflictingPage' });
+    expect(state.tree).toEqual(serverPage.components);
+    expect(state.saveConflict).toBeNull();
+    expect(state.saveState).toBe('CLEAN');
+  });
+});

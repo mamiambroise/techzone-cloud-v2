@@ -15,6 +15,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsISO8601,
   IsObject,
   IsOptional,
   IsString,
@@ -199,6 +200,11 @@ export class CreateUiPageDto {
 }
 
 export class UpdateUiPageDto {
+  /** Optimistic concurrency token returned as updatedAt by page reads. */
+  @IsOptional()
+  @IsISO8601({ strict: true })
+  expectedUpdatedAt?: string;
+
   @IsOptional()
   @IsString()
   @Matches(KEY_RE)
@@ -213,7 +219,7 @@ export class UpdateUiPageDto {
 
   @IsOptional()
   @IsString()
-  @Min(1)
+  @MinLength(1)
   @MaxLength(255)
   title?: string;
 

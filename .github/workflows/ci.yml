@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, Ranja]
   pull_request:
 
 jobs:
@@ -29,6 +29,10 @@ jobs:
 
       - name: Unit tests (Vitest)
         run: npm test
+        working-directory: frontend
+
+      - name: UI Builder security gate
+        run: npm run test:security:ui
         working-directory: frontend
 
       - name: Build (Vite)
@@ -77,6 +81,10 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+
+      - name: UI Builder security gate
+        run: npm run test:security:ui
+        working-directory: backend
 
       - name: IAM E2E (isolated PostgreSQL)
         run: npm run test:e2e -- --runInBand

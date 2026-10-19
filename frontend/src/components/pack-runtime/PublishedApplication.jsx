@@ -3,11 +3,16 @@ import { api } from '../../services/apiClient.js';
 import { UiRenderer } from '../../features/ui-builder/renderer/Renderer.jsx';
 
 /** Loads only the immutable published manifest. No working-UI endpoint. */
-export default function PublishedApplication({ packCode, packVersion, tenantId }) {
+export default function PublishedApplication({ packCode, packVersion, tenantId, effectiveManifest }) {
+  if (effectiveManifest?.executable !== true || effectiveManifest.status !== 'RESOLVED'
+    || effectiveManifest.scope?.tenantId !== tenantId
+    || effectiveManifest.source?.packCode !== packCode || effectiveManifest.source?.packVersion !== packVersion) {
+    return <p role="alert">Interface bloquée : une résolution Runtime exécutable est requise.</p>;
+  }
   const identity = `${tenantId}:${packCode}:${packVersion}`;
-  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} />;
+  return <PublishedWorkspace key={`${identity}:${effectiveManifest.source.manifestHash}`} packCode={packCode} packVersion={packVersion} expectedHash={effectiveManifest.source.manifestHash} />;
 }
-function PublishedWorkspace({ packCode, packVersion }) {
+function PublishedWorkspace({ packCode, packVersion, expectedHash }) {
   const [definition, setDefinition] = useState(null), [error, setError] = useState('');
   const [selection, setSelection] = useState({ key: null, recordId: null });
   useEffect(() => {
@@ -15,12 +20,19 @@ function PublishedWorkspace({ packCode, packVersion }) {
     api.get(`/runtime/manifests/${encodeURIComponent(packCode)}/${encodeURIComponent(packVersion)}`)
       .then(response => {
         const manifest = response.data;
-        const ui = manifest.definition?.ui?.definition;
-        if (!ui?.pages || !ui.businessContext || ui.applicationVersionId !== ui.businessContext.applicationVersionId) throw new Error('Published UI metadata missing');
+        if (!expectedHash || manifest.hash !== expectedHash) throw new Error('Runtime manifest changed');
+        const artifact = manifest.definition?.ui;
+        const ui = artifact?.definition;
+        if (!Array.isArray(ui?.pages) || !Array.isArray(ui.navigation?.items) || !ui.businessContext
+          || !['1.0', '1.1'].includes(ui.schemaVersion)
+          || !ui.applicationVersionId || artifact.applicationVersionId !== ui.applicationVersionId
+          || ui.applicationVersionId !== ui.businessContext.applicationVersionId
+          || ui.pages.some(page => !page || typeof page.key !== 'string' || !page.components)
+          || ui.navigation.items.some(item => !item || !ui.pages.some(page => page.key === item.pageKey))) throw new Error('Published UI metadata missing or inconsistent');
         if (active) setDefinition(ui);
       }).catch(() => active && setError('Interface publiée indisponible pour ce tenant.'));
     return () => { active = false; };
-  }, [packCode, packVersion]);
+  }, [packCode, packVersion, expectedHash]);
   if (error) return <p role="alert">{error}</p>;
   if (!definition) return <p role="status">Chargement de l’application publiée…</p>;
   const page = definition.pages.find(p => p.key === selection.key) || definition.pages[0];

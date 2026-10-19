@@ -12,6 +12,9 @@ import { ConditionsEngine } from '../conditions/conditions.engine';
 import { ActionEngine } from '../action/action.engine';
 
 export interface WorkflowDefinition {
+  /** Server-owned scope; UI references without an owner are rejected. */
+  tenantId?: string;
+  applicationVersionId?: string;
   code: string;
   nom: string;
   lifecycle: WorkflowLifecycle;

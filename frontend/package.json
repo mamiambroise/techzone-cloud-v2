@@ -10,7 +10,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:security:ui": "vitest run src/features/ui-builder src/components/pack-runtime/PublishedApplication.test.jsx --maxWorkers=2 --testTimeout=15000"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

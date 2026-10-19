@@ -13,6 +13,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { executeRuntime, getRuntimeRecord } from '../services/uiBuilderService.js';
 import { runtimeResource, serializeFields } from './runtimeBinding.js';
 import RuntimeField from './RuntimeField.jsx';
+import { rendererTreeError, safeUiHref } from './rendererSafety.js';
 import RuntimeDataTable from './RuntimeTable.jsx';
 import {
   Box, PanelTop, Square, Grid3X3, Columns3, Heading1, Type, TextCursorInput,
@@ -97,6 +98,7 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
 
 /** Rendu d'un composant selon son type (registry-driven). */
 function renderNode(node, ctx) {
+  if (node.responsive?.[ctx.device]?.visible === 'hidden') return null;
   const props = node.props || {};
   const childNodes = (node.children || []).map((childId) => ctx.nodes[childId]).filter(Boolean);
 
@@ -238,14 +240,14 @@ function renderNode(node, ctx) {
       );
 
     case 'Image': {
-      const src = typeof props.src === 'string' && /^https:\/\//.test(props.src) ? props.src : '';
+      const src = safeUiHref(props.src, true);
       return src
         ? <img src={src} alt={props.alt || ''} style={{ height: Math.min(Number(props.height) || 160, 600), width: 'auto' }} className="rounded-lg object-cover" />
         : <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-300 text-xs text-slate-400">{props.alt || 'Image indisponible'}</div>;
     }
 
     case 'Link': {
-      const href = typeof props.href === 'string' && (/^\//.test(props.href) || /^https:\/\//.test(props.href)) ? props.href : '#';
+      const href = safeUiHref(props.href) || '#';
       return <a href={href} className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">{String(ctx.resolveBinding(node, 'text', props.text) ?? props.text ?? '')}</a>;
     }
 
@@ -320,27 +322,49 @@ function describeActions(actions) {
 }
 
 function RendererNode({ node, ctx }) {
-  return renderNode(node, ctx);
+  const content = renderNode(node, ctx);
+  return ctx.decorateNode ? ctx.decorateNode(node, content) : content;
 }
 
 /**
  * Rendu racine d'une page.
  * resolveBinding(node, prop, fallback) : résolution structurée injectée.
  */
-export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate }) {
+function getViewportDevice() {
+  if (typeof window === 'undefined') return 'DESKTOP';
+  if (window.innerWidth <= 640) return 'MOBILE';
+  if (window.innerWidth <= 1024) return 'TABLET';
+  return 'DESKTOP';
+}
+
+export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate, device, decorateNode }) {
   const [dataRevision, setDataRevision] = useState(0);
+  const [viewportDevice, setViewportDevice] = useState(getViewportDevice);
+
+  useEffect(() => {
+    if (device) return undefined;
+    const updateDevice = () => setViewportDevice(getViewportDevice());
+    window.addEventListener('resize', updateDevice);
+    return () => window.removeEventListener('resize', updateDevice);
+  }, [device]);
+
+  const activeDevice = device || viewportDevice;
   const ctx = useMemo(() => ({
     nodes: tree?.nodes || {},
+    decorateNode,
     businessContext,
     recordId,
     onNavigate,
     mode,
+    device: activeDevice,
     resolveBinding: resolveBinding || ((node, prop, fallback) => node.bindings?.[prop]?.kind === 'STATIC' ? node.bindings[prop].value : fallback),
     fieldSchemas: new Map(),
     dataRevision,
     refreshData: () => setDataRevision((value) => value + 1),
-  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate]);
+  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate, activeDevice, decorateNode]);
 
+  const treeError = tree ? rendererTreeError(tree) : null;
+  if (treeError) return <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{treeError}</p>;
   const rootNode = ctx.nodes[tree?.root];
   if (!rootNode) {
     return (

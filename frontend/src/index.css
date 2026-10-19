@@ -238,3 +238,21 @@ button:not(:disabled),
     transform: none;
   }
 }
+
+/* UI Builder: scoped keyboard focus and compact responsive workspace. */
+.uib-workspace { min-width: 0; color: var(--color-text, #0f172a); }
+.uib-workspace :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-indigo, #4f46e5);
+  outline-offset: 3px;
+}
+.uib-context { background: var(--color-surface, #fff); }
+@media (max-width: 767px) {
+  .uib-context { position: static; }
+  .uib-workspace pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uib-workspace *, .uib-workspace *::before, .uib-workspace *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
