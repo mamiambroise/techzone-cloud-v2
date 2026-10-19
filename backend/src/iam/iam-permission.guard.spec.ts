@@ -4,6 +4,7 @@ import { BadRequestException, ForbiddenException, InternalServerErrorException }
 import { IamPermissionGuard } from './iam-permission.guard';
 import { TenantGuard } from './tenant.guard';
 import { TENANT_RESOURCE_KEY, TENANT_OPTIONAL_KEY } from './tenant-resource.decorator';
+import type { PrismaService } from '../prisma/prisma.service';
 
 describe('IAM guard contracts', () => {
   // `TenantResource` résout l'identifiant via Prisma sur une colonne `uuid` :
@@ -26,11 +27,11 @@ describe('IAM guard contracts', () => {
 
   it('refuses a resource tenant different from the authenticated principal', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_B }),
+      findUnique: jest.fn<() => Promise<{ tenantId: string } | null>>().mockResolvedValue({ tenantId: TENANT_B }),
     };
     const mockPrisma = {
       application: mockModel,
-    } as any;
+    } as unknown as PrismaService;
 
     const reflector = {
       getAllAndOverride: jest.fn((key) => key === TENANT_RESOURCE_KEY ? { table: 'application', idParam: 'id' } : undefined),
@@ -80,11 +81,11 @@ describe('IAM guard contracts', () => {
 
   it('allows access when resource tenant matches principal tenant', async () => {
     const mockModel = {
-      findUnique: jest.fn().mockResolvedValue({ tenantId: TENANT_A }),
+      findUnique: jest.fn<() => Promise<{ tenantId: string } | null>>().mockResolvedValue({ tenantId: TENANT_A }),
     };
     const mockPrisma = {
       application: mockModel,
-    } as any;
+    } as unknown as PrismaService;
 
     const reflector = {
       getAllAndOverride: jest.fn((key) => key === TENANT_RESOURCE_KEY ? { table: 'application', idParam: 'id' } : undefined),

@@ -1,9 +1,19 @@
+import { jest } from '@jest/globals';
 import { CockpitService } from './cockpit.service';
 import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
+import type { PrismaService } from '../../../prisma/prisma.service';
 
-describe('CockpitService (DEP-CDC-01)', () => {
-  let service: CockpitService;
-  let prisma: PrismaService;
+const principal: IamAuthContext = {
+  userId: 'cockpit-user',
+  sessionId: 'cockpit-session',
+  tenantId: 'tenant-a',
+  organizationId: null,
+  siteId: null,
+  authenticationLevel: 'PASSWORD',
+  roles: [],
+  permissions: [],
+  isSuperAdmin: false,
+};
 
 describe('CockpitService tenant isolation', () => {
   const prisma = {
@@ -14,15 +24,12 @@ describe('CockpitService tenant isolation', () => {
     deploymentHistory: { findMany: jest.fn().mockResolvedValue([]) },
     environment: { findMany: jest.fn().mockResolvedValue([]) },
   };
-  const service = new CockpitService(prisma as any);
+  const service = new CockpitService(prisma as unknown as PrismaService);
 
-    service = module.get<CockpitService>(CockpitService);
-    prisma = module.get<PrismaService>(PrismaService);
-  });
+  beforeEach(() => jest.clearAllMocks());
 
-  afterEach(async () => {
-    await prisma.$disconnect();
-  });
+  it('scopes dashboard aggregates and records to the authenticated tenant', async () => {
+    await service.getDashboard(principal);
 
     expect(prisma.release.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { tenantId: 'tenant-a' } }),

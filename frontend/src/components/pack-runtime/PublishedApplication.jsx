@@ -2,40 +2,57 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../../services/apiClient.js';
 import { UiRenderer } from '../../features/ui-builder/renderer/Renderer.jsx';
 
+function validPublishedUi(ui) {
+  return ui?.schemaVersion === '1.1'
+    && Array.isArray(ui.pages)
+    && Array.isArray(ui.navigation?.items)
+    && Boolean(ui.businessContext)
+    && ui.applicationVersionId === ui.businessContext.applicationVersionId;
+}
+
 /** Loads only the immutable published manifest. No working-UI endpoint. */
 export default function PublishedApplication({ packCode, packVersion, tenantId, resolutionId, effectiveManifest }) {
-  const identity = `${tenantId}:${packCode}:${packVersion}:${resolutionId ?? 'none'}`;
-  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} resolutionId={resolutionId} effectiveManifest={effectiveManifest} />;
+  const manifestContent = effectiveManifest?.content ?? effectiveManifest;
+  const source = manifestContent?.source;
+  const isExecutable = Boolean(resolutionId) && manifestContent?.status === 'EXECUTABLE' && manifestContent?.executable !== false;
+  if (
+    !isExecutable ||
+    manifestContent?.scope?.tenantId !== tenantId ||
+    source?.packCode !== packCode ||
+    source?.packVersion !== packVersion ||
+    !source?.manifestHash
+  ) {
+    return <p role="alert">Interface bloquée : une résolution Runtime exécutable est requise.</p>;
+  }
+  const identity = `${tenantId}:${packCode}:${packVersion}:${resolutionId}`;
+  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} expectedHash={source.manifestHash} effectiveManifest={manifestContent} />;
 }
-function PublishedWorkspace({ packCode, packVersion, resolutionId, effectiveManifest }) {
+
+function PublishedWorkspace({ packCode, packVersion, expectedHash, effectiveManifest }) {
   const [definition, setDefinition] = useState(null), [error, setError] = useState('');
   const [selection, setSelection] = useState({ key: null, recordId: null });
   useEffect(() => {
     let active = true;
-    const manifestContent = effectiveManifest?.content ?? effectiveManifest;
-    const isExecutable = Boolean(resolutionId) && manifestContent?.status === 'EXECUTABLE' && manifestContent?.executable !== false;
-    if (!resolutionId || !manifestContent || !isExecutable) {
-      setDefinition(null);
-      setError('Runtime bloqué : aucune résolution exécutable n’est active pour cette application.');
-      return () => { active = false; };
-    }
-    if (manifestContent?.ui?.definition) {
-      const ui = manifestContent.ui.definition;
-      if (ui?.pages && ui?.businessContext) {
+    if (effectiveManifest?.ui?.definition) {
+      const ui = effectiveManifest.ui.definition;
+      if (validPublishedUi(ui)) {
         setError('');
         setDefinition(ui);
         return () => { active = false; };
       }
+      setDefinition(null);
+      setError('Interface publiée indisponible pour ce tenant.');
+      return () => { active = false; };
     }
     api.get(`/runtime/manifests/${encodeURIComponent(packCode)}/${encodeURIComponent(packVersion)}`)
       .then(response => {
         const manifest = response.data;
         const ui = manifest.definition?.ui?.definition;
-        if (!ui?.pages || !ui.businessContext || ui.applicationVersionId !== ui.businessContext.applicationVersionId) throw new Error('Published UI metadata missing');
+        if (manifest.hash !== expectedHash || !validPublishedUi(ui)) throw new Error('Published UI metadata missing');
         if (active) { setError(''); setDefinition(ui); }
       }).catch(() => active && setError('Interface publiée indisponible pour ce tenant.'));
     return () => { active = false; };
-  }, [effectiveManifest, packCode, packVersion, resolutionId]);
+  }, [effectiveManifest, expectedHash, packCode, packVersion]);
   if (error) return <p role="alert">{error}</p>;
   if (!definition) return <p role="status">Chargement de l’application publiée…</p>;
   const page = definition.pages.find(p => p.key === selection.key) || definition.pages[0];

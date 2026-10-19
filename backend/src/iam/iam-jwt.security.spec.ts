@@ -157,7 +157,12 @@ describe('IamJwtGuard — binding session ↔ user', () => {
       { id: USER_ID, isAdmin: false },
     );
 
-    await expect(guard.canActivate({ ...({} as never), ...({ getHandler: () => ({}), getClass: () => ({}), switchToHttp: () => ({ getRequest: () => requestFor(token) }) } as never) }))
+    const context = {
+      getHandler: () => ({}),
+      getClass: () => ({}),
+      switchToHttp: () => ({ getRequest: () => requestFor(token) }),
+    } as unknown as import('@nestjs/common').ExecutionContext;
+    await expect(guard.canActivate(context))
       .rejects.toMatchObject({ code: 'SESSION_MISMATCH' } as Partial<IamError>);
   });
 
