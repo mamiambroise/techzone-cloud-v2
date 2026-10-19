@@ -1,89 +1,71 @@
 # Rapport des corrections autorisees - 2026-10-19
 
-## A. Synthese
+## A. Etat synchronise
 
-Execution realisee sur `mami`, sans push. Les six taches autorisees ont ete examinees dans l'ordre demande. Quatre sont corrigees et validees; deux restent a faire car PostgreSQL E2E isole ne demarre pas dans cette session Windows.
+Execution realisee sur `mami`, sans push, reset, `db push`, suppression ni changement de configuration PostgreSQL. Les commits historiques demandes ont ete verifies : `c94186e`, `1500c82`, `c33e18d`, `173b179`, `1e83c5d` et `6a80c43`.
 
-| Mesure | Resultat |
-|---|---:|
-| Taches autorisees corrigees et validees | 4 |
-| Taches autorisees bloquees | 2 |
-| Tests cibles PASS | 219 |
-| Tests Deployment PASS | 35 |
-| Tests Deployment bloques par DB | 29 |
-| Tests ignores (PostgreSQL frontend) | 2 |
-| Nouvelle anomalie enregistree, non corrigee | 1 (REG-008) |
+REG-004 et REG-007 sont maintenant valides par des executions reelles sur la base E2E isolee. Cette validation concerne l'infrastructure et les suites de test : elle ne constitue pas une certification complete du Deployment, ni une recette de production.
 
-Les comptes PASS sont les executions cibles : Cockpit (3), snapshots Pack (9), gate backend associee (146), Runtime publie (13), Runtime/Renderer (37) et UI Builder (11). Ils ne remplacent pas une suite complete.
+| Controle execute | Resultat reel |
+|---|---|
+| `pg_isready` et `current_database()` | PASS : `127.0.0.1:55432`, `techzone_test` |
+| Prisma test (`validate`, `migrate deploy`, `migrate status`) | PASS : 11 migrations, schema a jour |
+| `npm run test:e2e` | PASS : 2 suites, 20 tests IAM multi-tenant |
+| `npm test -- --runInBand deployment` | PASS : 11 suites, 64 tests |
+| Pack Manager / Pack Runtime / Data Runtime cibles | PASS : 12 suites, 91 tests |
+| Securite backend UI/Runtime | PASS : 10 suites, 146 tests |
+| Securite frontend UI Builder/Runtime | PASS : 13 fichiers, 116 tests; 2 fichiers et 2 tests ignores |
+| Suite IAM complete apres correction | PASS : 17 suites, 145 tests |
+| `npx tsc --noEmit -p tsconfig.spec.json` | FAIL attendu : 304 diagnostics restants (REG-008) |
 
-Builds et controles statiques executes apres correction : `npx vite build`, `npx tsc --noEmit` et `npx oxlint` frontend, ainsi que `npx nest build`, `npx oxlint` cible et `npx prisma validate` backend. Ils ont reussi. Vite conserve l'avertissement deja connu du bundle d'entree a 586.66 kB (REG-005, non modifie).
+Les comptes ci-dessus decrivent des executions distinctes et peuvent se recouvrir. Les simulations SIM-01 a SIM-32 ne sont pas declarees PASS : les documents existants ne definissent pas de correspondance individuelle entre chaque identifiant et un script executable.
 
 ## B. Tableau de correction
 
-| ID | Responsable | Avant | Correction | Tests | Etat | Commit |
-|---|---|---|---|---|---|---|
-| REG-004 | Jasmina / Mami | PostgreSQL test indisponible | Infrastructure existante inspectee; aucun contournement non isole | Connexion test refusee; `pg_ctl` erreurs 87/3 | A faire | - |
-| REG-007 | Nassa / Jasmina | Risque de connexion implicite | Garde existant verifie : Jest force la cible test ou echoue ferme | Deployment : 35 PASS, 29 bloques sur 55432 | A faire | - |
-| REG-006 | Nassa | Spec Cockpit syntaxiquement fusionnee de facon invalide | Test d'isolation restaure avec mock Prisma controle | 3/3 PASS | OK | `1500c82` |
-| REG-001 | Jasmina / Ranja | Fixtures Pack incompletes | ApplicationVersion, PackVersion, snapshot et hashes alignes | 9/9 snapshots; 146/146 securite UI/backend PASS | OK | `c33e18d` |
-| REG-002 | Nassa | Fixtures Runtime incompatibles avec V3 | Fixtures `resolutionId`/`EXECUTABLE`; gardes tenant, pack/version, hash et schema retablis | 13/13 PublishedApplication; 37 PASS, 2 skips Runtime/Renderer | OK | `173b179` |
-| REG-003 | Ranja | Assertion regex ambigue | Assertion exacte sur l'etat vide de recherche | 11/11 PASS | OK | `1e83c5d` |
+| ID | Responsable | Etat final | Preuve principale | Commit |
+|---|---|---|---|---|
+| REG-004 | Jasmina / Mami | OK | Restauration E2E, Prisma et 20 E2E IAM PASS sur `techzone_test` | - |
+| REG-007 | Nassa / Jasmina | OK | Garde fail-closed et 64 tests Deployment PASS sur base isolee | - |
+| REG-006 | Nassa | OK | Cockpit : 3 tests PASS | `1500c82` |
+| REG-001 | Jasmina / Ranja | OK | Snapshots Pack et gate securite PASS | `c33e18d` |
+| REG-002 | Nassa | OK | Runtime publie et controles fail-closed PASS | `173b179` |
+| REG-003 | Ranja | OK | UI Builder : assertion deterministe, 11 tests PASS | `1e83c5d` |
+| IAM-001 | Mami | OK | Throttle sans handle de purge bloquant | `c94186e` |
+| REG-008 | Reparti par module | A faire | 312 diagnostics initiaux, 304 restants apres correctifs IAM | `dfc26e1` pour les 8 diagnostics IAM |
+| REG-009 | A attribuer | A faire | Avertissement de compatibilite Prisma/pg sous Deployment | - |
 
-## C. Details et preuves
+## C. REG-004 - PostgreSQL E2E isole
 
-### REG-004 - PostgreSQL E2E isole
+Le service Windows `postgresql-x64-18` sur le port 5432 est distinct du cluster E2E utilisateur PostgreSQL 18 situe sous `%LOCALAPPDATA%\TechzoneLocalPostgres\data`, configure sur `127.0.0.1:55432`. `TEST_DATABASE_URL` est distinct de `DATABASE_URL` et le runner refuse toute cible qui ne contient pas `test` ou `e2e`.
 
-La configuration distingue bien `DATABASE_URL` de `TEST_DATABASE_URL`; la seconde cible une base au nom explicite `techzone_test` sur le port 55432. Docker n'est pas installe. Le service PostgreSQL 18 existe, mais le cluster local dedie n'est pas demarre. `scripts/local-postgres.ps1 -Action start` echoue car le journal local est inaccessible; un demarrage direct avec un journal temporaire echoue ensuite avec `pg_ctl: could not create restricted token: error code 87` puis `could not start server: error code 3`. La connexion PostgreSQL a `techzone_test` retourne `ECONNREFUSED`.
+Les fichiers de configuration et `pg_hba.conf` ont ete lus sans etre modifies : ecoute locale uniquement, port 55432 et authentification SCRAM pour loopback. Les ACL NTFS du cluster etaient presentes; aucune permission n'a ete changee. `pg_controldata` ne montrait pas de corruption.
 
-Aucune migration, aucun `db push`, aucun reset et aucune ecriture de donnees n'ont ete executes. REG-004 reste a faire. Prerequis : corriger le demarrage du cluster Windows sous le compte qui l'administre, puis verifier `current_database() = techzone_test`, executer `prisma:test:validate`, `prisma:test:status`, les migrations non destructives et les E2E.
+La cause observee est une recuperation du cluster interrompue avant la disponibilite (`0xC000013A`, interruption de processus), et non une corruption, un conflit de port ou un defaut de droits etabli. Les erreurs historiques `pg_ctl` Windows 87 et 3 sont un symptome de lancement/statut peu fiable dans cette session, pas une cause racine prouvee : `pg_ctl status` peut echouer alors que PostgreSQL accepte des connexions.
 
-### REG-007 - Isolation Deployment
+Le serveur existant a ete demarre sans reinitialisation, puis la recuperation a ete laissee a son terme. Preuves finales : `pg_isready` PASS, `current_database() = techzone_test`, Prisma valide et statut des migrations a jour. Deux migrations deja presentes mais non appliquees ont ete inspectees avant `migrate deploy`; elles n'effectuent ni suppression ni reinitialisation. Voir `22_DIAGNOSTIC_POSTGRESQL_WINDOWS.md` et `23_RESULTATS_E2E_APRES_RESTAURATION.md`.
 
-`backend/test/jest.setup.ts` est deja un garde fail-closed : il impose `TEST_DATABASE_URL` lorsqu'elle est distincte et cible une base dont le nom contient `test` ou `e2e`; en son absence, il remplace l'URL par un port impossible. Les tests `npm test -- --runInBand deployment` ont atteint uniquement `127.0.0.1:55432`, la cible de test configuree. Ils n'ont donc pas atteint `techzonecloud_local`.
+## D. REG-007 - isolation Deployment
 
-Resultat : 6 suites et 35 tests sans dependance DB ont passe; 5 suites et 29 tests d'integration ont ete bloques par l'indisponibilite de PostgreSQL test. Ce resultat prouve l'orientation isolee mais pas l'execution reproductible complete exigee : REG-007 reste a faire jusqu'au passage des suites sur `techzone_test` operationnelle.
+`backend/test/jest.setup.ts` force `DATABASE_URL` vers `TEST_DATABASE_URL` quand la cible est clairement une base test/e2e, et la remplace par un port impossible sinon. `test/iam-e2e-runner.mjs` verifie en plus que les deux URL sont distinctes avant de lancer Jest. Ainsi, les tests purs restent independants de PostgreSQL et les tests d'integration utilisent seulement `techzone_test`.
 
-### REG-006 - Cockpit Deployment
+`npm test -- --runInBand deployment` passe maintenant entierement : 11 suites et 64 tests. Les branches de readiness, echec explicite, annulation et absence de faux statut `SUCCEEDED` sont executees par cette suite. Aucune connexion a `techzonecloud_local` n'a ete utilisee. Cette preuve clot REG-007, mais ne remplace ni une validation de production, ni une certification globale Deployment.
 
-`backend/src/modules/deployment/cockpit/cockpit.service.spec.ts` melangeait deux anciennes versions de tests, avec declarations et accolades orphelines. La suite a ete remplacee par un test unitaire isole qui controle les filtres tenant de dashboard, listes et contexte absent sans instancier Prisma reel.
+## E. Modules rejoues et simulations
 
-Preuve : `npm test -- --runInBand src/modules/deployment/cockpit/cockpit.service.spec.ts` : 1 suite, 3 tests PASS. Le typecheck global n'est pas vert pour des erreurs hors perimetre (REG-008), mais cette erreur TS1128 a disparu et la suite compile dans Jest.
+Les tests cibles Pack Manager, Pack Runtime et Data Runtime passent (12 suites, 91 tests). La gate backend de securite UI/Runtime passe (10 suites, 146 tests). La gate frontend UI Builder/Runtime passe (116 tests, 2 tests ignores). Les deux ignores ne sont pas reclassifies en PASS.
 
-### REG-001 - Snapshots Pack Manager / UI Builder
+`npm run test:e2e` passe avec 20 cas IAM cross-tenant : lectures, mises a jour et suppressions croisees, tenant forge, permissions, session revoquee, MFA et membership. Cette preuve est E2E, mais elle ne definit pas a elle seule les SIM-01 a SIM-32. Tous les SIM restent donc `NOT TESTED` jusqu'a une matrice officielle identifiant preconditions, fixtures, et assertions pour chaque numero.
 
-`backend/src/modules/pack-manager/ui-snapshot.integration.spec.ts` fournit desormais l'ApplicationVersion et son application tenant, le lien application du pack, ainsi qu'un PackVersion publie avec snapshot et hash coherents. Les cas absence d'ApplicationVersion, autre tenant, autre application et hash de manifest altere sont verifies sans affaiblir les validations metier.
+Les recettes navigateur PH6/PH7, UAT, responsive, charge et concurrence complete n'ont pas ete executees. Les recettes historiques PH6/PH7 visent des fixtures et une base heritee hors `techzone_test`; elles sont laissees `NOT TESTED` pour respecter l'isolation.
 
-Preuves : 9/9 tests de la suite snapshot PASS; `npm run test:security:ui` : 10 suites, 146 tests PASS.
+## F. REG-008 et nouveau risque
 
-### REG-002 - Runtime publie
+Le typecheck complet des specifications est passe de 312 diagnostics a 304 apres huit corrections IAM limitees au perimetre Mami (`dfc26e1`). Les deux doublons de permissions `src/iam/iam.constants.ts:91-92` restent attribues a Nassa; aucune erreur hors IAM n'a ete corrigee. L'analyse exhaustive par fichier, cause, responsable et priorite est dans `24_ANALYSE_REG_008.md`.
 
-`frontend/src/components/pack-runtime/PublishedApplication.test.jsx` utilise maintenant une resolution explicite et un manifest effectif `EXECUTABLE`. Pendant l'alignement, l'inspection a confirme que Runtime V3 avait supprime les gardes existants de tenant, source pack/version, hash du manifest et structure UI. Ces gardes font partie de REG-002 et ont ete restaures dans `PublishedApplication.jsx` avec un comportement fail-closed.
+La trace Deployment revele aussi un avertissement deprecation `pg` emis depuis `@prisma/adapter-pg` lors de requetes concurrentes. Les 64 tests restent PASS; il est enregistre comme risque P3 REG-009 et non comme echec fonctionnel.
 
-Les controles verifies sont : resolution absente ou bloquee, tenant et pack/version incoherents, hash source different, UI malformee, schema non supporte, changement de tenant et rendu/naviguation d'une application publiee valide.
+## G. Git et suites
 
-Preuves : 13/13 tests PublishedApplication PASS; 6 fichiers Runtime/Renderer, 37 tests PASS, 2 ignores parce qu'ils requierent PostgreSQL.
+Branche de travail : `mami`. Nouveau commit local : `dfc26e1` (`fix(iam): resolve owned strict spec diagnostics`). Les dossiers non suivis preexistants `docs/audit/global/` et `docs/ui-ux/` sont preserves. Aucun push, PR, reset ou changement de branche n'a ete effectue.
 
-### REG-003 - UI Builder
-
-`frontend/src/features/ui-builder/components/UiBuilderControls.test.jsx` cible exactement `Aucun resultat` au lieu de la regex ambigue `/Aucun/`.
-
-Preuve : 1 suite, 11 tests PASS. Les avertissements React Router v7 n'etaient pas des echecs.
-
-## D. E2E et simulations
-
-Environnement attendu : PostgreSQL local isole `techzone_test` sur `127.0.0.1:55432`. Il reste indisponible pour la raison Windows documentee dans REG-004. Les E2E, les migrations de statut, les scenarios multi-tenant et les simulations SIM-01 a SIM-32 n'ont donc pas ete declares executes et doivent etre repris apres restauration de cette instance. Aucun resultat BLOCKED n'est presente comme PASS.
-
-## E. Controle global et nouvelle anomalie
-
-Le typecheck de specifications `npx tsc --noEmit -p backend/tsconfig.spec.json` echoue sur de nombreuses erreurs preexistantes hors des six corrections (notamment `backend/src/iam/iam.constants.ts`, `backend/src/iam/iam-throttle.service.ts` et des mocks de tests). Cette anomalie est enregistree comme REG-008, priorite P2, et n'a pas ete corrigee faute d'autorisation.
-
-## F. Git
-
-Branche : `mami`.
-
-Commits locaux crees : `1500c82`, `c33e18d`, `173b179`, `1e83c5d`. Le commit IAM existant `c94186e` est preserve. Les dossiers non suivis preexistants `docs/audit/global/` et `docs/ui-ux/` sont preserves. Aucun push, aucune PR, aucun reset et aucun changement de branche n'ont ete effectues.
-
-## G. Prochaines approbations ou actions requises
-
-1. Restaurer le demarrage du cluster PostgreSQL test sous son compte Windows administrateur, puis autoriser/reprendre REG-004 et REG-007 pour migrations non destructives, E2E et simulations.
-2. Autoriser le traitement de REG-008 si le typecheck complet des specifications doit devenir un gate de qualite.
+Actions restant soumises a approbation : traiter REG-008 hors IAM, traiter REG-009 de compatibilite Prisma/pg, definir une campagne SIM numerotee, et traiter REG-005 sans changement dans le cadre de cette execution.
