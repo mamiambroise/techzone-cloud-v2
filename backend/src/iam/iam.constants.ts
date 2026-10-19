@@ -88,8 +88,6 @@ export const PERMISSIONS = {
   BM_CONTRACT_WRITE: 'bm:contract:write',
   BM_VALIDATE: 'bm:validate',
   BM_PUBLISH: 'bm:publish',
-  BM_CONTRACT_READ: 'bm:contract:read',
-  BM_CONTRACT_WRITE: 'bm:contract:write',
   ENVIRONMENT_READ: 'environment:read',
   ENVIRONMENT_CREATE: 'environment:create',
   ENVIRONMENT_UPDATE: 'environment:update',

@@ -1,32 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 :root {
-  --color-bg: #F5F8FD;
+  /* Brand palette supplied for the Techzone Cloud interface. */
+  --color-primary: #0866F5;
+  --color-primary-hover: #0554D8;
+  --color-primary-soft: #EDF4FF;
+  --color-bg: #EFF6FF;
   --color-surface: #FFFFFF;
-  --color-surface-2: #F8FAFC;
-  --color-border: #E2E8F0;
-  --color-text: #0F172A;
-  --color-text-muted: #64748B;
-  --color-primary: #2563EB;
-  --color-primary-hover: #1D4ED8;
-  --color-indigo: #4F46E5;
-  --color-violet: #7C3AED;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #06B6D4;
-  --color-sidebar: #0B1730;
+  --color-surface-2: #F8FAFF;
+  --color-border: #E1EAF5;
+  --color-text: #101C48;
+  --color-text-primary: #101C48;
+  --color-text-secondary: #64748B;
+  --color-text-muted: #94A3B8;
+  --color-indigo: #0866F5;
+  --color-violet: #0866F5;
+  --color-success: #08A66A;
+  --color-warning: #FF9800;
+  --color-error: #F22640;
+  --color-danger: #F22640;
+  --color-info: #0866F5;
+  --color-sidebar: #0D1B2A;
   --color-sidebar-2: #142747;
-  --color-header: #FFFFFF;
+  --color-sidebar-text: #CBD5E1;
+  --color-sidebar-active: #0866F5;
+  --color-header: #0D1B2A;
 
-  --radius-sm: 8px;
+  --module-packs: #08A66A;
+  --module-deployments: #7C18F5;
+  --module-billing: #FF9800;
+  --module-resources: #0CB7A7;
+
+  --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 12px;
+  --radius-lg: 14px;
   --radius-xl: 16px;
 
   --space-1: 4px;
@@ -36,19 +48,19 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 14px rgb(15 23 42 / 0.05);
+  --shadow-card: 0 2px 12px rgb(16 28 72 / 0.05);
   --shadow-card-hover: 0 10px 24px rgb(15 23 42 / 0.10);
-  --focus-ring: 0 0 0 3px rgb(37 99 235 / 0.28);
+  --focus-ring: 0 0 0 3px rgb(8 102 245 / 0.28);
 
   /* Existing Business Manager aliases remain the source-compatible bridge. */
-  --bm-canvas: #f8fafc;
+  --bm-canvas: #EFF6FF;
   --bm-surface: #ffffff;
-  --bm-border: #e2e8f0;
-  --bm-accent: #2563eb;
-  --bm-accent-soft: #eff6ff;
-  --bm-text: #0f172a;
+  --bm-border: #E1EAF5;
+  --bm-accent: #0866F5;
+  --bm-accent-soft: #EDF4FF;
+  --bm-text: #101C48;
   --bm-text-muted: #64748b;
-  --bm-radius: 12px;
+  --bm-radius: 14px;
 }
 
 html {
