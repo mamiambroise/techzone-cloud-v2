@@ -102,7 +102,7 @@ export default function UiBuilderLayout({ subTab, children }) {
       <header className="space-y-1">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600"><PanelsTopLeft className="h-5 w-5" /></span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><PanelsTopLeft className="h-5 w-5" /></span>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">UI Builder</h1>
               <p className="mt-0.5 text-sm text-slate-500">
@@ -139,7 +139,7 @@ export default function UiBuilderLayout({ subTab, children }) {
               key={tab.id}
               to={tab.route}
               aria-current={isActive ? 'page' : undefined}
-              className={`shrink-0 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors duration-150 bm-focus ${isActive ? 'border-b-2 border-violet-500 text-violet-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+              className={`shrink-0 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors duration-150 bm-focus ${isActive ? 'border-b-2 border-blue-600 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
             >
               {tab.label}
             </Link>

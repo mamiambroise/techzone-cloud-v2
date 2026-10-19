@@ -12,7 +12,7 @@ export default function SubNavBar() {
   if (!group || ['dashboard','registry','bm','packs','runtime'].includes(group.id) || !canAccess(active, user)) return null;
   const entries = groupEntries(group.id).filter(e => (e.component || e.redirectTo) && canAccess(e, user));
   const contextual = pageDefinitions.filter(e => e.group === group.id && !e.menu && (e.component || e.redirectTo) && !e.route.includes(':') && !isActionRoute(e) && canAccess(e, user));
-  return <div className="border-b border-[var(--color-border)] bg-[var(--color-header)]">
+  return <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
     <nav aria-label={group.label} className="tz-scroll-x flex gap-2 px-4 py-3">
       {entries.map(entry => <Link key={entry.id} to={entry.route} aria-current={active?.id === entry.id ? 'page' : undefined} className={`shrink-0 rounded-[var(--radius-md)] px-3 py-2 text-xs transition-colors ${active?.id === entry.id ? 'bg-blue-100 text-blue-800 font-bold' : 'text-slate-600 hover:bg-slate-100'}`}>{entry.label}</Link>)}
     </nav>
