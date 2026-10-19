@@ -250,7 +250,7 @@ describe('UI Builder callback regressions', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ui-builder/pages', expect.objectContaining({ key: 'orders', type: 'FORM' })));
 
     await user.type(screen.getByRole('searchbox'), 'no-match');
-    expect(await screen.findByText(/Aucun/)).toBeInTheDocument();
+    expect(await screen.findByText('Aucun résultat')).toBeInTheDocument();
   }, 15_000);
 
   it('enables form composition after both BmSelect controls receive values', async () => {
