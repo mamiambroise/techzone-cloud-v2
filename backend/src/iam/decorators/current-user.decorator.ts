@@ -18,6 +18,7 @@ export interface IamAuthContext {
   sessionId: string;
   tenantId?: string | null;
   organizationId?: string | null;
+  siteId?: string | null;
   authenticationLevel?: string | null;
   roles: string[];
   permissions: string[];

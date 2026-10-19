@@ -85,7 +85,11 @@ export class DataModelService {
   }
 
   async createEntity(applicationVersionId: string, dto: CreateEntityDto, tenantId: string | null) {
-    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(
+      this.prisma,
+      applicationVersionId,
+      tenantId,
+    );
 
     const code = dto.code.trim().toLowerCase();
 
@@ -107,7 +111,7 @@ export class DataModelService {
 
     return this.prisma.bmEntity.create({
       data: {
-        applicationId: appVersion?.applicationId ?? '',
+        applicationId: appVersion.applicationId,
         applicationVersionId,
         code,
         name: dto.name,
@@ -248,7 +252,7 @@ export class DataModelService {
     const code = dto.code.trim().toLowerCase();
 
     const existing = await this.prisma.bmField.findFirst({
-      where: { entityId, code },
+      where: { entityId, code, tenantId: tenantId ?? undefined },
     });
 
     if (existing) {
@@ -295,7 +299,7 @@ export class DataModelService {
     }
 
     return this.prisma.bmField.findMany({
-      where: { entityId },
+      where: { entityId, tenantId: tenantId ?? undefined },
       orderBy: { position: 'asc' },
     });
   }
@@ -532,8 +536,12 @@ async createFieldValidation(dto: CreateFieldValidationDto, tenantId: string | nu
   // COMPUTED FIELD ENGINE
   // =====================================================================
 
-async createComputedField(applicationVersionId: string, entityId: string, dto: CreateComputedFieldDto, tenantId: string | null) {
-    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+  async createComputedField(applicationVersionId: string, entityId: string, dto: CreateComputedFieldDto, tenantId: string | null) {
+    const appVersion = await assertVersionWritable(
+      this.prisma,
+      applicationVersionId,
+      tenantId,
+    );
     await this.assertEntityVersionWritable(entityId, tenantId);
 
     const entity = await this.prisma.bmEntity.findFirst({
@@ -576,7 +584,7 @@ async createComputedField(applicationVersionId: string, entityId: string, dto: C
 
     return this.prisma.bmComputedField.create({
       data: {
-        applicationId: appVersion?.applicationId ?? '',
+        applicationId: appVersion.applicationId,
         applicationVersionId,
         entityId,
         code: dto.code.trim().toLowerCase(),
@@ -634,3 +642,4 @@ async createComputedField(applicationVersionId: string, entityId: string, dto: C
     };
   }
 }
+

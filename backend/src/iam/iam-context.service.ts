@@ -18,11 +18,18 @@ export class IamContextService {
     requested?: { organizationId?: string | null; siteId?: string | null },
   ) {
     const membership = await this.prisma.membership.findFirst({
-      where: { userId, tenantId, status: 'ACTIVE' },
+      where: { userId, tenantId, status: 'ACTIVE', revokedAt: null },
       include: {
         tenant: { select: { id: true, status: true } },
-        organization: { select: { id: true, status: true } },
-        site: { select: { id: true, status: true } },
+        organization: { select: { id: true, tenantId: true, status: true } },
+        site: {
+          select: {
+            id: true,
+            organizationId: true,
+            status: true,
+            organization: { select: { tenantId: true, status: true } },
+          },
+        },
       },
     });
     if (!membership) {
@@ -48,6 +55,21 @@ export class IamContextService {
     }
     if (membership.siteId && membership.site?.status !== 'ACTIVE') {
       throw new IamError('Site non actif', 403, 'TENANT_ACCESS_DENIED');
+    }
+    if (
+      membership.organizationId &&
+      membership.organization?.tenantId !== tenantId
+    ) {
+      throw new IamError('Organisation hors tenant', 403, 'TENANT_ACCESS_DENIED');
+    }
+    if (
+      membership.siteId &&
+      (membership.site?.organization?.tenantId !== tenantId ||
+        membership.site.organization?.status !== 'ACTIVE' ||
+        (membership.organizationId &&
+          membership.site.organizationId !== membership.organizationId))
+    ) {
+      throw new IamError('Site hors contexte tenant', 403, 'TENANT_ACCESS_DENIED');
     }
 
     // La requête ne peut pas suggérer un org/site hors de son membership :

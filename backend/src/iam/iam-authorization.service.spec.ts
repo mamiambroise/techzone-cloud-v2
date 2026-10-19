@@ -50,10 +50,28 @@ function prismaStub(options: StubOptions = {}) {
     membership: {
       findFirst: jest.fn().mockResolvedValue(
         options.membershipStatus === undefined
-          ? { status: 'ACTIVE' }
+          ? {
+              status: 'ACTIVE',
+              validFrom: null,
+              validUntil: null,
+              organizationId: null,
+              siteId: null,
+              tenant: { id: TENANT_A, status: 'ACTIVE' },
+              organization: null,
+              site: null,
+            }
           : options.membershipStatus === null
             ? null
-            : { status: options.membershipStatus },
+            : {
+                status: options.membershipStatus,
+                validFrom: null,
+                validUntil: null,
+                organizationId: null,
+                siteId: null,
+                tenant: { id: TENANT_A, status: 'ACTIVE' },
+                organization: null,
+                site: null,
+              },
       ),
     },
     roleAssignment: {
@@ -256,8 +274,8 @@ describe('IamAuthorizationService', () => {
     });
   });
 
-  describe('cache', () => {
-    it('serves a repeated resolution from the cache', async () => {
+  describe('live authorization resolution', () => {
+    it('re-reads persisted authorization on every resolution', async () => {
       const { prisma } = prismaStub({
         assignments: [{ id: 'a1', roleId: APPLICATION_MANAGER_ROLE }],
         grants: [
@@ -278,10 +296,10 @@ describe('IamAuthorizationService', () => {
       await service.resolve({ id: USER, isAdmin: false }, TENANT_A);
       await service.resolve({ id: USER, isAdmin: false }, TENANT_A);
 
-      expect(prisma.rolePermission.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.rolePermission.findMany).toHaveBeenCalledTimes(2);
     });
 
-    it('recomputes after invalidate(user, tenant)', async () => {
+    it('keeps the invalidate boundary safe for RBAC write callers', async () => {
       const { prisma } = prismaStub({
         assignments: [{ id: 'a1', roleId: APPLICATION_MANAGER_ROLE }],
       });
@@ -294,7 +312,7 @@ describe('IamAuthorizationService', () => {
       expect(prisma.rolePermission.findMany).toHaveBeenCalledTimes(2);
     });
 
-    it('keys the cache per tenant so switching tenant cannot reuse the previous rights', async () => {
+    it('does not reuse rights when switching tenants', async () => {
       const { prisma } = prismaStub({
         assignments: [{ id: 'a1', roleId: APPLICATION_MANAGER_ROLE }],
         grants: [
@@ -320,7 +338,7 @@ describe('IamAuthorizationService', () => {
       expect(prisma.rolePermission.findMany).toHaveBeenCalledTimes(2);
     });
 
-    it('clears every entry when invalidate() is called without arguments', async () => {
+    it('does not preserve a stale entry after a global invalidation signal', async () => {
       const { prisma } = prismaStub({
         assignments: [{ id: 'a1', roleId: APPLICATION_MANAGER_ROLE }],
       });

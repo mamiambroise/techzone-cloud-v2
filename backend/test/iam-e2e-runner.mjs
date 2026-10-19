@@ -43,7 +43,14 @@ const child = spawn(
   ],
   {
     cwd: process.cwd(),
-    env: { ...process.env, DATABASE_URL: testDatabaseUrl },
+    // Keep every module loaded by Jest on the isolated database from process
+    // startup. The setup file accepts this alias only for this dedicated,
+    // prevalidated runner.
+    env: {
+      ...process.env,
+      DATABASE_URL: testDatabaseUrl,
+      TECHZONE_E2E_ISOLATED_RUNNER: '1',
+    },
     stdio: 'inherit',
   },
 );

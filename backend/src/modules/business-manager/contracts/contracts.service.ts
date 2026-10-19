@@ -30,7 +30,11 @@ export class ContractsService {
   }
 
   async createContract(applicationVersionId: string, dto: CreateContractDto, tenantId: string | null) {
-    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(
+      this.prisma,
+      applicationVersionId,
+      tenantId,
+    );
 
     const code = dto.code.trim().toLowerCase();
     const version = dto.version || '1.0.0';
@@ -119,7 +123,11 @@ export class ContractsService {
 
   async updateContract(id: string, dto: UpdateContractDto, tenantId: string | null) {
     const contract = await this.findOneContract(id, tenantId);
-    await assertVersionWritable(this.prisma, contract.applicationVersionId, tenantId);
+    await assertVersionWritable(
+      this.prisma,
+      contract.applicationVersionId,
+      tenantId,
+    );
 
     if (contract.status === BmContractStatus.LOCKED || contract.status === BmContractStatus.ACTIVE) {
       throw new PlatformException(
@@ -144,7 +152,11 @@ export class ContractsService {
 
   async validateContract(id: string, tenantId: string | null) {
     const contract = await this.findOneContract(id, tenantId);
-    await assertVersionWritable(this.prisma, contract.applicationVersionId, tenantId);
+    await assertVersionWritable(
+      this.prisma,
+      contract.applicationVersionId,
+      tenantId,
+    );
 
     if (contract.status === BmContractStatus.LOCKED) {
       throw new PlatformException(

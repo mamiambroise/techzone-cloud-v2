@@ -4,10 +4,14 @@ import { IamError } from './iam-error';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateMembershipDto } from './dto/create-membership.dto';
+import { IamAuthorizationService } from './iam-authorization.service';
 
 @Injectable()
 export class IamTenantsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authorization: IamAuthorizationService,
+  ) {}
 
   private generateId(): string {
     return crypto.randomUUID();
@@ -97,7 +101,14 @@ export class IamTenantsService {
     if (dto.timezone !== undefined) data.timezone = dto.timezone;
     if (dto.metadata !== undefined) data.metadata = dto.metadata;
 
-    return this.prisma.tenant.update({ where: { id }, data });
+    const updated = await this.prisma.tenant.update({ where: { id }, data });
+    if (dto.status !== undefined) {
+      // Tenant state participates in every authorization decision. There is no
+      // retained authorization cache, but this keeps the write boundary
+      // explicit for future cache implementations.
+      this.authorization.invalidate();
+    }
+    return updated;
   }
 
   async deleteTenant(id: string) {
@@ -110,6 +121,7 @@ export class IamTenantsService {
       where: { id },
       data: { status: 'ARCHIVED', archivedAt: new Date() },
     });
+    this.authorization.invalidate();
 
     return { success: true, message: 'Tenant archivé' };
   }
@@ -139,12 +151,46 @@ export class IamTenantsService {
       throw new IamError('L appartenance existe deja', 409, 'MEMBERSHIP_EXISTS');
     }
 
-    return this.prisma.membership.create({
+    let organizationId = dto.organizationId ?? null;
+    let siteId = dto.siteId ?? null;
+
+    if (organizationId) {
+      const organization = await this.prisma.organization.findFirst({
+        where: { id: organizationId, tenantId },
+        select: { id: true },
+      });
+      if (!organization) {
+        throw new IamError(
+          'Organisation hors tenant',
+          422,
+          'CONTEXT_ACCESS_DENIED',
+        );
+      }
+    }
+
+    if (siteId) {
+      const site = await this.prisma.site.findUnique({
+        where: { id: siteId },
+        include: { organization: { select: { tenantId: true } } },
+      });
+      if (
+        !site ||
+        site.organization.tenantId !== tenantId ||
+        (organizationId && site.organizationId !== organizationId)
+      ) {
+        throw new IamError('Site hors contexte tenant', 422, 'CONTEXT_ACCESS_DENIED');
+      }
+      // A site always belongs to one organization; persist that relationship
+      // instead of allowing a tenant-only membership with a detached site.
+      organizationId = site.organizationId;
+    }
+
+    const created = await this.prisma.membership.create({
       data: {
         userId: dto.userId,
         tenantId,
-        organizationId: dto.organizationId ?? null,
-        siteId: dto.siteId ?? null,
+        organizationId,
+        siteId,
         status: dto.status as any,
         validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
         validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
@@ -153,6 +199,8 @@ export class IamTenantsService {
       },
       include: { user: { select: { id: true, username: true, primaryEmail: true } }, tenant: { select: { id: true, code: true, name: true } } },
     });
+    this.authorization.invalidate(dto.userId, tenantId);
+    return created;
   }
 
   async getTenantSubscriptions(tenantId: string) {

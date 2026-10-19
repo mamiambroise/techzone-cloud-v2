@@ -7,6 +7,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EnvironmentDeploymentService } from './environment-deployment.service';
 import { DeploymentService } from '../deployments/deployment.service';
 import { PrismaService } from '../../../prisma/prisma.service';
+import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
+import { DeploymentReadinessService } from '../readiness/deployment-readiness.service';
+
+const principalFor = (tenantId: string): IamAuthContext => ({
+  userId: 'environment-test-user',
+  sessionId: 'environment-test-session',
+  tenantId,
+  organizationId: null,
+  siteId: null,
+  authenticationLevel: 'PASSWORD',
+  roles: [],
+  permissions: [],
+  isSuperAdmin: false,
+});
 
 describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
   let service: EnvironmentDeploymentService;
@@ -19,6 +33,10 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
         EnvironmentDeploymentService,
         DeploymentService,
         PrismaService,
+        {
+          provide: DeploymentReadinessService,
+          useValue: { verify: jest.fn(), auditMetadata: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -42,18 +60,24 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
   });
 
   it('should list all environment deployment statuses', async () => {
-    const list = await service.findAll();
+    const list = await service.findAll(principalFor(fixture.tenant.id));
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThan(0);
   });
 
   it('should get detailed environment status and drift check', async () => {
     const environments = [fixture.environment];
-    const status = await service.getStatus(environments[0].id);
+    const status = await service.getStatus(
+      environments[0].id,
+      principalFor(fixture.tenant.id),
+    );
     expect(status).toHaveProperty('environment');
     expect(status).toHaveProperty('deployments');
 
-    const drift = await service.detectDrift(environments[0].id);
+    const drift = await service.detectDrift(
+      environments[0].id,
+      principalFor(fixture.tenant.id),
+    );
     expect(drift).toHaveProperty('isSynchronized');
     expect(drift.isSynchronized).toBe(true);
   });
@@ -65,10 +89,13 @@ describe('EnvironmentDeploymentService (DEP-CDC-04)', () => {
     const lockResult = await service.lock(envId, {
       reason: 'Scheduled infrastructure maintenance window',
       lockedBy: 'ops-lead',
-    });
+    }, principalFor(fixture.tenant.id));
     expect(lockResult.status).toBe('LOCKED');
 
-    const unlockResult = await service.unlock(envId, 'ops-lead');
+    const unlockResult = await service.unlock(
+      envId,
+      principalFor(fixture.tenant.id),
+    );
     expect(unlockResult.status).toBe('ACTIVE');
   });
 });

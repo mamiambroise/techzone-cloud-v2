@@ -39,7 +39,11 @@ export class NavigationService {
   // =====================================================================
 
 async createMenu(applicationVersionId: string, dto: CreateMenuDto, tenantId: string | null) {
-    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(
+      this.prisma,
+      applicationVersionId,
+      tenantId,
+    );
 
     const code = dto.code.trim().toLowerCase();
 
@@ -62,7 +66,7 @@ async createMenu(applicationVersionId: string, dto: CreateMenuDto, tenantId: str
     return this.prisma.bmMenu.create({
       data: {
         applicationVersionId,
-        applicationId: appVersion?.applicationId ?? '',
+        applicationId: appVersion.applicationId,
         code,
         name: dto.name,
         description: dto.description,
@@ -316,3 +320,4 @@ const menu = await this.findOneMenu(menuId, tenantId);
     };
   }
 }
+

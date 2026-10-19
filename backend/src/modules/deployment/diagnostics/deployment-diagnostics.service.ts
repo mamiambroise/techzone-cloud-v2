@@ -3,13 +3,27 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { QueryHistoryDto } from './dto/query-history.dto';
 import { DeploymentErrorCode } from '../../../common/errors/deployment-error-code.enum';
 import { DeploymentException } from '../../../common/errors/deployment.exception';
+import { type IamAuthContext } from '../../../iam/decorators/current-user.decorator';
 
 @Injectable()
 export class DeploymentDiagnosticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getHistory(query?: QueryHistoryDto) {
-    const where: Record<string, any> = {};
+  private requireTenant(principal: IamAuthContext): string {
+    const tenantId = principal?.tenantId;
+    if (!tenantId || tenantId === 'legacy') {
+      throw new DeploymentException(
+        DeploymentErrorCode.DEP_PERMISSION_DENIED,
+        'An active tenant context is required for deployment diagnostics',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    return tenantId;
+  }
+
+  async getHistory(query: QueryHistoryDto | undefined, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const where: Record<string, any> = { tenantId };
 
     if (query?.applicationId) {
       where.applicationId = query.applicationId;
@@ -59,9 +73,10 @@ export class DeploymentDiagnosticsService {
     }));
   }
 
-  async getTimeline(deploymentId: string) {
-    const deployment = await this.prisma.deployment.findUnique({
-      where: { id: deploymentId },
+  async getTimeline(deploymentId: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const deployment = await this.prisma.deployment.findFirst({
+      where: { id: deploymentId, tenantId },
       include: {
         release: {
           include: {
@@ -85,6 +100,7 @@ export class DeploymentDiagnosticsService {
     const events = await this.prisma.deploymentHistory.findMany({
       where: {
         deploymentId,
+        tenantId,
       },
       orderBy: {
         createdAt: 'asc',
@@ -113,15 +129,19 @@ export class DeploymentDiagnosticsService {
     };
   }
 
-  async getDiagnostics() {
+  async getDiagnostics(principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
     const deployments = await this.prisma.deployment.findMany({
+      where: { tenantId },
       include: {
         gates: true,
       },
     });
 
-    const rollbacks = await this.prisma.rollback.findMany();
-    const gates = await this.prisma.deploymentGate.findMany();
+    const rollbacks = await this.prisma.rollback.findMany({
+      where: { deployment: { is: { tenantId } } },
+    });
+    const gates = deployments.flatMap((deployment) => deployment.gates);
 
     const totalDeployments = deployments.length;
     const succeeded = deployments.filter((d: any) => d.status === 'SUCCEEDED').length;
@@ -172,9 +192,13 @@ export class DeploymentDiagnosticsService {
     };
   }
 
-  async getDeploymentDiagnostic(deploymentId: string) {
-    const deployment = await this.prisma.deployment.findUnique({
-      where: { id: deploymentId },
+  async getDeploymentDiagnostic(
+    deploymentId: string,
+    principal: IamAuthContext,
+  ) {
+    const tenantId = this.requireTenant(principal);
+    const deployment = await this.prisma.deployment.findFirst({
+      where: { id: deploymentId, tenantId },
       include: {
         release: {
           include: {

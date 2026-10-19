@@ -122,7 +122,11 @@ describe('densité login — lockout temporaire serveur', () => {
     const prisma: any = {
       iamUser: {
         findFirst: jest.fn(async () => baseUser),
-        findUnique: jest.fn(async () => ({ defaultTenantId: null })),
+        findUnique: jest.fn(async () => ({
+          defaultTenantId: null,
+          status: 'ACTIVE',
+          isAdmin: false,
+        })),
         update: jest.fn(async () => ({})),
       },
       iamCredential: {
