@@ -33,6 +33,12 @@ describe('IamThrottleService — seuil, verrou TTL, reset', () => {
   const USER2 = '22222222-2222-4222-8222-222222222222';
   void USER2;
 
+  it('does not keep the process alive for opportunistic garbage collection', () => {
+    const throttle = newThrottle();
+    expect((throttle as any).gcTimer?.hasRef?.()).toBe(false);
+    throttle.onModuleDestroy();
+  });
+
   it("n'est pas locked avant le seuil", () => {
     const t = newThrottle();
     expect(t.isLocked('login', 'k1')).toBe(false);

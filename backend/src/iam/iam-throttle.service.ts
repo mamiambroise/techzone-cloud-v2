@@ -49,7 +49,12 @@ export class IamThrottleService implements OnModuleDestroy {
     60_000,
   );
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    // The interval is only an opportunistic memory cleanup. It must not keep a
+    // process alive on its own (notably for a graceful shutdown or a direct
+    // service instance in a unit test).
+    this.gcTimer.unref?.();
+  }
 
   /**
    * Refuse explicitement si un verrou temporaire est actif pour la clé.
