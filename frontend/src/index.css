@@ -3,10 +3,37 @@
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Map existing Tailwind blue utilities to the official Techzone brand. */
+  --color-blue-50: #EDF4FF;
+  --color-blue-100: #DCEAFF;
+  --color-blue-200: #BBD4FF;
+  --color-blue-300: #8BB8FF;
+  --color-blue-400: #5795FF;
+  --color-blue-500: #237BFF;
+  --color-blue-600: #0866F5;
+  --color-blue-700: #0554D8;
+  --color-blue-800: #0643A8;
+  --color-blue-900: #0A377F;
+  --color-blue-950: #0D1B2A;
+
+  /* Keep existing slate utilities aligned with the light workspace tokens. */
+  --color-slate-50: #F8FAFF;
+  --color-slate-100: #EFF6FF;
+  --color-slate-200: #E1EAF5;
+  --color-slate-300: #CBD5E1;
+  --color-slate-400: #94A3B8;
+  --color-slate-500: #7C8BA1;
+  --color-slate-600: #64748B;
+  --color-slate-700: #405071;
+  --color-slate-800: #28365D;
+  --color-slate-900: #101C48;
+  --color-slate-950: #0D1B2A;
 }
 
 :root {
   /* Brand palette supplied for the Techzone Cloud interface. */
+  --font-ui: "Inter", sans-serif;
   --color-primary: #0866F5;
   --color-primary-hover: #0554D8;
   --color-primary-soft: #EDF4FF;
@@ -30,6 +57,7 @@
   --color-sidebar-text: #CBD5E1;
   --color-sidebar-active: #0866F5;
   --color-header: #0D1B2A;
+  --color-header-text: #CBD5E1;
 
   --module-packs: #08A66A;
   --module-deployments: #7C18F5;
@@ -79,7 +107,7 @@ html {
 body {
   min-width: 320px;
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
   background-color: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;

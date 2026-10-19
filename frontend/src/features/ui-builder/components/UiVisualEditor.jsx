@@ -229,7 +229,7 @@ function EditorBody() {
                 role="tab"
                 aria-selected={leftTab === tab.id}
                 onClick={() => setLeftTab(tab.id)}
-                className={`flex-1 rounded-md px-2 py-2 text-[10px] font-bold transition-colors ${leftTab === tab.id ? 'bg-violet-50 text-violet-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+                className={`flex-1 rounded-md px-2 py-2 text-[10px] font-bold transition-colors ${leftTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
               >
                 {tab.label}
               </button>
@@ -480,7 +480,7 @@ function PageList({ pages, selectedPageId, onSelect }) {
             type="button"
             aria-current={selectedPageId === page.id ? 'page' : undefined}
             onClick={() => onSelect(page.id)}
-            className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${selectedPageId === page.id ? 'bg-violet-50 text-violet-800' : 'text-slate-700 hover:bg-slate-50'}`}
+            className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${selectedPageId === page.id ? 'bg-blue-50 text-blue-800' : 'text-slate-700 hover:bg-slate-50'}`}
           >
             <span className="block truncate text-xs font-semibold">{page.title}</span>
             <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-400">{page.route}</span>
@@ -565,7 +565,7 @@ function Inspector({ node, tab, onTab }) {
             role="tab"
             aria-selected={tab === tabId}
             onClick={() => onTab(tabId)}
-            className={`rounded-t-lg px-2.5 py-2 text-[10px] font-bold transition-colors duration-150 ${tab === tabId ? 'border-b-2 border-violet-500 text-violet-700' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`rounded-t-lg px-2.5 py-2 text-[10px] font-bold transition-colors duration-150 ${tab === tabId ? 'border-b-2 border-blue-600 text-blue-700' : 'text-slate-400 hover:text-slate-600'}`}
           >
             {({ CONTENT: 'Propriétés', DATA: 'Données', ACTIONS: 'Actions', VISIBILITY: 'Visibilité', RESPONSIVE: 'Responsive', ADVANCED: 'Avancé' })[tabId]}
           </button>

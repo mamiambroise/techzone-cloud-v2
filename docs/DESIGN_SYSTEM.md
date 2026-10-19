@@ -34,6 +34,7 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 
 ## Layout
 - Sidebar largeur : 260px (rétractable via class `sidebar-collapsed` ou état)
+- Sidebar et header : fond `#0D1B2A`, texte de navigation `#CBD5E1`, état actif `#0866F5`
 - Header hauteur : 64px
 - Rayon : 6px (petit), 10px (standard), 14px (grand)
 - Ombre carte : `0 2px 12px rgba(16, 28, 72, 0.05)`
