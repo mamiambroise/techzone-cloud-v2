@@ -123,7 +123,7 @@ describe('BMApplicationsRoute', () => {
     expect(screen.getByRole('button', { name: /Nouvelle application/ })).toBeInTheDocument();
   });
 
-  it('shows real application cards with code, status and open action', async () => {
+  it('shows real applications in the compact table with an open action', async () => {
     render(
       <MemoryRouter>
         <BMApplicationsRoute />
@@ -131,7 +131,7 @@ describe('BMApplicationsRoute', () => {
     );
     await screen.findByText('UI Application');
     expect(screen.getByText('ui_app')).toBeInTheDocument();
-    expect(screen.getAllByText(/Ouvrir l’application/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Ouvrir l’application' })).toBeInTheDocument();
   });
 
   it('shows the empty state when there is no application', async () => {

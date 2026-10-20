@@ -11,6 +11,20 @@ de menu ni une destination d’ouverture.
 Les deep links existants vers une application, une version, les modèles de
 données, les fonctionnalités, la navigation et la validation sont préservés.
 
+## Contexte Application / Version
+
+Les cinq espaces qui nécessitent une version utilisent une Context Bar unique.
+Le contexte canonique est porté par les paramètres relatifs `applicationId` et
+`versionId` des routes Business Manager, puis mémorisé uniquement après
+validation sous `bm-context:<tenantId>`. Les paramètres de liens profonds restent
+prioritaires. Un changement d'application vide immédiatement la version et les
+réponses tardives d'un tenant ou d'une application précédente sont ignorées.
+
+Les routes canoniques sont `/business-manager/models`,
+`/business-manager/features`, `/business-manager/navigation`,
+`/business-manager/configuration` et `/business-manager/validation`; les liens
+historiques avec paramètres de chemin restent accessibles.
+
 ## Espaces de travail
 
 - **Applications** : liste, recherche, filtres, création, édition, duplication,

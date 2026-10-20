@@ -142,7 +142,7 @@ export function BMApplicationDetailRoute() {
                     <div className="space-y-3 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-medium text-slate-800">Version {sortedVersions[0].version || sortedVersions[0].code}</span><BmStatusBadge value={sortedVersions[0].status} /></div>
                       {latestReport ? <p className="text-slate-600">{latestReport.issues?.length ?? 0} problème(s) dans le dernier rapport de validation.</p> : <p className="text-slate-500">{validationUnavailable ? 'Les rapports de validation sont indisponibles.' : 'Aucun rapport de validation pour cette version.'}</p>}
-                      <Link className="inline-flex text-sm font-semibold text-blue-700 hover:text-blue-800 bm-focus" to={`${path}/versions/${sortedVersions[0].id}/validation`}>Ouvrir la validation</Link>
+                      <Link className="inline-flex text-sm font-semibold text-blue-700 hover:text-blue-800 bm-focus" to={`/business-manager/validation?applicationId=${applicationId}&versionId=${sortedVersions[0].id}`}>Ouvrir la validation</Link>
                     </div>
                   ) : <p className="text-sm text-slate-500">Créez une version pour accéder aux contrôles de validation.</p>}
                 </BmCard>
@@ -152,7 +152,7 @@ export function BMApplicationDetailRoute() {
 
           {tab === 'versions' && (
             <BmCard title="Versions" subtitle="Chaque version ouvre son espace de définition métier.">
-              {sortedVersions.length ? <ul className="divide-y divide-slate-100">{sortedVersions.map((version) => <li key={version.id} className="flex flex-wrap items-center gap-3 py-3"><span className="min-w-0 flex-1 font-medium text-slate-800">{version.version || version.code || version.id}</span><BmStatusBadge value={version.status} /><Link className="text-sm font-semibold text-blue-700 hover:text-blue-800 bm-focus" to={`${path}/versions/${version.id}/data-model`}>Ouvrir</Link></li>)}</ul> : <BmEmptyState title="Aucune version" description="Créez une version depuis les fonctions existantes de l’application." />}
+              {sortedVersions.length ? <ul className="divide-y divide-slate-100">{sortedVersions.map((version) => <li key={version.id} className="flex flex-wrap items-center gap-3 py-3"><span className="min-w-0 flex-1 font-medium text-slate-800">{version.version || version.code || version.id}</span><BmStatusBadge value={version.status} /><Link className="text-sm font-semibold text-blue-700 hover:text-blue-800 bm-focus" to={`/business-manager/models?applicationId=${applicationId}&versionId=${version.id}`}>Ouvrir</Link></li>)}</ul> : <BmEmptyState title="Aucune version" description="Créez une version depuis les fonctions existantes de l’application." />}
             </BmCard>
           )}
 

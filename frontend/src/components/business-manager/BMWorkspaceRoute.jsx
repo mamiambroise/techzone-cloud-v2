@@ -1,13 +1,13 @@
 import BMContractsPanel from './BMContractsPanel.jsx';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Database, Boxes, Compass, Settings2, ShieldCheck, ChevronDown, ChevronRight,
   ArrowRight, Pencil, Archive, Trash2, MoreVertical, Plus, Layers, CircleDot,
   AlertTriangle, XCircle, CheckCircle2, Clock, Rocket,
 } from 'lucide-react';
 import { api } from '../../services/apiClient.js';
-import { useTenant } from '../../contexts/TenantProvider.jsx';
+import { useBmContext } from './useBmContext.js';
 import { PageHeader } from '../ui/PageHeader.jsx';
 import {
   BmPage, BmBreadcrumb, BmContextBar, BmCard, BmTabs, BmTable, BmBadge, BmStatusBadge,
@@ -25,7 +25,7 @@ const SECTIONS = [
   ['features', 'Fonctionnalités'],
   ['navigation', 'Navigation'],
   ['configuration', 'Configuration'],
-  ['validation', 'Validation & publication'],
+  ['validation', 'Validation'],
 ];
 
 const fieldTypes = 'TEXT LONG_TEXT INTEGER BIG_INTEGER DECIMAL CURRENCY PERCENTAGE BOOLEAN DATE DATETIME TIME EMAIL PHONE URL ENUM MULTI_ENUM UUID SEQUENCE FILE IMAGE JSON RELATION FORMULA'.split(' ');
@@ -46,52 +46,16 @@ const configurationTypes = ['STRING', 'NUMBER', 'BOOLEAN', 'ENUM', 'JSON', 'URL'
 const COMMON_FIELDS = [{ key: 'code', label: 'Code technique', required: true }, { key: 'name', label: 'Nom', required: true }, { key: 'description', label: 'Description' }];
 
 export default function BMWorkspaceRoute() {
-  const { activeTenant } = useTenant();
-  return <Workspace key={activeTenant?.id || 'none'} tenant={activeTenant} />;
+  return <Workspace />;
 }
 
-function Workspace({ tenant }) {
-  const params = useParams();
+function Workspace() {
   const location = useLocation();
   const navigate = useNavigate();
-  const storageKey = `bm-context:${tenant?.id}`;
-  const [saved, setSaved] = useState(() => { try { return JSON.parse(sessionStorage.getItem(storageKey) || '{}'); } catch { return {}; } });
-
-  const applicationId = params.applicationId || saved.applicationId || '';
-  const versionId = params.versionId || (applicationId === saved.applicationId ? saved.versionId : '') || '';
+  const { tenant, applications, versions, application, version, applicationId, versionId, loading, error, retry, selectApplication, selectVersion } = useBmContext();
+  const indexSections = { models: 'data-model', features: 'features', navigation: 'navigation', configuration: 'configuration', validation: 'validation' };
   const suffix = location.pathname.split('/').pop();
-  const section = SECTIONS.some(([id]) => id === suffix) ? suffix : 'data-model';
-
-  const [applications, setApplications] = useState([]);
-  const [versions, setVersions] = useState([]);
-  const [environments, setEnvironments] = useState([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    let live = true;
-    setLoading(true); setError(''); setApplications([]); setVersions([]); setEnvironments([]);
-    if (!tenant) { setLoading(false); return undefined; }
-    (async () => {
-      const [apps, envs] = await Promise.all([get('/applications'), get('/environments')]);
-      const vers = applicationId && apps.some((a) => a.id === applicationId) ? await get(`/applications/${applicationId}/versions`) : [];
-      if (live) { setApplications(apps); setVersions(vers); setEnvironments(envs); }
-    })().catch(() => { if (live) setError(bmSafeError); }).finally(() => { if (live) setLoading(false); });
-    return () => { live = false; };
-  }, [tenant?.id, applicationId, revision]);
-
-  const application = applications.find((a) => a.id === applicationId);
-  const version = versions.find((v) => v.id === versionId);
-
-  useEffect(() => {
-    if (application && version) {
-      sessionStorage.setItem(storageKey, JSON.stringify({ applicationId, versionId }));
-      setSaved((previous) => (previous.applicationId === applicationId && previous.versionId === versionId ? previous : { applicationId, versionId }));
-    }
-  }, [application, version, storageKey, applicationId, versionId]);
-
-  const path = (appId, verId, targetSection = section) => `${root}/applications/${appId}/versions${verId ? `/${verId}/${targetSection}` : ''}`;
+  const section = Object.keys(SECTION_ICONS).find((id) => location.pathname.endsWith(`/${id}`)) || indexSections[suffix] || 'data-model';
 
   const versionOptions = [{ value: '', label: 'Sélectionner une version' }, ...versions.map((v) => ({ value: v.id, label: `${v.version} — ${v.status}` }))];
   const applicationOptions = [{ value: '', label: 'Sélectionner une application' }, ...applications.map((a) => ({ value: a.id, label: a.name }))];
@@ -114,53 +78,19 @@ function Workspace({ tenant }) {
 
       <BmContextBar
         items={[
-          { label: 'Application', value: application?.name },
-          { label: 'Version', value: version?.version },
+          { label: 'Tenant', value: tenant?.name || tenant?.code },
+          { label: 'Application', value: application?.name, control: <select aria-label="Application" className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" value={application?.id || ''} onChange={(event) => selectApplication(event.target.value)}>{applicationOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> },
+          { label: 'Version', value: version?.version, control: <select aria-label="Version" className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none disabled:text-slate-400" value={version?.id || ''} disabled={!applicationId} onChange={(event) => selectVersion(event.target.value)}>{versionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> },
           { label: 'Statut', value: version?.status },
-          { label: 'Environnement', value: version?.environment?.name },
-          { label: 'Tenant', value: tenant?.name },
         ]}
       />
 
       {/* Sélecteurs Application / Version (besoin réel du CDC : le contexte pilote tout l'écran) */}
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-        <label className="text-xs font-semibold text-slate-600">
-          Application
-          <select aria-label="Application" className={`${inputClass} mt-1 w-64`} value={application?.id || ''} onChange={(event) => navigate(path(event.target.value, ''))}>
-            {applicationOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="text-xs font-semibold text-slate-600">
-          Version
-          <select aria-label="Version" className={`${inputClass} mt-1 w-56`} value={version?.id || ''} disabled={!applicationId} onChange={(event) => navigate(path(applicationId, event.target.value))}>
-            {versionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-      </div>
-
       {/* Navigation secondaire entre sections */}
-      <nav aria-label="Sections de la version" className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-2 shadow-2xs">
-        {SECTIONS.map(([id, label]) => {
-          const Icon = SECTION_ICONS[id];
-          const isActive = id === section;
-          return (
-            <Link
-              key={id}
-              to={path(applicationId, versionId, id)}
-              aria-current={isActive ? 'page' : undefined}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-150 bm-focus ${isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
       {loading ? (
         <BmLoading label="Chargement du contexte…" />
       ) : error ? (
-        <BmErrorState message={error} onRetry={() => setRevision((r) => r + 1)} />
+        <BmErrorState message={error} onRetry={retry} />
       ) : !version ? (
         <div className="rounded-xl border border-slate-200 bg-white shadow-2xs">
           <BmEmptyState
