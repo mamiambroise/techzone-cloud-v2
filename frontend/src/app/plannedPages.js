@@ -15,6 +15,7 @@ const planned = (id, group, label, description) => ({
 });
 
 export const plannedPages = [
+  { ...planned("data", "data", "Vue d’ensemble", "Vue d’ensemble Data Runtime et état des sources du tenant courant."), component: "DataRuntime", implemented: true, status: "PARTIAL" },
   planned("uiNavigation", "ui", "Navigation", "L’ordre visuel, les icônes et la visibilité des pages seront gérés ici ; la structure de navigation reste au Business Manager."),
   planned("uiEditor", "ui", "Éditeur visuel", "L’éditeur visuel s’ouvre depuis une page de l’application ; il sera disponible avec le futur Page Builder."),
 
@@ -27,18 +28,10 @@ export const plannedPages = [
   planned("packCapabilities", "packs", "Capacités", "Le catalogue des capacités fournies et requises par les packs n’est pas encore intégré."),
   planned("packRules", "packs", "Règles", "Les règles de composition et de compatibilité des packs seront disponibles avec le futur Pack Manager."),
 
-  planned("runtimeContext", "runtime", "Contextes", "Les contextes d’exécution résolus ne sont pas encore exposés par le Runtime."),
-  planned("runtimeManifest", "runtime", "Manifest", "Le manifest actif des packs publiés sera consultable avec le futur moteur Runtime."),
-  planned("runtimeResolver", "runtime", "Résolution", "La résolution des modules, capacités et providers sera consultable avec le futur moteur Runtime."),
-  planned("runtimeEffective", "runtime", "Configuration effective", "La configuration effective appliquée à l’exécution sera disponible avec le futur moteur Runtime."),
-  planned("runtimeCache", "runtime", "Cache", "La gestion du cache d’exécution n’est pas encore disponible."),
-  planned("runtimeDiagnostics", "runtime", "Diagnostics", "Les diagnostics d’exécution seront disponibles avec le futur moteur Runtime."),
-
-  planned("data", "data", "Vue d’ensemble", "La vue d’ensemble des sources, contrats et accès sera intégrée avec la Data Platform."),
-  planned("dataSources", "data", "Sources", "La gestion des sources de données n’est pas encore disponible."),
-  planned("dataContracts", "data", "Modèles & Contrats", "Les modèles et contrats de données seront disponibles avec la Data Platform."),
-  planned("dataPolicies", "data", "Politiques", "Les politiques d’accès aux données ne sont pas encore intégrées."),
-  planned("dataDiagnostics", "data", "Diagnostics", "Les diagnostics des sources et des requêtes ne sont pas encore disponibles."),
+  { ...planned("dataSources", "data", "Sources", "Sources Data Runtime exposées par le contrat canonique."), component: "DataRuntimeGovernance", implemented: true, status: "PARTIAL" },
+  { ...planned("dataContracts", "data", "Modèles & Contrats", "Contrat canonique et opérations exposées par Business Manager."), component: "DataRuntimeGovernance", implemented: true, status: "PARTIAL" },
+  { ...planned("dataPolicies", "data", "Politiques", "Matrice des opérations exposées, complétée par la décision IAM serveur."), component: "DataRuntimeGovernance", implemented: true, status: "PARTIAL" },
+  { ...planned("dataDiagnostics", "data", "Diagnostics", "Métriques et historique Data Runtime du tenant authentifié."), component: "DataRuntimeGovernance", implemented: true, status: "PARTIAL" },
 
   planned("erpSynchronizations", "erp", "Synchronisations", "Le suivi des synchronisations ERP sera intégré avec l’Integration Hub."),
   planned("erpDiagnostics", "erp", "Diagnostics", "Les diagnostics de la connexion ERP seront fournis par l’Integration Hub."),

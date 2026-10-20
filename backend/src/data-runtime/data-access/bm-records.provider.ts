@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DataProvider, ListOptions } from './data-access-manager';
-import { RuntimeContext, ResourceDescriptor } from '../interfaces';
+import { RuntimeContext, ResourceDescriptor, RelationType } from '../interfaces';
 import { Prisma } from '../../generated/prisma/client';
 import { DATA_RUNTIME_EXECUTE } from '../../iam/iam.constants';
 
@@ -172,11 +172,55 @@ export class BmRecordsProvider implements DataProvider {
     return Prisma.sql`(${Prisma.join(parts, filter.logic === 'AND' ? ' AND ' : ' OR ')})`;
   }
 
+  private async expandRelations(items: any[], d: any, requested: string[], ctx: RuntimeContext): Promise<any[]> {
+    if (requested.length > 10 || requested.some((code) => typeof code !== 'string' || !code.trim())) {
+      throw new BadRequestException('INVALID_RELATIONS');
+    }
+    if (!this.prisma.bmRelation?.findMany) throw new BadRequestException('RELATION_EXPANSION_UNAVAILABLE');
+    const relationRows = await this.prisma.bmRelation.findMany({
+      where: {
+        applicationVersionId: d.version.id,
+        sourceEntityId: d.entity.id,
+        code: { in: requested },
+        OR: [{ tenantId: ctx.tenantId }, { tenantId: null }],
+      },
+    });
+    if (relationRows.length !== requested.length) throw new BadRequestException('RELATION_NOT_ALLOWED');
+    if (!this.prisma.bmEntity?.findUnique || !this.prisma.businessRecord?.findMany) {
+      throw new BadRequestException('RELATION_EXPANSION_UNAVAILABLE');
+    }
+    const relationData = await Promise.all(relationRows.map(async (relation: any) => {
+      const targetEntity = await this.prisma.bmEntity.findUnique({ where: { id: relation.targetEntityId }, select: { code: true } });
+      if (!targetEntity) throw new BadRequestException('RELATION_DEFINITION_NOT_FOUND');
+      const ids = items.flatMap((item) => {
+        const value = item.data?.[relation.code];
+        return Array.isArray(value) ? value : [value];
+      }).filter((value: any) => typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value));
+      const records = ids.length
+        ? await this.prisma.businessRecord.findMany({
+          where: { id: { in: [...new Set(ids)] }, tenantId: ctx.tenantId, applicationId: d.version.applicationId, entityCode: targetEntity.code, archivedAt: null },
+        })
+        : [];
+      return { relation, recordsById: new Map(records.map((record: any) => [record.id, record])) };
+    }));
+    const expanded = items.map((item) => {
+      const data = item.data && typeof item.data === 'object' ? item.data : {};
+      const relations: Record<string, any> = {};
+      for (const { relation, recordsById } of relationData) {
+        const rawValue = data[relation.code];
+        const values = Array.isArray(rawValue) ? rawValue : [rawValue];
+        const related = values.map((value: any) => recordsById.get(value)).filter(Boolean);
+        relations[relation.code] = Array.isArray(rawValue) ? related : (related[0] || null);
+      }
+      return { ...item, relations };
+    });
+    return expanded;
+  }
+
   async list(resource: string, ctx: RuntimeContext, options: ListOptions = {}) {
     const d = await this.check(resource, 'read', ctx);
     const page = options.page ?? 1, pageSize = options.pageSize ?? 20;
     if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) throw new BadRequestException('INVALID_PAGINATION');
-    if (options.relations?.length) throw new BadRequestException('RELATION_EXPANSION_NOT_SUPPORTED');
     for (const field of options.select || []) this.fieldExpression(d, field);
     const order = (options.sort || []).map(sort => {
       if (!['ASC', 'DESC'].includes(sort.direction)) throw new BadRequestException('INVALID_SORT');
@@ -189,11 +233,59 @@ export class BmRecordsProvider implements DataProvider {
       this.prisma.$queryRaw<{ total: bigint }[]>(Prisma.sql`SELECT count(*) AS total FROM business_manager.business_records WHERE ${where}`),
     ], { isolationLevel: 'RepeatableRead' });
     const total = Number(counts[0].total);
-    return { items: options.select?.length ? items.map(r => ({ ...r, data: Object.fromEntries(options.select!.map(k => [k, r.data[k]])) })) : items, page, pageSize, total, totalPages: Math.ceil(total / pageSize) };
+    const expanded = options.relations?.length ? await this.expandRelations(items, d, options.relations, ctx) : items;
+    return { items: options.select?.length ? expanded.map(r => ({ ...r, data: Object.fromEntries(options.select!.map(k => [k, r.data[k]])) })) : expanded, page, pageSize, total, totalPages: Math.ceil(total / pageSize) };
   }
   async count(resource: string, ctx: RuntimeContext, filter?: any) { return (await this.list(resource, ctx, { pageSize: 1, filter })).total; }
   async exists(resource: string, id: string, ctx: RuntimeContext) {
     try { await this.get(resource, id, ctx); return true; } catch (error) { if (error instanceof NotFoundException) return false; throw error; }
   }
-  async metadata(resource: string, ctx: RuntimeContext): Promise<ResourceDescriptor> { const d = await this.definition(resource, ctx); return { resourceCode: resource, displayName: d.entity.name, provider: 'BM_RECORDS', instance: 'postgresql', operations: ['READ','LIST','CREATE','UPDATE','DELETE'], fields: d.entity.fields.map((f:any) => ({ code:f.code, displayName:f.label || f.code, type:f.type, required:f.required, nullable:!f.required })), relations: [] }; }
+  async metadata(resource: string, ctx: RuntimeContext): Promise<ResourceDescriptor> {
+    const d = await this.definition(resource, ctx);
+    const relationRows = this.prisma.bmRelation?.findMany
+      ? await this.prisma.bmRelation.findMany({
+        where: {
+          applicationVersionId: d.version.id,
+          sourceEntityId: d.entity.id,
+          OR: [{ tenantId: ctx.tenantId }, { tenantId: null }],
+        },
+        orderBy: { code: 'asc' },
+      })
+      : [];
+    const targetIds = relationRows.map((relation: any) => relation.targetEntityId).filter(Boolean);
+    const targetEntities = targetIds.length && this.prisma.bmEntity?.findMany
+      ? await this.prisma.bmEntity.findMany({
+        where: {
+          id: { in: targetIds },
+          applicationVersionId: d.version.id,
+          OR: [{ tenantId: ctx.tenantId }, { tenantId: null }],
+          status: 'ACTIVE',
+        },
+        select: { id: true, code: true },
+      })
+      : [];
+    const targetById = new Map(targetEntities.map((entity: any) => [entity.id, entity.code]));
+    const relationType = (value: string): RelationType => {
+      const normalized = String(value || 'ONE_TO_MANY').toUpperCase();
+      const allowed: RelationType[] = ['ONE_TO_ONE', 'ONE_TO_MANY', 'MANY_TO_ONE', 'MANY_TO_MANY'];
+      return allowed.includes(normalized as RelationType)
+        ? (normalized as RelationType)
+        : 'ONE_TO_MANY';
+    };
+    return {
+      resourceCode: resource,
+      displayName: d.entity.name,
+      provider: 'BM_RECORDS',
+      instance: 'postgresql',
+      operations: ['READ', 'LIST', 'CREATE', 'UPDATE', 'DELETE'],
+      fields: d.entity.fields.map((f: any) => ({ code: f.code, displayName: f.label || f.code, type: f.type, required: f.required, nullable: !f.required })),
+      relations: relationRows.map((relation: any) => ({
+        code: relation.code,
+        displayName: relation.sourceLabel || relation.code,
+        targetResource: targetById.get(relation.targetEntityId) || relation.targetEntityId,
+        type: relationType(relation.relationType),
+        foreignKey: relation.configuration?.foreignKey || relation.code,
+      })),
+    };
+  }
 }

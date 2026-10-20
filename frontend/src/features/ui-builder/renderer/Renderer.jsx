@@ -68,10 +68,10 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
     setRecord(null); setMessage(null);
     if (operation === 'CREATE') return undefined;
     if (!ctx.recordId) { setMessage({ error: 'Sélectionnez un enregistrement depuis la liste.' }); return undefined; }
-    getRuntimeRecord(resource, ctx.recordId).then(value => { if (active) setRecord(value); })
+    getRuntimeRecord(resource, ctx.recordId, ctx.businessContext?.runtimeProof).then(value => { if (active) setRecord(value); })
       .catch(() => active && setMessage({ error: 'Enregistrement inaccessible.' }));
     return () => { active = false; };
-  }, [resource, ctx.recordId, operation]);
+  }, [resource, ctx.recordId, operation, ctx.businessContext?.runtimeProof]);
   const submit = async (event) => {
     event.preventDefault();
     if (!resource) return setMessage({ error: 'Aucun binding ENTITY_FIELD ne définit la ressource.' });
@@ -83,7 +83,7 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
     const input = serializeFields(fields, event.currentTarget, ctx.businessContext);
     setSubmitting(true);
     try {
-    const result = await executeRuntime({ resource, operation, ...(operation === 'UPDATE' ? { targetId: ctx.recordId } : {}), input, idempotencyKey: `ui-${node.id}-${Date.now()}` });
+    const result = await executeRuntime({ resource, operation, ...(operation === 'UPDATE' ? { targetId: ctx.recordId } : {}), input, idempotencyKey: `ui-${node.id}-${Date.now()}` }, ctx.businessContext?.runtimeProof);
     setMessage(result.success ? { success: operation === 'CREATE' ? 'Enregistrement créé.' : 'Enregistrement modifié.' } : { error: result.errorMessage || 'Écriture refusée.' });
     if (result.success) ctx.refreshData();
     } catch { setMessage({ error: 'Création impossible. Réessayez après vérification de la connexion.' }); }

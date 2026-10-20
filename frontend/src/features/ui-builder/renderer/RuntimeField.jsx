@@ -15,7 +15,7 @@ export default function RuntimeField({ node, ctx }) {
     async function read() {
       const rows = [];
       for (let page = 1; ; page++) {
-        const result = await queryRuntime(resource, { page, pageSize: 100 });
+        const result = await queryRuntime(resource, { page, pageSize: 100 }, ctx.businessContext?.runtimeProof);
         if (!active) return;
         const batch = recordRows(result);
         rows.push(...batch);
@@ -26,7 +26,7 @@ export default function RuntimeField({ node, ctx }) {
     }
     read().catch(() => active && setChoices({ resource, rows: [], loading: false, error: 'Options indisponibles. Rechargez la page.' }));
     return () => { active = false; };
-  }, [resource, ctx.dataRevision]);
+  }, [resource, ctx.dataRevision, ctx.businessContext?.runtimeProof]);
   const type = schema?.type;
   const value = ctx.record?.[node.bindings?.value?.field] ?? schema?.defaultValue ?? '';
   const [selected, setSelected] = useState(String(value));

@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-20T03:40:33.317Z",
+  "status": "BLOCKED",
+  "message": "TEST_LOGIN_CREDENTIALS_MISSING",
+  "checks": [
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "frontend:/runtime",
+      "status": 200
+    },
+    {
+      "path": "frontend:/api/runtime/dashboard",
+      "status": 401
+    },
+    {
+      "path": "/runtime/dashboard",
+      "status": 401,
+      "code": "UNAUTHENTICATED",
+      "traceId": "70a57452-c846-4b12-85fd-44b70aafc575"
+    }
+  ],
+  "fullBusinessAcceptance": "NOT TESTED"
+}

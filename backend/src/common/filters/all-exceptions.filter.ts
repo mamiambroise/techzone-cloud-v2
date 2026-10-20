@@ -42,11 +42,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = 503;
       code = 'DATABASE_UNAVAILABLE';
       message = 'La base de données est indisponible.';
+    } else if (['P2021', 'P2022', '42P01', '42703'].includes(dbCode)) {
+      status = 503;
+      code = 'DATABASE_SCHEMA_OUTDATED';
+      message = 'Le schéma de la base de données doit être mis à jour avec les migrations du backend.';
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exResponse = exception.getResponse();
       message = typeof exResponse === 'string' ? exResponse : (exResponse as any).message || message;
       code = (exResponse as any)?.code || (exResponse as any)?.error?.code || (status === 403 ? 'FORBIDDEN' : status === 401 ? 'UNAUTHENTICATED' : status === 400 ? 'VALIDATION_ERROR' : code);
+      if (typeof message === 'string' && /^RUNTIME_[A-Z_]+$/.test(message)) code = message;
       details = (exResponse as any)?.details ?? (exResponse as any)?.error?.details;
     } else if (exception && typeof exception === 'object' && 'statusCode' in exception && 'code' in exception) {
       status = err.statusCode!;

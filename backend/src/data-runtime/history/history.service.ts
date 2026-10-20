@@ -111,8 +111,17 @@ export class HistoryService {
     return results.reverse();
   }
 
-  getMetrics(): DataMetrics {
-    const total = this.records.length;
+  /**
+   * Return metrics for one tenant only. Runtime telemetry is process-local,
+   * therefore the caller must always provide the authenticated tenant when
+   * exposing it through an HTTP endpoint. Omitting the tenant is retained for
+   * internal diagnostics and tests, but must not be used by tenant routes.
+   */
+  getMetrics(tenantId?: string): DataMetrics {
+    const records = tenantId
+      ? this.records.filter((record) => record.tenantId === tenantId)
+      : this.records;
+    const total = records.length;
     if (total === 0) {
       return {
         queryCount: 0,
@@ -128,11 +137,11 @@ export class HistoryService {
       };
     }
 
-    const successCount = this.records.filter((r) => r.status === 'SUCCESS').length;
-    const timeouts = this.records.filter((r) => r.status === 'TIMEOUT').length;
-    const denied = this.records.filter((r) => r.status === 'DENIED').length;
+    const successCount = records.filter((r) => r.status === 'SUCCESS').length;
+    const timeouts = records.filter((r) => r.status === 'TIMEOUT').length;
+    const denied = records.filter((r) => r.status === 'DENIED').length;
 
-    const latencies = this.records.map((r) => r.duration).sort((a, b) => a - b);
+    const latencies = records.map((r) => r.duration).sort((a, b) => a - b);
     const p95 = latencies[Math.floor(latencies.length * 0.95)];
     const p99 = latencies[Math.floor(latencies.length * 0.99)];
     const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;

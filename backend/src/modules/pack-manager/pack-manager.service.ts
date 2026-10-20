@@ -962,7 +962,7 @@ export class PackManagerService {
   async publishedManifest(code: string, versionNumber: string, actor: Actor) {
     const item = await this.db.packManifest.findFirst({
       where: { tenantId: this.tenant(actor), status: 'PUBLISHED', packVersion: { versionNumber, status: 'PUBLISHED', pack: { code, archivedAt: null } } },
-      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true, applicationVersionId: true } } },
     });
     if (!item) throw new NotFoundException('PUBLISHED_PACK_MANIFEST_NOT_FOUND');
     const content = item.content as any;
@@ -975,7 +975,7 @@ export class PackManagerService {
       hash(item.packVersion.snapshot.content) !== item.packVersion.snapshotHash
     ) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
     publicJson(content);
-    return { id: item.id, packVersionId: item.packVersionId, hash: item.manifestHash, definition: content.definition };
+    return { id: item.id, packVersionId: item.packVersionId, applicationVersionId: item.packVersion.applicationVersionId, hash: item.manifestHash, definition: content.definition };
   }
 
   private assertPublicationIntegrity(
@@ -1075,7 +1075,7 @@ export class PackManagerService {
     await this.version(id, actor);
     const item = await this.db.packManifest.findFirst({
       where: { tenantId: this.tenant(actor), packVersionId: id },
-      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true, applicationVersionId: true } } },
     });
     if (!item) throw new NotFoundException('PACK_MANIFEST_NOT_FOUND');
     if (

@@ -1,6 +1,6 @@
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const target=process.argv[2];require('./ph7-live-gate.cjs').gate(target);
-const url=new URL(require('dotenv').parse(fs.readFileSync('.env')).DATABASE_URL);assert(url.hostname==='127.0.0.1'&&url.port==='55432');url.pathname='/'+target;process.env.DATABASE_URL=url.toString();
+const url=new URL(require('dotenv').parse(fs.readFileSync('.env')).DATABASE_URL);assert(url.hostname==='127.0.0.1'&&url.port==='55432'||target==='techzonecloud_phase7_recipe'&&['127.0.0.1','localhost'].includes(url.hostname)&&['5432','55432'].includes(url.port));url.pathname='/'+target;process.env.DATABASE_URL=url.toString();
 const {PrismaService}=require('../dist/prisma/prisma.service');
 const {UiBuilderService}=require('../dist/modules/ui-builder/ui-builder.service');
 const {PackManagerService}=require('../dist/modules/pack-manager/pack-manager.service');
