@@ -70,25 +70,27 @@ export function ModuleCard({ group, entry, description }) {
   return (
     <Link
       to={entry.route}
-      className="group flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-blue-600 motion-reduce:transform-none motion-reduce:transition-none"
+      className="group flex min-w-0 items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition duration-200 hover:border-blue-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-blue-600 motion-reduce:transition-none"
     >
-      <div className="flex items-center justify-between">
-        <span className="rounded-lg bg-slate-50 p-2 text-blue-600">
-          <Icon size={20} />
-        </span>
+      <span className="rounded-lg bg-slate-50 p-2 text-blue-600">
+        <Icon size={18} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-start justify-between gap-2">
+          <span className="text-sm font-semibold text-slate-900">{group.label}</span>
         {!entry.implemented ? (
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
+          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
             Bientôt
           </span>
         ) : (
           <ArrowUpRight
-            size={17}
-            className="text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
+            size={15}
+            className="mt-0.5 shrink-0 text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
           />
         )}
-      </div>
-      <h3 className="mt-3 text-sm font-semibold">{group.label}</h3>
-      <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>
+        </span>
+        <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{description}</span>
+      </span>
     </Link>
   );
 }

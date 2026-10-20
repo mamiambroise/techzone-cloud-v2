@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Plus,
   RotateCw,
-  Layers,
   Package,
   Database,
   Plug,
@@ -163,13 +162,13 @@ export default function CockpitView() {
   );
   return (
     <div className="space-y-5 sm:space-y-6" data-testid="platform-dashboard">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs sm:px-5">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
             Bienvenue, {user?.displayName || user?.username || "dans votre espace"}
           </h1>
           <p className="mt-1 text-xs text-slate-500">
-            {activeTenant?.name || activeTenant?.code} · Votre espace de travail
+            {activeTenant?.name || activeTenant?.code} · Vue d’ensemble de votre espace
           </p>
         </div>
         <button
@@ -185,40 +184,7 @@ export default function CockpitView() {
           />
           Actualiser
         </button>
-      </div>
-      <section className="relative overflow-hidden rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 via-white to-white p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="max-w-2xl">
-            <p className="mb-2 flex items-center gap-2 text-xs font-semibold text-blue-700">
-              <Layers size={16} />
-              TECHZONE CLOUD
-            </p>
-            <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              Construisez, déployez et pilotez
-              <br className="hidden sm:block" /> vos applications métier.
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-              De la définition métier à l’exécution, retrouvez vos modules et
-              les informations de votre espace en un seul endroit.
-            </p>
-          </div>
-          <Layers
-            size={68}
-            strokeWidth={1}
-            className="hidden shrink-0 text-blue-200 sm:block"
-          />
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-medium text-slate-600">
-          {["Modulaire", "Multi-tenant", "Intégré"].map((t) => (
-            <span
-              key={t}
-              className="rounded-full border border-slate-200 bg-white px-2.5 py-1"
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-      </section>
+      </header>
       {error && (
         <div
           role="alert"
@@ -233,7 +199,7 @@ export default function CockpitView() {
       {!error && (
         <section
           aria-label="Indicateurs clés"
-          className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-5"
+          className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 2xl:grid-cols-5"
         >
           {metrics
             .filter((m) => canAccess(m, user))
@@ -274,16 +240,71 @@ export default function CockpitView() {
             ))}
         </section>
       )}
+      {!error && (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
+          <DashboardSection
+            id="trend-title"
+            title="Activité et tendances"
+            description="Lecture de l’activité de la plateforme"
+          >
+            <div
+              data-widget="activityTrend"
+              className="flex min-h-28 items-start gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4"
+            >
+              <span className="rounded-lg bg-white p-2 text-slate-500 shadow-sm">
+                <ArrowRight size={18} />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-slate-800">
+                  Tendance indisponible
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  L’historique agrégé nécessaire à un graphique n’est pas encore exposé par les sources du tableau de bord.
+                </p>
+              </div>
+            </div>
+          </DashboardSection>
+          <DashboardSection
+            id="health-title"
+            title="Santé de la plateforme"
+            description="État consolidé des services et diagnostics disponibles"
+            action={
+              observability ? (
+                <Link className="text-xs font-medium text-blue-600" to={observability.route}>
+                  Ouvrir Observabilité
+                </Link>
+              ) : null
+            }
+          >
+            <div
+              data-widget="platformHealth"
+              className="flex min-h-28 items-start gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4"
+            >
+              <span className="rounded-lg bg-white p-2 text-slate-500 shadow-sm">
+                <HeartPulse size={18} />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-slate-800">
+                  Santé consolidée indisponible
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Les diagnostics restent consultables dans leurs modules propriétaires. Aucun statut global n’est affiché sans source de supervision fiable.
+                </p>
+              </div>
+            </div>
+          </DashboardSection>
+        </div>
+      )}
       <section aria-labelledby="modules-title">
         <div className="mb-3">
           <h2 id="modules-title" className="text-sm font-semibold">
-            Vos modules
+            Accès rapides
           </h2>
           <p className="mt-1 text-xs text-slate-500">
-            Accédez directement à vos outils de construction et d’exploitation.
+            Les espaces autorisés les plus utiles pour poursuivre votre travail.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {modules.slice(0, 8).map((m) => (
             <ModuleCard
               key={m.group.id}
@@ -429,35 +450,6 @@ export default function CockpitView() {
                 </div>
               ),
             )}
-          </DashboardSection>
-          <DashboardSection
-            id="health-title"
-            title="Santé de la plateforme"
-            description="État consolidé des services et diagnostics disponibles"
-            action={
-              observability ? (
-                <Link className="text-xs font-medium text-blue-600" to={observability.route}>
-                  Ouvrir Observabilité
-                </Link>
-              ) : null
-            }
-          >
-            <div
-              data-widget="platformHealth"
-              className="flex items-start gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4"
-            >
-              <span className="rounded-lg bg-white p-2 text-slate-500 shadow-sm">
-                <HeartPulse size={18} />
-              </span>
-              <div>
-                <p className="text-sm font-medium text-slate-800">
-                  Santé consolidée indisponible
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Les diagnostics restent consultables dans leurs modules propriétaires. Aucun statut global n’est affiché sans source de supervision fiable.
-                </p>
-              </div>
-            </div>
           </DashboardSection>
           <DashboardSection
             id="alerts-title"
