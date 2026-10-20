@@ -304,6 +304,16 @@ export function effectiveNavigation(user, context = {}) {
   }
   return navigationGroups
     .filter((g) => !g.hidden && (status === "ready" || g.id === "dashboard"))
-    .map((g) => ({ ...g, entries: groupEntries(g.id).filter((e) => canAccess(e, user)) }))
+    .map((g) => {
+      const entries = groupEntries(g.id);
+      const permissions = entries
+        .map((entry) => entry.permission)
+        .filter(Boolean);
+      const uniformPermission = permissions.length > 0 && permissions.every((permission) => permission === permissions[0]);
+      const visibleEntries = uniformPermission && canAccess({ permission: permissions[0] }, user)
+        ? entries
+        : entries.filter((entry) => canAccess(entry, user));
+      return { ...g, entries: visibleEntries };
+    })
     .filter((g) => g.entries.length);
 }
