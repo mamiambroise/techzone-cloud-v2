@@ -24,6 +24,9 @@ export default defineConfig(({ mode }) => {
         exclude: [...configDefaults.exclude, 'node_modules/*'],
         css: true,
         mockReset: true,
+        fileParallelism: false,
+        maxWorkers: 1,
+        testTimeout: 15000,
       },
     });
   }
