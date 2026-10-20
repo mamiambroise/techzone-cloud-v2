@@ -3973,6 +3973,7 @@ model Pack {
   @@unique([id, tenantId])
 
   @@unique([tenantId, code])
+  @@index([applicationId])
   @@index([tenantId, status])
   @@map("pm_packs")
 }

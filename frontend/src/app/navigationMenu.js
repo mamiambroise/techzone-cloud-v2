@@ -93,12 +93,12 @@ const menu = [
 
   group("runtime", "Runtime", "execution", "Play", "text-sky-400", [
     item("runtime", "Vue d’ensemble", "Home", ["packRuntime"]),
-    item("runtimeContext", "Contextes", "Layers"),
-    item("runtimeManifest", "Manifest", "FileText"),
-    item("runtimeResolver", "Résolution", "GitBranch"),
-    item("runtimeEffective", "Configuration effective", "SlidersHorizontal"),
-    item("runtimecache", "Cache", "Database", [], { pageId: "runtimeCache" }),
+    item("runtimeApplications", "Applications", "LayoutGrid"),
+    item("runtimeResolutions", "Résolutions", "GitBranch"),
+    item("runtimeActivations", "Activations", "PlayCircle"),
+    item("runtimeCache", "Cache", "Database"),
     item("runtimeDiagnostics", "Diagnostics", "BarChart3"),
+    item("runtimeHistory", "Historique", "History"),
   ]),
 
   group("data", "Données", "integrations", "Database", "text-cyan-400", [

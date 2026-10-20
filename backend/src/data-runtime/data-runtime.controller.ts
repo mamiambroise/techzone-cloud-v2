@@ -1,3 +1,4 @@
+import { RuntimeExecutionService } from '../modules/pack-runtime/runtime-execution.service';
 import { Controller, Get, Post, Body, Param, Logger, Req, ConflictException, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -36,6 +37,7 @@ export class DataRuntimeController {
     private readonly historyService: HistoryService,
     private readonly validationService: ValidationService,
     private readonly prisma: PrismaService = null as any,
+    private readonly runtimeExecution: RuntimeExecutionService = new RuntimeExecutionService(prisma),
   ) {}
 
   // === CONTRACT ===
@@ -182,34 +184,27 @@ export class DataRuntimeController {
       throw new ForbiddenException('TENANT_REQUIRED');
     }
     const resolutionId = payload.resolutionId || (req as any)?.body?.resolutionId || (req as any)?.query?.resolutionId || (req as any)?.headers?.['x-runtime-resolution-id'];
-    if (!resolutionId) return;
-    if (!this.prisma?.runtimeResolution) {
-      throw new ForbiddenException('RUNTIME_RESOLUTION_GUARD_UNAVAILABLE');
+    const resource = String(payload.resource || '');
+    const bm = /^bm:([0-9a-f-]{36}):/i.exec(resource);
+    let version: { id: string; applicationId: string; status: string } | null = null;
+    if (bm) {
+      version = await this.prisma.applicationVersion.findFirst({ where: { id: bm[1], tenantId: principal.tenantId }, select: { id: true, applicationId: true, status: true } });
+      if (!version) throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
     }
-    const item = await this.prisma.runtimeResolution.findFirst({
-      where: { id: String(resolutionId), tenantId: principal.tenantId },
-      include: { effectiveManifest: true },
+    const published = version?.status === 'PUBLISHED' || req?.headers?.['x-runtime-origin'] === 'published' || Boolean(version && await this.prisma.packVersion.count({ where: { tenantId: principal.tenantId, applicationVersionId: version.id, status: 'PUBLISHED' } }));
+    if (!resolutionId && !published) return;
+    if (!resolutionId) throw new BadRequestException('RUNTIME_RESOLUTION_ID_REQUIRED');
+    const item = await this.runtimeExecution.assertExecutable({
+      resolutionId: String(resolutionId), tenantId: principal.tenantId,
+      applicationId: version?.applicationId || payload.applicationId,
+      applicationVersionId: version?.id || payload.applicationVersionId,
+      environmentId: payload.environmentId,
     });
-    if (!item) {
-      throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND');
+    if (bm) {
+      const content = item.effectiveManifest!.content as Record<string, any>;
+      if (!content.ui?.definition?.businessContext?.entities?.some((e: any) => e.code === resource.split(':')[2])) throw new ForbiddenException('RUNTIME_DATA_BINDING_UNAVAILABLE');
     }
-    const runtimeStatus = item.status === 'RESOLVED' ? 'EXECUTABLE' : item.status;
-    if (runtimeStatus !== 'EXECUTABLE' || item.effectiveManifest?.executable !== true) {
-      throw new ConflictException('RUNTIME_RESOLUTION_BLOCKED');
-    }
-    if (payload.applicationId && item.applicationId !== String(payload.applicationId)) {
-      throw new BadRequestException('RUNTIME_APPLICATION_MISMATCH');
-    }
-    if (payload.environmentId && item.environment !== String(payload.environmentId)) {
-      throw new BadRequestException('RUNTIME_ENVIRONMENT_MISMATCH');
-    }
-    if (payload.applicationVersionId) {
-      const effective = item.effectiveManifest?.content as Record<string, any> | null;
-      const observed = effective?.scope?.businessVersionId ?? effective?.businessConfiguration?.versionId ?? effective?.businessConfiguration?.applicationVersionId;
-      if (observed && String(observed) !== String(payload.applicationVersionId)) {
-        throw new BadRequestException('RUNTIME_APPLICATION_VERSION_MISMATCH');
-      }
-    }
+    if (req) (req as any).runtimeResolution = item;
     return item;
   }
 
@@ -221,8 +216,8 @@ export class DataRuntimeController {
     return {
       tenantId: principal.tenantId,
       userId: principal.userId,
-      applicationId: 'data-runtime',
-      environmentId: process.env.NODE_ENV || 'development',
+      applicationId: (req as any)?.runtimeResolution?.applicationId ?? 'data-runtime',
+      environmentId: (req as any)?.runtimeResolution?.environment ?? process.env.NODE_ENV ?? 'development',
       requestId: `req-${Date.now()}`,
       traceId,
       // The IAM guard derives ADMIN from the persisted user, never request JSON.

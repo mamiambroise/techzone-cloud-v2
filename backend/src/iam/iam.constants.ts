@@ -41,6 +41,8 @@ export const PERMISSIONS = {
   PACK_VERSION_PUBLISH: 'pack.version.publish',
   RUNTIME_EFFECTIVE_MANIFEST_READ: 'runtime.effective.manifest.read',
   RUNTIME_RESOLVE: 'runtime.resolve',
+  RUNTIME_ACTIVATE: 'runtime.activate',
+  RUNTIME_DEACTIVATE: 'runtime.deactivate',
   RUNTIME_CACHE_READ: 'runtime.cache.read',
   RUNTIME_CACHE_INVALIDATE: 'runtime.cache.invalidate',
   RUNTIME_PROVIDER_READ: 'runtime.provider.read',

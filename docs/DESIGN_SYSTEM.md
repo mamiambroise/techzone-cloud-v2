@@ -75,3 +75,18 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 - La complétion est le ratio d’étapes READY parmi les étapes serveur ; sans étapes, afficher « — ».
 - Validation immédiate des routes : message textuel et `aria-invalid`, sans remplacer la validation serveur.
 - Conflit de sauvegarde : conserver l’arbre local, annoncer le conflit, afficher les révisions et une comparaison ; rechargement serveur après confirmation explicite. Bloquer autosave et sauvegarde manuelle tant que le conflit n’est pas résolu.
+
+## Pack Runtime — exécution contrôlée
+
+- Le rendu publié attend une résolution `EXECUTABLE` et un contexte serveur `ACTIVE` avec readiness `READY` ; afficher un panneau bloquant dans les autres états.
+- L’action « Activer l’application » est distincte de la résolution ; la désactivation demande confirmation et retire le rendu actif après rechargement.
+- Les listes d’activations utilisent les contextes persistés, jamais une liste de résolutions présentée comme des activations.
+- Les cartes de santé et de cache affichent « Non vérifiée » en l’absence de mesure ; aucun statut « Active » ou « OK » par défaut.
+- Les appels de cache et de providers sont conditionnés aux permissions ; leur absence ne doit pas empêcher la consultation autorisée du Runtime.
+- Toutes les règles spécifiques au module sont regroupées dans `frontend/src/index.css`, sous `.runtime-workspace` et les classes `rt-*` ; aucun reset supplémentaire ni feuille de style globale concurrente.
+- Navigation interne horizontale et défilante sur mobile ; les liens conservent la résolution sélectionnée et exposent `aria-current`.
+- Indicateurs en bandeau de supervision, détails via tableaux filtrables et paginés localement ; le périmètre maximal de 100 résolutions est annoncé.
+- L’inspecteur sépare Synthèse, Manifeste, Capacités, Dépendances, Configuration, Données & services et Journal des étapes. Le chargement de l’inspecteur est différé.
+- Une résolution exécutable ne rend pas automatiquement l’application : l’utilisateur active, vérifie le contexte prêt, puis choisit « Ouvrir l’application ».
+- Cache : confirmation du périmètre Tenant/Application/Pack/Entrée ; confirmation partagée et focus clavier contenu dans le dialogue.
+- Erreurs et traces restent visibles dans le panneau concerné, sans bloquer les données chargées par les autres API. Les réponses tardives sont annulées lors d’un changement de tenant ou de sélection.

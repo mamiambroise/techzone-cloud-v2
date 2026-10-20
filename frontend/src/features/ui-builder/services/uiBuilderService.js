@@ -52,14 +52,16 @@ export function getBusinessContext(applicationVersionId) {
 
 // Data Runtime is the sole gateway for records rendered by a UI definition.
 // Keeping this here makes preview and the eventual runtime use the same API contract.
-export function queryRuntime(resource, query = {}) {
-  return api.post('/data-runtime/query', { resource, page: 1, pageSize: 20, ...query }).then(unwrap);
+const runtimeHeaders = proof => proof?.resolutionId ? { 'X-Runtime-Resolution-Id': proof.resolutionId, 'X-Runtime-Origin': 'published' } : {};
+
+export function queryRuntime(resource, query = {}, proof) {
+  return api.post('/data-runtime/query', { resource, page: 1, pageSize: 20, ...query }, { headers: runtimeHeaders(proof) }).then(unwrap);
 }
 
-export function executeRuntime(request) {
-  return api.post('/data-runtime/execute', request, { preserveEnvelope: true }).then(unwrap);
+export function executeRuntime(request, proof) {
+  return api.post('/data-runtime/execute', request, { preserveEnvelope: true, headers: runtimeHeaders(proof) }).then(unwrap);
 }
 
-export function getRuntimeRecord(resource, id) {
-  return api.get(`/data-runtime/resources/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`, { preserveEnvelope: true }).then(unwrap);
+export function getRuntimeRecord(resource, id, proof) {
+  return api.get(`/data-runtime/resources/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`, { preserveEnvelope: true, headers: runtimeHeaders(proof) }).then(unwrap);
 }
