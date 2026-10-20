@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { WidgetBody } from "./DashboardWidgets.jsx";
+import { StatusBadge, WidgetBody } from "./DashboardWidgets.jsx";
 import {
   effectiveNavigation,
   activeNavigation,
@@ -86,5 +86,11 @@ describe("Dashboard states", () => {
     show({ state: "LOADED", data: 123 }, { loading: true });
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.queryByText(/123/)).not.toBeInTheDocument();
+  });
+  it("gives critical and successful statuses distinct semantic tones", () => {
+    const { rerender } = render(<StatusBadge status="CRITICAL" />);
+    expect(screen.getByText("CRITICAL").className).toMatch(/rose/);
+    rerender(<StatusBadge status="SUCCESS" />);
+    expect(screen.getByText("SUCCESS").className).toMatch(/emerald/);
   });
 });

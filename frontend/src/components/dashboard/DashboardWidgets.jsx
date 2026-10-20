@@ -28,7 +28,7 @@ export function WidgetBody({ widget, loading, retry, empty, children }) {
             : "Cette source n’est pas encore disponible dans votre espace."}
         </p>
         {widget.state === "ERROR" && (
-          <button onClick={retry} className={`${buttonClass} mt-3`}>
+          <button type="button" onClick={retry} className={`${buttonClass} mt-3`}>
             <RotateCw size={13} />
             Réessayer
           </button>
@@ -93,10 +93,19 @@ export function ModuleCard({ group, entry, description }) {
   );
 }
 export function StatusBadge({ status }) {
-  const danger = /FAIL|ERROR|INVALID|BLOCK/.test(status);
+  const danger = /CRITICAL|FAIL|ERROR|INVALID|BLOCK/.test(status);
+  const warning = /WARNING|PENDING|DRAFT/.test(status);
+  const success = /SUCCESS|ACTIVE|PUBLISHED|READY|RESOLVED/.test(status);
+  const tone = danger
+    ? "bg-rose-50 text-rose-700"
+    : warning
+      ? "bg-amber-50 text-amber-800"
+      : success
+        ? "bg-emerald-50 text-emerald-700"
+        : "bg-slate-100 text-slate-600";
   return (
     <span
-      className={`inline-flex rounded-md px-2 py-1 text-[10px] font-medium ${danger ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"}`}
+      className={`inline-flex rounded-md px-2 py-1 text-[10px] font-medium ${tone}`}
     >
       {status}
     </span>

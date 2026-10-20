@@ -162,10 +162,10 @@ export default function CockpitView() {
     </WidgetBody>
   );
   return (
-    <div className="space-y-6" data-testid="platform-dashboard">
+    <div className="space-y-5 sm:space-y-6" data-testid="platform-dashboard">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
             Bienvenue, {user?.displayName || user?.username || "dans votre espace"}
           </h1>
           <p className="mt-1 text-xs text-slate-500">
@@ -173,6 +173,8 @@ export default function CockpitView() {
           </p>
         </div>
         <button
+          type="button"
+          aria-label="Actualiser les données du tableau de bord"
           className={buttonClass}
           onClick={() => refresh()}
           disabled={loading}
@@ -231,7 +233,7 @@ export default function CockpitView() {
       {!error && (
         <section
           aria-label="Indicateurs clés"
-          className="grid grid-cols-2 gap-3 xl:grid-cols-5"
+          className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-5"
         >
           {metrics
             .filter((m) => canAccess(m, user))
@@ -305,7 +307,7 @@ export default function CockpitView() {
                     <li key={row.id}>
                       <Link
                         to={row.targetRoute}
-                        className="flex items-center gap-3 rounded-lg py-3 transition-colors hover:bg-slate-50"
+                        className="flex items-center gap-3 rounded-lg py-3 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-blue-600"
                       >
                         <span className="h-2 w-2 shrink-0 rounded-full bg-blue-400" />
                         <div className="min-w-0 flex-1">
@@ -404,7 +406,7 @@ export default function CockpitView() {
                     <Link
                       key={row.id}
                       to={row.targetRoute}
-                      className="rounded-lg border border-slate-100 p-3 hover:border-blue-200"
+                      className="rounded-lg border border-slate-100 p-3 hover:border-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate text-sm font-medium">
@@ -479,7 +481,7 @@ export default function CockpitView() {
                             <li key={row.id}>
                               <Link
                                 to={row.targetRoute}
-                                className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/40 p-3"
+                                className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/40 p-3 focus-visible:outline-2 focus-visible:outline-blue-600"
                               >
                                 <CircleAlert
                                   size={16}
