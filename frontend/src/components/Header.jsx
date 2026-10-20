@@ -19,7 +19,7 @@ import { useTenant } from "../contexts/TenantProvider.jsx";
 import { useDashboard, alertKeys } from "./dashboard/DashboardContext.jsx";
 import GlobalSearch from "./GlobalSearch.jsx";
 const iconButton =
-  "rounded-[var(--radius-lg)] p-2 text-[var(--color-text-muted)] transition-colors duration-200 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
+  "rounded-[var(--radius-lg)] p-2 text-slate-300 transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
 export default function Header({ mobileOpen, onToggleMobileSidebar }) {
   const { user, logout } = useAuth(),
     { activeTenant, tenants, switchTenant, hasMultipleTenants, loading } =
@@ -94,7 +94,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
                   ? "/dashboard"
                   : groupDestination(group?.id) || "/dashboard"
               }
-              className="hidden shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] sm:inline"
+              className="hidden shrink-0 text-slate-300 hover:text-white sm:inline"
             >
               {entry?.group === "dashboard"
                 ? "Accueil"
@@ -102,7 +102,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             </Link>
             <ChevronRight
               size={13}
-              className="hidden shrink-0 text-slate-300 sm:block"
+              className="hidden shrink-0 text-slate-500 sm:block"
             />
             <span
               aria-current="page"
@@ -231,10 +231,10 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-xs font-semibold text-white">
                 {name.slice(0, 1).toUpperCase()}
               </span>
-              <span className="hidden max-w-28 truncate text-xs font-medium xl:block">
+            <span className="hidden max-w-28 truncate text-xs font-medium text-white xl:block">
                 {name}
               </span>
-              <ChevronDown size={12} className="text-slate-400" />
+              <ChevronDown size={12} className="text-slate-300" />
             </button>
             {panel === "user" && (
               <div className="absolute right-0 top-full mt-3 w-56 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-[var(--color-text)] shadow-[var(--shadow-card-hover)]">

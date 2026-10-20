@@ -2,9 +2,9 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowUpRight, Inbox, RotateCw } from "lucide-react";
 export const buttonClass =
-  "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-blue-300 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-600 motion-reduce:transition-none";
+  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-medium text-[var(--color-text-secondary)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
 export function WidgetBody({ widget, loading, retry, empty, children }) {
-  if (loading || !widget || widget.state === "LOADING")
+  if (loading || widget?.state === "LOADING")
     return (
       <div
         role="status"
@@ -16,18 +16,18 @@ export function WidgetBody({ widget, loading, retry, empty, children }) {
         <div className="h-4 w-4/5 rounded bg-slate-100" />
       </div>
     );
-  if (widget.state === "FORBIDDEN")
+  if (widget?.state === "FORBIDDEN")
     return <p className="py-4 text-sm text-slate-500">Accès non autorisé.</p>;
-  if (["ERROR", "UNAVAILABLE"].includes(widget.state))
+  if (!widget || ["ERROR", "UNAVAILABLE"].includes(widget.state))
     return (
       <div className="py-3 text-sm text-slate-500">
         <AlertCircle className="mb-2 h-5 w-5 text-slate-400" />
         <p>
-          {widget.state === "ERROR"
+          {widget?.state === "ERROR"
             ? "Données temporairement indisponibles."
             : "Cette source n’est pas encore disponible dans votre espace."}
         </p>
-        {widget.state === "ERROR" && (
+        {widget?.state === "ERROR" && (
           <button type="button" onClick={retry} className={`${buttonClass} mt-3`}>
             <RotateCw size={13} />
             Réessayer
@@ -35,7 +35,7 @@ export function WidgetBody({ widget, loading, retry, empty, children }) {
         )}
       </div>
     );
-  if (widget.state === "EMPTY")
+  if (widget?.state === "EMPTY")
     return (
       <div className="py-5 text-sm text-slate-500">
         <Inbox className="mb-2 h-5 w-5 text-slate-400" />
@@ -44,19 +44,19 @@ export function WidgetBody({ widget, loading, retry, empty, children }) {
     );
   return children(widget.data);
 }
-export function DashboardSection({ title, description, action, children, id }) {
+export function DashboardSection({ title, description, action, children, id, className = "" }) {
   return (
     <section
       aria-labelledby={id}
-      className="min-w-0 rounded-xl border border-slate-200 bg-white p-5 shadow-xs"
+      className={`min-w-0 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)] sm:p-5 ${className}`}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 id={id} className="text-sm font-semibold text-slate-900">
+          <h2 id={id} className="text-sm font-semibold text-[var(--color-text)]">
             {title}
           </h2>
           {description && (
-            <p className="mt-1 text-xs text-slate-500">{description}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{description}</p>
           )}
         </div>
         {action}
@@ -70,14 +70,14 @@ export function ModuleCard({ group, entry, description }) {
   return (
     <Link
       to={entry.route}
-      className="group flex min-w-0 items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition duration-200 hover:border-blue-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-blue-600 motion-reduce:transition-none"
+      className="group flex min-w-0 items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-card)] transition duration-200 hover:border-[var(--color-primary)] hover:shadow-[var(--shadow-card-hover)] focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none"
     >
-      <span className="rounded-lg bg-slate-50 p-2 text-blue-600">
+      <span className="rounded-[var(--radius-md)] bg-[var(--color-primary-soft)] p-2 text-[var(--color-primary)]">
         <Icon size={18} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-start justify-between gap-2">
-          <span className="text-sm font-semibold text-slate-900">{group.label}</span>
+          <span className="text-sm font-semibold text-[var(--color-text)]">{group.label}</span>
         {!entry.implemented ? (
           <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-500">
             Bientôt
@@ -89,7 +89,7 @@ export function ModuleCard({ group, entry, description }) {
           />
         )}
         </span>
-        <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{description}</span>
+        <span className="mt-1 block line-clamp-2 text-xs leading-5 text-[var(--color-text-secondary)]">{description}</span>
       </span>
     </Link>
   );
@@ -99,12 +99,12 @@ export function StatusBadge({ status }) {
   const warning = /WARNING|PENDING|DRAFT/.test(status);
   const success = /SUCCESS|ACTIVE|PUBLISHED|READY|RESOLVED/.test(status);
   const tone = danger
-    ? "bg-rose-50 text-rose-700"
+    ? "bg-[var(--color-error-soft)] text-[var(--color-error)]"
     : warning
-      ? "bg-amber-50 text-amber-800"
+      ? "bg-[var(--color-warning-soft)] text-[var(--color-warning)]"
       : success
-        ? "bg-emerald-50 text-emerald-700"
-        : "bg-slate-100 text-slate-600";
+        ? "bg-[var(--color-success-soft)] text-[var(--color-success)]"
+        : "bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]";
   return (
     <span
       className={`inline-flex rounded-md px-2 py-1 text-[10px] font-medium ${tone}`}

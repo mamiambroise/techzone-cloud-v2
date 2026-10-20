@@ -94,6 +94,13 @@ const metrics = [
     to: "/settings/integrations",
     permission: "erp:read",
   },
+  {
+    key: "activeApplications",
+    label: "Applications actives",
+    icon: AppWindow,
+    to: "/runtime",
+    permission: "runtime.resolution.read",
+  },
 ];
 export default function CockpitView() {
   const { user } = useAuth(),
@@ -162,13 +169,13 @@ export default function CockpitView() {
   );
   return (
     <div className="space-y-5 sm:space-y-6" data-testid="platform-dashboard">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs sm:px-5">
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-card)] sm:px-5">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
-            Bienvenue, {user?.displayName || user?.username || "dans votre espace"}
+          <h1 className="text-xl font-semibold tracking-tight text-[var(--color-text)] sm:text-2xl">
+            Bienvenue sur Techzone Cloud
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
-            {activeTenant?.name || activeTenant?.code} · Vue d’ensemble de votre espace
+          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+            {activeTenant?.name || activeTenant?.code} · Construisez, déployez et gérez vos applications métier.
           </p>
         </div>
         <button
@@ -188,7 +195,7 @@ export default function CockpitView() {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+          className="rounded-[var(--radius-lg)] border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-4 text-sm text-[var(--color-text)]"
         >
           Impossible de charger le tableau de bord.{" "}
           <button className="font-semibold underline" onClick={() => refresh()}>
@@ -199,7 +206,7 @@ export default function CockpitView() {
       {!error && (
         <section
           aria-label="Indicateurs clés"
-          className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 2xl:grid-cols-5"
+          className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
         >
           {metrics
             .filter((m) => canAccess(m, user))
@@ -207,10 +214,10 @@ export default function CockpitView() {
               <div
                 key={key}
                 data-widget={key}
-                className="group min-w-0 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] motion-reduce:transition-none sm:p-5"
+                className="group min-w-0 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] motion-reduce:transition-none"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-xs font-medium text-slate-500">
+                  <h2 className="text-xs font-medium text-[var(--color-text-secondary)]">
                     {label}
                   </h2>
                   <span className="rounded-xl bg-[var(--color-primary-soft)] p-2 text-[var(--color-primary)]">
@@ -315,12 +322,12 @@ export default function CockpitView() {
         </div>
       </section>
       {!error && (
-        <>
-          <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid gap-5 xl:grid-cols-2">
             <DashboardSection
               id="activity-title"
               title="Activité récente"
               description="Derniers événements de votre espace"
+              className="xl:order-1"
             >
               {renderWidget("activity", "Aucune activité récente.", (rows) => (
                 <ul className="divide-y divide-slate-100">
@@ -352,6 +359,7 @@ export default function CockpitView() {
                 id="packs-title"
                 title="Packs récents"
                 description="Reprenez votre composition"
+                className="xl:order-3"
                 action={
                   <Link className="text-xs text-blue-600" to="/packs/packs">
                     Tout voir
@@ -407,11 +415,11 @@ export default function CockpitView() {
                 )}
               </DashboardSection>
             )}
-          </div>
           <DashboardSection
             id="environments-title"
             title="Environnements"
             description="Configuration enregistrée et dernier déploiement"
+            className="xl:order-4"
             action={
               <Link to="/environments" className="text-xs text-blue-600">
                 Consulter
@@ -455,6 +463,7 @@ export default function CockpitView() {
             id="alerts-title"
             title="Alertes & problèmes"
             description="Derniers résultats enregistrés — ouvrez le module pour vérifier leur état actuel"
+            className="xl:order-2"
           >
             <div className="grid gap-3 sm:grid-cols-2">
               {alertKeys
@@ -499,7 +508,7 @@ export default function CockpitView() {
                 ))}
             </div>
           </DashboardSection>
-        </>
+        </div>
       )}
       <DashboardSection id="quick-title" title="Actions rapides">
         <div className="flex flex-wrap gap-2">

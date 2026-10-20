@@ -73,6 +73,11 @@ describe("Dashboard states", () => {
     expect(screen.queryByText("Aucune donnée")).not.toBeInTheDocument();
     expect(screen.queryByText(/Valeur/)).not.toBeInTheDocument();
   });
+  it("treats an absent optional source as unavailable rather than loading", () => {
+    show(undefined);
+    expect(screen.getByText(/source n’est pas encore disponible/i)).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
   it("retries only through the widget callback", () => {
     const retry = vi.fn();
     show({ state: "ERROR", data: null }, { retry });
@@ -89,8 +94,8 @@ describe("Dashboard states", () => {
   });
   it("gives critical and successful statuses distinct semantic tones", () => {
     const { rerender } = render(<StatusBadge status="CRITICAL" />);
-    expect(screen.getByText("CRITICAL").className).toMatch(/rose/);
+    expect(screen.getByText("CRITICAL").className).toMatch(/color-error/);
     rerender(<StatusBadge status="SUCCESS" />);
-    expect(screen.getByText("SUCCESS").className).toMatch(/emerald/);
+    expect(screen.getByText("SUCCESS").className).toMatch(/color-success/);
   });
 });
