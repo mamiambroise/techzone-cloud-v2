@@ -116,6 +116,24 @@ export default function CockpitView() {
       }),
     [user],
   );
+  const onboardingSteps = useMemo(
+    () =>
+      [
+        ["bm", "Modéliser", "Créez votre première application métier."],
+        ["ui", "Construire l’interface", "Concevez les pages de votre application."],
+        ["automation", "Automatiser", "Ajoutez des workflows lorsque nécessaire."],
+        ["packs", "Publier le pack", "Composez, validez et publiez votre pack."],
+        ["environments", "Déployer et exécuter", "Choisissez un environnement puis déployez."],
+      ].flatMap(([groupId, label, description]) => {
+        const entry = groupEntries(groupId).find((candidate) =>
+          canAccess(candidate, user),
+        );
+        return entry ? [{ groupId, label, description, to: entry.route }] : [];
+      }),
+    [user],
+  );
+  const showOnboarding =
+    widgets.applications?.state === "LOADED" && widgets.applications.data === 0;
   const actions = [
     { label: "Nouvelle application", to: "/business-manager/applications/new" },
     {
@@ -148,7 +166,7 @@ export default function CockpitView() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-            Tableau de bord
+            Bienvenue, {user?.displayName || user?.username || "dans votre espace"}
           </h1>
           <p className="mt-1 text-xs text-slate-500">
             {activeTenant?.name || activeTenant?.code} · Votre espace de travail
@@ -174,7 +192,7 @@ export default function CockpitView() {
               TECHZONE CLOUD
             </p>
             <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              Construisez, déployez et exécutez
+              Construisez, déployez et pilotez
               <br className="hidden sm:block" /> vos applications métier.
             </h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
@@ -264,7 +282,7 @@ export default function CockpitView() {
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {modules.map((m) => (
+          {modules.slice(0, 8).map((m) => (
             <ModuleCard
               key={m.group.id}
               {...m}
@@ -499,6 +517,36 @@ export default function CockpitView() {
           ))}
         </div>
       </DashboardSection>
+      {showOnboarding && onboardingSteps.length > 0 && (
+        <DashboardSection
+          id="onboarding-title"
+          title="Démarrer avec Techzone Cloud"
+          description="Suivez les étapes accessibles dans votre espace. La progression n’est affichée que lorsqu’elle peut être calculée à partir de données réelles."
+        >
+          <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {onboardingSteps.map((step, index) => (
+              <li key={step.groupId} className="min-w-0">
+                <Link
+                  to={step.to}
+                  className="group flex h-full gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition-colors hover:border-blue-200 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-blue-700 shadow-sm">
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-semibold text-slate-800">
+                      {step.label}
+                    </span>
+                    <span className="mt-1 block text-[11px] leading-4 text-slate-500">
+                      {step.description}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </DashboardSection>
+      )}
       {generatedAt && !error && (
         <p className="text-right text-[11px] text-slate-400">
           Dernière lecture : {displayDate(generatedAt)}
