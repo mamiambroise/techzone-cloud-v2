@@ -120,9 +120,19 @@ describe('resolveRoute', () => {
 describe('groupEntries', () => {
   it('returns only menu-visible entries for bm group', () => {
     const entries = groupEntries('bm');
-    expect(entries.length).toBeGreaterThan(0);
-    entries.forEach(entry => {
-      expect(entry.menu).toBe(true);
-    });
+    expect(entries.map(entry => entry.label)).toEqual([
+      'Applications',
+      'Modèles de données',
+      'Fonctionnalités',
+      'Navigation',
+      'Configuration',
+      'Validation',
+    ]);
+    expect(entries).toHaveLength(6);
+    expect(entries.some(entry => /vue d’ensemble/i.test(entry.label))).toBe(false);
+  });
+
+  it('opens the Business Manager root directly on the applications workspace', () => {
+    expect(resolveRoute('/business-manager').component).toBe('BMApplicationsRoute');
   });
 });

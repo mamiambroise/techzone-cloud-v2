@@ -1,9 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import BMOverview from './BMOverview.jsx';
 import { BMApplicationsRoute } from './BMApplicationsRoute.jsx';
 import { BMApplicationNewRoute } from './BMApplicationNewRoute.jsx';
+import { BMApplicationDetailRoute } from './BMApplicationDetailRoute.jsx';
 
 vi.mock('../../services/api/platformApplicationsService.js', () => ({
   __esModule: true,
@@ -122,7 +123,7 @@ describe('BMApplicationsRoute', () => {
     expect(screen.getByRole('button', { name: /Nouvelle application/ })).toBeInTheDocument();
   });
 
-  it('shows real application cards with code, status and open action', async () => {
+  it('shows real applications in the compact table with an open action', async () => {
     render(
       <MemoryRouter>
         <BMApplicationsRoute />
@@ -130,7 +131,7 @@ describe('BMApplicationsRoute', () => {
     );
     await screen.findByText('UI Application');
     expect(screen.getByText('ui_app')).toBeInTheDocument();
-    expect(screen.getAllByText(/Ouvrir l’application/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Ouvrir l’application' })).toBeInTheDocument();
   });
 
   it('shows the empty state when there is no application', async () => {
@@ -155,5 +156,34 @@ describe('BMApplicationNewRoute', () => {
     expect(screen.getByText('Nouvelle application')).toBeInTheDocument();
     expect(screen.getByLabelText('Code')).toBeInTheDocument();
     expect(screen.getByLabelText('Nom')).toBeInTheDocument();
+  });
+});
+
+describe('BMApplicationDetailRoute', () => {
+  it('groups the selected application into the five contextual tabs', async () => {
+    const apiClient = await import('../../services/apiClient.js');
+    apiClient.api.get.mockImplementation((url) => {
+      if (url === '/business-manager/applications/app-1') {
+        return Promise.resolve({ data: { id: 'app-1', code: 'catalogue', name: 'Catalogue', status: 'ACTIVE' } });
+      }
+      if (url === '/business-manager/applications/app-1/versions') {
+        return Promise.resolve({ data: [{ id: 'version-1', version: '1.0.0', status: 'DRAFT' }] });
+      }
+      if (url === '/business-manager/activity') return Promise.resolve({ data: [] });
+      if (url === '/business-manager/validation/version-1/reports') return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: [] });
+    });
+    render(
+      <MemoryRouter initialEntries={['/business-manager/applications/app-1']}>
+        <Routes>
+          <Route path="/business-manager/applications/:applicationId" element={<BMApplicationDetailRoute />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByRole('tab', { name: 'Résumé' });
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'Résumé', 'Versions', 'Métadonnées', 'Contrats', 'Historique',
+    ]);
+    expect(screen.getByText('Définition métier')).toBeInTheDocument();
   });
 });

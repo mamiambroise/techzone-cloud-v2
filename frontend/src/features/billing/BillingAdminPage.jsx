@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { billingAdminService } from '../../services/apiClient.js';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthProvider.jsx';
+import { billingAdminService, billingService } from '../../services/apiClient.js';
 import {
   ActionButton,
   BillingEmpty,
@@ -22,7 +24,16 @@ import {
  * l'affiche au lieu de masquer la restriction.
  */
 export default function BillingAdminPage({ title = 'Billing Admin' }) {
-  const [tab, setTab] = useState('subscriptions');
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const tabForPath = {
+    '/billing/admin/catalog': 'catalog',
+    '/billing/admin/subscriptions': 'subscriptions',
+    '/billing/admin/operations': 'operations',
+    '/billing/admin/diagnostics': 'diagnostics',
+  };
+  const routeTab = tabForPath[pathname] ?? 'subscriptions';
+  const [tab, setTab] = useState(routeTab);
   const [actionError, setActionError] = useState(null);
   const [sweepReport, setSweepReport] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +43,23 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
     [tab],
   );
   const invoices = useBillingResource(
-    () => (tab === 'invoices' ? billingAdminService.invoices() : Promise.resolve(null)),
+    () => (tab === 'operations' ? billingAdminService.invoices() : Promise.resolve(null)),
+    [tab],
+  );
+  const payments = useBillingResource(
+    () => (tab === 'operations' ? billingAdminService.payments() : Promise.resolve(null)),
+    [tab],
+  );
+  const products = useBillingResource(
+    () => (tab === 'catalog' ? billingAdminService.products() : Promise.resolve(null)),
+    [tab],
+  );
+  const features = useBillingResource(
+    () => (tab === 'catalog' ? billingAdminService.features() : Promise.resolve(null)),
+    [tab],
+  );
+  const activePlans = useBillingResource(
+    () => (tab === 'catalog' ? billingService.plans() : Promise.resolve(null)),
     [tab],
   );
   const diagnostics = useBillingResource(
@@ -40,9 +67,13 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
     [tab],
   );
   const health = useBillingResource(
-    () => (tab === 'sweeps' ? billingAdminService.health() : Promise.resolve(null)),
+    () => (tab === 'diagnostics' ? billingAdminService.health() : Promise.resolve(null)),
     [tab],
   );
+  useEffect(() => {
+    setTab(routeTab);
+    setSweepReport(null);
+  }, [routeTab]);
 
   const runSweeps = async () => {
     setBusy(true);
@@ -58,13 +89,26 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
   };
 
   const tabs = [
+    { id: 'catalog', label: 'Offres & tarifs' },
     { id: 'subscriptions', label: 'Abonnements' },
-    { id: 'invoices', label: 'Factures' },
+    { id: 'operations', label: 'Opérations financières' },
     { id: 'diagnostics', label: 'Diagnostics' },
-    { id: 'sweeps', label: 'Balayages' },
   ];
+  const permissionByTab = {
+    catalog: ['billing:plan:read'],
+    subscriptions: ['billing:subscription:read'],
+    operations: ['billing:invoice:read', 'billing:payment:read'],
+    diagnostics: ['billing:diagnostic:read', 'billing:read'],
+  };
+  const permissions = user?.permissions ?? [];
+  const allowedTabs = tabs.filter((entry) => user?.isSuperAdmin || permissions.includes('*') || permissionByTab[entry.id].every((permission) => permissions.includes(permission)));
 
-  const currentResource = { subscriptions, invoices, diagnostics, sweeps: health }[tab];
+  const currentResource = {
+    catalog: products,
+    subscriptions,
+    operations: invoices,
+    diagnostics,
+  }[tab];
 
   return (
     <div className="space-y-5">
@@ -76,7 +120,7 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
       </header>
 
       <div className="flex flex-wrap gap-2 border-b border-slate-200">
-        {tabs.map((entry) => (
+        {allowedTabs.map((entry) => (
           <button
             key={entry.id}
             type="button"
@@ -143,7 +187,31 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
         </BillingPanel>
       ) : null}
 
-      {tab === 'invoices' ? (
+      {tab === 'catalog' ? (
+        <div className="grid gap-5 xl:grid-cols-2">
+          <BillingPanel title="Produits" description="Référentiel plateforme utilisé par les offres." actions={<ActionButton onClick={() => products.reload()}>Actualiser</ActionButton>}>
+            {(products.data ?? []).length === 0 ? <BillingEmpty label="Aucun produit retourné par le catalogue." /> : (
+              <ul className="divide-y divide-slate-100">{(products.data ?? []).map((product) => <li key={product.id} className="flex items-center justify-between gap-3 py-2"><div><p className="text-sm font-medium text-slate-800">{product.name}</p><p className="text-xs text-slate-500">{product.key ?? product.id}</p></div><StatusBadge value={product.status} /></li>)}</ul>
+            )}
+          </BillingPanel>
+          <BillingPanel title="Offres actives et tarifs" description="Seuls les plans et prix publiés sont lisibles par le catalogue client." actions={<ActionButton onClick={() => activePlans.reload()}>Actualiser</ActionButton>}>
+            {(activePlans.data ?? []).length === 0 ? <BillingEmpty label="Aucun plan actif retourné." /> : (
+              <ul className="divide-y divide-slate-100">{(activePlans.data ?? []).map((plan) => <li key={plan.id} className="py-2"><div className="flex items-center justify-between gap-3"><span className="text-sm font-medium text-slate-800">{plan.name}</span><StatusBadge value={plan.status} /></div><p className="mt-1 text-xs text-slate-500">{(plan.prices ?? []).map((price) => `${amount(price.amount, price.currency)} / ${String(price.interval).toLowerCase()}`).join(' · ') || 'Aucun prix actif'}</p></li>)}</ul>
+            )}
+          </BillingPanel>
+          <BillingPanel title="Clés d’entitlement" description="Référentiel commercial, distinct des permissions IAM." actions={<ActionButton onClick={() => features.reload()}>Actualiser</ActionButton>}>
+            {(features.data ?? []).length === 0 ? <BillingEmpty label="Aucune clé d’entitlement retournée." /> : (
+              <ul className="divide-y divide-slate-100">{(features.data ?? []).map((feature) => <li key={feature.id ?? feature.code} className="py-2 text-sm text-slate-700">{feature.code ?? feature.key ?? feature.id}</li>)}</ul>
+            )}
+          </BillingPanel>
+          <BillingPanel title="Périmètre de cette version" description="Le backend ne fournit pas encore de liste administrative des brouillons ni d’éditeur complet des tarifs.">
+            <p className="text-sm text-slate-600">Aucune donnée commerciale n’est simulée : cette vue n’affiche que les réponses actuelles des services catalogue.</p>
+          </BillingPanel>
+        </div>
+      ) : null}
+
+      {tab === 'operations' ? (
+        <div className="space-y-5">
         <BillingPanel
           title="Factures tous tenants"
           actions={<ActionButton onClick={() => invoices.reload()}>Actualiser</ActionButton>}
@@ -179,6 +247,24 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
             </div>
           )}
         </BillingPanel>
+        <BillingPanel
+          title="Paiements tous tenants"
+          actions={<ActionButton onClick={() => payments.reload()}>Actualiser</ActionButton>}
+        >
+          {(payments.data ?? []).length === 0 ? (
+            <BillingEmpty label="Aucun paiement sur la plateforme." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-slate-500"><tr><th className="py-2">Tenant</th><th className="py-2">Facture</th><th className="py-2">Montant</th><th className="py-2">Méthode</th><th className="py-2">Statut</th></tr></thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(payments.data ?? []).map((row) => <tr key={row.id}><td className="py-2 font-mono text-xs text-slate-500">{row.tenantId}</td><td className="py-2 font-mono text-xs text-slate-500">{row.invoiceId}</td><td className="py-2 text-slate-700">{amount(row.amount, row.currency)}</td><td className="py-2 text-slate-600">{row.method}</td><td className="py-2"><StatusBadge value={row.status} /></td></tr>)}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </BillingPanel>
+        </div>
       ) : null}
 
       {tab === 'diagnostics' ? (
@@ -220,7 +306,7 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
         </BillingPanel>
       ) : null}
 
-      {tab === 'sweeps' ? (
+      {tab === 'diagnostics' ? (
         <BillingPanel
           title="Balayages périodiques"
           description="Renouvellement, fin d'essai, échéances de facture, grâce et résiliations programmées."

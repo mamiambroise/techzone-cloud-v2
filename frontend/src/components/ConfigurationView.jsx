@@ -2,7 +2,6 @@ import { api } from '../services/apiClient.js';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../app/routes.js';
 import { useTenant } from '../contexts/TenantProvider.jsx';
-import { ContextBar } from './ContextBar.jsx';
 import { getEffective } from '../services/api/platformConfigService.js';
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -32,19 +31,19 @@ import {
   Filter,
   X,
 } from 'lucide-react';
-import { BmBreadcrumb, BmBadge, BmButton } from './business-manager/bm/ui.jsx';
+import { BmBreadcrumb, BmBadge, BmButton, BmContextBar } from './business-manager/bm/ui.jsx';
+import { useBmContext } from './business-manager/useBmContext.js';
 
 export default function ConfigurationView() {
   const dispatch = useDispatch();
   const { activeTenant } = useTenant();
+  const bmContext = useBmContext();
   const [params] = useSearchParams();
   const [tab, setTab] = useState('definitions');
   const [effective, setEffective] = useState([]);
   const [effectiveError, setEffectiveError] = useState('');
   const [effectiveLoading, setEffectiveLoading] = useState(false);
-  let storedContext = {};
-  try { storedContext = JSON.parse(sessionStorage.getItem('bm-context:'+activeTenant?.id) || '{}'); } catch {}
-  const context = {applicationId:params.get('applicationId') || storedContext.applicationId,applicationVersionId:params.get('applicationVersionId') || storedContext.versionId,environmentId:params.get('environmentId')};
+  const context = {applicationId:bmContext.applicationId,applicationVersionId:bmContext.versionId,environmentId:params.get('environmentId')};
   const [contextLabels,setContextLabels] = useState({});
   const [saveError,setSaveError] = useState('');
   useEffect(()=>{let live=true;setContextLabels({});if(context.applicationId && context.applicationVersionId) Promise.all([api.get('/business-manager/applications/'+context.applicationId),api.get('/business-manager/versions/'+context.applicationVersionId)]).then(([a,v])=>{if(live)setContextLabels({application:a.data.name,version:v.data.version,status:v.data.status});}).catch(()=>{});return()=>{live=false;};},[activeTenant?.id,context.applicationId,context.applicationVersionId]);
@@ -159,7 +158,12 @@ export default function ConfigurationView() {
         </div>
       </div>
 
-      <ContextBar application={contextLabels.application} version={contextLabels.version} status={contextLabels.status} tenant={activeTenant?.name || activeTenant?.code} />
+      <BmContextBar items={[
+        { label:'Tenant',value:activeTenant?.name || activeTenant?.code },
+        { label:'Application',value:bmContext.application?.name,control:<select aria-label="Application" className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" value={bmContext.applicationId || ''} onChange={event => bmContext.selectApplication(event.target.value)}><option value="">Sélectionner une application</option>{bmContext.applications.map(application => <option key={application.id} value={application.id}>{application.name}</option>)}</select> },
+        { label:'Version',value:bmContext.version?.version,control:<select aria-label="Version" className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none disabled:text-slate-400" value={bmContext.versionId || ''} disabled={!bmContext.applicationId} onChange={event => bmContext.selectVersion(event.target.value)}><option value="">Sélectionner une version</option>{bmContext.versions.map(version => <option key={version.id} value={version.id}>{version.version} — {version.status}</option>)}</select> },
+        { label:'Statut',value:bmContext.version?.status },
+      ]} />
       {saveError && <p role="alert" className="text-red-700">{saveError}</p>}
       <div role="tablist" aria-label="Configuration" className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">{[['definitions','Définitions'],['values','Valeurs'],['effective','Configuration effective']].map(([id,label]) => <button key={id} role="tab" aria-selected={tab===id} onClick={() => setTab(id)} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-150 bm-focus ${tab===id?'bg-blue-600 text-white':'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{label}</button>)}</div>
       {configLoading && <p role="status">Chargement des paramètres…</p>}

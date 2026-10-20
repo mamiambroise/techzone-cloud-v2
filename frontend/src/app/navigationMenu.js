@@ -40,7 +40,6 @@ const menu = [
   group("dashboard", "Tableau de bord", "accueil", "Home", "", [item("dashboard", "Tableau de bord", "Home")]),
 
   group("bm", "Business Manager", "creation", "BriefcaseBusiness", "text-pink-500", [
-    item("bm", "Vue d’ensemble", "Home"),
     item("bmApplications", "Applications", "LayoutGrid", ["applications", "applicationNew", "applicationDetail", "applicationWorkspace", "bmApplicationNew", "bmApplicationDetail", "bmVersions", "bmVersionsIndex", "bmVersionDetail", "bmRuntimeIndex", "bmRuntime"]),
     item("bmModels", "Modèles de données", "Database", ["bmDataModel"]),
     item("bmFeaturesIndex", "Fonctionnalités", "Cog", ["bmFeatures"]),
@@ -50,17 +49,11 @@ const menu = [
   ]),
 
   group("ui", "UI Builder", "creation", "PanelsTopLeft", "text-violet-500", [
-    item("ui", "Vue d’ensemble", "Home"),
     item("uiPages", "Pages", "FileText"),
     item("uiEditor", "Éditeur visuel", "ImageIcon", ["uiBuilder", "uiPage"], {
       pageId: "uiBuilder",
       route: "/ui/builder/editor",
     }),
-    item("uiComponents", "Composants", "Box"),
-    item("uiForms", "Formulaires", "ClipboardList"),
-    item("uiNavigation", "Navigation", "Navigation"),
-    item("uiThemes", "Thème", "Palette"),
-    item("uiPreview", "Aperçu & Test", "Eye"),
   ]),
 
   group("automation", "Automatisation", "creation", "Cog", "text-amber-400", [
@@ -176,12 +169,14 @@ const menu = [
   ]),
 
   group("billing", "Abonnements & Facturation", "commercial", "CreditCard", "text-sky-400", [
-    item("billingOverview", "Vue d’ensemble", "Home"),
-    item("billingPlans", "Plans", "Tag"),
-    item("billingSubscriptions", "Abonnements", "CreditCard"),
-    item("billingEntitlements", "Entitlements", "KeyRound"),
-    item("billingQuotas", "Quotas", "Gauge"),
-    item("billingInvoices", "Facturation", "Receipt"),
+    item("billingOverview", "Mon abonnement", "CreditCard"),
+    item("billingQuotas", "Utilisation", "Gauge"),
+    item("billingInvoices", "Factures & paiements", "Receipt"),
+    item("billingSettings", "Paramètres", "Settings"),
+    item("billingAdminCatalog", "Offres & tarifs", "Tags"),
+    item("billingAdminSubscriptions", "Abonnements clients", "Building2"),
+    item("billingAdminOperations", "Opérations financières", "Landmark"),
+    item("billingAdminDiagnostics", "Diagnostics & audit", "Activity"),
   ]),
 
   group("admin", "Administration Platform", "administration", "Settings", "text-slate-200", [
