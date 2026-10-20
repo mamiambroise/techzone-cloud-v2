@@ -68,7 +68,15 @@ export class DashboardService {
         this.widget(actor, null, () => this.db.application.count({ where })),
       packs: () =>
         this.widget(actor, 'pack.read', () =>
-          this.db.pack.count({ where: { ...where, archivedAt: null } }),
+          this.db.pack.count({
+            where: {
+              ...where,
+              archivedAt: null,
+              versions: {
+                some: { tenantId, archivedAt: null, publishedAt: { not: null } },
+              },
+            },
+          }),
         ),
       deployments: () =>
         this.widget(actor, null, () => this.db.deployment.count({ where })),

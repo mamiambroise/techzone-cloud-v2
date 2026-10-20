@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { WidgetBody } from "./DashboardWidgets.jsx";
+import { StatusBadge, WidgetBody } from "./DashboardWidgets.jsx";
 import {
   effectiveNavigation,
   activeNavigation,
@@ -32,13 +32,13 @@ describe("Effective navigation", () => {
     expect(groups.some((g) => g.id === "packs")).toBe(false);
     expect(groups.some((g) => g.id === "iam")).toBe(false);
   });
-  it("keeps one Runtime and one Data domain and places Registry on the platform", () => {
+  it("keeps one Pack Runtime and one Data domain and places Registry in administration", () => {
     const groups = effectiveNavigation(
       { permissions: ["*"] },
       { tenantId: "a" },
     );
     expect(groups.filter((g) => g.id === "runtime")).toHaveLength(1);
-    expect(groups.find((g) => g.id === "registry").section).toBe("platform");
+    expect(groups.find((g) => g.id === "registry").section).toBe("administration");
     expect(
       groups
         .find((g) => g.id === "packs")
@@ -73,6 +73,11 @@ describe("Dashboard states", () => {
     expect(screen.queryByText("Aucune donnée")).not.toBeInTheDocument();
     expect(screen.queryByText(/Valeur/)).not.toBeInTheDocument();
   });
+  it("treats an absent optional source as unavailable rather than loading", () => {
+    show(undefined);
+    expect(screen.getByText(/source n’est pas encore disponible/i)).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
   it("retries only through the widget callback", () => {
     const retry = vi.fn();
     show({ state: "ERROR", data: null }, { retry });
@@ -86,5 +91,11 @@ describe("Dashboard states", () => {
     show({ state: "LOADED", data: 123 }, { loading: true });
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.queryByText(/123/)).not.toBeInTheDocument();
+  });
+  it("gives critical and successful statuses distinct semantic tones", () => {
+    const { rerender } = render(<StatusBadge status="CRITICAL" />);
+    expect(screen.getByText("CRITICAL").className).toMatch(/color-error/);
+    rerender(<StatusBadge status="SUCCESS" />);
+    expect(screen.getByText("SUCCESS").className).toMatch(/color-success/);
   });
 });

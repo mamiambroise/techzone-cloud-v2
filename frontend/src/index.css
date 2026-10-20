@@ -4,65 +4,72 @@
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Map existing Tailwind blue utilities to the official Techzone brand. */
-  --color-blue-50: #EDF4FF;
-  --color-blue-100: #DCEAFF;
-  --color-blue-200: #BBD4FF;
-  --color-blue-300: #8BB8FF;
-  --color-blue-400: #5795FF;
-  --color-blue-500: #237BFF;
-  --color-blue-600: #0866F5;
-  --color-blue-700: #0554D8;
-  --color-blue-800: #0643A8;
-  --color-blue-900: #0A377F;
-  --color-blue-950: #0D1B2A;
+  /* Map existing Tailwind utilities to the Techzone Cloud V3 palette. */
+  --color-blue-50: #EFF6FF;
+  --color-blue-100: #DBEAFE;
+  --color-blue-200: #BFDBFE;
+  --color-blue-300: #93C5FD;
+  --color-blue-400: #60A5FA;
+  --color-blue-500: #3B82F6;
+  --color-blue-600: #2563EB;
+  --color-blue-700: #1D4ED8;
+  --color-blue-800: #1E40AF;
+  --color-blue-900: #1E3A8A;
+  --color-blue-950: #172554;
 
-  /* Keep existing slate utilities aligned with the light workspace tokens. */
-  --color-slate-50: #F8FAFF;
-  --color-slate-100: #EFF6FF;
-  --color-slate-200: #E1EAF5;
+  /* Keep existing slate utilities aligned with the neutral workspace tokens. */
+  --color-slate-50: #F9FAFB;
+  --color-slate-100: #F3F4F6;
+  --color-slate-200: #E5E7EB;
   --color-slate-300: #CBD5E1;
   --color-slate-400: #94A3B8;
-  --color-slate-500: #7C8BA1;
-  --color-slate-600: #64748B;
-  --color-slate-700: #405071;
-  --color-slate-800: #28365D;
-  --color-slate-900: #101C48;
-  --color-slate-950: #0D1B2A;
+  --color-slate-500: #6B7280;
+  --color-slate-600: #4B5563;
+  --color-slate-700: #374151;
+  --color-slate-800: #1F2937;
+  --color-slate-900: #111827;
+  --color-slate-950: #0F172A;
 }
 
 :root {
-  /* Brand palette supplied for the Techzone Cloud interface. */
+  /* Techzone Cloud V3 source-of-truth tokens. */
   --font-ui: "Inter", sans-serif;
-  --color-primary: #0866F5;
-  --color-primary-hover: #0554D8;
-  --color-primary-soft: #EDF4FF;
-  --color-bg: #EFF6FF;
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-soft: #EFF6FF;
+  --color-secondary: #6F46E5;
+  --color-accent: #06B6D4;
+  --color-info: #3882F6;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-danger: var(--color-error);
+  --color-success-soft: #F0FDF4;
+  --color-warning-soft: #FFFBEB;
+  --color-error-soft: #FEF2F2;
+  --color-info-soft: #EFF6FF;
+  --color-bg: #F3F4F6;
   --color-surface: #FFFFFF;
-  --color-surface-2: #F8FAFF;
-  --color-border: #E1EAF5;
-  --color-text: #101C48;
-  --color-text-primary: #101C48;
-  --color-text-secondary: #64748B;
-  --color-text-muted: #94A3B8;
-  --color-indigo: #0866F5;
-  --color-violet: #0866F5;
-  --color-success: #08A66A;
-  --color-warning: #FF9800;
-  --color-error: #F22640;
-  --color-danger: #F22640;
-  --color-info: #0866F5;
-  --color-sidebar: #0D1B2A;
-  --color-sidebar-2: #142747;
+  --color-surface-2: #F9FAFB;
+  --color-border: #D1D5DB;
+  --color-text: #111827;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-indigo: var(--color-secondary);
+  --color-violet: var(--color-secondary);
+  --color-sidebar: #0F172A;
+  --color-sidebar-2: #1E293B;
+  --color-sidebar-hover: #1E293B;
   --color-sidebar-text: #CBD5E1;
-  --color-sidebar-active: #0866F5;
-  --color-header: #0D1B2A;
+  --color-sidebar-active: #2563EB;
+  --color-header: #0F172A;
   --color-header-text: #CBD5E1;
 
-  --module-packs: #08A66A;
-  --module-deployments: #7C18F5;
-  --module-billing: #FF9800;
-  --module-resources: #0CB7A7;
+  --module-packs: var(--color-success);
+  --module-deployments: var(--color-secondary);
+  --module-billing: var(--color-warning);
+  --module-resources: var(--color-accent);
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -76,18 +83,18 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --shadow-card: 0 2px 12px rgb(16 28 72 / 0.05);
-  --shadow-card-hover: 0 10px 24px rgb(15 23 42 / 0.10);
-  --focus-ring: 0 0 0 3px rgb(8 102 245 / 0.28);
+  --shadow-card: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-card-hover: 0 10px 24px rgb(15 23 42 / 0.12);
+  --focus-ring: 0 0 0 3px rgb(37 99 235 / 0.28);
 
   /* Existing Business Manager aliases remain the source-compatible bridge. */
-  --bm-canvas: #EFF6FF;
+  --bm-canvas: var(--color-bg);
   --bm-surface: #ffffff;
-  --bm-border: #E1EAF5;
-  --bm-accent: #0866F5;
-  --bm-accent-soft: #EDF4FF;
-  --bm-text: #101C48;
-  --bm-text-muted: #64748b;
+  --bm-border: var(--color-border);
+  --bm-accent: var(--color-primary);
+  --bm-accent-soft: var(--color-primary-soft);
+  --bm-text: var(--color-text);
+  --bm-text-muted: var(--color-text-secondary);
   --bm-radius: 14px;
 }
 

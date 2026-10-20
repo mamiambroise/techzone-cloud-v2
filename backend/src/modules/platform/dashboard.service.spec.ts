@@ -47,6 +47,23 @@ describe('Platform dashboard read boundary', () => {
     expect(db.pack.count).not.toHaveBeenCalled();
     expect(db.runtimeDiagnostic.findMany).not.toHaveBeenCalled();
   });
+  it('counts only non-archived packs with a published version for the tenant', async () => {
+    const db = database();
+    await new DashboardService(db as any).getDashboard(actor('a', ['pack.read']), 'packs');
+    expect(db.pack.count).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'a',
+        archivedAt: null,
+        versions: {
+          some: {
+            tenantId: 'a',
+            archivedAt: null,
+            publishedAt: { not: null },
+          },
+        },
+      },
+    });
+  });
   it('isolates every projection by authenticated tenant and bounds lists', async () => {
     const db = database(),
       s = new DashboardService(db as any);
