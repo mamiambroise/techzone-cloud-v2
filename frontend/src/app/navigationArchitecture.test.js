@@ -50,7 +50,7 @@ describe('Global architecture (CDC §50)', () => {
 describe('Stable ordering per module (RG-NAV-025)', () => {
   it.each([
     ['bm', ['Applications', 'Modèles de données', 'Fonctionnalités', 'Navigation', 'Configuration', 'Validation']],
-    ['ui', ['Vue d’ensemble', 'Pages', 'Éditeur visuel', 'Composants', 'Formulaires', 'Navigation', 'Thème', 'Aperçu & Test']],
+    ['ui', ['Pages', 'Éditeur visuel']],
     ['automation', ['Vue d’ensemble', 'Workflows', 'Déclencheurs', 'Actions', 'Planifications', 'Exécutions', 'Modèles', 'Diagnostics', 'Règles', 'Formules']],
     ['packs', ['Vue d’ensemble', 'Packs', 'Versions', 'Modules', 'Fonctionnalités', 'Capacités', 'Dépendances', 'Règles', 'Validation & Manifest', 'Publication', 'Historique']],
     ['runtime', ['Vue d’ensemble', 'Contextes', 'Manifest', 'Résolution', 'Configuration effective', 'Cache', 'Diagnostics']],
@@ -224,7 +224,7 @@ describe('Module availability (RG-NAV-017, RG-NAV-018)', () => {
       ['erp', '/erp'],
       ['automation', '/automation'],
       ['data', '/data-runtime'],
-      ['ui', '/ui'],
+      ['ui', '/ui/pages'],
       ['billing', '/billing/overview'],
     ].forEach(([id, route]) => {
       expect(groupDestination(id)).toBe(route);
@@ -260,17 +260,11 @@ describe('Destinations réelles de la sidebar (UI Builder)', () => {
   // Une entrée de menu est une destination cliquable : elle ne doit jamais être
   // un motif de route containing un paramètre non résolu (« /ui/builder/:pageId »),
   // qui produirait une URL littérale non partageable dans la barre d'adresse.
-  it('expose les 8 destinations UI Builder sans paramètre de route', () => {
+  it('expose les 2 destinations UI Builder sans paramètre de route', () => {
     const destinations = groupEntries('ui').map((entry) => entry.route);
     expect(destinations).toEqual([
-      '/ui',
       '/ui/pages',
       '/ui/builder/editor',
-      '/ui/components',
-      '/ui/forms',
-      '/ui/navigation',
-      '/ui/themes',
-      '/ui/preview',
     ]);
     destinations.forEach((route) => expect(route).not.toMatch(/:\w/));
   });

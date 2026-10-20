@@ -49,17 +49,11 @@ const menu = [
   ]),
 
   group("ui", "UI Builder", "creation", "PanelsTopLeft", "text-violet-500", [
-    item("ui", "Vue d’ensemble", "Home"),
     item("uiPages", "Pages", "FileText"),
     item("uiEditor", "Éditeur visuel", "ImageIcon", ["uiBuilder", "uiPage"], {
       pageId: "uiBuilder",
       route: "/ui/builder/editor",
     }),
-    item("uiComponents", "Composants", "Box"),
-    item("uiForms", "Formulaires", "ClipboardList"),
-    item("uiNavigation", "Navigation", "Navigation"),
-    item("uiThemes", "Thème", "Palette"),
-    item("uiPreview", "Aperçu & Test", "Eye"),
   ]),
 
   group("automation", "Automatisation", "creation", "Cog", "text-amber-400", [

@@ -12,7 +12,7 @@
  * page blanche.
  */
 import { useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { PanelsTopLeft, AlertTriangle, Layers, FolderTree } from 'lucide-react';
 
@@ -42,15 +42,33 @@ export default function UiBuilderLayout({ subTab, children }) {
   const { activeTenant } = useTenant();
   const dispatch = useDispatch();
   const params = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryApplicationId = searchParams.get('applicationId') || '';
+  const queryVersionId = searchParams.get('versionId') || '';
 
   const uiBuilder = useSelector((state) => state.uiBuilder);
   const context = useUiBuilderContext({
     tenantId: activeTenant?.id,
-    applicationId: params.applicationId,
-    versionId: params.versionId,
+    applicationId: params.applicationId || queryApplicationId,
+    versionId: params.versionId || queryVersionId,
   });
 
   const { applicationId, versionId, application, version, versionsStatus } = context;
+  const changeApplication = (nextApplicationId) => {
+    const next = new URLSearchParams(location.search);
+    if (nextApplicationId) next.set('applicationId', nextApplicationId); else next.delete('applicationId');
+    next.delete('versionId');
+    navigate({ pathname: location.pathname, search: next.toString() ? `?${next}` : '' });
+    context.selectApplication(nextApplicationId);
+  };
+  const changeVersion = (nextVersionId) => {
+    const next = new URLSearchParams(location.search);
+    if (nextVersionId) next.set('versionId', nextVersionId); else next.delete('versionId');
+    navigate({ pathname: location.pathname, search: next.toString() ? `?${next}` : '' });
+    context.selectVersion(nextVersionId);
+  };
 
   useEffect(() => {
     dispatch(setContext({ applicationVersionId: versionId || null, tenantId: activeTenant?.id || null }));
@@ -111,7 +129,6 @@ export default function UiBuilderLayout({ subTab, children }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <ContextSwitcher context={context} />
             <Link to={ROUTES.bm} className="text-xs font-medium text-blue-600 hover:text-blue-700">Business Manager →</Link>
           </div>
         </div>
@@ -121,31 +138,15 @@ export default function UiBuilderLayout({ subTab, children }) {
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {[
             ['Tenant', activeTenant.name || activeTenant.code || activeTenant.id],
-            ['Application', application?.name || application?.code || applicationId],
-            ['Version', version?.version || version?.versionNumber || versionId],
+            ['Application', application?.name || application?.code || applicationId, <select aria-label="Application" className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none" value={applicationId} onChange={(event) => changeApplication(event.target.value)}><option value="">Sélectionner une application</option>{context.applications.map((row) => <option key={row.id} value={row.id}>{row.name || row.code}</option>)}</select>],
+            ['Version', version?.version || version?.versionNumber || versionId, <select aria-label="Version" disabled={versionsStatus !== 'LOADED'} className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none disabled:text-slate-400" value={versionId} onChange={(event) => changeVersion(event.target.value)}><option value="">Sélectionner une version</option>{context.versions.map((row) => <option key={row.id} value={row.id}>{row.version || row.versionNumber} — {row.status}</option>)}</select>],
             ['Page', uiBuilder.pages.find((page) => page.id === (params.pageId || uiBuilder.selectedPageId))?.title || 'Aucune page sélectionnée'],
             ['Device', uiBuilder.device || 'DESKTOP'],
             ['Statut', version?.status || '—'],
-          ].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-xs font-medium text-slate-500">{label}</dt><dd className="truncate text-sm font-semibold text-slate-900" title={String(value)}>{value}</dd></div>)}
+          ].map(([label, value, control]) => <div key={label} className="min-w-0"><dt className="text-xs font-medium text-slate-500">{label}</dt><dd className="truncate text-sm font-semibold text-slate-900" title={String(value)}>{control || value}</dd></div>)}
         </dl>
         <p role="status" className="mt-2 text-xs text-slate-600">{({ CLEAN: 'Aucune modification', DIRTY: 'Modifications en attente', SAVING: 'Saving…', SAVED: 'Saved', ERROR: 'Save failed', CONFLICT: 'Conflict' })[uiBuilder.saveState] || 'Aucune modification'}</p>
       </section>
-
-      <nav aria-label="Sections UI Builder" className="flex gap-1 overflow-x-auto border-b border-slate-200 pb-px [scrollbar-width:thin]">
-        {UIB_SUB_TABS.map((tab) => {
-          const isActive = tab.id === subTab;
-          return (
-            <Link
-              key={tab.id}
-              to={tab.route}
-              aria-current={isActive ? 'page' : undefined}
-              className={`shrink-0 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors duration-150 bm-focus ${isActive ? 'border-b-2 border-blue-600 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </nav>
 
       {!uiBuilder.overview?.applicationVersion?.editable && uiBuilder.overview && (
         <div role="alert" className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
