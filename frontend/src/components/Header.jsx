@@ -116,31 +116,40 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
           <GlobalSearch />
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          {hasMultipleTenants && activeTenant && (
-            <select
-              aria-label="Tenant actif"
-              disabled={loading}
-              value={activeTenant?.id || ""}
-              onChange={async (e) => {
-                try {
-                  setSwitchError(false);
-                  await switchTenant(e.target.value);
-                } catch {
-                  setSwitchError(true);
-                }
-              }}
-              className="max-w-28 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-2 text-xs text-[var(--color-text)] sm:max-w-40"
-            >
-              <option value="" disabled>
-                Choisir un tenant
-              </option>
-              {tenants.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name || t.code}
+          {activeTenant &&
+            (hasMultipleTenants ? (
+              <select
+                aria-label="Tenant actif"
+                disabled={loading}
+                value={activeTenant.id}
+                onChange={async (e) => {
+                  try {
+                    setSwitchError(false);
+                    await switchTenant(e.target.value);
+                  } catch {
+                    setSwitchError(true);
+                  }
+                }}
+                className="max-w-28 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-2 text-xs font-medium text-[var(--color-text)] sm:max-w-40"
+              >
+                <option value="" disabled>
+                  Choisir un tenant
                 </option>
-              ))}
-            </select>
-          )}
+                {tenants.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name || t.code}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span
+                aria-label="Tenant actif"
+                className="hidden max-w-40 truncate rounded-[var(--radius-lg)] border border-white/15 bg-white/10 px-3 py-2 text-xs font-medium text-white sm:block"
+                title={activeTenant.name || activeTenant.code}
+              >
+                {activeTenant.name || activeTenant.code}
+              </span>
+            ))}
           <button
             type="button"
             aria-label="Rechercher"
@@ -162,7 +171,12 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             >
               <Bell size={18} />
               {alerts.length > 0 && (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500" />
+                <span
+                  aria-label={`${alerts.length} notification${alerts.length > 1 ? "s" : ""}`}
+                  className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold leading-4 text-slate-950"
+                >
+                  {alerts.length > 9 ? "9+" : alerts.length}
+                </span>
               )}
             </button>
             {panel === "alerts" && (

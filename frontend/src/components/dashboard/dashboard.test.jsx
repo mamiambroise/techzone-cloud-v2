@@ -32,13 +32,13 @@ describe("Effective navigation", () => {
     expect(groups.some((g) => g.id === "packs")).toBe(false);
     expect(groups.some((g) => g.id === "iam")).toBe(false);
   });
-  it("keeps one Runtime and one Data domain and places Registry on the platform", () => {
+  it("keeps one Pack Runtime and one Data domain and places Registry in administration", () => {
     const groups = effectiveNavigation(
       { permissions: ["*"] },
       { tenantId: "a" },
     );
     expect(groups.filter((g) => g.id === "runtime")).toHaveLength(1);
-    expect(groups.find((g) => g.id === "registry").section).toBe("platform");
+    expect(groups.find((g) => g.id === "registry").section).toBe("administration");
     expect(
       groups
         .find((g) => g.id === "packs")

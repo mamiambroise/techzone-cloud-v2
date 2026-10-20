@@ -28,16 +28,18 @@ const group = (id, label, section, icon, accent, items) => ({
 
 export const navigationSections = [
   { id: "accueil", label: "ACCUEIL" },
-  { id: "construction", label: "CONSTRUCTION" },
-  { id: "execution", label: "EXÉCUTION" },
+  { id: "creation", label: "CRÉATION D’APPLICATIONS" },
+  { id: "publication", label: "PUBLICATION & EXÉCUTION" },
   { id: "integrations", label: "DONNÉES & INTÉGRATIONS" },
-  { id: "platform", label: "PLATEFORME" },
+  { id: "supervision", label: "SUPERVISION" },
+  { id: "commercial", label: "COMMERCIAL" },
+  { id: "administration", label: "ADMINISTRATION & INFRASTRUCTURE" },
 ];
 
 const menu = [
   group("dashboard", "Tableau de bord", "accueil", "Home", "", [item("dashboard", "Tableau de bord", "Home")]),
 
-  group("bm", "Business Manager", "construction", "BriefcaseBusiness", "text-pink-500", [
+  group("bm", "Business Manager", "creation", "BriefcaseBusiness", "text-pink-500", [
     item("bm", "Vue d’ensemble", "Home"),
     item("bmApplications", "Applications", "LayoutGrid", ["applications", "applicationNew", "applicationDetail", "applicationWorkspace", "bmApplicationNew", "bmApplicationDetail", "bmVersions", "bmVersionsIndex", "bmVersionDetail", "bmRuntimeIndex", "bmRuntime"]),
     item("bmModels", "Modèles de données", "Database", ["bmDataModel"]),
@@ -47,7 +49,7 @@ const menu = [
     item("bmQuality", "Validation", "CheckCircle2", ["bmValidation"]),
   ]),
 
-  group("ui", "UI Builder", "construction", "PanelsTopLeft", "text-violet-500", [
+  group("ui", "UI Builder", "creation", "PanelsTopLeft", "text-violet-500", [
     item("ui", "Vue d’ensemble", "Home"),
     item("uiPages", "Pages", "FileText"),
     item("uiEditor", "Éditeur visuel", "ImageIcon", ["uiBuilder", "uiPage"], {
@@ -61,7 +63,7 @@ const menu = [
     item("uiPreview", "Aperçu & Test", "Eye"),
   ]),
 
-  group("automation", "Automatisation", "construction", "Cog", "text-amber-400", [
+  group("automation", "Automatisation", "creation", "Cog", "text-amber-400", [
     item("automation", "Vue d’ensemble", "Home"),
     item("automationWorkflows", "Workflows", "Network"),
     item("automationTriggers", "Déclencheurs", "Zap"),
@@ -74,7 +76,7 @@ const menu = [
     item("automationFormulas", "Formules", "SlidersHorizontal"),
   ]),
 
-  group("packs", "Pack Manager", "construction", "Layers", "text-emerald-400", [
+  group("packs", "Pack Manager", "publication", "Layers", "text-emerald-400", [
     item("packs", "Vue d’ensemble", "Home"),
     item("pmpacks", "Packs", "Box", [], { pageId: "pmpacks" }),
     item("packVersions", "Versions", "Tag"),
@@ -89,9 +91,10 @@ const menu = [
     item("pmpublication", "Publication", "UploadCloud", [], {
       pageId: "packPublication",
     }),
+    item("history", "Historique", "History"),
   ]),
 
-  group("runtime", "Runtime", "execution", "Play", "text-sky-400", [
+  group("runtime", "Pack Runtime", "publication", "Play", "text-sky-400", [
     item("runtime", "Vue d’ensemble", "Home", ["packRuntime"]),
     item("runtimeContext", "Contextes", "Layers"),
     item("runtimeManifest", "Manifest", "FileText"),
@@ -136,7 +139,7 @@ const menu = [
     item("integrations-diagnostics", "Diagnostics", "BarChart3", ["integrations-apis", "integrations-sync", "integrations-specifications"]),
   ]),
 
-  group("registry", "Registry", "platform", "Box", "text-slate-200", [
+  group("registry", "Registry", "administration", "Box", "text-slate-200", [
     item("registry", "Vue d’ensemble", "Home", ["packRegistry"]),
     item("registryEntries", "Entrées", "Package"),
     item("registryCapabilities", "Capacités", "Server"),
@@ -145,16 +148,13 @@ const menu = [
     item("registryDiagnostics", "Diagnostics", "BarChart3"),
   ]),
 
-  group("environments", "Environnements", "platform", "Server", "text-sky-400", [
+  group("environments", "Environnements & Déploiements", "publication", "Server", "text-sky-400", [
     item("environments", "Environnements", "Server", ["specifications", "contracts", "snapshots", "platform-contract"]),
+    item("deployment", "Déploiements", "Rocket", ["deployment-cockpit", "deployment-diagnostics", "deployment-specifications"]),
+    item("deploymentReleases", "Historique des déploiements", "History", [], { pageId: "deployment-releases" }),
   ]),
 
-  group("deployments", "Déploiements", "platform", "Rocket", "text-sky-300", [
-    item("deployment", "Vue d’ensemble", "Home", ["deployment-cockpit", "deployment-diagnostics", "deployment-specifications"]),
-    item("history", "Historique", "History"),
-  ]),
-
-  group("iam", "Sécurité & IAM", "platform", "ShieldCheck", "text-slate-200", [
+  group("iam", "Auth / IAM", "administration", "ShieldCheck", "text-slate-200", [
     item("iam-users", "Utilisateurs", "Users"),
     item("iam-identities", "Identités", "Fingerprint"),
     item("iam-roles", "Rôles", "KeyRound"),
@@ -164,7 +164,7 @@ const menu = [
     item("iam-sessions", "Sessions", "Monitor"),
   ]),
 
-  group("observability", "Observabilité", "platform", "Activity", "text-slate-200", [
+  group("observability", "Observabilité", "supervision", "Activity", "text-slate-200", [
     item("observability", "Vue d’ensemble", "Home"),
     item("observability-monitoring", "Monitoring", "Activity"),
     item("observability-logs", "Logs", "ScrollText"),
@@ -175,7 +175,7 @@ const menu = [
     item("observability-security-events", "Événements de sécurité", "Lock"),
   ]),
 
-  group("billing", "Abonnements", "platform", "CreditCard", "text-sky-400", [
+  group("billing", "Abonnements & Facturation", "commercial", "CreditCard", "text-sky-400", [
     item("billingOverview", "Vue d’ensemble", "Home"),
     item("billingPlans", "Plans", "Tag"),
     item("billingSubscriptions", "Abonnements", "CreditCard"),
@@ -184,7 +184,7 @@ const menu = [
     item("billingInvoices", "Facturation", "Receipt"),
   ]),
 
-  group("admin", "Administration", "platform", "Settings", "text-slate-200", [
+  group("admin", "Administration Platform", "administration", "Settings", "text-slate-200", [
     item("adminOverview", "Vue d’ensemble", "Home"),
     item("settingsGeneral", "Paramètres généraux", "Settings"),
     item("settingsProfile", "Profil", "Users"),
