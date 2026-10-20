@@ -153,8 +153,11 @@ export class DataRuntimeController {
   @Get('metrics')
   @Permissions(DATA_RUNTIME_READ)
   @ApiOperation({ summary: 'Metriques du Data Runtime' })
-  async getMetrics() {
-    return this.historyService.getMetrics();
+  async getMetrics(@CurrentUser() principal: IamAuthContext) {
+    if (!principal?.tenantId) {
+      throw new ForbiddenException('TENANT_REQUIRED');
+    }
+    return this.historyService.getMetrics(principal.tenantId);
   }
 
   // === BINDING ===

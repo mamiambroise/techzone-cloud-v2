@@ -20,6 +20,18 @@ describe('ValidationService', () => {
   });
 
   describe('validate', () => {
+    it('rejects an unknown resource contract', async () => {
+      const result = await service.validate('Unknown', {});
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RESOURCE_NOT_FOUND');
+    });
+
+    it('rejects a non-object payload', async () => {
+      const result = await service.validate('Product', [] as any);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('INVALID_OBJECT');
+    });
+
     it('should pass valid data', async () => {
       const result = await service.validate('Product', {
         id: 'P-1',

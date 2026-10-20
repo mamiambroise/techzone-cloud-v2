@@ -42,4 +42,19 @@ describe('BM records query safety', () => {
     await expect((scopedProvider as any).check(resource, 'read', context)).resolves.toBeDefined();
     await expect((scopedProvider as any).check(resource, 'read', { ...context, permissions: ['data-runtime:query'] })).rejects.toThrow('customer.read');
   });
+
+  it('exposes tenant-scoped Business Manager relations in metadata', async () => {
+    const prisma = {
+      applicationVersion: { findFirst: jest.fn().mockResolvedValue({ id: 'version-1', applicationId: 'app-1', version: '1.0.0' }) },
+      bmEntity: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'entity-1', code: 'customer', name: 'Customer', fields: [] }),
+        findMany: jest.fn().mockResolvedValue([{ id: 'entity-2', code: 'order' }]),
+      },
+      bmRelation: { findMany: jest.fn().mockResolvedValue([{ code: 'orders', sourceLabel: 'Orders', targetEntityId: 'entity-2', relationType: 'ONE_TO_MANY', configuration: { foreignKey: 'customerId' } }]) },
+    };
+    const scopedProvider = new BmRecordsProvider(prisma as any);
+    const descriptor = await scopedProvider.metadata('bm:11111111-1111-4111-a111-111111111111:customer', { tenantId: 'tenant-1', userId: 'user-1' } as any);
+    expect(descriptor.relations).toEqual([{ code: 'orders', displayName: 'Orders', targetResource: 'order', type: 'ONE_TO_MANY', foreignKey: 'customerId' }]);
+    expect(prisma.bmRelation.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ sourceEntityId: 'entity-1' }) }));
+  });
 });
