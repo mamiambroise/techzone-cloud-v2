@@ -7,10 +7,17 @@ import { PackManagerService } from '../pack-manager/pack-manager.service';
 import { contractHash, dependencyIssues, matches, publicJson, RecordValue } from '../pack-manager/pack-contract';
 import { RuntimeBridgeService } from '../business-manager/runtime/runtime-bridge.service';
 import { RuntimeCacheService } from './runtime-cache.service';
+import { RegistryService } from '../../registry/registry.service';
 
 @Injectable()
 export class PackRuntimeService {
-  constructor(private readonly db: PrismaService, private readonly packs: PackManagerService, private readonly bridge: RuntimeBridgeService, private readonly cache: RuntimeCacheService) {}
+  constructor(
+    private readonly db: PrismaService,
+    private readonly packs: PackManagerService,
+    private readonly bridge: RuntimeBridgeService,
+    private readonly cache: RuntimeCacheService,
+    private readonly registry?: RegistryService,
+  ) {}
   private tenant(actor: IamPrincipal) { if (!actor.tenantId || actor.tenantId === 'legacy') throw new BadRequestException('TENANT_CONTEXT_REQUIRED'); return actor.tenantId; }
   private text(input: RecordValue, key: string) { if (typeof input[key] !== 'string' || !input[key].trim()) throw new BadRequestException(key.toUpperCase() + '_REQUIRED'); return input[key].trim(); }
   publishedManifest(code: string, version: string, actor: IamPrincipal) { return this.packs.publishedManifest(code,version,actor); }
@@ -38,6 +45,66 @@ export class PackRuntimeService {
       const definition = source.definition as RecordValue;
       publicJson(definition);
       const issues = await this.packs.publicationDependencies(definition,actor);
+      const registryReferences: RecordValue[] = [];
+      const lockedReferences = source.registryReferences ?? [];
+      const registryDependencies = (definition.dependencies ?? []).filter(
+        (dependency: RecordValue) =>
+          dependency &&
+          typeof dependency === 'object' &&
+          ['REGISTRY', 'REGISTRY_ENTRY', 'REGISTRY_REF'].includes(
+            String(dependency.targetType).toUpperCase(),
+          ) &&
+          dependency.required !== false,
+      );
+      if (registryDependencies.length !== lockedReferences.length) {
+        issues.push({
+          code: 'REGISTRY_VERSION_LOCK_INVALID',
+          severity: 'ERROR',
+          message: 'Les dépendances Registry du Pack publié ne sont pas toutes verrouillées.',
+          path: 'registryReferences',
+        });
+      }
+      for (const reference of lockedReferences) {
+        if (
+          typeof reference.entryId !== 'string' ||
+          typeof reference.key !== 'string' ||
+          typeof reference.version !== 'string' ||
+          !this.registry
+        ) {
+          issues.push({
+            code: 'REGISTRY_VERSION_LOCK_INVALID',
+            severity: 'ERROR',
+            message: 'Le verrou Registry du Pack publié est invalide.',
+            path: 'registryReferences',
+          });
+          continue;
+        }
+        const resolution = await this.registry.resolve(actor, {
+          key: reference.key,
+          entryId: reference.entryId,
+          version: reference.version,
+          published: true,
+          allowDeprecated: true,
+          environmentCode: environment,
+        });
+        if (
+          !['COMPATIBLE', 'DEPRECATED'].includes(resolution.status) ||
+          resolution.selectedCandidate?.id !== reference.entryId
+        ) {
+          issues.push({
+            code: 'REGISTRY_REFERENCE_INCOMPATIBLE',
+            severity: 'ERROR',
+            message: `La référence Registry exacte ${reference.key}@${reference.version} n’est pas disponible.`,
+            path: 'registryReferences',
+          });
+          continue;
+        }
+        registryReferences.push({
+          ...reference,
+          status: resolution.status,
+          warnings: resolution.warnings,
+        });
+      }
       const ui = definition.ui as RecordValue | undefined;
       if (!ui?.definition) {
         issues.push({ code: 'UI_DEFINITION_MISSING', severity: 'ERROR', message: 'Le manifest publié ne contient pas de snapshot UI.', path: 'ui' });
@@ -78,7 +145,7 @@ export class PackRuntimeService {
       issues.push(...dependencyIssues(finalDefinition, publications).filter(i => !issues.some(existing => existing.code === i.code && existing.path === i.path)));
       const executable = issues.length === 0 && !resources.some(r => r.state === 'BLOCKED');
       const status = executable ? 'RESOLVED' : 'BLOCKED';
-      const effective = { contract: 'techzone.effective-runtime-manifest', contractVersion: '1.0.0', source: { packCode, packVersion, manifestHash: source.hash, packManifestId: source.id }, scope: { tenantId, applicationId, businessVersionId, environment }, status, executable, modules, features, capabilities: [...provided].sort(), dependencies: definition.dependencies, ui, ruleDecisions: decisions, businessConfiguration: business, configuration: business.configuration };
+      const effective = { contract: 'techzone.effective-runtime-manifest', contractVersion: '1.0.0', source: { packCode, packVersion, manifestHash: source.hash, packManifestId: source.id }, scope: { tenantId, applicationId, businessVersionId, environment }, status, executable, modules, features, capabilities: [...provided].sort(), dependencies: definition.dependencies, registryReferences, ui, ruleDecisions: decisions, businessConfiguration: business, configuration: business.configuration };
       const functionalHash = contractHash(effective);
       const stages = [ ['manifest.load', { manifestId: source.id }], ['manifest.validate', { hash: source.hash }], ['context.resolve', { revision: business.revision }], ['module_feature.resolve', { modules: modules.length, features: features.length }], ['capability_dependency.resolve', { issues }], ['rules.evaluate', { decisions }], ['effective_manifest.build', { functionalHash, executable }] ] as const;
       const result = await this.db.$transaction(async tx => {

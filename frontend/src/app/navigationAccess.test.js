@@ -3,7 +3,7 @@ import { canAccess } from './navigationAccess.js';
 import { navigationGroups, groupEntries, pageDefinitions, resolveRoute, effectiveNavigation } from './navigationConfig.js';
 
 const admin = { id: 'admin', permissions: ['*'], isAdmin: true };
-const operator = { id: 'op', permissions: ['erp:read', 'automation:read', 'data-runtime:read', 'data-runtime:query'], isAdmin: false };
+const operator = { id: 'op', permissions: ['erp:read', 'automation:read', 'data-runtime:read', 'data-runtime:query', 'registry.read'], isAdmin: false };
 const ready = { tenantId: 'tenant-a', loading: false, error: null };
 
 describe('canAccess', () => {

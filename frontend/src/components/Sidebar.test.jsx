@@ -170,10 +170,10 @@ describe('Collapsed mode and tooltips (RG-NAV-023)', () => {
 });
 
 describe('Module availability badge', () => {
-  it('marks a fully planned module as Bientôt without hiding it', () => {
+  it('shows the implemented Registry without a planned badge', () => {
     renderSidebar('/dashboard');
     expect(group('Registry')).toBeInTheDocument();
-    expect(within(group('Registry')).getByText('Bientôt')).toBeInTheDocument();
+    expect(within(group('Registry')).queryByText('Bientôt')).not.toBeInTheDocument();
   });
 
   it('marks only the unavailable child of a partially available module', () => {

@@ -47,6 +47,13 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 - Les tableaux larges sont contenus dans une zone de défilement horizontal et conservent leurs en-têtes et libellés accessibles.
 - Les modales utilisent `role="dialog"`, `aria-modal`, un titre associé, Échap et la restitution du focus.
 
+## Console Registry
+
+- Les vues Registry réutilisent les jetons de surface et les badges d’état de ce système; AVAILABLE est vert, DEPRECATED/DEGRADED ambre, et UNAVAILABLE/DISABLED/INCOMPATIBLE rouge.
+- Les listes restent lisibles sur mobile via un défilement horizontal contenant le tableau.
+- Un état ou une disponibilité ne s’affiche que s’il provient du registre persistant; une absence de données est présentée comme un état vide, jamais comme une donnée de démonstration.
+- Les formulaires d’enregistrement ne demandent pas l’owner ni le provider: l’autorité backend du namespace en est la source.
+
 ## Règles
 - Réutiliser les composants existants (`components/`, `components/ui/`, `components/common/`)
 - Respecter palette, espacement 4/8/12/16/24/32px
