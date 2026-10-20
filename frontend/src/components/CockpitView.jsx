@@ -63,7 +63,7 @@ const metrics = [
   },
   {
     key: "packs",
-    label: "Packs",
+    label: "Packs publiés",
     icon: Package,
     to: "/packs/packs",
     permission: "pack.read",
@@ -211,13 +211,15 @@ export default function CockpitView() {
               <div
                 key={key}
                 data-widget={key}
-                className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
+                className="group min-w-0 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] motion-reduce:transition-none sm:p-5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="text-xs font-medium text-slate-500">
                     {label}
                   </h2>
-                  <Icon size={17} className="shrink-0 text-blue-600" />
+                  <span className="rounded-xl bg-[var(--color-primary-soft)] p-2 text-[var(--color-primary)]">
+                    <Icon size={17} className="shrink-0" />
+                  </span>
                 </div>
                 <WidgetBody
                   widget={widgets[key]}
@@ -226,12 +228,12 @@ export default function CockpitView() {
                 >
                   {(count) => (
                     <>
-                      <p className="my-3 text-3xl font-semibold tracking-tight tabular-nums">
+                      <p className="mb-3 mt-5 text-3xl font-semibold tracking-tight text-[var(--color-text)] tabular-nums">
                         {count}
                       </p>
                       <Link
                         to={to}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] group-hover:underline"
                       >
                         Consulter <ArrowRight size={12} />
                       </Link>
