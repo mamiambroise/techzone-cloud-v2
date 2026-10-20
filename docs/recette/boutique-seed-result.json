@@ -6,27 +6,37 @@
   "recordsA": 42,
   "recordsB": 5,
   "counts": {
-    "created": {
+    "created": {},
+    "reused": {
       "tenant": 2,
       "applications": 2,
       "application_versions": 4,
-      "bm_entities": 46,
       "bm_fields": 234,
       "bm_relations": 56,
       "business_records": 47,
       "pm_packs": 2,
-      "pm_pack_versions": 4
-    },
-    "reused": {}
+      "pm_pack_versions": 4,
+      "iam_user": 1,
+      "membership": 2
+    }
   },
-  "missingColumns": [
-    "pm_packs.applicationId"
-  ],
+  "missingColumns": [],
   "acceptance": "NOT TESTED",
   "limitations": [
     "Le CDC liste 23 modèles malgré son total annoncé de 25.",
     "Modèles et packs DRAFT ; pas de contrat ou publication simulés.",
     "IAM/RBAC, pages, règles métier et concurrence à valider par API/UI.",
     "SC06 est un historique synthétique, pas une preuve de transaction exécutée."
-  ]
+  ],
+  "admin": {
+    "username": "boutique.recette.admin",
+    "status": "REUSED",
+    "platformAdmin": true,
+    "tenants": [
+      "TENANT_BOUTIQUE_A",
+      "TENANT_BOUTIQUE_B"
+    ],
+    "credentialsFile": ".env.boutique-admin",
+    "passwordPrinted": false
+  }
 }

@@ -42,3 +42,19 @@ describe('Published data execution boundary', () => {
     expect(query.execute).not.toHaveBeenCalled(); expect(execution.execute).not.toHaveBeenCalled();
   });
 });
+
+describe('Tenant-scoped diagnostics', () => {
+  it('requires an authenticated tenant before exposing metrics', async () => {
+    const history = { getMetrics: jest.fn() };
+    const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, history as any, null as any, null as any, null as any);
+    await expect(controller.getMetrics({ tenantId: '', userId: 'user' } as any)).rejects.toThrow('TENANT_REQUIRED');
+    expect(history.getMetrics).not.toHaveBeenCalled();
+  });
+
+  it('passes only the authenticated tenant to metrics', async () => {
+    const history = { getMetrics: jest.fn().mockReturnValue({ queryCount: 1 }) };
+    const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, history as any, null as any, null as any, null as any);
+    await expect(controller.getMetrics({ tenantId: 'tenant-a', userId: 'user' } as any)).resolves.toEqual({ queryCount: 1 });
+    expect(history.getMetrics).toHaveBeenCalledWith('tenant-a');
+  });
+});

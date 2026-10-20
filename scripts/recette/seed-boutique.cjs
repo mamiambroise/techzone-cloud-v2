@@ -1,7 +1,7 @@
 // Données synthétiques CDC Boutique. Aucun reset, publication ou modification d'existant.
 const fs = require('node:fs');
 const path = require('node:path');
-const { createHash } = require('node:crypto');
+const { createHash, randomBytes } = require('node:crypto');
 const root = path.resolve(__dirname, '../..');
 const { Client } = require(path.join(root, 'backend/node_modules/pg'));
 const dotenv = require(path.join(root, 'backend/node_modules/dotenv'));
@@ -10,6 +10,8 @@ const url = new URL(env.DATABASE_URL);
 const schema = url.searchParams.get('schema') || 'business_manager';
 url.searchParams.delete('schema');
 const apply = process.argv.includes('--apply');
+const withAdmin = process.argv.includes('--with-admin');
+const adminFile = path.join(root, '.env.boutique-admin');
 const id = (key) => {
   const s = createHash('sha256').update('techzone-boutique-cdc-v1.1:' + key).digest('hex');
   return `${s.slice(0,8)}-${s.slice(8,12)}-4${s.slice(13,16)}-a${s.slice(17,20)}-${s.slice(20,32)}`;
@@ -83,6 +85,7 @@ async function main() {
   const client = new Client({connectionString:url.toString(),connectionTimeoutMillis:5000});
   const counts = {created:{},reused:{}};
   const missingColumns = [];
+  let adminReport;
   const columns = {};
   const table = name => `${q(schema)}.${q(name)}`;
   async function ensure(name, data, key = {id:data.id}) {
@@ -107,8 +110,10 @@ async function main() {
     await client.query("SET LOCAL lock_timeout='5s'");
     await client.query("SELECT pg_advisory_xact_lock(hashtext('CDC_BOUTIQUE_V1_1_SYNTHETIC'))");
     const timestamp = new Date().toISOString();
+    const tenants = [];
     for(const suffix of ['A','B']) {
       const tenant = await ensure('tenant',{id:id('tenant:'+suffix),code:'TENANT_BOUTIQUE_'+suffix,name:'Boutique '+suffix,status:'ACTIVE',locale:'fr-MG',timezone:'Indian/Antananarivo',metadata:{seed:marker},updatedAt:timestamp},{code:'TENANT_BOUTIQUE_'+suffix});
+      tenants.push(tenant);
       // La base actuelle impose un code application globalement unique.
       const appCode = suffix==='A'?'TECHZONE_BOUTIQUE':'TECHZONE_BOUTIQUE_CONTROLE';
       const app = await ensure('applications',{id:id('app:'+suffix),tenantId:tenant.id,code:appCode,name:'Techzone Boutique Pro',description:marker,updatedAt:timestamp},{tenantId:tenant.id,code:appCode});
@@ -142,8 +147,47 @@ async function main() {
       const pack=await ensure('pm_packs',{id:id('pack:'+suffix),tenantId:tenant.id,applicationId:app.id,code:'PACK_BOUTIQUE_VENTE',name:'Pack Boutique Vente',createdBy:marker,updatedAt:timestamp},{tenantId:tenant.id,code:'PACK_BOUTIQUE_VENTE'});
       for(const version of ['1.0.0','1.1.0']) await ensure('pm_pack_versions',{id:id('pack-version:'+suffix+version),tenantId:tenant.id,packId:pack.id,applicationVersionId:versions[version].id,versionNumber:version,createdBy:marker,updatedAt:timestamp},{tenantId:tenant.id,packId:pack.id,versionNumber:version});
     }
+    if (withAdmin) {
+      const bcrypt = require(path.join(root, 'backend/node_modules/bcrypt'));
+      const username = 'boutique.recette.admin';
+      const email = 'boutique.recette.admin@tests.invalid';
+      const userId = id('iam:admin');
+      const existing = await client.query(`SELECT * FROM ${table('iam_user')} WHERE id=$1 OR username=$2 OR "primaryEmail"=$3`, [userId, username, email]);
+      if (existing.rowCount && (existing.rowCount !== 1 || existing.rows[0].id !== userId || existing.rows[0].metadata?.seed !== marker)) {
+        throw new Error('ADMIN_IDENTITY_CONFLICT: aucun compte existant ne sera promu');
+      }
+      if (existing.rowCount) {
+        const user = existing.rows[0];
+        if (user.status !== 'ACTIVE' || !user.isAdmin || user.archivedAt || user.username !== username || user.primaryEmail !== email) throw new Error('ADMIN_STATE_CONFLICT: compte existant conservé sans modification');
+        const credential = await client.query(`SELECT id FROM ${table('iam_credential')} WHERE "userId"=$1 AND type='PASSWORD' AND status='ACTIVE'`, [userId]);
+        if (!credential.rowCount) throw new Error('ADMIN_PASSWORD_MISSING: utiliser la récupération IAM');
+      }
+      let password;
+      if (!existing.rowCount) {
+        const saved = fs.existsSync(adminFile) ? dotenv.parse(fs.readFileSync(adminFile)) : {};
+        if (fs.existsSync(adminFile) && (!saved.BOUTIQUE_ADMIN_PASSWORD || saved.BOUTIQUE_ADMIN_USERNAME !== username)) throw new Error('ADMIN_CREDENTIAL_FILE_CONFLICT');
+        password = saved.BOUTIQUE_ADMIN_PASSWORD || randomBytes(24).toString('base64url');
+        if (password.length < 10 || password.length > 128) throw new Error('ADMIN_PASSWORD_INVALID_LENGTH');
+        // Le secret est sauvegardé avant COMMIT afin de ne jamais créer un compte
+        // dont le mot de passe serait perdu. Un rollback peut laisser ce fichier réutilisable.
+        if (apply && !fs.existsSync(adminFile)) fs.writeFileSync(adminFile, `BOUTIQUE_ADMIN_USERNAME=${username}\nBOUTIQUE_ADMIN_PASSWORD=${password}\n`, {flag:'wx', mode:0o600});
+        if (apply) fs.chmodSync(adminFile, 0o600);
+        const hash = await bcrypt.hash(password, 12);
+        await ensure('iam_user', {id:userId, username, primaryEmail:email, displayName:'Administrateur recette Boutique', status:'ACTIVE', isAdmin:true, defaultTenantId:tenants[0].id, metadata:{seed:marker}, createdBy:marker, updatedAt:timestamp});
+        await ensure('iam_credential', {id:id('iam:admin:password'), userId, type:'PASSWORD', status:'ACTIVE', secretHash:hash, createdBy:marker, updatedAt:timestamp});
+        await ensure('iam_password_history', {id:id('iam:admin:history'), userId, passwordHash:hash});
+      } else {
+        counts.reused.iam_user = (counts.reused.iam_user || 0) + 1;
+      }
+      for (const tenant of tenants) {
+        const membership = await ensure('membership', {id:id('iam:admin:membership:'+tenant.code), userId, tenantId:tenant.id, status:'ACTIVE', joinedAt:timestamp, metadata:{seed:marker}, createdBy:marker, updatedAt:timestamp}, {userId, tenantId:tenant.id});
+        if (membership.status !== 'ACTIVE' || membership.organizationId || membership.siteId || membership.validFrom && new Date(membership.validFrom) > new Date() || membership.validUntil && new Date(membership.validUntil) < new Date()) throw new Error('ADMIN_MEMBERSHIP_CONFLICT: appartenance existante conservée sans modification');
+      }
+      adminReport = {username, status:existing.rowCount?'REUSED':apply?'CREATED':'WOULD_CREATE', platformAdmin:true, tenants:tenants.map(t=>t.code), credentialsFile:'.env.boutique-admin', passwordPrinted:false};
+    }
     await client.query(apply?'COMMIT':'ROLLBACK');
     const report={database:actual,schema,mode:apply?'APPLIED':'DRY_RUN_ROLLED_BACK',modelsPerTenant:Object.keys(specs).length,recordsA:fixtures.length,recordsB:5,counts,missingColumns:[...new Set(missingColumns)],acceptance:'NOT TESTED',limitations:['Le CDC liste 23 modèles malgré son total annoncé de 25.','Modèles et packs DRAFT ; pas de contrat ou publication simulés.','IAM/RBAC, pages, règles métier et concurrence à valider par API/UI.','SC06 est un historique synthétique, pas une preuve de transaction exécutée.']};
+    if (adminReport) report.admin = adminReport;
     console.log(JSON.stringify(report,null,2));
     if(apply) fs.writeFileSync(path.join(root,'docs/recette/boutique-seed-result.json'),JSON.stringify(report,null,2)+'\n');
   } catch(error) {

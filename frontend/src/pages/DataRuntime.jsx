@@ -12,11 +12,16 @@ import {
 
 function DataRuntime() {
   const [resources, setResources] = useState([]);
+  const [contract, setContract] = useState(null);
+  const [metrics, setMetrics] = useState(null);
   const [selected, setSelected] = useState('Product');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [queryOutput, setQueryOutput] = useState(null);
+  const [mutationForm, setMutationForm] = useState({ operation: 'CREATE', targetId: '', json: '{\n  "ref": "PRD-X",\n  "label": "Produit test"\n}' });
+  const [mutationOutput, setMutationOutput] = useState(null);
+  const [mutationLoading, setMutationLoading] = useState(false);
 
   const [queryForm, setQueryForm] = useState({ fields: '', filterField: '', filterOp: 'EQ', filterValue: '' });
   const [validateForm, setValidateForm] = useState({ json: '{\n  "ref": "PRD-X",\n  "label": "Produit test",\n  "price": 42\n}' });
@@ -25,9 +30,21 @@ function DataRuntime() {
   const fetchResources = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await dataRuntimeService.resources();
-      setResources(res.data);
-      setSelected((prev) => (res.data.length > 0 && !prev ? res.data[0].resourceCode : prev));
+      const [resourceResult, contractResult, metricsResult] = await Promise.allSettled([
+        dataRuntimeService.resources(),
+        dataRuntimeService.contract(),
+        dataRuntimeService.metrics(),
+      ]);
+      if (resourceResult.status === 'rejected') throw resourceResult.reason;
+      const available = Array.isArray(resourceResult.value.data) ? resourceResult.value.data : [];
+      if (contractResult.status === 'fulfilled') setContract(contractResult.value.data);
+      if (metricsResult.status === 'fulfilled') setMetrics(metricsResult.value.data);
+      setResources(available);
+      setSelected((prev) => (
+        available.some((resource) => resource.resourceCode === prev)
+          ? prev
+          : (available[0]?.resourceCode || '')
+      ));
     } catch (err) {
       setError('Impossible de charger les ressources');
       console.error(err);
@@ -54,7 +71,10 @@ function DataRuntime() {
     setQueryOutput(null);
     try {
       const filter = queryForm.filterField
-        ? { field: queryForm.filterField, operator: queryForm.filterOp, value: queryForm.filterValue }
+        ? {
+          logic: 'AND',
+          conditions: [{ field: queryForm.filterField, operator: queryForm.filterOp, value: queryForm.filterValue }],
+        }
         : undefined;
       const body = { resource: selected };
       if (queryForm.fields) body.select = queryForm.fields.split(',').map((s) => s.trim()).filter(Boolean);
@@ -79,6 +99,39 @@ function DataRuntime() {
     }
   };
 
+  const runMutation = async (e) => {
+    e.preventDefault();
+    setMutationOutput(null);
+    if (mutationForm.operation === 'DELETE' && !mutationForm.targetId.trim()) {
+      setMutationOutput({ error: 'Un identifiant est requis pour supprimer un enregistrement.' });
+      return;
+    }
+    if (mutationForm.operation !== 'DELETE' && !mutationForm.json.trim()) {
+      setMutationOutput({ error: 'Le payload JSON est requis pour cette opération.' });
+      return;
+    }
+    const actionLabel = mutationForm.operation === 'DELETE' ? 'supprimer cet enregistrement' : `${mutationForm.operation.toLowerCase()} cet enregistrement`;
+    if (!window.confirm(`Confirmer : ${actionLabel} dans ${selected} ?`)) return;
+    try {
+      const input = mutationForm.operation === 'DELETE' ? undefined : JSON.parse(mutationForm.json);
+      setMutationLoading(true);
+      const response = await dataRuntimeService.execute({
+        resource: selected,
+        operation: mutationForm.operation,
+        ...(mutationForm.targetId.trim() ? { targetId: mutationForm.targetId.trim() } : {}),
+        ...(input !== undefined ? { input } : {}),
+        idempotencyKey: `ui-${selected}-${mutationForm.operation}-${Date.now()}`,
+      });
+      setMutationOutput(response.data);
+      if (response.data?.success) await listRows(selected);
+    } catch (err) {
+      const parseErr = err instanceof SyntaxError;
+      setMutationOutput({ error: parseErr ? 'JSON invalide' : (err.response?.data?.message || err.message) });
+    } finally {
+      setMutationLoading(false);
+    }
+  };
+
   const renderValue = (v) => {
     if (v === null || v === undefined) return <span className="text-slate-400 dark:text-slate-500">—</span>;
     if (typeof v === 'object') return <span className="font-mono text-xs">{JSON.stringify(v)}</span>;
@@ -92,11 +145,26 @@ function DataRuntime() {
   const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
 
   return (
-    <div className="space-y-6">
+    <div className="tz-page space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Data Runtime</h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Exploration et validation des ressources de données</p>
       </div>
+
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Vue d’ensemble Data Runtime">
+        {[
+          ['Ressources', resources.length, 'Contrats disponibles'],
+          ['Provider', contract?.health?.status || 'Non vérifié', 'État retourné par le contrat'],
+          ['Opérations', metrics?.executionCount ?? metrics?.queryCount ?? '—', 'Tenant courant'],
+          ['Taux de succès', typeof metrics?.successRate === 'number' ? `${metrics.successRate.toFixed(1)}%` : '—', 'Historique autorisé'],
+        ].map(([label, value, hint]) => (
+          <article key={label} className="tz-surface p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{value}</p>
+            <p className="mt-1 text-xs text-slate-500">{hint}</p>
+          </article>
+        ))}
+      </section>
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
@@ -175,6 +243,52 @@ function DataRuntime() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-amber-200 dark:border-amber-800/60 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-amber-100 dark:border-amber-800/50 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100">Mutation Tester</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Les permissions IAM et les règles métier sont vérifiées par le serveur.</p>
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Action sensible</span>
+            </div>
+            <form onSubmit={runMutation} className="p-6 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <select
+                  value={mutationForm.operation}
+                  onChange={(e) => setMutationForm({ ...mutationForm, operation: e.target.value })}
+                  className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm dark:bg-slate-900 dark:text-slate-100"
+                  aria-label="Opération de mutation"
+                >
+                  {['CREATE', 'UPDATE', 'DELETE'].map((operation) => <option key={operation} value={operation}>{operation}</option>)}
+                </select>
+                <input
+                  value={mutationForm.targetId}
+                  onChange={(e) => setMutationForm({ ...mutationForm, targetId: e.target.value })}
+                  placeholder={mutationForm.operation === 'CREATE' ? 'ID cible (optionnel)' : 'ID cible'}
+                  className="md:col-span-2 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm dark:bg-slate-900 dark:text-slate-100"
+                  aria-label="Identifiant cible"
+                />
+              </div>
+              {mutationForm.operation !== 'DELETE' && (
+                <textarea
+                  rows="5"
+                  value={mutationForm.json}
+                  onChange={(e) => setMutationForm({ ...mutationForm, json: e.target.value })}
+                  className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm font-mono dark:bg-slate-900 dark:text-slate-100"
+                  aria-label="Payload JSON de mutation"
+                />
+              )}
+              <button type="submit" disabled={mutationLoading} className="w-full bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-60 font-medium">
+                {mutationLoading ? 'Exécution…' : 'Exécuter après confirmation'}
+              </button>
+              {mutationOutput && (
+                <pre className={`rounded-lg p-4 text-xs overflow-x-auto max-h-64 ${mutationOutput.success ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                  {JSON.stringify(mutationOutput, null, 2)}
+                </pre>
+              )}
+            </form>
           </div>
 
           {/* Query + Validation */}
