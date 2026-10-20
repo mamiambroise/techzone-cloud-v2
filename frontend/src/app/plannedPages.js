@@ -27,13 +27,6 @@ export const plannedPages = [
   planned("packCapabilities", "packs", "Capacités", "Le catalogue des capacités fournies et requises par les packs n’est pas encore intégré."),
   planned("packRules", "packs", "Règles", "Les règles de composition et de compatibilité des packs seront disponibles avec le futur Pack Manager."),
 
-  planned("runtimeContext", "runtime", "Contextes", "Les contextes d’exécution résolus ne sont pas encore exposés par le Runtime."),
-  planned("runtimeManifest", "runtime", "Manifest", "Le manifest actif des packs publiés sera consultable avec le futur moteur Runtime."),
-  planned("runtimeResolver", "runtime", "Résolution", "La résolution des modules, capacités et providers sera consultable avec le futur moteur Runtime."),
-  planned("runtimeEffective", "runtime", "Configuration effective", "La configuration effective appliquée à l’exécution sera disponible avec le futur moteur Runtime."),
-  planned("runtimeCache", "runtime", "Cache", "La gestion du cache d’exécution n’est pas encore disponible."),
-  planned("runtimeDiagnostics", "runtime", "Diagnostics", "Les diagnostics d’exécution seront disponibles avec le futur moteur Runtime."),
-
   planned("data", "data", "Vue d’ensemble", "La vue d’ensemble des sources, contrats et accès sera intégrée avec la Data Platform."),
   planned("dataSources", "data", "Sources", "La gestion des sources de données n’est pas encore disponible."),
   planned("dataContracts", "data", "Modèles & Contrats", "Les modèles et contrats de données seront disponibles avec la Data Platform."),

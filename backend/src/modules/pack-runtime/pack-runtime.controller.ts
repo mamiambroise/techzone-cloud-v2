@@ -89,6 +89,28 @@ export class PackRuntimeController {
     return this.service.reresolve(id, user);
   }
 
+  @Post('resolutions/:id/activate')
+  @RequirePermission('runtime.activate')
+  activate(@Param('id', new ParseUUIDPipe()) id: string, @CurrentPrincipal() user: IamPrincipal) {
+    return this.service.activate(id, user);
+  }
+
+  @Post('resolutions/:id/deactivate')
+  @RequirePermission('runtime.deactivate')
+  deactivate(@Param('id', new ParseUUIDPipe()) id: string, @CurrentPrincipal() user: IamPrincipal) {
+    return this.service.deactivate(id, user);
+  }
+
+  @Get('contexts')
+  @RequirePermission('runtime.resolution.read')
+  contexts(@CurrentPrincipal() user: IamPrincipal) { return this.service.contexts(user); }
+
+  @Get('resolutions/:id/execution-manifest')
+  @RequirePermission('runtime.effective.manifest.read')
+  executionManifest(@Param('id', new ParseUUIDPipe()) id: string, @CurrentPrincipal() user: IamPrincipal) {
+    return this.service.executionManifest(id, user);
+  }
+
   @Get('dashboard')
   @RequirePermission('runtime.resolution.read')
   dashboard(@CurrentPrincipal() user: IamPrincipal) {

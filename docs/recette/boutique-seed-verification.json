@@ -1,0 +1,10 @@
+{
+  "database": "techzonecloud_dev",
+  "persistedRecords": 47,
+  "tenants": 2,
+  "saleAmounts": "PASS",
+  "inventoryBalances": 9,
+  "idempotency": "PASS (zero insertion au deuxième passage)",
+  "businessAcceptance": "NOT TESTED",
+  "branch": "Nassa"
+}

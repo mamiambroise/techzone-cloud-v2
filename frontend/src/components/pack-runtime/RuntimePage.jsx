@@ -1,59 +1,112 @@
-import { createElement, useEffect, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Clock3, Database, Layers3, Play, RefreshCw, ShieldCheck } from 'lucide-react';
 import { api } from '../../services/apiClient.js';
 import { useTenant } from '../../contexts/TenantProvider.jsx';
 import { useAuth } from '../../auth/AuthProvider.jsx';
-import PublishedApplication from './PublishedApplication.jsx';
-import { BmPage, BmPageHeader, BmBreadcrumb, BmContextBar, BmCard, BmKpiCard, BmButton, BmTable, BmStatusBadge, BmEmptyState, BmErrorState, BmLoading, BmSelect } from '../business-manager/bm/ui.jsx';
-const get = path => api.get(path).then(r => r.data);
-const titles = { overview:'Vue d’ensemble Runtime',context:'Contextes',manifest:'Manifest publié',resolver:'Résolution',effective:'Configuration effective',cache:'Cache',diagnostics:'Diagnostics' };
-export default function RuntimePage() { const { activeTenant } = useTenant(); return <Workspace key={activeTenant?.id} tenant={activeTenant}/>; }
+import RuntimeConfirmation from './RuntimeConfirmation.jsx';
+import { BmBreadcrumb, BmButton, BmEmptyState, BmLoading, BmPage, BmPageHeader } from '../business-manager/bm/ui.jsx';
+import { RuntimeError, RuntimePanel, RuntimeResource } from './RuntimePrimitives.jsx';
+import RuntimeLaunch from './RuntimeLaunch.jsx';
+import { ContextTable, ResolutionTable, RuntimeCache, RuntimeDiagnostics, RuntimeHistory, RuntimeOverview } from './RuntimeViews.jsx';
+import { RUNTIME_SECTIONS, canRuntime, formatDate, resolutionIdentity } from './runtimeModel.js';
+import { runtimeError, useRuntimeData, useRuntimeResolution } from './useRuntimeData.js';
+
+const RuntimeDetail = lazy(() => import('./RuntimeDetail.jsx'));
+const sectionTitles = { overview: 'Vue d’ensemble Runtime', applications: 'Applications en exécution', resolutions: 'Résolutions de packs', activations: 'Activations Runtime', context: 'Contextes d’exécution', resolver: 'Lancer une exécution', manifest: 'Manifeste effectif', effective: 'Configuration effective', cache: 'Cache Runtime', diagnostics: 'Diagnostics Runtime', history: 'Historique Runtime' };
+const descriptions = {
+  overview: 'Supervisez les applications publiées, leurs contextes et les conditions de leur exécution.',
+  applications: 'Retrouvez les applications actives par version et environnement.',
+  resolutions: 'Examinez les contrôles serveur et les exigences de chaque pack publié.',
+  activations: 'Suivez les activations persistées, leur acteur et leur état de préparation.',
+  context: 'Inspectez les versions, environnements et contextes d’exécution de votre tenant.',
+  cache: 'Consultez les mesures réelles et invalidez uniquement le périmètre nécessaire.',
+  diagnostics: 'Identifiez les blocages et remontez à la résolution concernée.',
+  history: 'Consultez les résolutions, activations et désactivations disponibles.',
+};
+const navIcons = { overview: Activity, applications: Layers3, resolutions: ShieldCheck, activations: Play, context: Layers3, cache: Database, diagnostics: Activity, history: Clock3 };
+
+export default function RuntimePage() {
+  const { activeTenant } = useTenant();
+  return <Workspace key={activeTenant?.id || 'no-tenant'} tenant={activeTenant} />;
+}
 function Workspace({ tenant }) {
-  const { pathname } = useLocation(), [query,setQuery] = useSearchParams(), { user } = useAuth();
-  const section = pathname === '/runtime' ? 'overview' : pathname.split('/').pop();
-  const [data,setData] = useState(null), [detail,setDetail] = useState(null), [error,setError] = useState(''), [busy,setBusy] = useState(false), [revision,setRevision] = useState(0);
-  const key = `runtime-context:${tenant?.id}`;
-  const [context,setContext] = useState(() => { let saved = {}, bm = {}; try { saved = JSON.parse(sessionStorage.getItem(key) || '{}'); bm = JSON.parse(sessionStorage.getItem('bm-context:'+tenant?.id) || '{}'); } catch {} return { ...saved,applicationId:query.get('applicationId') || saved.applicationId || bm.applicationId,businessVersionId:query.get('businessVersionId') || saved.businessVersionId || bm.versionId,packCode:query.get('pack') || saved.packCode || '',packVersion:query.get('packVersion') || saved.packVersion || '' }; });
-  const [versions,setVersions] = useState([]);
-  const [sourceManifest,setSourceManifest] = useState(null);
-  const selected = query.get('resolution') ?? '';
-  const allowed = p => user?.isAdmin || user?.permissions?.includes('*') || user?.permissions?.includes(p);
-  const refresh = () => setRevision(r => r+1);
-  useEffect(() => { let live = true; setError(''); setData(null); Promise.all([get('/runtime/dashboard'),get('/pack-manager/registry'),get('/business-manager/applications'),get('/business-manager/environments'),get('/runtime/cache/status'),get('/runtime/cache/entries'),get('/runtime/providers/health')]).then(([dashboard,packs,applications,environments,cache,entries,health]) => { if (live) setData({ dashboard,packs,applications,environments,cache,entries,health }); }).catch(e => { if (live) setError(e.normalized?.message || 'Runtime indisponible'); }); return () => { live = false; }; },[revision]);
-  useEffect(() => { let live = true; setVersions([]); if (context.applicationId) get(`/business-manager/applications/${context.applicationId}/versions`).then(v => { if (live) setVersions(v); }).catch(e => { if (live) setError(e.normalized?.message || 'Versions indisponibles'); }); return () => { live = false; }; },[context.applicationId]);
-  useEffect(() => { let live = true; setDetail(null); if (selected) Promise.all([get(`/runtime/resolutions/${selected}`),get(`/runtime/resolutions/${selected}/diagnostics`)]).then(([resolution,diagnostics]) => { if (live) setDetail({ resolution,diagnostics }); }).catch(e => { if (live) setError(e.normalized?.message || 'Résolution indisponible'); }); return () => { live = false; }; },[selected,revision]);
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [query] = useSearchParams();
+  const cleanPath = pathname.replace(/\/+$/, '');
+  const section = cleanPath === '/runtime' ? 'overview' : cleanPath.split('/').pop();
+  const selected = query.get('resolution') || '';
+  const [revision, setRevision] = useState(0);
+  const [now, setNow] = useState(Date.now);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [noticeTone, setNoticeTone] = useState('success');
+  const [actionError, setActionError] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const lock = useRef(false);
+  const actionController = useRef(null);
+  const mounted = useRef(true);
+  const resources = useRuntimeData(tenant?.id, user, revision);
+  const detail = useRuntimeResolution(selected, tenant?.id, revision);
+  const resolutions = Array.isArray(resources.resolutions?.data) ? resources.resolutions.data : [];
+  const contexts = Array.isArray(resources.contexts?.data) ? resources.contexts.data : [];
+  const applications = Array.isArray(resources.applications?.data) ? resources.applications.data : [];
+  const allowed = permission => canRuntime(user, permission);
+  const refresh = () => { setNow(Date.now()); setRevision(v => v + 1); };
+  const loading = Object.values(resources).some(r => r.status === 'loading');
   useEffect(() => {
-    let live = true; setSourceManifest(null);
-    const source = detail?.resolution.effectiveManifest?.content?.source;
-    if (section === 'manifest' && source) get('/runtime/manifests/'+encodeURIComponent(source.packCode)+'/'+encodeURIComponent(source.packVersion)).then(value => { if(live) setSourceManifest(value); }).catch(e => { if(live) setError(e.normalized?.message || 'Manifest indisponible'); });
-    return () => { live = false; };
-  },[section,detail]);
-  const change = values => setContext(c => { const next = { ...c,...values }; sessionStorage.setItem(key,JSON.stringify(next)); return next; });
-  async function run(path,body) { if (busy) return; setBusy(true); setError(''); try { const result = (await api.post('/runtime'+path,body)).data; if (result.resolutionId) setQuery({ resolution:result.resolutionId }); refresh(); } catch(e) { setError(e.normalized?.message || 'Opération refusée'); } finally { setBusy(false); } }
-  const effective = detail?.resolution.effectiveManifest?.content;
-  const selectedResolution = detail?.resolution;
-  const canRenderRuntime = Boolean(selectedResolution?.id && selectedResolution?.status === 'EXECUTABLE' && selectedResolution?.effectiveManifest?.executable !== false);
-  const app = data?.applications.find(a => a.id === context.applicationId);
-  return <BmPage><BmBreadcrumb items={[{ label:'Runtime',to:'/runtime' },{ label:titles[section] }]}/><BmPageHeader title={titles[section] ?? 'Runtime'} subtitle="Résolution de packs publiés dans un contexte métier vérifié."/>
-    {error && <BmErrorState message={error} onRetry={refresh}/>}
-    {context.packCode && context.packVersion && canRenderRuntime && <PublishedApplication packCode={context.packCode} packVersion={context.packVersion} tenantId={tenant?.id} resolutionId={selectedResolution.id} effectiveManifest={selectedResolution.effectiveManifest?.content ?? selectedResolution.effectiveManifest} />}
-    {context.packCode && context.packVersion && !canRenderRuntime && !error && <BmCard title="Runtime bloqué" subtitle="Aucune résolution exécutable n’est active pour ce pack."><p className="text-sm text-amber-700">Le rendu de l’application est refusé tant qu’une résolution exécutables et validée n’a pas été activée.</p></BmCard>}
-    {!data ? !error && <BmLoading/> : <>
-      <BmContextBar items={[{ label:'Application',value:effective?.businessConfiguration?.application?.name ?? app?.name },{ label:'Pack',value:effective?.source?.packCode ?? context.packCode },{ label:'Version',value:effective?.source?.packVersion ?? context.packVersion },{ label:'Tenant',value:tenant?.name ?? tenant?.id },{ label:'Environnement',value:effective?.scope?.environment ?? context.environment }]}/>
-      {['overview','context','resolver'].includes(section) && <BmCard title="Contexte de résolution" subtitle="L’identité, les permissions et la configuration sont déterminées par le serveur."><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <BmSelect label="Application" value={context.applicationId ?? ''} onChange={v => change({ applicationId:v,businessVersionId:'' })} options={[{ value:'',label:'Application' },...data.applications.map(a => ({ value:a.id,label:a.name }))]}/>
-        <BmSelect label="Version métier" value={context.businessVersionId ?? ''} onChange={v => change({ businessVersionId:v })} options={[{ value:'',label:'Version métier' },...versions.map(v => ({ value:v.id,label:v.version+' · '+v.status }))]}/>
-        <BmSelect label="Pack publié" value={context.packCode+'@'+context.packVersion} onChange={v => { const p = data.packs.find(p => p.code+'@'+p.versionNumber === v); change({ packCode:p?.code ?? '',packVersion:p?.versionNumber ?? '' }); }} options={[{ value:'@',label:'Pack publié' },...data.packs.map(p => ({ value:p.code+'@'+p.versionNumber,label:p.name+' · '+p.versionNumber }))]}/>
-        <BmSelect label="Environnement" value={context.environment ?? ''} onChange={v => change({ environment:v })} options={[{ value:'',label:'Environnement' },...data.environments.filter(e => e.status === 'ACTIVE').map(e => ({ value:e.code,label:e.name }))]}/>
-      </div><div className="mt-4 flex flex-wrap gap-3">{allowed('runtime.resolve') && <BmButton disabled={busy || !context.applicationId || !context.businessVersionId || !context.environment || !context.packVersion} onClick={() => run('/resolve',context)}>{busy ? 'Résolution…' : 'Résoudre le pack'}</BmButton>}<Link className="text-sm text-blue-700 py-2" to="/packs/registry">Consulter les packs publiés</Link></div></BmCard>}
-      {section === 'overview' && <><div className="grid gap-4 md:grid-cols-3">{[['total','Résolutions',Activity],['resolved','Résolues',CheckCircle2],['blocked','Bloquées',AlertTriangle]].map(([k,label,icon]) => <BmKpiCard key={k} label={label} value={data.dashboard.counters[k]} icon={createElement(icon,{ size:22 })}/>)}</div><BmCard title="Disponibilité des providers">{data.health.providers.map(p => <div key={p.code} className="flex justify-between text-sm"><span>{p.code}</span><BmStatusBadge value={p.state}/></div>)}</BmCard></>}
-      {!['cache'].includes(section) && <><BmSelect label="Résolution enregistrée" value={selected} onChange={v => setQuery({ resolution:v })} options={[{ value:'',label:'Choisir une résolution' },...data.dashboard.recent.map(r => ({ value:r.id,label:new Date(r.startedAt).toLocaleString()+' · '+r.status }))]}/>
-        {selected && !detail ? !error && <BmLoading/> : detail ? <><BmCard title="Parcours de résolution"><div className="flex flex-wrap gap-3" aria-live="polite">{detail.resolution.steps.map((s,i) => <div key={s.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm transition-colors duration-150 motion-reduce:transition-none"><span className="text-blue-600 font-semibold">{i+1}. </span>{s.code}<div className="mt-1"><BmStatusBadge value={s.status}/></div></div>)}</div><p className="mt-4"><BmStatusBadge value={detail.resolution.status}/></p>{allowed('runtime.resolution.reresolve') && <BmButton className="mt-3" variant="secondary" disabled={busy} onClick={() => run(`/resolutions/${selected}/reresolve`,{})}>Relancer la résolution</BmButton>}</BmCard>
-        {['manifest','effective','resolver','overview'].includes(section) && effective && <BmCard title={section === 'manifest' ? 'Manifest source' : 'Configuration effective'}><dl className="grid gap-3 text-sm sm:grid-cols-2"><div><dt className="text-slate-500">Pack</dt><dd>{effective.source.packCode} · {effective.source.packVersion}</dd></div><div><dt className="text-slate-500">Exécutable</dt><dd>{effective.executable ? 'Oui' : 'Non — diagnostic à corriger'}</dd></div></dl><p className="my-3 text-xs break-all">{effective.source.manifestHash}</p><BmTable rows={[...(effective.modules ?? []),...(effective.features ?? [])]} columns={[{ key:'code',label:'Module / fonctionnalité' },{ key:'state',label:'État',render:r => <BmStatusBadge value={r.state}/> },{ key:'reasonCode',label:'Explication' }]} emptyState={<BmEmptyState title="Aucun module résolu"/>}/><details className="mt-4"><summary className="text-blue-700 cursor-pointer">Inspecter le contrat JSON</summary><pre className="max-h-96 overflow-auto bg-slate-50 rounded-lg p-4 text-xs">{JSON.stringify(section === 'manifest' ? sourceManifest : effective,null,2)}</pre></details></BmCard>}
-        {detail.diagnostics.length > 0 || section === 'diagnostics' ? <BmCard title="Diagnostics">{detail.diagnostics.length ? <ul className="space-y-3">{detail.diagnostics.map(d => <li key={d.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm"><strong>{d.code}</strong><p>{d.message}</p><span className="text-xs text-slate-500">Trace : {d.traceId}</span></li>)}</ul> : <BmEmptyState title="Aucun diagnostic pour cette résolution"/>}</BmCard> : null}</> : <BmEmptyState title="Aucune résolution sélectionnée" description="Résolvez un pack publié ou choisissez une résolution enregistrée."/>}
-      </>}
-      {section === 'cache' && <BmCard title="Cache Runtime" subtitle={`Mémoire locale · TTL ${data.cache.ttlMs / 1000} s · ${data.cache.entries} entrée(s)`}>{allowed('runtime.cache.invalidate') && <BmButton disabled={busy} variant="secondary" onClick={() => { if (window.confirm('Invalider le cache Runtime de ce tenant ?')) run('/cache/invalidate',{ scope:'TENANT' }); }}>Invalider le cache du tenant</BmButton>}<BmTable rows={data.entries} keyOf={r => r.key} columns={[{ key:'packCode',label:'Pack' },{ key:'state',label:'État' },{ key:'expiresAt',label:'Expiration',render:r => new Date(r.expiresAt).toLocaleString() }]} emptyState={<BmEmptyState title="Cache vide"/>}/></BmCard>}
-    </>}
+    mounted.current = true;
+    const timer = setInterval(() => setNow(Date.now()), 15_000);
+    return () => { mounted.current = false; actionController.current?.abort(); clearInterval(timer); };
+  }, []);
+  useEffect(() => { if (resources.resolutions?.status === 'ready') setUpdatedAt(new Date().toISOString()); }, [resources.resolutions]);
+  function select(id, path = '/runtime/resolutions') { setActionError(null); navigate(`${path}?resolution=${encodeURIComponent(id)}`); }
+  async function run(path, body, success) {
+    if (lock.current || !tenant?.id) return;
+    lock.current = true;
+    actionController.current = new AbortController();
+    setBusy(true); setActionError(null); setNotice('');
+    try {
+      const response = await api.post(`/runtime${path}`, body, { signal: actionController.current.signal, errorHandling: 'local' });
+      if (!mounted.current) return;
+      setConfirmation(null);
+      setNotice(success);
+      setNoticeTone(response.data?.status === 'BLOCKED' ? 'warning' : 'success');
+      if (path === '/resolve' || path.endsWith('/reresolve')) {
+        if (response.data?.resolutionId) select(response.data.resolutionId);
+        if (response.data?.status === 'BLOCKED') setNotice('Résolution enregistrée : l’exécution est bloquée. Consultez les diagnostics.');
+      }
+      refresh();
+    } catch (error) {
+      if (mounted.current && !actionController.current.signal.aborted) { setConfirmation(null); setActionError(runtimeError(error)); }
+    } finally { lock.current = false; if (mounted.current) setBusy(false); }
+  }
+  function deactivate(resolution, context) {
+    const identity = resolutionIdentity(resolution, applications);
+    setConfirmation({ path: `/resolutions/${context.resolutionId}/deactivate`, body: {}, title: 'Désactiver cette application ?', message: `${identity.application} — environnement ${context.environment}. Le contexte actif sera fermé et les prochaines opérations de cette exécution seront refusées.`, confirmLabel: 'Désactiver', success: 'Application désactivée.', danger: true });
+  }
+  const detailView = <Suspense fallback={<BmLoading label="Chargement de l’inspecteur…" />}><RuntimeDetail key={`${selected}:${section === 'manifest' || section === 'effective' ? section : 'detail'}`} state={detail} tenantId={tenant?.id} applications={applications} contexts={contexts} allowed={allowed} busy={busy} onAction={run} onDeactivate={deactivate} onRetry={refresh} now={now} initialTab={section === 'manifest' ? 'manifest' : section === 'effective' ? 'configuration' : 'summary'} /></Suspense>;
+  if (!tenant?.id) return <BmPage className="runtime-workspace"><BmPageHeader title="Pack Runtime" subtitle="Exécutez vos packs applicatifs dans un contexte vérifié." /><RuntimePanel><BmEmptyState icon={Layers3} title="Sélectionnez un tenant" description="Utilisez le sélecteur de tenant de l’en-tête pour charger ses applications et ses contextes Runtime." /></RuntimePanel></BmPage>;
+  return <BmPage className="runtime-workspace">
+    <BmBreadcrumb items={[{ label: 'Runtime', to: '/runtime' }, { label: sectionTitles[section] || 'Runtime' }]} />
+    <div className="rt-header"><BmPageHeader title={sectionTitles[section] || 'Runtime'} subtitle={descriptions[section] || 'Vérifiez le contexte et le manifeste avant toute exécution.'} actions={<><BmButton variant="secondary" disabled={loading || busy} onClick={refresh} icon={<RefreshCw size={16} className={loading ? 'animate-spin motion-reduce:animate-none' : ''} />}>Actualiser</BmButton>{allowed('runtime.resolve') && section !== 'resolver' && <Link to="/runtime/resolver" className="rt-primary-link"><Play size={15} aria-hidden="true" />Lancer un pack</Link>}</>} /><div className="rt-tenant-line"><span><Layers3 size={14} aria-hidden="true" />{tenant.name || tenant.code || tenant.id}</span><span>{updatedAt ? `Actualisé le ${formatDate(updatedAt)}` : 'Chargement des informations'}</span></div></div>
+    <nav className="rt-navigation" aria-label="Sections Pack Runtime">{RUNTIME_SECTIONS.map(([id, path, label]) => { const Icon = navIcons[id]; return <NavLink key={id} end to={path + (selected ? `?resolution=${encodeURIComponent(selected)}` : '')}><Icon size={15} aria-hidden="true" />{label}</NavLink>; })}</nav>
+    {notice && <div role="status" className={`rt-notice rt-notice--${noticeTone}`}><span aria-hidden="true">{noticeTone === 'warning' ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}</span><p>{notice}</p><button type="button" onClick={() => setNotice('')} aria-label="Fermer la notification">×</button></div>}
+    <RuntimeError error={actionError} onRetry={() => { setActionError(null); refresh(); }} />
+    {busy && <div role="status" className="rt-operation"><RefreshCw size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />Vérification et enregistrement côté serveur…</div>}
+    {section === 'overview' && <RuntimeOverview resources={resources} resolutions={resolutions} contexts={contexts} applications={applications} now={now} onSelect={select} allowed={allowed} onAction={run} busy={busy} onRetry={refresh} />}
+    {['overview','resolver'].includes(section) && <RuntimeLaunch tenantId={tenant.id} resources={resources} allowed={allowed} busy={busy} onResolve={form => run('/resolve', form, 'Résolution enregistrée. Examinez le résultat avant activation.')} initialQuery={query} />}
+    {section === 'applications' && <RuntimePanel title="Applications actives" subtitle="Une ligne représente un contexte actif dans un environnement."><RuntimeResource resource={resources.contexts} onRetry={refresh}><ContextTable {...{contexts, resolutions, applications, now, allowed, busy}} activeOnly onSelect={select} onDeactivate={deactivate} /></RuntimeResource><Link className="rt-link rt-inline rt-spaced" to="/runtime/resolver">Préparer une nouvelle exécution <ArrowRight size={15} aria-hidden="true" /></Link></RuntimePanel>}
+    {section === 'resolutions' && <RuntimePanel title="Résolutions enregistrées" subtitle="Les 100 dernières résolutions du tenant, filtrables et consultables."><RuntimeResource resource={resources.resolutions} onRetry={refresh}><ResolutionTable {...{resolutions, applications, now}} onSelect={select} /></RuntimeResource></RuntimePanel>}
+    {['activations','context'].includes(section) && <RuntimePanel title={section === 'activations' ? 'Activations et états persistés' : 'Contextes Runtime'} subtitle="Identité, version, environnement, readiness et dernières opérations disponibles."><RuntimeResource resource={resources.contexts} onRetry={refresh}><ContextTable {...{contexts, resolutions, applications, now, allowed, busy}} onSelect={select} onDeactivate={deactivate} /></RuntimeResource></RuntimePanel>}
+    {section === 'diagnostics' && <RuntimeResource resource={resources.resolutions} onRetry={refresh}><RuntimeDiagnostics {...{resolutions, applications}} onSelect={select} /></RuntimeResource>}
+    {section === 'history' && <RuntimeResource resource={resources.resolutions} onRetry={refresh}><RuntimeResource resource={resources.contexts} onRetry={refresh}><RuntimeHistory {...{resolutions, contexts, applications}} onSelect={select} /></RuntimeResource></RuntimeResource>}
+    {section === 'cache' && <RuntimeCache {...{resources, applications, allowed, busy}} onConfirm={setConfirmation} onRetry={refresh} />}
+    {(['context','manifest','effective'].includes(section) || selected && section !== 'cache') && detailView}
+    {!selected && ['resolutions','diagnostics','activations'].includes(section) && <p className="rt-footnote">Sélectionnez une ligne pour consulter le manifeste effectif, les diagnostics et le journal des étapes.</p>}
+    <RuntimeConfirmation open={Boolean(confirmation)} title={confirmation?.title} message={confirmation?.message} confirmLabel={confirmation?.confirmLabel} danger={confirmation?.danger} loading={busy} onCancel={() => { if (!busy) setConfirmation(null); }} onConfirm={() => { if (confirmation) run(confirmation.path, confirmation.body, confirmation.success); }} />
   </BmPage>;
 }
