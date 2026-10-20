@@ -20,29 +20,24 @@ describe('ROUTES', () => {
 });
 
 describe('navigationSections', () => {
-  it('has accueil, construction, execution, integrations, platform sections', () => {
+  it('has the V3 workspace sections', () => {
     const sectionIds = navigationSections.map(s => s.id);
-    expect(sectionIds).toContain('accueil');
-    expect(sectionIds).toHaveLength(5);
-    expect(sectionIds).toContain('construction');
-    expect(sectionIds).toContain('execution');
-    expect(sectionIds).toContain('integrations');
-    expect(sectionIds).toContain('platform');
+    expect(sectionIds).toEqual(['accueil', 'creation', 'publication', 'integrations', 'supervision', 'commercial', 'administration']);
   });
 });
 
 describe('navigationGroups', () => {
-  it('has bm group mapped to construction section', () => {
+  it('has bm group mapped to creation section', () => {
     const bmGroup = navigationGroups.find(g => g.id === 'bm');
     expect(bmGroup).toBeDefined();
-    expect(bmGroup.section).toBe('construction');
+    expect(bmGroup.section).toBe('creation');
     expect(bmGroup.icon).toBe('BriefcaseBusiness');
   });
 
-  it('has runtime group mapped to execution section', () => {
+  it('has runtime group mapped to publication section', () => {
     const runtimeGroup = navigationGroups.find(g => g.id === 'runtime');
     expect(runtimeGroup).toBeDefined();
-    expect(runtimeGroup.section).toBe('execution');
+    expect(runtimeGroup.section).toBe('publication');
   });
 
   it('has data, erp, api groups mapped to integrations section', () => {
@@ -53,11 +48,20 @@ describe('navigationGroups', () => {
     });
   });
 
-  it('has environments, deployments, iam, observability, billing, admin groups mapped to platform section', () => {
-    ['environments', 'deployments', 'iam', 'observability', 'billing', 'admin'].forEach(id => {
+  it('maps publication, supervision, commercial and administration modules to V3 sections', () => {
+    const expected = {
+      packs: 'publication',
+      environments: 'publication',
+      observability: 'supervision',
+      billing: 'commercial',
+      iam: 'administration',
+      admin: 'administration',
+      registry: 'administration',
+    };
+    Object.entries(expected).forEach(([id, section]) => {
       const group = navigationGroups.find(g => g.id === id);
       expect(group).toBeDefined();
-      expect(group.section).toBe('platform');
+      expect(group.section).toBe(section);
     });
   });
 });

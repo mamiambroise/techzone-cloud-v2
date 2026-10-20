@@ -7,36 +7,38 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 
 | Token | Valeur | Usage |
 |---|---|---|
-| `--color-bg` | `#EFF6FF` | Fond principal |
+| `--color-bg` | `#F3F4F6` | Fond principal |
 | `--color-surface` | `#FFFFFF` | Cartes, surfaces |
-| `--color-primary` | `#0866F5` | Actions et états actifs |
-| `--color-primary-hover` | `#0554D8` | Survol primaire |
-| `--color-primary-soft` | `#EDF4FF` | Accent primaire doux |
-| `--color-bg` | `#EFF6FF` | Fond principal |
-| `--color-surface` | `#FFFFFF` | Cartes, surfaces |
-| `--color-surface-2` | `#F8FAFF` | Surfaces secondaires |
-| `--color-border` | `#E1EAF5` | Bordures |
-| `--color-text-primary` | `#101C48` | Texte principal |
-| `--color-text-secondary` | `#64748B` | Texte secondaire |
-| `--color-text-muted` | `#94A3B8` | Texte atténué |
-| `--color-success` | `#08A66A` | Succès |
-| `--color-warning` | `#FF9800` | Avertissement |
-| `--color-danger` | `#F22640` | Erreur et danger |
-| `--color-info` | `#0866F5` | Information |
-| `--color-sidebar` | `#0D1B2A` | Fond sidebar |
-| `--color-header` | `#0D1B2A` | Header |
+| `--color-primary` | `#2563EB` | Actions et états actifs |
+| `--color-primary-hover` | `#1D4ED8` | Survol primaire |
+| `--color-primary-soft` | `#EFF6FF` | Accent primaire doux |
+| `--color-secondary` | `#6F46E5` | Accent secondaire |
+| `--color-accent` | `#06B6D4` | Accent complémentaire |
+| `--color-surface-2` | `#F9FAFB` | Surfaces secondaires |
+| `--color-border` | `#D1D5DB` | Bordures |
+| `--color-text-primary` | `#111827` | Texte principal |
+| `--color-text-secondary` | `#4B5563` | Texte secondaire |
+| `--color-text-muted` | `#6B7280` | Texte atténué |
+| `--color-success` | `#22C55E` | Succès |
+| `--color-warning` | `#F59E0B` | Avertissement |
+| `--color-error` | `#EF4444` | Erreur et danger |
+| `--color-info` | `#3882F6` | Information |
+| `--color-sidebar` | `#0F172A` | Fond sidebar |
+| `--color-sidebar-hover` | `#1E293B` | Survol sidebar |
+| `--color-header` | `#0F172A` | Header |
 | `--color-sidebar-text` | `#CBD5E1` | Texte de navigation |
-| `--color-sidebar-active` | `#0866F5` | Navigation active |
-| `--module-packs` | `#08A66A` | Module Packs |
-| `--module-deployments` | `#7C18F5` | Module Deployments |
-| `--module-billing` | `#FF9800` | Module Billing |
-| `--module-resources` | `#0CB7A7` | Module Resources |
+| `--color-sidebar-active` | `#2563EB` | Navigation active |
+| `--module-packs` | `var(--color-success)` | Module Packs |
+| `--module-deployments` | `var(--color-secondary)` | Module Deployments |
+| `--module-billing` | `var(--color-warning)` | Module Billing |
+| `--module-resources` | `var(--color-accent)` | Module Resources |
 
 ## Layout
 - Sidebar largeur : 260px (rétractable via class `sidebar-collapsed` ou état)
+- Sidebar et header : fond `#0F172A`, texte de navigation `#CBD5E1`, état actif `#2563EB`
 - Header hauteur : 64px
 - Rayon : 6px (petit), 10px (standard), 14px (grand)
-- Ombre carte : `0 2px 12px rgba(16, 28, 72, 0.05)`
+- Ombre carte : `0 1px 3px rgba(15, 23, 42, .08)` avec élévation discrète au survol
 - Police UI : Inter, puis polices système de secours
 
 ## Primitives disponibles

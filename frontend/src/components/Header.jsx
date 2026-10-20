@@ -19,7 +19,7 @@ import { useTenant } from "../contexts/TenantProvider.jsx";
 import { useDashboard, alertKeys } from "./dashboard/DashboardContext.jsx";
 import GlobalSearch from "./GlobalSearch.jsx";
 const iconButton =
-  "rounded-[var(--radius-lg)] p-2 text-[var(--color-text-muted)] transition-colors duration-200 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
+  "rounded-[var(--radius-lg)] p-2 text-slate-300 transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
 export default function Header({ mobileOpen, onToggleMobileSidebar }) {
   const { user, logout } = useAuth(),
     { activeTenant, tenants, switchTenant, hasMultipleTenants, loading } =
@@ -69,7 +69,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
   return (
     <header
       ref={root}
-      className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-white/95 shadow-[0_1px_0_rgb(15_23_42_/_0.02)] backdrop-blur-sm"
+      className="sticky top-0 z-30 border-b border-white/10 bg-[var(--color-header)] text-[var(--color-header-text)] shadow-[0_1px_0_rgb(15_23_42_/_0.02)] backdrop-blur-sm"
     >
       <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
@@ -94,7 +94,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
                   ? "/dashboard"
                   : groupDestination(group?.id) || "/dashboard"
               }
-              className="hidden shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] sm:inline"
+              className="hidden shrink-0 text-slate-300 hover:text-white sm:inline"
             >
               {entry?.group === "dashboard"
                 ? "Accueil"
@@ -102,11 +102,11 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             </Link>
             <ChevronRight
               size={13}
-              className="hidden shrink-0 text-slate-300 sm:block"
+              className="hidden shrink-0 text-slate-500 sm:block"
             />
             <span
               aria-current="page"
-              className="truncate font-medium text-[var(--color-text)]"
+              className="truncate font-medium text-white"
             >
               {entry?.label || "Page introuvable"}
             </span>
@@ -116,31 +116,40 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
           <GlobalSearch />
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          {hasMultipleTenants && activeTenant && (
-            <select
-              aria-label="Tenant actif"
-              disabled={loading}
-              value={activeTenant?.id || ""}
-              onChange={async (e) => {
-                try {
-                  setSwitchError(false);
-                  await switchTenant(e.target.value);
-                } catch {
-                  setSwitchError(true);
-                }
-              }}
-              className="max-w-28 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-2 text-xs text-[var(--color-text)] sm:max-w-40"
-            >
-              <option value="" disabled>
-                Choisir un tenant
-              </option>
-              {tenants.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name || t.code}
+          {activeTenant &&
+            (hasMultipleTenants ? (
+              <select
+                aria-label="Tenant actif"
+                disabled={loading}
+                value={activeTenant.id}
+                onChange={async (e) => {
+                  try {
+                    setSwitchError(false);
+                    await switchTenant(e.target.value);
+                  } catch {
+                    setSwitchError(true);
+                  }
+                }}
+                className="max-w-28 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-2 text-xs font-medium text-[var(--color-text)] sm:max-w-40"
+              >
+                <option value="" disabled>
+                  Choisir un tenant
                 </option>
-              ))}
-            </select>
-          )}
+                {tenants.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name || t.code}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span
+                aria-label="Tenant actif"
+                className="hidden max-w-40 truncate rounded-[var(--radius-lg)] border border-white/15 bg-white/10 px-3 py-2 text-xs font-medium text-white sm:block"
+                title={activeTenant.name || activeTenant.code}
+              >
+                {activeTenant.name || activeTenant.code}
+              </span>
+            ))}
           <button
             type="button"
             aria-label="Rechercher"
@@ -162,13 +171,18 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             >
               <Bell size={18} />
               {alerts.length > 0 && (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500" />
+                <span
+                  aria-label={`${alerts.length} notification${alerts.length > 1 ? "s" : ""}`}
+                  className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold leading-4 text-slate-950"
+                >
+                  {alerts.length > 9 ? "9+" : alerts.length}
+                </span>
               )}
             </button>
             {panel === "alerts" && (
               <section
                 aria-label="Notifications récentes"
-                className="absolute right-0 top-full mt-3 w-[min(21rem,calc(100vw-2rem))] rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card-hover)]"
+                className="absolute right-0 top-full mt-3 w-[min(21rem,calc(100vw-2rem))] rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-[var(--color-text)] shadow-[var(--shadow-card-hover)]"
               >
                 <h2 className="mb-3 text-sm font-semibold">Alertes récentes</h2>
                 {dashboardLoading ? (
@@ -217,13 +231,13 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-xs font-semibold text-white">
                 {name.slice(0, 1).toUpperCase()}
               </span>
-              <span className="hidden max-w-28 truncate text-xs font-medium xl:block">
+            <span className="hidden max-w-28 truncate text-xs font-medium text-white xl:block">
                 {name}
               </span>
-              <ChevronDown size={12} className="text-slate-400" />
+              <ChevronDown size={12} className="text-slate-300" />
             </button>
             {panel === "user" && (
-              <div className="absolute right-0 top-full mt-3 w-56 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-card-hover)]">
+              <div className="absolute right-0 top-full mt-3 w-56 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-[var(--color-text)] shadow-[var(--shadow-card-hover)]">
                 <p className="truncate text-sm font-medium">{name}</p>
                 <p className="mt-1 truncate text-xs text-slate-500">
                   {activeTenant?.name || "Aucun tenant actif"}

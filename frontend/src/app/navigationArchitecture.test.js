@@ -5,9 +5,9 @@ import { ROUTES } from './routes.js';
 const labelsOf = id => groupEntries(id).map(e => e.label);
 
 describe('Global architecture (CDC §50)', () => {
-  it('exposes exactly the five target sections in the target order', () => {
+  it('exposes the V3 workspace sections in their target order', () => {
     expect(navigationSections.map(s => s.id)).toEqual([
-      'accueil', 'construction', 'execution', 'integrations', 'platform',
+      'accueil', 'creation', 'publication', 'integrations', 'supervision', 'commercial', 'administration',
     ]);
   });
 
@@ -18,30 +18,32 @@ describe('Global architecture (CDC §50)', () => {
     }));
     expect(rendered).toEqual([
       { section: 'accueil', modules: ['dashboard'] },
-      { section: 'construction', modules: ['bm', 'ui', 'automation', 'packs'] },
-      { section: 'execution', modules: ['runtime'] },
+      { section: 'creation', modules: ['bm', 'ui', 'automation'] },
+      { section: 'publication', modules: ['packs', 'runtime', 'environments'] },
       { section: 'integrations', modules: ['data', 'erp', 'api'] },
-      { section: 'platform', modules: ['registry', 'environments', 'deployments', 'iam', 'observability', 'billing', 'admin'] },
+      { section: 'supervision', modules: ['observability'] },
+      { section: 'commercial', modules: ['billing'] },
+      { section: 'administration', modules: ['registry', 'iam', 'admin'] },
     ]);
   });
 
   it('maps each module to its target section', () => {
     const expected = {
       dashboard: 'accueil',
-      bm: 'construction', ui: 'construction', automation: 'construction', packs: 'construction',
-      runtime: 'execution',
+      bm: 'creation', ui: 'creation', automation: 'creation',
+      packs: 'publication', runtime: 'publication', environments: 'publication',
       data: 'integrations', erp: 'integrations', api: 'integrations',
-      registry: 'platform', environments: 'platform', deployments: 'platform',
-      iam: 'platform', observability: 'platform', billing: 'platform', admin: 'platform',
+      observability: 'supervision', billing: 'commercial',
+      registry: 'administration', iam: 'administration', admin: 'administration',
     };
     Object.entries(expected).forEach(([id, section]) => {
       expect(navigationGroups.find(g => g.id === id)?.section).toBe(section);
     });
   });
 
-  it('keeps Registry as the first module of the platform section', () => {
-    const platform = navigationGroups.filter(g => g.section === 'platform').map(g => g.id);
-    expect(platform[0]).toBe('registry');
+  it('keeps Registry as the first confirmed module of administration', () => {
+    const administration = navigationGroups.filter(g => g.section === 'administration').map(g => g.id);
+    expect(administration[0]).toBe('registry');
   });
 });
 
@@ -55,7 +57,6 @@ describe('Stable ordering per module (RG-NAV-025)', () => {
     ['data', ['Vue d’ensemble', 'Sources', 'Modèles & Contrats', 'Requêtes', 'Politiques', 'Diagnostics', 'Historique']],
     ['erp', ['Vue d’ensemble', 'Ressources', 'Mappings', 'Synchronisations', 'Paramètres & diagnostics']],
     ['api', ['Vue d’ensemble', 'Connecteurs', 'Webhooks', 'Diagnostics']],
-    ['deployments', ['Vue d’ensemble', 'Historique']],
     ['billing', ['Vue d’ensemble', 'Plans', 'Abonnements', 'Entitlements', 'Quotas', 'Facturation']],
     ['admin', ['Vue d’ensemble', 'Paramètres généraux', 'Profil']],
   ])('orders %s children as specified by the CDC', (group, expected) => {
