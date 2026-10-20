@@ -199,3 +199,9 @@ La grille de KPI passe de deux colonnes à cinq (`xl`), les modules et sections 
 ## Conclusion d'audit
 
 La modernisation peut démarrer sans refonte de routes, API ou modèle IAM : la base de données et les protections nécessaires à un dashboard tenant-aware existent déjà. La première phase doit préserver ce socle et ne visualiser que les widgets disponibles. Les tendances, la santé consolidée, le centre de notifications et le guide contextuel sont des capacités produit à spécifier avant toute implémentation.
+
+## Mise à jour DASH-00 — références V3 vérifiées
+
+Lors du lot DASH-00, l'audit a été recoupé avec `03_SPEC_UI_DASHBOARD_V3.md` et `06_MAQUETTES_DASHBOARD_V3.md`. Les deux documents confirment que la cible est une unique page d'accueil enrichie de composants et d'états responsive, et non dix-huit nouvelles routes. Ils ne fournissent aucune donnée de production supplémentaire : les graphiques, la santé consolidée, les quotas, les applications actives et la progression du guide restent conditionnels aux contrats réellement disponibles.
+
+`CDC_TABLEAU_DE_BORD_TECHZONE_CLOUD_V2` n'a pas été trouvé dans le workspace au moment de cette vérification. Les captures `docs/dashboard-navigation/screenshots/dashboard-desktop.png` et `dashboard-mobile.png` ont été identifiées comme traces de l'interface existante, non comme maquette V3 de référence. Le plan de migration détaillé et la matrice de décision sont consignés dans `07_PLAN_MIGRATION_DASHBOARD.md`.
