@@ -58,7 +58,7 @@ describe('Stable ordering per module (RG-NAV-025)', () => {
     ['data', ['Vue d’ensemble', 'Sources', 'Modèles & Contrats', 'Requêtes', 'Politiques', 'Diagnostics', 'Historique']],
     ['erp', ['Vue d’ensemble', 'Ressources', 'Mappings', 'Synchronisations', 'Paramètres & diagnostics']],
     ['api', ['Vue d’ensemble', 'Connecteurs', 'Webhooks', 'Diagnostics']],
-    ['billing', ['Vue d’ensemble', 'Plans', 'Abonnements', 'Entitlements', 'Quotas', 'Facturation']],
+    ['billing', ['Mon abonnement', 'Utilisation', 'Factures & paiements', 'Paramètres', 'Offres & tarifs', 'Abonnements clients', 'Opérations financières', 'Diagnostics & audit']],
     ['admin', ['Vue d’ensemble', 'Paramètres généraux', 'Profil']],
   ])('orders %s children as specified by the CDC', (group, expected) => {
     expect(labelsOf(group)).toEqual(expected);

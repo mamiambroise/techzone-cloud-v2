@@ -32,11 +32,6 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
   const openInvoices = (invoices.data ?? []).filter((invoice) =>
     ['OPEN', 'PARTIALLY_PAID', 'OVERDUE'].includes(invoice.status),
   );
-  const dueTotal = openInvoices.reduce(
-    (total, invoice) => total + Number(String(invoice.amountDue ?? 0)),
-    0,
-  );
-  const currency = subscription?.price?.currency ?? openInvoices[0]?.currency ?? '';
 
   return (
     <div className="space-y-5">
@@ -135,8 +130,8 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
           {(invoices.data ?? []).length > 0 ? (
             <>
               <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                Reste à payer : <strong>{amount(dueTotal, currency)}</strong> sur {openInvoices.length} facture(s)
-                ouverte(s).
+                {openInvoices.length} facture(s) ouverte(s). Les montants restent affichés par facture :
+                aucune addition monétaire n’est calculée dans le navigateur.
               </div>
               <ul className="mt-3 divide-y divide-slate-100">
                 {(invoices.data ?? []).map((invoice) => (

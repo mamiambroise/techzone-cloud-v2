@@ -169,12 +169,14 @@ const menu = [
   ]),
 
   group("billing", "Abonnements & Facturation", "commercial", "CreditCard", "text-sky-400", [
-    item("billingOverview", "Vue d’ensemble", "Home"),
-    item("billingPlans", "Plans", "Tag"),
-    item("billingSubscriptions", "Abonnements", "CreditCard"),
-    item("billingEntitlements", "Entitlements", "KeyRound"),
-    item("billingQuotas", "Quotas", "Gauge"),
-    item("billingInvoices", "Facturation", "Receipt"),
+    item("billingOverview", "Mon abonnement", "CreditCard"),
+    item("billingQuotas", "Utilisation", "Gauge"),
+    item("billingInvoices", "Factures & paiements", "Receipt"),
+    item("billingSettings", "Paramètres", "Settings"),
+    item("billingAdminCatalog", "Offres & tarifs", "Tags"),
+    item("billingAdminSubscriptions", "Abonnements clients", "Building2"),
+    item("billingAdminOperations", "Opérations financières", "Landmark"),
+    item("billingAdminDiagnostics", "Diagnostics & audit", "Activity"),
   ]),
 
   group("admin", "Administration Platform", "administration", "Settings", "text-slate-200", [
