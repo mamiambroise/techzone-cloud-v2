@@ -11,6 +11,7 @@ import {
   Rocket,
   AppWindow,
   CircleAlert,
+  HeartPulse,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider.jsx";
 import { useTenant } from "../contexts/TenantProvider.jsx";
@@ -53,6 +54,12 @@ const activityLabels = {
   "runtime.resolve": "Résolution Runtime",
   "application.create": "Application créée",
   "application.update": "Application modifiée",
+};
+const activitySource = (action = "") => {
+  if (action.startsWith("pack.")) return "Pack Manager";
+  if (action.startsWith("runtime.")) return "Pack Runtime";
+  if (action.startsWith("application.") || action.startsWith("business.") || action.startsWith("bm.")) return "Business Manager";
+  return "Plateforme";
 };
 const metrics = [
   {
@@ -123,6 +130,9 @@ export default function CockpitView() {
     },
     { label: "Déployer", to: "/deployment/releases", admin: true },
   ].filter((a) => (!a.admin || user?.isSuperAdmin) && canAccess(a, user));
+  const observability = groupEntries("observability").find((entry) =>
+    canAccess(entry, user),
+  );
   const renderWidget = (key, empty, children) => (
     <WidgetBody
       widget={widgets[key]}
@@ -285,7 +295,7 @@ export default function CockpitView() {
                             {activityLabels[row.action] || row.action}
                           </p>
                           <p className="mt-1 text-[11px] text-slate-500">
-                            {displayDate(row.createdAt)}
+                            {activitySource(row.action)} · {displayDate(row.createdAt)}
                           </p>
                         </div>
                         <StatusBadge status={row.result} />
@@ -401,6 +411,35 @@ export default function CockpitView() {
             )}
           </DashboardSection>
           <DashboardSection
+            id="health-title"
+            title="Santé de la plateforme"
+            description="État consolidé des services et diagnostics disponibles"
+            action={
+              observability ? (
+                <Link className="text-xs font-medium text-blue-600" to={observability.route}>
+                  Ouvrir Observabilité
+                </Link>
+              ) : null
+            }
+          >
+            <div
+              data-widget="platformHealth"
+              className="flex items-start gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4"
+            >
+              <span className="rounded-lg bg-white p-2 text-slate-500 shadow-sm">
+                <HeartPulse size={18} />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-slate-800">
+                  Santé consolidée indisponible
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Les diagnostics restent consultables dans leurs modules propriétaires. Aucun statut global n’est affiché sans source de supervision fiable.
+                </p>
+              </div>
+            </div>
+          </DashboardSection>
+          <DashboardSection
             id="alerts-title"
             title="Alertes & problèmes"
             description="Derniers résultats enregistrés — ouvrez le module pour vérifier leur état actuel"
@@ -433,10 +472,10 @@ export default function CockpitView() {
                                     {row.message}
                                   </span>
                                   <span className="mt-1 block text-slate-500">
-                                    {displayDate(row.timestamp)} ·{" "}
-                                    {row.severity}
+                                    {displayDate(row.timestamp)}
                                   </span>
                                 </span>
+                                <StatusBadge status={row.severity} />
                                 <ArrowRight size={13} />
                               </Link>
                             </li>
