@@ -84,7 +84,6 @@ const menu = [
     item("pmpublication", "Publication", "UploadCloud", [], {
       pageId: "packPublication",
     }),
-    item("history", "Historique", "History"),
   ]),
 
   group("runtime", "Pack Runtime", "publication", "Play", "text-sky-400", [
