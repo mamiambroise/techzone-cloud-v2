@@ -29,6 +29,14 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
   const entitlements = context.data?.entitlements ?? null;
   const providers = context.data?.providers ?? null;
 
+  const lifecycleNotice = subscription?.status === 'SUSPENDED'
+    ? { tone: 'rose', title: 'Abonnement suspendu', text: 'Les données sont conservées, mais les capacités commerciales peuvent être limitées. Une réactivation dépend d’un paiement vérifié ou d’une action autorisée.' }
+    : subscription?.status === 'GRACE_PERIOD'
+      ? { tone: 'amber', title: 'Période de grâce en cours', text: `La fin de grâce est ${dateTime(subscription.graceEndsAt)}. Les conséquences applicables sont déterminées par la politique serveur.` }
+      : subscription?.status === 'PAST_DUE'
+        ? { tone: 'amber', title: 'Paiement en retard', text: 'Un paiement ou une facture reste en attente. Le cycle de grâce et de suspension est calculé côté serveur.' }
+        : null;
+
   const openInvoices = (invoices.data ?? []).filter((invoice) =>
     ['OPEN', 'PARTIALLY_PAID', 'OVERDUE'].includes(invoice.status),
   );
@@ -43,6 +51,12 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
       </header>
 
       <BillingError error={context.error} title="Contexte Billing indisponible" />
+      {lifecycleNotice ? (
+        <div role="alert" className={`rounded-xl border p-4 text-sm ${lifecycleNotice.tone === 'rose' ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+          <p className="font-semibold">{lifecycleNotice.title}</p>
+          <p className="mt-1">{lifecycleNotice.text}</p>
+        </div>
+      ) : null}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <BillingPanel

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthProvider.jsx';
 import { billingAdminService, billingService } from '../../services/apiClient.js';
 import {
   ActionButton,
@@ -23,6 +24,7 @@ import {
  * l'affiche au lieu de masquer la restriction.
  */
 export default function BillingAdminPage({ title = 'Billing Admin' }) {
+  const { user } = useAuth();
   const { pathname } = useLocation();
   const tabForPath = {
     '/billing/admin/catalog': 'catalog',
@@ -92,6 +94,14 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
     { id: 'operations', label: 'Opérations financières' },
     { id: 'diagnostics', label: 'Diagnostics' },
   ];
+  const permissionByTab = {
+    catalog: ['billing:plan:read'],
+    subscriptions: ['billing:subscription:read'],
+    operations: ['billing:invoice:read', 'billing:payment:read'],
+    diagnostics: ['billing:diagnostic:read', 'billing:read'],
+  };
+  const permissions = user?.permissions ?? [];
+  const allowedTabs = tabs.filter((entry) => user?.isSuperAdmin || permissions.includes('*') || permissionByTab[entry.id].every((permission) => permissions.includes(permission)));
 
   const currentResource = {
     catalog: products,
@@ -110,7 +120,7 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
       </header>
 
       <div className="flex flex-wrap gap-2 border-b border-slate-200">
-        {tabs.map((entry) => (
+        {allowedTabs.map((entry) => (
           <button
             key={entry.id}
             type="button"

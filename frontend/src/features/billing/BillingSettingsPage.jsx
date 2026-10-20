@@ -15,6 +15,7 @@ const emptyAccount = {
   legalName: '',
   billingEmail: '',
   billingContact: '',
+  billingAddress: '',
   currency: '',
   taxIdentifier: '',
 };
@@ -43,6 +44,7 @@ export default function BillingSettingsPage({ title = 'Paramètres de facturatio
       legalName: account.data.legalName ?? '',
       billingEmail: account.data.billingEmail ?? '',
       billingContact: account.data.billingContact ?? '',
+      billingAddress: account.data.billingAddress?.address ?? '',
       currency: account.data.currency ?? '',
       taxIdentifier: account.data.taxIdentifier ?? '',
     });
@@ -64,6 +66,7 @@ export default function BillingSettingsPage({ title = 'Paramètres de facturatio
         legalName: form.legalName || null,
         billingContact: form.billingContact || null,
         taxIdentifier: form.taxIdentifier || null,
+        billingAddress: form.billingAddress ? { address: form.billingAddress } : undefined,
         currency: form.currency || undefined,
       });
       setSaved(true);
@@ -106,6 +109,7 @@ export default function BillingSettingsPage({ title = 'Paramètres de facturatio
             <Field label="Email de facturation" id="billing-email" type="email" value={form.billingEmail} onChange={update('billingEmail')} required disabled={!canManage} />
             <Field label="Raison sociale" id="billing-legal-name" value={form.legalName} onChange={update('legalName')} disabled={!canManage} />
             <Field label="Contact facturation" id="billing-contact" value={form.billingContact} onChange={update('billingContact')} disabled={!canManage} />
+            <TextArea label="Adresse de facturation" id="billing-address" value={form.billingAddress} onChange={update('billingAddress')} disabled={!canManage} />
             <Field label="Devise" id="billing-currency" value={form.currency} onChange={update('currency')} placeholder="Ex. EUR" disabled={!canManage} />
             <Field label="Identifiant fiscal" id="billing-tax-identifier" value={form.taxIdentifier} onChange={update('taxIdentifier')} disabled={!canManage} />
             <div className="md:col-span-2 flex flex-wrap items-center gap-3">
@@ -134,6 +138,22 @@ function Field({ label, id, type = 'text', value, onChange, required, disabled, 
         required={required}
         disabled={disabled}
         placeholder={placeholder}
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+      />
+    </div>
+  );
+}
+
+function TextArea({ label, id, value, onChange, disabled }) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-slate-600" htmlFor={id}>{label}</label>
+      <textarea
+        id={id}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        rows={3}
         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
       />
     </div>
