@@ -40,7 +40,6 @@ const menu = [
   group("dashboard", "Tableau de bord", "accueil", "Home", "", [item("dashboard", "Tableau de bord", "Home")]),
 
   group("bm", "Business Manager", "creation", "BriefcaseBusiness", "text-pink-500", [
-    item("bm", "Vue d’ensemble", "Home"),
     item("bmApplications", "Applications", "LayoutGrid", ["applications", "applicationNew", "applicationDetail", "applicationWorkspace", "bmApplicationNew", "bmApplicationDetail", "bmVersions", "bmVersionsIndex", "bmVersionDetail", "bmRuntimeIndex", "bmRuntime"]),
     item("bmModels", "Modèles de données", "Database", ["bmDataModel"]),
     item("bmFeaturesIndex", "Fonctionnalités", "Cog", ["bmFeatures"]),

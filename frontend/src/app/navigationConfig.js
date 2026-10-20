@@ -13,7 +13,7 @@ export const pageDefinitions = [
   { ...{"component":"NewApplicationRoute","id":"applicationNew","label":"Nouvelle application","group":"applications","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["applicationNew"] },
   { ...{"component":"ApplicationDetailRoute","id":"applicationDetail","label":"Détail application","group":"applications","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["applicationDetail"] },
   { ...{"component":"WorkspaceConfigView","id":"applicationWorkspace","label":"Configuration application","group":"applications","status":"PARTIAL","menu":true,"moduleId":"01","tab":"workspace","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["applicationWorkspace"] },
-  { ...{"component":"BMOverview","id":"bm","label":"Vue d’ensemble","group":"bm","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bm"] },
+  { ...{"component":"BMApplicationsRoute","id":"bm","label":"Applications","group":"bm","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bm"] },
   { ...{"component":"BMApplicationsRoute","id":"bmApplications","label":"Applications","group":"bm","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["bmApplications"] },
   { ...{"id":"bmVersionsIndex","group":"bm","label":"Versions","component":"BMVersionsRoute","menu":false,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE"}, route: ROUTES["bmVersionsIndex"] },
   { ...{"id":"bmModels","group":"bm","label":"Modèles de données","component":"BMWorkspaceRoute","menu":true,"protected":true,"implemented":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","description":"Entités, champs, relations et contraintes de la version sélectionnée."}, route: ROUTES["bmModels"] },
@@ -253,7 +253,9 @@ export function activeNavigation(pathname) {
   const page = resolveActiveRoute(pathname);
   if (!page) return undefined;
   const entry = entryByPageId.get(page.id) ?? page;
-  return page.id === "erps-create" || page.id === "erps-edit-:id"
+  return page.id === "bm"
+    ? (entryByPageId.get("bmApplications") ?? entry)
+    : page.id === "erps-create" || page.id === "erps-edit-:id"
     ? { ...entry, id: "erpRegistry" }
     : entry;
 }

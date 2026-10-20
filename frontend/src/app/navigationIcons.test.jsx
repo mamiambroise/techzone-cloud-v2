@@ -21,7 +21,7 @@ describe('Sidebar icon registry and navigation',()=>{
     render(<MemoryRouter initialEntries={['/business-manager']}><Sidebar isOpen={false} onClose={()=>{}}/></MemoryRouter>);
     expect(screen.getAllByRole('heading',{level:2})).toHaveLength(7);
     expect(screen.getByText('Compte de recette')).toBeInTheDocument();
-    expect(screen.getByRole('link',{name:'Vue d’ensemble'})).toHaveAttribute('aria-current','page');
+    expect(screen.getByRole('link',{name:'Applications'})).toHaveAttribute('aria-current','page');
     fireEvent.change(screen.getByLabelText('Rechercher dans le menu'),{target:{value:'Navigation'}});
     expect(screen.getAllByRole('link',{name:'Navigation',exact:true}).map(link => link.getAttribute('href'))).toEqual(expect.arrayContaining(['/business-manager/navigation', '/ui/navigation']));
     // Le groupe UI Builder est maintenant implémenté : il reste visible lors de

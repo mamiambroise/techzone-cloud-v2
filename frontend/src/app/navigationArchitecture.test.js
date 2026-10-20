@@ -49,7 +49,7 @@ describe('Global architecture (CDC §50)', () => {
 
 describe('Stable ordering per module (RG-NAV-025)', () => {
   it.each([
-    ['bm', ['Vue d’ensemble', 'Applications', 'Modèles de données', 'Fonctionnalités', 'Navigation', 'Configuration', 'Validation']],
+    ['bm', ['Applications', 'Modèles de données', 'Fonctionnalités', 'Navigation', 'Configuration', 'Validation']],
     ['ui', ['Vue d’ensemble', 'Pages', 'Éditeur visuel', 'Composants', 'Formulaires', 'Navigation', 'Thème', 'Aperçu & Test']],
     ['automation', ['Vue d’ensemble', 'Workflows', 'Déclencheurs', 'Actions', 'Planifications', 'Exécutions', 'Modèles', 'Diagnostics', 'Règles', 'Formules']],
     ['packs', ['Vue d’ensemble', 'Packs', 'Versions', 'Modules', 'Fonctionnalités', 'Capacités', 'Dépendances', 'Règles', 'Validation & Manifest', 'Publication', 'Historique']],
@@ -124,7 +124,7 @@ describe('Active route and parent route (RG-NAV-019, RG-NAV-020)', () => {
     ['/packs/publication', 'pmpublication'],
     ['/runtime/cache', 'runtimecache'],
     ['/runtime', 'runtime'],
-    ['/business-manager', 'bm'],
+    ['/business-manager', 'bmApplications'],
     ['/business-manager/applications/app-1', 'bmApplications'],
     ['/business-manager/applications/app-1/versions', 'bmApplications'],
     ['/business-manager/applications/app-1/versions/v1', 'bmApplications'],

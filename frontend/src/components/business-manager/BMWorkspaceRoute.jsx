@@ -170,7 +170,7 @@ function Workspace({ tenant }) {
           />
         </div>
       ) : (
-        <Domain key={`${versionId}:${section}`} versionId={versionId} section={section} navigate={navigate} applicationId={applicationId} />
+        <Domain key={`${versionId}:${section}`} versionId={versionId} section={section} navigate={navigate} applicationId={applicationId} readOnly={version.status === 'PUBLISHED'} />
       )}
     </BmPage>
   );
@@ -182,21 +182,21 @@ function Workspace({ tenant }) {
 
 const TABS = {
   'data-model': ['overview', 'entities', 'fields', 'relations', 'constraints'],
-  features: ['features', 'capabilities', 'dependencies'],
+  features: ['features', 'capabilities', 'business-events'],
   navigation: ['menus', 'items'],
-  configuration: ['configuration'],
+  configuration: ['settings', 'metadata', 'permissions', 'contracts'],
   validation: ['workflow', 'reports'],
 };
 
 const TAB_LABELS = {
   overview: 'Vue d’ensemble', entities: 'Entités', fields: 'Champs', relations: 'Relations', constraints: 'Contraintes',
-  features: 'Features', capabilities: 'Capacités', dependencies: 'Dépendances',
+  features: 'Features', capabilities: 'Capacités', 'business-events': 'Business Events',
   menus: 'Menus', items: 'Éléments',
-  configuration: 'Paramètres de la version',
+  settings: 'Paramètres métier', metadata: 'Métadonnées', permissions: 'Permissions référencées', contracts: 'Contrats',
   workflow: 'Workflow de publication', reports: 'Historique des validations',
 };
 
-function Domain({ versionId, section, navigate, applicationId }) {
+function Domain({ versionId, section, navigate, applicationId, readOnly = false }) {
   const tabs = TABS[section];
   const [tab, setTab] = useState(tabs[0]);
   const [rows, setRows] = useState([]);
@@ -335,7 +335,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
         { key: 'status', label: 'Statut', render: (row) => <BmStatusBadge value={row.status} /> },
       ];
       createLabel = 'Créer une capacité';
-    } else if (tab === 'dependencies') {
+    } else if (tab === 'business-events') {
       // Endpoint réel : GET /features/:versionId/dependencies
       data = (dependencies || []).flatMap((feature) => feature.capabilities.flatMap((capability) => capability.dependencies.map((dependency) => ({
         id: `${capability.code}:${dependency.targetCapabilityCode}:${dependency.dependencyType}`,
@@ -390,7 +390,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
       ];
       createLabel = 'Créer un menu';
     }
-  } else if (section === 'configuration') {
+  } else if (section === 'configuration' && tab === 'settings') {
     // Configuration portée par la version : scope APPLICATION_VERSION + scopeId.
     data = rows;
     createPath = '/configurations';
@@ -425,7 +425,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
   function createButton() {
     if (!createPath) return null;
     return (
-      <BmButton size="sm" icon={<Plus className="h-4 w-4" />} disabled={busy || (needsParent && !selected)} onClick={() => setEditor({})}>
+      <BmButton size="sm" icon={<Plus className="h-4 w-4" />} disabled={busy || readOnly || (needsParent && !selected)} onClick={() => setEditor({})}>
         {createLabel}
       </BmButton>
     );
@@ -449,8 +449,8 @@ const configurationLifecycleColumn = section === 'configuration' ? {
     className: 'text-right',
     render: (row) => (
       <div className="flex items-center justify-end gap-1">
-        <BmIconButton label="Valider" disabled={busy || ['READY', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'].includes(row.status)} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/validate`))}><ShieldCheck className="h-4 w-4" /></BmIconButton>
-        <BmIconButton label="Activer" disabled={busy || row.status !== 'READY'} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/activate`))}><Rocket className="h-4 w-4" /></BmIconButton>
+        <BmIconButton label="Valider" disabled={busy || readOnly || ['READY', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'].includes(row.status)} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/validate`))}><ShieldCheck className="h-4 w-4" /></BmIconButton>
+        <BmIconButton label="Activer" disabled={busy || readOnly || row.status !== 'READY'} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/activate`))}><Rocket className="h-4 w-4" /></BmIconButton>
       </div>
     ),
   } : null;
@@ -462,8 +462,8 @@ const configurationLifecycleColumn = section === 'configuration' ? {
     render: (row) => (
       <div className="flex items-center justify-end gap-1">
         {onView && <BmIconButton label="Voir" onClick={() => onView(row)}><MoreVertical className="h-4 w-4" /></BmIconButton>}
-        {updatePath && <BmIconButton label="Modifier" disabled={row.status === 'ARCHIVED' || busy} onClick={() => setEditor(row)}><Pencil className="h-4 w-4" /></BmIconButton>}
-        {removePath && <BmIconButton label={removeLabel} variant="danger" disabled={row.status === 'ARCHIVED' || busy} onClick={() => { if (window.confirm(`${removeLabel} « ${row.name || row.label || row.code} » ?`)) mutate(() => api[removeMethod](root + removePath(row))); }}><Archive className="h-4 w-4" /></BmIconButton>}
+        {updatePath && <BmIconButton label="Modifier" disabled={readOnly || row.status === 'ARCHIVED' || busy} onClick={() => setEditor(row)}><Pencil className="h-4 w-4" /></BmIconButton>}
+        {removePath && <BmIconButton label={removeLabel} variant="danger" disabled={readOnly || row.status === 'ARCHIVED' || busy} onClick={() => { if (window.confirm(`${removeLabel} « ${row.name || row.label || row.code} » ?`)) mutate(() => api[removeMethod](root + removePath(row))); }}><Archive className="h-4 w-4" /></BmIconButton>}
       </div>
     ),
   });
@@ -490,7 +490,7 @@ const configurationLifecycleColumn = section === 'configuration' ? {
         <>
           {/* ---- Validation & publication : workflow réel ---- */}
           {section === 'validation' && tab === 'workflow' && (
-            <><BMContractsPanel versionId={versionId} applicationId={applicationId}/><ValidationWorkflow versionId={versionId} applicationId={applicationId} navigate={navigate} onError={setError} /></>
+            <><BMContractsPanel versionId={versionId} applicationId={applicationId} readOnly={readOnly}/><ValidationWorkflow versionId={versionId} applicationId={applicationId} navigate={navigate} onError={setError} readOnly={readOnly} /></>
           )}
 
           {section === 'validation' && tab === 'reports' && (
@@ -517,6 +517,19 @@ const configurationLifecycleColumn = section === 'configuration' ? {
           )}
 
           {section !== 'validation' && (
+            section === 'features' && tab === 'business-events' ? (
+              <BmPlannedState
+                title="Business Events indisponibles"
+                description="Aucun contrat Business Events n’est exposé par le backend Business Manager. Aucun événement n’est affiché ou créé sans source réelle."
+              />
+            ) : section === 'configuration' && tab === 'contracts' ? (
+              <BMContractsPanel versionId={versionId} applicationId={applicationId} readOnly={readOnly} />
+            ) : section === 'configuration' && ['metadata', 'permissions'].includes(tab) ? (
+              <BmPlannedState
+                title={tab === 'metadata' ? 'Métadonnées indisponibles' : 'Permissions référencées indisponibles'}
+                description="Cette information n’est pas encore fournie par un contrat Business Manager dédié. Les données ne sont pas reconstituées côté interface."
+              />
+            ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <input
@@ -565,7 +578,22 @@ const configurationLifecycleColumn = section === 'configuration' ? {
                 emptyState={emptyState}
                 footer={<> {filtered.length} élément(s) sur {rows.length}</>}
               />
+              {section === 'features' && tab === 'capabilities' && Array.isArray(dependencies) && (
+                <BmCard title="Dépendances existantes" subtitle="Données de dépendances rattachées aux capacités réelles.">
+                  <BmTable
+                    columns={[
+                      { key: 'featureName', label: 'Feature' },
+                      { key: 'capabilityCode', label: 'Capacité' },
+                      { key: 'targetCapabilityCode', label: 'Cible' },
+                      { key: 'dependencyType', label: 'Type', render: (row) => <BmBadge tone={row.dependencyType === 'REQUIRED' ? 'red' : 'blue'}>{row.dependencyType}</BmBadge> },
+                    ]}
+                    rows={dependencies.flatMap((feature) => feature.capabilities.flatMap((capability) => capability.dependencies.map((dependency) => ({ id: `${capability.code}:${dependency.targetCapabilityCode}:${dependency.dependencyType}`, featureName: feature.name, capabilityCode: capability.code, ...dependency }))))}
+                    emptyState={<BmEmptyState title="Aucune dépendance" />}
+                  />
+                </BmCard>
+              )}
             </>
+            )
           )}
         </>
       )}
@@ -606,7 +634,7 @@ const WORKFLOW_STEPS = [
   { id: 'publication', label: 'Publication', detail: (checks) => checks && `Statut : ${checks.version?.status}` },
 ];
 
-function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
+function ValidationWorkflow({ versionId, applicationId, navigate, onError, readOnly = false }) {
   const [state, setState] = useState({ loading: true, error: '', data: null });
   const [busy, setBusy] = useState(false);
   const [environmentId, setEnvironmentId] = useState('');
@@ -722,10 +750,10 @@ function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
         {/* Actions de publication */}
         <BmCard title="Actions de publication">
           <div className="space-y-3">
-            <BmButton className="w-full" icon={<ShieldCheck className="h-4 w-4" />} disabled={busy} onClick={runValidation}>
+            <BmButton className="w-full" icon={<ShieldCheck className="h-4 w-4" />} disabled={busy || readOnly} onClick={runValidation}>
               Lancer la validation
             </BmButton>
-            <BmButton className="w-full" variant="secondary" icon={<Rocket className="h-4 w-4" />} disabled={busy || !canPromote} onClick={promote} title={canPromote ? 'Faire avancer le statut de la version' : 'Version déjà publiée ou archivée'}>
+            <BmButton className="w-full" variant="secondary" icon={<Rocket className="h-4 w-4" />} disabled={busy || readOnly || !canPromote} onClick={promote} title={canPromote && !readOnly ? 'Faire avancer le statut de la version' : 'Version publiée ou non éligible à une transition'}>
               Faire avancer le statut{version ? ` (${version.status})` : ''}
             </BmButton>
             <label className="block text-xs font-semibold text-slate-600">
@@ -735,6 +763,7 @@ function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
                 {(environments || []).map((environment) => <option key={environment.id} value={environment.id}>{environment.name} ({environment.type})</option>)}
               </select>
             </label>
+            {readOnly && <p className="rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-600">Cette version publiée est en lecture seule.</p>}
             <p className="rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
               La publication complète (gate qualité + readiness runtime + snapshot) n’est pas encore orchestrée par la plateforme. Seule la transition de statut de la version est réelle.
             </p>
