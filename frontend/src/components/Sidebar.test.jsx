@@ -52,10 +52,69 @@ describe('Navigation principale à un niveau', () => {
 
   it('keeps icon links accessible in collapsed mode and exposes a tooltip', () => {
     collapsed = true;
-    renderSidebar();
-    const item = screen.getByRole('link', { name: 'Pack Manager' });
-    fireEvent.mouseEnter(item);
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Pack Manager');
+    renderSidebar('/dashboard');
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    fireEvent.click(group('Pack Manager'));
+    expect(screen.getByRole('searchbox')).toBeInTheDocument();
+    expect(group('Pack Manager')).toHaveAttribute('aria-expanded', 'true');
+    expect(within(submenuOf('packs')).getByRole('link', { name: 'Publication' })).toBeInTheDocument();
+  });
+});
+
+describe('Module availability badge', () => {
+  it('shows the implemented Registry without a planned badge', () => {
+    renderSidebar('/dashboard');
+    expect(group('Registry')).toBeInTheDocument();
+    expect(within(group('Registry')).queryByText('Bientôt')).not.toBeInTheDocument();
+  });
+
+  it('marks only the unavailable child of a partially available module', () => {
+    renderSidebar('/dashboard');
+    fireEvent.click(group('Automatisation'));
+    const items = within(submenuOf('automation')).getAllByRole('link');
+    const flagged = items.filter(link => within(link).queryByText('Bientôt')).map(link => link.textContent.replace('Bientôt', ''));
+    expect(flagged).toEqual(['Actions', 'Planifications', 'Modèles', 'Diagnostics', 'Formules']);
+  });
+});
+
+describe('Sidebar search never reveals a hidden module', () => {
+  it('filters only the entries already visible for the principal', () => {
+    principal = { displayName: 'Opérateur', permissions: ['erp:read', 'automation:read'], isAdmin: false };
+    renderSidebar('/dashboard');
+    fireEvent.change(screen.getByLabelText('Rechercher dans le menu'), { target: { value: 'Pack' } });
+    expect(screen.queryByRole('button', { name: 'Pack Manager' })).toBeNull();
+  });
+
+  it('reports when nothing matches', () => {
+    renderSidebar('/dashboard');
+    fireEvent.change(screen.getByLabelText('Rechercher dans le menu'), { target: { value: 'zzzz' } });
+    expect(screen.getByText('Aucun résultat.')).toBeInTheDocument();
+  });
+});
+
+describe('IAM filtering of the sidebar', () => {
+  it('shows only the dashboard while the tenant context is unresolved', () => {
+    tenant = { activeTenant: null, loading: true, error: null };
+    renderSidebar('/dashboard');
+    expect(screen.getByRole('link', { name: 'Tableau de bord' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pack Manager' })).toBeNull();
+    expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual(['ACCUEIL']);
+  });
+
+  it('keeps the safe fallback when the tenant context fails', () => {
+    tenant = { activeTenant: null, loading: false, error: new Error('down') };
+    renderSidebar('/dashboard');
+    expect(screen.queryByRole('button', { name: 'Pack Runtime' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Tableau de bord' })).toBeInTheDocument();
+  });
+
+  it('recomputes the navigation when the tenant changes', () => {
+    tenant = { activeTenant: { id: 'tenant-b' }, loading: false, error: null };
+    const { rerender } = renderSidebar('/dashboard');
+    expect(screen.getByRole('button', { name: 'Pack Manager' })).toBeInTheDocument();
+    tenant = { activeTenant: { id: 'tenant-c' }, loading: false, error: null };
+    rerender(<MemoryRouter initialEntries={['/dashboard']}><Sidebar isOpen={false} onClose={() => {}} /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: 'Pack Manager' })).toBeInTheDocument();
   });
 
   it('uses a dialog and close control on mobile', () => {

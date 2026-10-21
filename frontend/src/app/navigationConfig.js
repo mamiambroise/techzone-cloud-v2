@@ -56,31 +56,19 @@ export const pageDefinitions = [
   { ...{"component":"PublicationView","id":"packPublication","label":"Publication","group":"packs","status":"PARTIAL","menu":true,"moduleId":"01","tab":"publication","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true}, route: ROUTES["packPublication"] },
   { ...{"id":"packRuntime","group":"packs","label":"Pack Runtime","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"L’exécution et le suivi des packs nécessitent le futur moteur Pack Runtime."}, route: ROUTES["packRuntime"] },
   { ...{"component":"HistoryRollbackView","id":"history","label":"Historique","group":"packs","status":"PARTIAL","menu":false,"moduleId":"01","tab":"history","protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":null}, route: ROUTES["history"] },
-  { ...{"id":"runtime","group":"runtime","label":"Vue d’ensemble","component":"RuntimePage","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"runtime.resolution.read","description":"Résolutions, applications publiées, cache et diagnostics du Runtime."}, route: ROUTES["runtime"] },
-  ...[
-    { id: "runtimeApplications", route: ROUTES.runtimeApplications, label: "Applications" },
-    { id: "runtimeResolutions", route: ROUTES.runtimeResolutions, label: "Résolutions" },
-    { id: "runtimeActivations", route: ROUTES.runtimeActivations, label: "Activations" },
-    { id: "runtimeCache", route: ROUTES.runtimeCache, label: "Cache" },
-    { id: "runtimeDiagnostics", route: ROUTES.runtimeDiagnostics, label: "Diagnostics" },
-    { id: "runtimeHistory", route: ROUTES.runtimeHistory, label: "Historique" },
-    { id: "runtimeContext", route: ROUTES.runtimeContext, label: "Contexte Runtime", menu: false },
-    { id: "runtimeManifest", route: ROUTES.runtimeManifest, label: "Manifest Runtime", menu: false },
-    { id: "runtimeResolver", route: ROUTES.runtimeResolver, label: "Résolution Runtime", menu: false },
-    { id: "runtimeEffective", route: ROUTES.runtimeEffective, label: "Configuration effective", menu: false },
-  ].map(({ id, route, label, menu = true }) => ({
-    id,
-    group: "runtime",
-    label,
-    component: "RuntimePage",
-    route,
-    menu,
-    protected: true,
-    implemented: true,
-    status: "PARTIAL",
-    classification: "EXISTING_PARTIAL_PAGE",
-    permission: "runtime.resolution.read",
-  })),
+  { ...{"id":"registry","group":"registry","label":"Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read","description":"Vue d’ensemble du registre transversal réel : entrées, fournisseurs, schémas et diagnostics."}, route: ROUTES["registry"] },
+  { ...{"id":"registrySources","group":"registry","label":"Sources Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registrySources"] },
+  { ...{"id":"registryEntries","group":"registry","label":"Entrées Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registryEntries"] },
+  { ...{"id":"registryEntryDetail","group":"registry","label":"Détail d’entrée Registry","component":"RegistryPage","menu":false,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registryEntryDetail"] },
+  { ...{"id":"registryVersions","group":"registry","label":"Versions Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registryVersions"] },
+  { ...{"id":"registryCapabilities","group":"registry","label":"Capacités Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registryCapabilities"] },
+  { ...{"id":"registryProviders","group":"registry","label":"Providers Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registryProviders"] },
+  { ...{"id":"registrySchemas","group":"registry","label":"Schémas Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registrySchemas"] },
+  { ...{"id":"registryCompatibility","group":"registry","label":"Compatibilité Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.compatibility.read"}, route: ROUTES["registryCompatibility"] },
+  { ...{"id":"registryAvailability","group":"registry","label":"Disponibilité Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.availability.read"}, route: ROUTES["registryAvailability"] },
+  { ...{"id":"registryDiagnostics","group":"registry","label":"Diagnostics Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.diagnostics.read"}, route: ROUTES["registryDiagnostics"] },
+  { ...{"id":"registryAudit","group":"registry","label":"Audit Registry","component":"RegistryPage","menu":true,"protected":true,"implemented":true,"status":"REAL","permission":"registry.read"}, route: ROUTES["registryAudit"] },
+  { ...{"id":"runtime","group":"runtime","label":"Runtime","component":"ComingSoon","menu":true,"protected":true,"status":"NOT_IMPLEMENTED","classification":"PLANNED_PAGE","implemented":false,"description":"Le moteur d’exécution des applications et la liaison runtime ne sont pas encore intégrés."}, route: ROUTES["runtime"] },
   { ...{"component":"ERPDashboard","id":"erp","label":"ERP Dashboard","group":"erp","status":"PARTIAL","menu":true,"protected":true,"classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erp"] },
   { ...{"id":"erpResources","group":"erp","label":"Ressources","component":"ErpResourcesNav","menu":true,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erpResources"] },
   { ...{"id":"erpRegistry","group":"erp","label":"Registre ERP","component":"ERPList","menu":false,"protected":true,"status":"PARTIAL","classification":"EXISTING_PARTIAL_PAGE","implemented":true,"permission":"erp:read"}, route: ROUTES["erpRegistry"] },
@@ -316,6 +304,16 @@ export function effectiveNavigation(user, context = {}) {
   }
   return navigationGroups
     .filter((g) => !g.hidden && (status === "ready" || g.id === "dashboard"))
-    .map((g) => ({ ...g, entries: groupEntries(g.id).filter((e) => canAccess(e, user)) }))
+    .map((g) => {
+      const entries = groupEntries(g.id);
+      const permissions = entries
+        .map((entry) => entry.permission)
+        .filter(Boolean);
+      const uniformPermission = permissions.length > 0 && permissions.every((permission) => permission === permissions[0]);
+      const visibleEntries = uniformPermission && canAccess({ permission: permissions[0] }, user)
+        ? entries
+        : entries.filter((entry) => canAccess(entry, user));
+      return { ...g, entries: visibleEntries };
+    })
     .filter((g) => g.entries.length);
 }

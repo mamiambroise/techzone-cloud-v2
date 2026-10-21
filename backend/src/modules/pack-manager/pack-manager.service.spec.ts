@@ -167,4 +167,73 @@ describe('Pack Manager isolation', () => {
     } as any);
     await expect(service.publish(version.id,actor)).rejects.toThrow('PACK_MANIFEST_HASH_INVALID');
   });
+
+  it('locks Registry dependencies to the selected exact entry and version', async () => {
+    const registry = {
+      resolve: jest.fn<any>().mockResolvedValue({
+        status: 'COMPATIBLE',
+        selectedCandidate: {
+          id: 'registry-entry-1.2.0',
+          stableKey: 'ui.component.table',
+          version: '1.2.0',
+        },
+      }),
+    };
+    const service = new PackManagerService({} as any, undefined, registry as any);
+    const definition = {
+      dependencies: [{
+        sourceId: 'feature-a',
+        type: 'REQUIRES',
+        targetType: 'REGISTRY',
+        targetRef: 'ui.component.table',
+        targetVersionRange: '^1.0.0',
+      }],
+    };
+
+    const locks = await (service as any).lockRegistryDependencies(definition, actor);
+
+    expect(locks).toEqual([{
+      dependencyKey: 'feature-a:REGISTRY:ui.component.table:REQUIRES',
+      entryId: 'registry-entry-1.2.0',
+      key: 'ui.component.table',
+      version: '1.2.0',
+    }]);
+    await (service as any).verifyRegistryDependencies(definition, locks, actor);
+    expect(registry.resolve).toHaveBeenLastCalledWith(actor, {
+      key: 'ui.component.table',
+      entryId: 'registry-entry-1.2.0',
+      version: '1.2.0',
+      published: true,
+      versionRange: '^1.0.0',
+    });
+  });
+
+  it('refuses to publish a Registry lock after its exact entry becomes unavailable', async () => {
+    const registry = {
+      resolve: jest.fn<any>().mockResolvedValue({
+        status: 'UNAVAILABLE',
+        selectedCandidate: null,
+      }),
+    };
+    const service = new PackManagerService({} as any, undefined, registry as any);
+    const definition = {
+      dependencies: [{
+        sourceId: 'feature-a',
+        type: 'REQUIRES',
+        targetType: 'REGISTRY',
+        targetRef: 'ui.component.table',
+        targetVersionRange: '^1.0.0',
+      }],
+    };
+    const locks = [{
+      dependencyKey: 'feature-a:REGISTRY:ui.component.table:REQUIRES',
+      entryId: 'registry-entry-1.2.0',
+      key: 'ui.component.table',
+      version: '1.2.0',
+    }];
+
+    await expect(
+      (service as any).verifyRegistryDependencies(definition, locks, actor),
+    ).rejects.toThrow('PACK_REGISTRY_DEPENDENCY_BLOCKED');
+  });
 });

@@ -34,6 +34,7 @@ import { ObservabilityModule } from './observability/observability.module';
     IntegrationModule,
     DeploymentModule,
     ErpRegistryModule,
+    RegistryModule,
     ErpAdapterModule,
     DataRuntimeModule,
     AutomationModule,

@@ -91,7 +91,7 @@ const BillingInvoicesPage = lazy(() => import('./features/billing/BillingInvoice
 const BillingPaymentsPage = lazy(() => import('./features/billing/BillingPaymentsPage.jsx'));
 const BillingAdminPage = lazy(() => import('./features/billing/BillingAdminPage.jsx'));
 const BillingWebhooksPage = lazy(() => import('./features/billing/BillingWebhooksPage.jsx'));
-const BillingSettingsPage = lazy(() => import('./features/billing/BillingSettingsPage.jsx'));
+const RegistryPage = lazy(() => import('./features/registry/RegistryPage.jsx'));
 
 function CockpitRoute() {
   const { openModal } = useModal();
