@@ -19,6 +19,7 @@ import { ErpRegistryModule } from './erp-registry/erp-registry.module';
 import { UiBuilderModule } from './modules/ui-builder/ui-builder.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { ConfigController } from './config/config.controller';
+import { ObservabilityModule } from './observability/observability.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ConfigController } from './config/config.controller';
     AutomationModule,
     UiBuilderModule,
     BillingModule,
+    ObservabilityModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

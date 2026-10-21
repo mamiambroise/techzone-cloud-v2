@@ -45,6 +45,22 @@ function Stop-Techzone {
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'stop-project.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'STOP_FAILED: restart cancelled' }
 }
+function Runtime-Healthy {
+    $backend = Owned-Process 'backend'
+    $frontend = Owned-Process 'frontend'
+    return $backend -and $frontend -and (Port-Open 3003) -and (Port-Open 3000)
+}
+function Ensure-ProjectPorts {
+    if (Runtime-Healthy) { return $true }
+    $busy = @(3000, 3003 | Where-Object { Port-Open $_ })
+    if (!$busy.Count) { return $false }
+
+    Write-Host "PROJECT_PORT_RECOVERY: ports $($busy -join ', ') occupied; attempting safe Techzone shutdown."
+    Stop-Techzone
+    $remaining = @(3000, 3003 | Where-Object { Port-Open $_ })
+    if ($remaining.Count) { throw "PORT_IN_USE: $($remaining -join ', '); unowned process left untouched" }
+    return $false
+}
 function Status-Techzone {
     Write-Output "TECHZONE CLOUD STATUS`n================================"
     foreach ($name in @('frontend','backend')) {
@@ -70,6 +86,11 @@ function Start-Techzone {
     }
     & $node (Join-Path $PSScriptRoot 'database.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'DATABASE_CHECK_FAILED' }
+    if (Ensure-ProjectPorts) {
+        Write-Output 'TECHZONE CLOUD ALREADY READY'
+        Status-Techzone
+        return
+    }
     Start-ServiceProcess 'backend' (Join-Path $PSScriptRoot 'backend.cjs') '' 3003 (Join-Path $projectRoot 'backend')
     Wait-Http 'http://localhost:3003/health'
     Wait-Http 'http://localhost:3003/ready'

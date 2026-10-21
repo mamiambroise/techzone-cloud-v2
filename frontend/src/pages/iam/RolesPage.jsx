@@ -227,12 +227,7 @@ export default function RolesPage() {
       setFormRole(null);
       loadRoles();
     } catch {
-      {
-        toast.error('Erreur lors de l\'opération sur le rôle.');
-      }
-      toast.success(formRole ? 'Rôle mis à jour.' : 'Rôle créé avec succès.');
-      setFormOpen(false);
-      setFormRole(null);
+      toast.error('Erreur lors de l\'opération sur le rôle.');
     }
   };
 

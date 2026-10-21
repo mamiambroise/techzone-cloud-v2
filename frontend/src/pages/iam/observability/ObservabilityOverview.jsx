@@ -1,218 +1,29 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Activity,
-  Shield,
-  BarChart3,
-  FileText,
-  AlertTriangle,
-  Search,
-  ExternalLink,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Activity, AlertTriangle, CheckCircle2, Clock3, RefreshCw, ShieldAlert } from 'lucide-react';
 import { iamObservabilityService } from '../../../services/apiClient.js';
-import {
-  obsCockpitMock,
-  obsMonitoringPageMock,
-  obsSecurityEventsPageMock,
-  obsAlertInstances,
-  obsAuditLogs,
-} from './mockData.js';
 import { ModernSpinner } from '../../../components/Loaders.jsx';
-import { useToast } from '../../../hooks/useToast.js';
 
-function StatCard({ icon: Icon, label, value, color, subtitle }) {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1 flex-1">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</span>
-          <p className="text-3xl font-bold text-slate-900">{value}</p>
-          {subtitle && <span className="text-xs text-slate-500">{subtitle}</span>}
-        </div>
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15`, color: color }}>
-          <Icon className="w-5 h-5" />
-        </div>
-      </div>
-    </div>
-  );
-}
+const statusClass = { HEALTHY: 'text-green-700 bg-green-50', DEGRADED: 'text-amber-700 bg-amber-50', UNHEALTHY: 'text-red-700 bg-red-50', MAINTENANCE: 'text-blue-700 bg-blue-50', UNKNOWN: 'text-slate-600 bg-slate-100' };
+const kpis = [['healthyServices', 'Services sains', CheckCircle2, 'text-green-700'], ['degradedServices', 'Services dégradés', AlertTriangle, 'text-amber-700'], ['activeAlerts', 'Alertes actives', ShieldAlert, 'text-red-700'], ['requestsPerMinute', 'Requêtes / min', Activity, 'text-blue-700'], ['errorRate', 'Taux d’erreur', AlertTriangle, 'text-amber-700'], ['p95LatencyMs', 'Latence P95', Clock3, 'text-violet-700'], ['openIncidents', 'Incidents ouverts', ShieldAlert, 'text-red-700'], ['securityEvents24h', 'Événements sécurité (24 h)', ShieldAlert, 'text-slate-700']];
 
-function SeverityBadge({ severity }) {
-  const cfg = {
-    CRITICAL: { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
-    HIGH: { bg: 'bg-orange-100', text: 'text-orange-700', dot: 'bg-orange-500' },
-    MEDIUM: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
-    LOW: { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500' },
-    INFO: { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-500' },
-  };
-  const c = cfg[severity] || cfg.LOW;
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-      {severity}
-    </span>
-  );
-}
-
-function StatusBadge({ status }) {
-  const cfg = {
-    HEALTHY: { bg: 'bg-green-100', text: 'text-green-700', dot: 'bg-green-500' },
-    DEGRADED: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
-    UNHEALTHY: { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
-    WARNING: { bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
-    UNKNOWN: { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-500' },
-  };
-  const c = cfg[status] || cfg.UNKNOWN;
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-      {status}
-    </span>
-  );
+function display(key, value) {
+  if (value === null || value === undefined) return '—';
+  if (key === 'errorRate') return `${value} %`;
+  if (key === 'p95LatencyMs') return `${value} ms`;
+  return new Intl.NumberFormat('fr-FR').format(value);
 }
 
 export default function ObservabilityOverview() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [overview, setOverview] = useState(null);
-  const [services, setServices] = useState([]);
-
-  const loadOverview = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await iamObservabilityService.monitoring();
-      const data = response.data;
-      setServices(Array.isArray(data?.services) ? data.services : []);
-      setOverview(null);
-    } catch {
-      {
-        toast.error('Erreur lors du chargement de l\'observabilité.');
-        setServices([]);
-        setOverview(null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadOverview();
-  }, [loadOverview]);
-
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <ModernSpinner />
-      </div>
-    );
-  }
-
-  if (!overview) return <div role="status" className="p-6">Les indicateurs de synthèse ne sont pas disponibles via une source de télémétrie réelle.</div>;
-
-  return (
-    <div className="p-6">
-      <nav className="text-xs text-slate-500 mb-4">
-        <span>Observability & Security</span> <span className="mx-1">/</span>
-        <span className="text-slate-900 font-medium">Observability</span>
-      </nav>
-
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-slate-900">Observability</h1>
-          <button onClick={loadOverview} title="Actualiser" className="p-1.5 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100">
-            <Activity className="w-4 h-4" />
-          </button>
-        </div>
-        <p className="text-sm text-slate-500 mt-1">Vue d'ensemble de la santé, des événements de sécurité et des alertes.</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-        <StatCard icon={TrendingUp} label="Requêtes (24h)" value={overview.requests24h.toLocaleString('fr-FR')} color="#2563eb" subtitle={`${overview.errorRate24h}% d'erreurs`} />
-        <StatCard icon={BarChart3} label="Latence moyenne" value={`${overview.avgLatency} ms`} color="#7c3aed" subtitle={`Dispo ${services.filter((s) => s.status === 'HEALTHY').length}/${services.length}`} />
-        <StatCard icon={Shield} label="Événements sécurité ouverts" value={overview.securityEventsOpen} color="#ef4444" subtitle="Nécessitent attention" />
-        <StatCard icon={AlertTriangle} label="Alertes critiques" value={overview.criticalAlerts} color="#f97316" subtitle="À traiter" />
-      </div>
-
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Services monitorés</h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Service</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Composant</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Statut</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Latence (ms)</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Disponibilité</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Taux d'erreur</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Requêtes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.map((service) => (
-                <tr key={service.service} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{service.service}</td>
-                  <td className="px-4 py-3 text-slate-600">{service.component}</td>
-                  <td className="px-4 py-3"><StatusBadge status={service.status} /></td>
-                  <td className="px-4 py-3 text-slate-600">{service.latency}</td>
-                  <td className="px-4 py-3 text-slate-600">{service.availability}%</td>
-                  <td className="px-4 py-3 text-slate-600">{service.errorRate}%</td>
-                  <td className="px-4 py-3 text-slate-600">{service.requestCount.toLocaleString('fr-FR')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-slate-900 mb-3">Événements de sécurité récents</h2>
-          <div className="space-y-3">
-            {obsSecurityEventsPageMock.events.slice(0, 5).map((event) => (
-              <div key={event.id} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg">
-                <SeverityBadge severity={event.severity} />
-                <div className="flex-1">
-                  <div className="font-medium text-slate-900 text-sm">{event.eventType}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{event.detailsSafe}</div>
-                </div>
-                <span className="text-xs text-slate-400">{new Date(event.timestamp).toLocaleString('fr-FR')}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4">
-            <a href="/observability/security-events" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
-              Voir tous les événements <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-slate-900 mb-3">Alertes actives</h2>
-          <div className="space-y-3">
-            {obsAlertInstances.filter((a) => a.status === 'OPEN' || a.status === 'ACKNOWLEDGED').map((alert) => (
-              <div key={alert.id} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg">
-                <SeverityBadge severity={alert.severity} />
-                <div className="flex-1">
-                  <div className="font-medium text-slate-900 text-sm">{alert.code}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{alert.scope}</div>
-                </div>
-                <StatusBadge status={alert.status} />
-              </div>
-            ))}
-            {obsAlertInstances.filter((a) => a.status === 'OPEN' || a.status === 'ACKNOWLEDGED').length === 0 && (
-              <div className="text-center py-6 text-slate-500"><CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-300" />Aucune alerte active</div>
-            )}
-          </div>
-          <div className="mt-4">
-            <a href="/observability/alerts" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
-              Voir le gestionnaire d'alertes <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const [data, setData] = useState(null); const [error, setError] = useState(null); const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => { setLoading(true); setError(null); try { setData((await iamObservabilityService.overview()).data); } catch (err) { setError(err.normalized?.message || 'La source d’observabilité est indisponible.'); } finally { setLoading(false); } }, []);
+  useEffect(() => { load(); }, [load]);
+  if (loading) return <div className="p-8 flex justify-center min-h-[320px]"><ModernSpinner /></div>;
+  if (error) return <div className="tz-page p-6"><div role="alert" className="tz-surface p-5 text-red-700">{error}</div></div>;
+  const health = data?.health ?? [];
+  return <main className="tz-page p-4 sm:p-6 space-y-5">
+    <header className="flex items-start justify-between gap-4"><div><h1 className="text-xl font-semibold text-slate-900">Observabilité</h1><p className="text-sm text-slate-500 mt-1">Signaux réellement collectés par la plateforme.</p></div><div className="flex items-center gap-2"><Link to="/observability/settings" className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Paramètres</Link><button type="button" aria-label="Actualiser l’observabilité" onClick={load} className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"><RefreshCw className="w-4 h-4" /></button></div></header>
+    <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">{kpis.map(([key, label, Icon, color]) => <article key={key} className="tz-surface p-4"><div className="flex justify-between gap-2"><span className="text-xs uppercase tracking-wide text-slate-500">{label}</span><Icon className={`w-4 h-4 ${color}`} /></div><p className="mt-2 text-2xl font-semibold text-slate-900">{display(key, data?.kpis?.[key])}</p></article>)}</section>
+    <section className="tz-surface overflow-hidden"><div className="px-4 py-3 border-b border-slate-200"><h2 className="font-medium text-slate-900">Santé et readiness</h2></div><div className="tz-scroll-x"><table className="w-full text-sm"><thead className="bg-slate-50 text-left text-slate-500"><tr><th className="px-4 py-2">Service</th><th className="px-4 py-2">Santé</th><th className="px-4 py-2">Readiness</th><th className="px-4 py-2">Dernière vérification</th><th className="px-4 py-2">Détail</th></tr></thead><tbody>{health.map((item) => <tr key={item.service} className="border-t border-slate-100"><td className="px-4 py-3 font-medium text-slate-800">{item.service}</td><td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-medium ${statusClass[item.status] || statusClass.UNKNOWN}`}>{item.status}</span></td><td className="px-4 py-3 text-slate-600">{item.readiness}</td><td className="px-4 py-3 text-slate-600">{item.checkedAt ? new Date(item.checkedAt).toLocaleString('fr-FR') : 'Non vérifiée'}</td><td className="px-4 py-3 text-slate-600">{item.message}</td></tr>)}{!health.length && <tr><td colSpan="5" className="px-4 py-8 text-center text-slate-500">Aucune vérification disponible.</td></tr>}</tbody></table></div></section>
+  </main>;
 }

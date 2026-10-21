@@ -45,10 +45,10 @@ export const plannedPages = [
 
   planned("deploymentActivations", "deployments", "Activations", "L’activation des versions de packs par environnement n’est pas encore intégrée."),
 
-  planned("observability-traces", "observability", "Traces", "Les traces distribuées ne sont pas encore collectées par la plateforme."),
+  { ...planned("observability-traces", "observability", "Traces", "Recherche de traces via les identifiants de corrélation collectés par la plateforme."), component: "ObservabilityDataPage", pageId: "observability-traces", implemented: true, status: "PARTIAL" },
   planned("observability-errors", "observability", "Erreurs", "L’agrégation des erreurs applicatives n’est pas encore disponible."),
 
-  planned("adminOverview", "admin", "Vue d’ensemble", "La vue d’ensemble de l’administration plateforme n’est pas encore disponible."),
+  { ...planned("adminOverview", "admin", "Vue d’ensemble", "Synthèse des indicateurs réels IAM et Observabilité de la plateforme."), component: "AdminOverviewPage", implemented: true, status: "PARTIAL" },
   planned("adminFeatures", "admin", "Fonctionnalités", "L’activation des fonctionnalités de la plateforme n’est pas encore disponible."),
   planned("adminMaintenance", "admin", "Maintenance", "Les opérations de maintenance de la plateforme ne sont pas encore disponibles."),
 ];

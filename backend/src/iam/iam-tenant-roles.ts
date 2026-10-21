@@ -46,6 +46,10 @@ const TENANT_USER_PERMISSIONS: string[] = [
   PERMISSIONS.BILLING_USAGE_READ,
   PERMISSIONS.ENVIRONMENT_READ,
   PERMISSIONS.DEPLOYMENT_READ,
+  // Basic tenant visibility only: no logs, audit, security events, exports or
+  // settings are exposed to every member by default.
+  PERMISSIONS.OBSERVABILITY_OVERVIEW_READ,
+  PERMISSIONS.OBSERVABILITY_METRICS_READ,
 ];
 
 /**
@@ -126,6 +130,13 @@ const APPLICATION_MANAGER_EXTRA_PERMISSIONS: string[] = [
   PERMISSIONS.DEPLOYMENT_RETRY,
   PERMISSIONS.DEPLOYMENT_ROLLBACK,
   PERMISSIONS.DEPLOYMENT_DIAGNOSTICS,
+  // Application operators can diagnose their tenant but cannot alter routing,
+  // policies or access audit/security evidence.
+  PERMISSIONS.OBSERVABILITY_LOGS_READ,
+  PERMISSIONS.OBSERVABILITY_TRACES_READ,
+  PERMISSIONS.OBSERVABILITY_ALERTS_READ,
+  PERMISSIONS.OBSERVABILITY_INCIDENTS_READ,
+  PERMISSIONS.OBSERVABILITY_DIAGNOSTICS_READ,
 ];
 
 const APPLICATION_MANAGER_PERMISSIONS: string[] = Array.from(
@@ -136,14 +147,18 @@ const APPLICATION_MANAGER_PERMISSIONS: string[] = Array.from(
  * TENANT_ADMIN : ADMINISTRATION_MANAGER et, à terme, administration du
  * tenant (membres, rôles).
  *
- * Today this role is deliberately equivalent to APPLICATION_MANAGER: the
- * `PERMISSIONS` catalog exposes no tenant-scoped membership or role permission
- * (the only one, `iam:admin`, is platform-wide). Adding rights here before
- * those permissions exist would advertise a capability the RBAC cannot
- * deliver, so the extra set stays empty and the role is documented as the
- * tenant's future governance role.
+ * It receives the sensitive, tenant-scoped Observability management surface;
+ * it deliberately never receives `iam:admin` or platform credential rights.
  */
-const TENANT_ADMIN_EXTRA_PERMISSIONS: string[] = [];
+const TENANT_ADMIN_EXTRA_PERMISSIONS: string[] = [
+  PERMISSIONS.OBSERVABILITY_ALERTS_MANAGE,
+  PERMISSIONS.OBSERVABILITY_INCIDENTS_MANAGE,
+  PERMISSIONS.OBSERVABILITY_AUDIT_READ,
+  PERMISSIONS.OBSERVABILITY_SECURITY_READ,
+  PERMISSIONS.OBSERVABILITY_SETTINGS_MANAGE,
+  // Export is server-redacted, tenant-scoped and itself audited.
+  PERMISSIONS.OBSERVABILITY_EXPORT,
+];
 
 export type SystemRoleDefinition = {
   code: string;
@@ -179,7 +194,7 @@ export const SYSTEM_ROLES: readonly SystemRoleDefinition[] = Object.freeze([
     code: TENANT_ROLE_CODES.TENANT_ADMIN,
     name: 'Administrateur du tenant',
     description:
-      'Rôle de gouvernance du tenant. Identique à application_manager tant que le catalogue n’expose pas de permission tenant-scopée sur les membres et les rôles ; aucune administration plateforme.',
+      'Rôle de gouvernance du tenant, incluant la gestion sensible de l’observabilité de son tenant, sans administration plateforme.',
     inherits: [TENANT_ROLE_CODES.APPLICATION_MANAGER],
     permissions: Object.freeze(TENANT_ADMIN_EXTRA_PERMISSIONS),
     platform: false,

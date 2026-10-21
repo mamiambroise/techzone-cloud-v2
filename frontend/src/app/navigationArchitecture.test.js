@@ -50,12 +50,12 @@ describe('Global architecture (CDC §50)', () => {
 describe('Stable ordering per module (RG-NAV-025)', () => {
   it.each([
     ['bm', ['Applications', 'Modèles de données', 'Fonctionnalités', 'Navigation', 'Configuration', 'Validation']],
-    ['ui', ['Pages', 'Éditeur visuel']],
+    ['ui', ['Vue d’ensemble', 'Pages', 'Éditeur visuel', 'Composants', 'Formulaires', 'Navigation', 'Thèmes', 'Aperçu & test']],
     ['automation', ['Vue d’ensemble', 'Workflows', 'Déclencheurs', 'Actions', 'Planifications', 'Exécutions', 'Modèles', 'Diagnostics', 'Règles', 'Formules']],
-    ['packs', ['Vue d’ensemble', 'Packs', 'Versions', 'Modules', 'Fonctionnalités', 'Capacités', 'Dépendances', 'Règles', 'Validation & Manifest', 'Publication']],
+    ['packs', ['Vue d’ensemble', 'Packs', 'Versions', 'Modules', 'Fonctionnalités', 'Capacités', 'Dépendances', 'Règles', 'Validation & Manifest', 'Publication', 'Historique']],
     ['runtime', ['Vue d’ensemble', 'Applications', 'Résolutions', 'Activations', 'Cache', 'Diagnostics', 'Historique']],
     ['data', ['Vue d’ensemble', 'Sources', 'Modèles & Contrats', 'Requêtes', 'Politiques', 'Diagnostics', 'Historique']],
-    ['erp', ['Vue d’ensemble', 'Ressources', 'Mappings', 'Synchronisations', 'Paramètres & diagnostics']],
+    ['erp', ['Vue d’ensemble', 'Ressources', 'Connexions', 'Mappings', 'Paramètres & diagnostics']],
     ['api', ['Vue d’ensemble', 'Connecteurs', 'Webhooks', 'Diagnostics']],
     ['billing', ['Mon abonnement', 'Utilisation', 'Factures & paiements', 'Paramètres', 'Offres & tarifs', 'Abonnements clients', 'Opérations financières', 'Diagnostics & audit']],
     ['admin', ['Vue d’ensemble', 'Paramètres généraux', 'Profil']],
@@ -223,7 +223,7 @@ describe('Module availability (RG-NAV-017, RG-NAV-018)', () => {
       ['erp', '/erp'],
       ['automation', '/automation'],
       ['data', '/data-runtime'],
-      ['ui', '/ui/pages'],
+      ['ui', '/ui'],
       ['billing', '/billing/overview'],
     ].forEach(([id, route]) => {
       expect(groupDestination(id)).toBe(route);
@@ -231,11 +231,9 @@ describe('Module availability (RG-NAV-017, RG-NAV-018)', () => {
     });
   });
 
-  it('falls back to the dashboard for fully planned modules', () => {
-    ['admin'].forEach(id => {
-      expect(resolveRoute(groupDestination(id))?.implemented).toBe(false);
-      expect(resolveRoute(ROUTES.dashboard).implemented).toBe(true);
-    });
+  it('opens the implemented Administration overview instead of a placeholder', () => {
+    expect(groupDestination('admin')).toBe('/admin');
+    expect(resolveRoute('/admin')?.implemented).toBe(true);
   });
 });
 
@@ -259,11 +257,10 @@ describe('Destinations réelles de la sidebar (UI Builder)', () => {
   // Une entrée de menu est une destination cliquable : elle ne doit jamais être
   // un motif de route containing un paramètre non résolu (« /ui/builder/:pageId »),
   // qui produirait une URL littérale non partageable dans la barre d'adresse.
-  it('expose les 2 destinations UI Builder sans paramètre de route', () => {
+  it('expose les destinations UI Builder sans paramètre de route', () => {
     const destinations = groupEntries('ui').map((entry) => entry.route);
     expect(destinations).toEqual([
-      '/ui/pages',
-      '/ui/builder/editor',
+      '/ui', '/ui/pages', '/ui/builder/editor', '/ui/components', '/ui/forms', '/ui/navigation', '/ui/themes', '/ui/preview',
     ]);
     destinations.forEach((route) => expect(route).not.toMatch(/:\w/));
   });

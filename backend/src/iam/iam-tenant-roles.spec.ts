@@ -80,6 +80,33 @@ describe('tenant role catalogue', () => {
     expect(permissions).not.toContain(PERMISSIONS.INTEGRATION_CREDENTIAL_WRITE);
   });
 
+  it('assigns observability by tenant role under least privilege', () => {
+    const tenantUser = effectiveSystemRolePermissions('tenant_user');
+    const applicationManager = effectiveSystemRolePermissions('application_manager');
+    const tenantAdmin = effectiveSystemRolePermissions('tenant_admin');
+
+    expect(tenantUser).toEqual(expect.arrayContaining([
+      PERMISSIONS.OBSERVABILITY_OVERVIEW_READ,
+      PERMISSIONS.OBSERVABILITY_METRICS_READ,
+    ]));
+    expect(tenantUser).not.toContain(PERMISSIONS.OBSERVABILITY_LOGS_READ);
+    expect(tenantUser).not.toContain(PERMISSIONS.OBSERVABILITY_EXPORT);
+    expect(applicationManager).toEqual(expect.arrayContaining([
+      PERMISSIONS.OBSERVABILITY_LOGS_READ,
+      PERMISSIONS.OBSERVABILITY_TRACES_READ,
+      PERMISSIONS.OBSERVABILITY_DIAGNOSTICS_READ,
+    ]));
+    expect(applicationManager).not.toContain(PERMISSIONS.OBSERVABILITY_SETTINGS_MANAGE);
+    expect(tenantAdmin).toEqual(expect.arrayContaining([
+      PERMISSIONS.OBSERVABILITY_ALERTS_MANAGE,
+      PERMISSIONS.OBSERVABILITY_INCIDENTS_MANAGE,
+      PERMISSIONS.OBSERVABILITY_AUDIT_READ,
+      PERMISSIONS.OBSERVABILITY_SECURITY_READ,
+      PERMISSIONS.OBSERVABILITY_SETTINGS_MANAGE,
+      PERMISSIONS.OBSERVABILITY_EXPORT,
+    ]));
+  });
+
   it('excludes payment mutation from the application_manager role', () => {
     const permissions = effectiveSystemRolePermissions('application_manager');
     expect(permissions).not.toContain(PERMISSIONS.BILLING_MANAGE);

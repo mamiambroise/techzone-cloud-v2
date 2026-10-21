@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { iamObservabilityService } from '../../../services/apiClient.js';
-import { obsMonitoring, obsMonitoringPageMock, obsHealthStatuses } from './mockData.js';
 import { ModernSpinner } from '../../../components/Loaders.jsx';
 import ConfirmModal from '../../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../../hooks/useToast.js';
@@ -49,14 +48,17 @@ function MonitoringPage() {
   const [page, setPage] = useState(1);
   const [detailService, setDetailService] = useState(null);
 
-  const statusOptions = ['ALL', ...obsHealthStatuses];
+  const statusOptions = ['ALL', 'HEALTHY', 'DEGRADED', 'UNHEALTHY', 'MAINTENANCE', 'UNKNOWN'];
 
   const loadMonitoring = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await iamObservabilityService.monitoring();
+      const response = await iamObservabilityService.health();
       const data = response.data;
-      const servicesData = Array.isArray(data?.services) ? data.services : [];
+      const servicesData = (Array.isArray(data) ? data : []).map((item) => ({
+        ...item, component: item.module, checkedAt: item.checkedAt, detailsSafe: item.message,
+        latency: null, availability: null, errorRate: null, requestCount: null, timeoutCount: null, queueBacklog: null, cacheHitRate: null,
+      }));
       setServices(servicesData);
     } catch {
       {

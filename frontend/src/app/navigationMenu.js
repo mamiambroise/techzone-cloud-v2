@@ -49,11 +49,17 @@ const menu = [
   ]),
 
   group("ui", "UI Builder", "creation", "PanelsTopLeft", "text-violet-500", [
+    item("ui", "Vue d’ensemble", "LayoutDashboard"),
     item("uiPages", "Pages", "FileText"),
     item("uiEditor", "Éditeur visuel", "ImageIcon", ["uiBuilder", "uiPage"], {
       pageId: "uiBuilder",
       route: "/ui/builder/editor",
     }),
+    item("uiComponents", "Composants", "Boxes"),
+    item("uiForms", "Formulaires", "FormInput"),
+    item("uiNavigation", "Navigation", "Waypoints"),
+    item("uiThemes", "Thèmes", "Palette"),
+    item("uiPreview", "Aperçu & test", "MonitorPlay"),
   ]),
 
   group("automation", "Automatisation", "creation", "Cog", "text-amber-400", [
@@ -117,12 +123,9 @@ const menu = [
       "erp-stocks",
       "erp-:moduleKey",
     ]),
+    item("erpRegistry", "Connexions", "Server"),
     item("erpMapping", "Mappings", "Table2"),
-    item("erpSynchronizations", "Synchronisations", "RefreshCw"),
-    item("erpDiagnostics", "Paramètres & diagnostics", "Settings", [
-      "settingsErp",
-      "adapters",
-    ]),
+    item("settingsErp", "Paramètres & diagnostics", "Settings", ["adapters"]),
   ]),
 
   group("api", "API & Intégrations", "integrations", "Puzzle", "text-teal-300", [
@@ -183,7 +186,7 @@ const menu = [
     item("adminOverview", "Vue d’ensemble", "Home"),
     item("settingsGeneral", "Paramètres généraux", "Settings"),
     item("settingsProfile", "Profil", "Users"),
-  ]),
+  ].map((entry) => ({ ...entry, permission: "iam:admin" }))),
 ];
 
 export const navigationGroups = menu.map(({ items, ...rest }) => rest);

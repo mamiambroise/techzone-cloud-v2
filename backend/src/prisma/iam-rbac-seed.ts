@@ -186,7 +186,7 @@ async function reconcileGrants(
     });
   }
 
-  return { granted: grantedPermissionIds.length, revoked: toRevoke.length };
+  return { granted: toGrant.length, revoked: toRevoke.length };
 }
 
 async function upsertSystemRole(

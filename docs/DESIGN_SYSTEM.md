@@ -3,6 +3,25 @@
 ## Objectif
 Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et futures.
 
+## Techzone Classic — Accent Tabs B
+
+Le shell applicatif adopte le thème **Techzone Classic — Accent Tabs B** : sidebar
+marine (`#0B1730`), header clair, workspace `#F5F8FC`, action primaire
+`#1769FF` et accents de navigation sobres. Les tokens source sont définis dans
+`frontend/src/index.css`; les composants ne doivent pas recopier ces valeurs.
+
+- La sidebar ne contient qu’un lien par module principal. Les destinations
+  internes vivent dans les onglets horizontaux ou dans un contrôle contextuel
+  existant lorsqu’il dépend d’identifiants métier.
+- `components/ui/ModuleTabs.jsx` est le composant à utiliser pour une
+  navigation de module à routes réelles. Il reçoit des destinations issues du
+  registre, conserve `aria-current` et ne s’appuie pas sur la couleur seule.
+- Les routes avec paramètres (application, version, page…) ne doivent pas être
+  placées dans un onglet générique : conserver leur navigation contextuelle afin
+  de ne jamais perdre les identifiants ni les permissions.
+- Sur écran étroit, les onglets restent sur une ligne et défilent
+  horizontalement; leur hauteur tactile minimale est de 44 px.
+
 ## Palette officielle (tokens)
 
 | Token | Valeur | Usage |
