@@ -14,6 +14,11 @@ import { RollbackController } from './rollback/rollback.controller';
 import { RollbackService } from './rollback/rollback.service';
 import { DeploymentDiagnosticsController } from './diagnostics/deployment-diagnostics.controller';
 import { DeploymentDiagnosticsService } from './diagnostics/deployment-diagnostics.service';
+import {
+  DEPLOYMENT_RUNTIME_READINESS_PROBE,
+  DeploymentReadinessService,
+  HttpDeploymentRuntimeReadinessProbe,
+} from './readiness/deployment-readiness.service';
 
 @Module({
   imports: [PrismaModule],
@@ -34,6 +39,12 @@ import { DeploymentDiagnosticsService } from './diagnostics/deployment-diagnosti
     GateService,
     RollbackService,
     DeploymentDiagnosticsService,
+    DeploymentReadinessService,
+    HttpDeploymentRuntimeReadinessProbe,
+    {
+      provide: DEPLOYMENT_RUNTIME_READINESS_PROBE,
+      useExisting: HttpDeploymentRuntimeReadinessProbe,
+    },
   ],
   exports: [
     CockpitService,
@@ -43,6 +54,7 @@ import { DeploymentDiagnosticsService } from './diagnostics/deployment-diagnosti
     GateService,
     RollbackService,
     DeploymentDiagnosticsService,
+    DeploymentReadinessService,
   ],
 })
 export class DeploymentModule {}

@@ -37,35 +37,21 @@ export type EffectiveAuthorization = {
 };
 
 /**
- * Cache court, invalidé à chaque changement de tenant et après toute écriture
- * RBAC. La durée est volontairement courte : la sécurité prime, et une
- * révocation doit devenir effective sans attendre l'expiration du JWT.
+ * Authorizations are resolved from persisted state for every guarded request.
+ * This intentionally trades a small amount of read work for immediate effect
+ * of membership, role, tenant, organization, and site revocations.
  */
-const CACHE_TTL_MS = 5_000;
-
-type CacheEntry = { value: EffectiveAuthorization; expiresAt: number };
-
 @Injectable()
 export class IamAuthorizationService {
-  private readonly cache = new Map<string, CacheEntry>();
-
   constructor(private readonly prisma: PrismaService) {}
 
   /** Invalidation explicite, appelée après toute écriture RBAC ou changement de tenant. */
-  invalidate(userId?: string, tenantId?: string): void {
-    if (!userId) {
-      this.cache.clear();
-      return;
-    }
-    for (const key of this.cache.keys()) {
-      const [cachedUser, cachedTenant] = key.split('|');
-      if (
-        cachedUser === userId &&
-        (tenantId === undefined || cachedTenant === tenantId)
-      ) {
-        this.cache.delete(key);
-      }
-    }
+  invalidate(_userId?: string, _tenantId?: string): void {
+    // Authorization is resolved from persisted state on every guarded request.
+    // Keep this method for existing RBAC write callers without retaining a
+    // stale authorization window after revocation.
+    void _userId;
+    void _tenantId;
   }
 
   async resolve(
@@ -104,15 +90,7 @@ export class IamAuthorizationService {
       };
     }
 
-    const cacheKey = `${user.id}|${effectiveTenantId}`;
-    const cached = this.cache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.value;
-    }
-
-    const value = await this.resolveFromDatabase(user.id, effectiveTenantId);
-    this.cache.set(cacheKey, { value, expiresAt: Date.now() + CACHE_TTL_MS });
-    return value;
+    return this.resolveFromDatabase(user.id, effectiveTenantId);
   }
 
   private async resolveFromDatabase(
@@ -121,10 +99,42 @@ export class IamAuthorizationService {
   ): Promise<EffectiveAuthorization> {
     const membership = await this.prisma.membership.findFirst({
       where: { userId, tenantId, revokedAt: null },
-      select: { status: true },
+      select: {
+        status: true,
+        validFrom: true,
+        validUntil: true,
+        organizationId: true,
+        siteId: true,
+        tenant: { select: { id: true, status: true } },
+        organization: { select: { id: true, tenantId: true, status: true } },
+        site: {
+          select: {
+            id: true,
+            organizationId: true,
+            status: true,
+            organization: { select: { tenantId: true, status: true } },
+          },
+        },
+      },
     });
 
-    const membershipActive = membership?.status === 'ACTIVE';
+    const now = new Date();
+    const membershipActive = Boolean(
+      membership &&
+        membership.status === 'ACTIVE' &&
+        (!membership.validFrom || membership.validFrom <= now) &&
+        (!membership.validUntil || membership.validUntil > now) &&
+        membership.tenant.status === 'ACTIVE' &&
+        (!membership.organizationId ||
+          (membership.organization?.tenantId === tenantId &&
+            membership.organization.status === 'ACTIVE')) &&
+        (!membership.siteId ||
+          (membership.site?.status === 'ACTIVE' &&
+            membership.site.organization?.tenantId === tenantId &&
+            membership.site.organization.status === 'ACTIVE' &&
+            (!membership.organizationId ||
+              membership.site.organizationId === membership.organizationId))),
+    );
 
     // Une affectation ne peut jamais compenser une membership absente ou
     // inactive : on ne consulte donc pas les rôles dans ce cas.

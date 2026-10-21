@@ -65,15 +65,16 @@ export class IamJwtGuard implements CanActivate {
 
     await this.authService.assertSessionUsable(session);
 
-    await this.prisma.iamSession.update({
-      where: { id: session.id },
-      data: { lastActivityAt: new Date() },
-    });
-
     const user = await this.prisma.iamUser.findUnique({ where: { id: decoded.userId } });
     if (!user) {
       throw new IamError('Utilisateur introuvable', 401, 'USER_NOT_FOUND');
     }
+    this.authService.assertUserIsActive(user);
+
+    await this.prisma.iamSession.update({
+      where: { id: session.id },
+      data: { lastActivityAt: new Date() },
+    });
 
     const roles = this.deriveRoles(user);
     const effective = await this.authorization.resolve(
@@ -84,8 +85,12 @@ export class IamJwtGuard implements CanActivate {
     const principal = {
       userId: decoded.userId,
       sessionId: decoded.sessionId,
-       tenantId: session.tenantId ?? null,
-      organizationId: session.organizationId ?? decoded.organizationId ?? null,
+      tenantId: session.tenantId ?? null,
+      // Tenant context is always read from the persisted session. JWT context
+      // claims are descriptive only and must not resurrect stale scope after a
+      // tenant switch.
+      organizationId: session.organizationId ?? null,
+      siteId: session.siteId ?? null,
       authenticationLevel: decoded.authenticationLevel ?? null,
       // Phase 8 : les permissions effectives proviennent du RBAC tenant
       // (membership ACTIVE → affectations → rôle → role_permission →

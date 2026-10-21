@@ -107,6 +107,7 @@ describe('ContractsService (TENANT-ISOLATION)', () => {
       id: 'av-1',
       status: 'DRAFT',
       version: '1.0.0',
+      applicationId: 'app-1',
     });
     prisma.bmBusinessContract.update.mockResolvedValue({ id: 'c-1' });
 
@@ -134,6 +135,7 @@ describe('ContractsService (TENANT-ISOLATION)', () => {
       id: 'av-1',
       status: 'ACTIVE',
       version: '1.0.0',
+      applicationId: 'app-1',
     });
 
     await expect(

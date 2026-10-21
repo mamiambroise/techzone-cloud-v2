@@ -806,6 +806,10 @@ export class PackManagerService {
         return definition;
       }
       const ui = await this.uiBuilder.getUiDefinition(version.applicationVersionId, this.tenant(actor));
+      if (ui.applicationVersionId !== version.applicationVersionId || ui.businessContext?.applicationVersionId !== version.applicationVersionId || validation.applicationVersionId !== version.applicationVersionId) {
+        issues.push({ code: 'UI_APPLICATION_VERSION_MISMATCH', path: 'ui', severity: 'ERROR', message: 'UI Definition et PackVersion doivent référencer la même ApplicationVersion.' });
+        return definition;
+      }
       definition.ui = { schemaVersion: ui.schemaVersion, applicationVersionId: version.applicationVersionId, definition: ui, uiDefinitionHash: hash(ui) };
     } catch {
       issues.push({ code: 'APPLICATION_VERSION_NOT_FOUND', path: 'applicationVersionId', severity: 'ERROR', message: 'ApplicationVersion inaccessible pour ce tenant.' });
@@ -978,7 +982,7 @@ export class PackManagerService {
   async publishedManifest(code: string, versionNumber: string, actor: Actor) {
     const item = await this.db.packManifest.findFirst({
       where: { tenantId: this.tenant(actor), status: 'PUBLISHED', packVersion: { versionNumber, status: 'PUBLISHED', pack: { code, archivedAt: null } } },
-      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true, applicationVersionId: true } } },
     });
     if (!item) throw new NotFoundException('PUBLISHED_PACK_MANIFEST_NOT_FOUND');
     const content = item.content as any;
@@ -1204,7 +1208,7 @@ export class PackManagerService {
     await this.version(id, actor);
     const item = await this.db.packManifest.findFirst({
       where: { tenantId: this.tenant(actor), packVersionId: id },
-      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true, applicationVersionId: true } } },
     });
     if (!item) throw new NotFoundException('PACK_MANIFEST_NOT_FOUND');
     if (

@@ -13,11 +13,11 @@ import UiBuilderLayout from './UiBuilderLayout.jsx';
 import { BmCard, BmBadge, BmButton } from '../../../components/business-manager/bm/ui.jsx';
 
 const DEFAULT_TOKENS = {
-  colors: { primary: '#2563eb', primarySoft: '#eff6ff', text: '#0f172a', muted: '#64748b', surface: '#ffffff', canvas: '#f8fafc' },
-  typography: { fontFamily: 'Plus Jakarta Sans', baseSize: 14, headingScale: 1.25 },
+  colors: { primary: '#0866F5', primarySoft: '#EDF4FF', text: '#101C48', muted: '#64748B', surface: '#FFFFFF', canvas: '#EFF6FF' },
+  typography: { fontFamily: 'Inter', baseSize: 14, headingScale: 1.25 },
   spacing: { unit: 4, container: 1200 },
-  radius: { sm: 8, md: 12, lg: 14 },
-  shadow: { card: '0 1px 2px rgba(15,23,42,0.06)' },
+  radius: { sm: 6, md: 10, lg: 14 },
+  shadow: { card: '0 2px 12px rgba(16,28,72,0.05)' },
   breakpoints: { tablet: 834, mobile: 420 },
 };
 
@@ -54,10 +54,10 @@ function ThemeBody() {
   }, [applicationVersionId]);
 
   const cssVars = useMemo(() => ({
-    '--preview-primary': HEX_RE.test(tokens.colors?.primary || '') ? tokens.colors.primary : '#2563eb',
+    '--preview-primary': HEX_RE.test(tokens.colors?.primary || '') ? tokens.colors.primary : '#0866F5',
     '--preview-radius': `${Math.min(Number(tokens.radius?.md) || 12, 24)}px`,
-    '--preview-canvas': HEX_RE.test(tokens.colors?.canvas || '') ? tokens.colors.canvas : '#f8fafc',
-    '--preview-text': HEX_RE.test(tokens.colors?.text || '') ? tokens.colors.text : '#0f172a',
+    '--preview-canvas': HEX_RE.test(tokens.colors?.canvas || '') ? tokens.colors.canvas : '#EFF6FF',
+    '--preview-text': HEX_RE.test(tokens.colors?.text || '') ? tokens.colors.text : '#101C48',
   }), [tokens]);
 
   const setColor = (key, value) => {

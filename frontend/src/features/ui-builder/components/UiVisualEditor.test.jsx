@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { configure, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
@@ -9,6 +9,9 @@ import UiVisualEditor from './UiVisualEditor.jsx';
 import uiBuilderReducer from '../store/uiBuilderSlice.js';
 import { api } from '../../../services/apiClient.js';
 
+// Context loading includes several effects and API responses before the canvas mounts.
+configure({ asyncUtilTimeout: 5000 });
+
 vi.mock('../../../services/apiClient.js', () => ({ api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('../../../contexts/TenantProvider.jsx', () => ({ useTenant: () => ({ activeTenant: { id: 'tenant-a', name: 'Tenant A' } }) }));
 
@@ -17,11 +20,11 @@ const PAGE = {
   components: { root: 'root', nodes: { root: { id: 'root', type: 'Container', props: { padding: 'md', gap: 'md' }, bindings: {}, actions: [], children: [] } } },
 };
 
-function renderEditor() {
+function renderEditor(entry = '/ui/builder/page-a') {
   const store = configureStore({ reducer: { uiBuilder: uiBuilderReducer } });
   return render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={['/ui/builder/page-a']}>
+      <MemoryRouter initialEntries={[entry]}>
         <Routes><Route path="/ui/builder/:pageId" element={<UiVisualEditor />} /></Routes>
       </MemoryRouter>
     </Provider>,
@@ -56,3 +59,19 @@ describe('UI Builder visual editor', () => {
     expect(screen.getByDisplayValue('Clients — /clients')).toBeInTheDocument();
   });
 });
+
+ describe('UI Builder specification context and validation links', () => {
+  it('keeps tenant context visible and opens a component from a validation link', async () => {
+    renderEditor('/ui/builder/page-a?component=root');
+    await screen.findByLabelText('Canvas');
+    expect(screen.getByRole('region', { name: 'Contexte UI Builder' })).toHaveTextContent('Tenant A');
+    expect(await screen.findByRole('tab', { name: 'Avancé' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: 'Avancé' }));
+    expect(screen.getByText('Définition du composant en lecture seule.')).toBeInTheDocument();
+  });
+  it('opens the first valid page from the generic editor route', async () => {
+    renderEditor('/ui/builder/editor');
+    await screen.findByLabelText('Canvas');
+    expect(screen.getByDisplayValue('Clients — /clients')).toBeInTheDocument();
+  });
+ });

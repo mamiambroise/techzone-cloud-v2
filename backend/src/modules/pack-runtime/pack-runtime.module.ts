@@ -1,3 +1,4 @@
+import { RuntimeExecutionModule } from './runtime-execution.module';
 import { Module } from '@nestjs/common';
 import { RuntimeBridgeModule } from '../business-manager/runtime/runtime-bridge.module';
 import { PackManagerModule } from '../pack-manager/pack-manager.module';

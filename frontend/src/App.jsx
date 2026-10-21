@@ -70,6 +70,7 @@ const AlertManagerPage = lazy(() => import('./pages/iam/observability/AlertManag
 
 const DataRuntime = lazy(() => import('./pages/DataRuntime.jsx'));
 const DataRuntimeHistory = lazy(() => import('./pages/DataRuntimeHistory.jsx'));
+const DataRuntimeGovernance = lazy(() => import('./pages/DataRuntimeGovernance.jsx'));
 const AutomationCockpit = lazy(() => import('./pages/AutomationCockpit.jsx'));
 const AutomationConditions = lazy(() => import('./pages/AutomationConditions.jsx'));
 const AutomationHistory = lazy(() => import('./pages/AutomationHistory.jsx'));

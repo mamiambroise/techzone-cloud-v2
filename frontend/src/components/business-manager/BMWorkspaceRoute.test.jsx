@@ -15,6 +15,14 @@ describe('BM workspace',()=>{
     expect(api.get).toHaveBeenCalledWith('/business-manager/data-model/version-a/schema');
     expect(JSON.parse(sessionStorage.getItem('bm-context:tenant-a'))).toEqual({applicationId:'app-a',versionId:'version-a'});
   });
+  it('uses the canonical models route query context', async () => {
+    api.get.mockImplementation(async url => ({data:url.endsWith('/applications')?[{id:'app-a',name:'Application A'}]:url.endsWith('/versions')?[{id:'version-a',version:'1.0',status:'DRAFT'}]:[]}));
+    render(<MemoryRouter initialEntries={['/business-manager/models?applicationId=app-a&versionId=version-a']}><Routes><Route path="/business-manager/models" element={<BMWorkspaceRoute/>}/></Routes></MemoryRouter>);
+    await screen.findAllByText('Créer une entité');
+    expect(api.get).toHaveBeenCalledWith('/business-manager/data-model/version-a/schema');
+    expect(screen.getByLabelText('Application')).toHaveValue('app-a');
+    expect(screen.getByLabelText('Version')).toHaveValue('version-a');
+  });
   it('shows a safe retry state instead of exposing SQL failures',async()=>{
     api.get.mockRejectedValue(new Error('Prisma SQL secret'));
     mount();await screen.findByRole('alert');expect(screen.queryByText(/Prisma SQL/)).not.toBeInTheDocument();expect(screen.getByText('Réessayer')).toBeInTheDocument();

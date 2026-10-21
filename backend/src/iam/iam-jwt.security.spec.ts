@@ -128,7 +128,10 @@ describe('IamJwtGuard — binding session ↔ user', () => {
       iamSession: { findUnique: jest.fn(async () => session), update: jest.fn(async () => ({})) },
       iamUser: { findUnique: jest.fn(async () => user) },
     } as unknown as PrismaService;
-    const authService = { assertSessionUsable: jest.fn(async () => undefined) } as unknown as IamAuthService;
+    const authService = {
+      assertSessionUsable: jest.fn(async () => undefined),
+      assertUserIsActive: jest.fn(),
+    } as unknown as IamAuthService;
     const authorization = {
       resolve: jest.fn(async () => ({ roles: [], permissions: [], isSuperAdmin: false, tenantRoleCodes: [] })),
     };
@@ -154,7 +157,12 @@ describe('IamJwtGuard — binding session ↔ user', () => {
       { id: USER_ID, isAdmin: false },
     );
 
-    await expect(guard.canActivate({ ...({} as never), ...({ getHandler: () => ({}), getClass: () => ({}), switchToHttp: () => ({ getRequest: () => requestFor(token) }) } as never) }))
+    const context = {
+      getHandler: () => ({}),
+      getClass: () => ({}),
+      switchToHttp: () => ({ getRequest: () => requestFor(token) }),
+    } as unknown as import('@nestjs/common').ExecutionContext;
+    await expect(guard.canActivate(context))
       .rejects.toMatchObject({ code: 'SESSION_MISMATCH' } as Partial<IamError>);
   });
 

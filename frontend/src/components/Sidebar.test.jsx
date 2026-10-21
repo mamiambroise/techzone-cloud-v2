@@ -29,7 +29,7 @@ const MODULE_IDS = {
   'UI Builder': 'ui',
   Automatisation: 'automation',
   'Pack Manager': 'packs',
-  Runtime: 'runtime',
+  'Pack Runtime': 'runtime',
   Données: 'data',
   'ERP / Dolibarr': 'erp',
   'API & Intégrations': 'api',
@@ -45,10 +45,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Sections (RG-NAV-025)', () => {
-  it('renders the five global sections as level 2 headings', () => {
+  it('renders the V3 global sections as level 2 headings', () => {
     renderSidebar();
     const headings = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
-    expect(headings).toEqual(['ACCUEIL', 'CONSTRUCTION', 'EXÉCUTION', 'DONNÉES & INTÉGRATIONS', 'PLATEFORME']);
+    expect(headings).toEqual(['ACCUEIL', 'CRÉATION D’APPLICATIONS', 'PUBLICATION & EXÉCUTION', 'DONNÉES & INTÉGRATIONS', 'SUPERVISION', 'COMMERCIAL', 'ADMINISTRATION & INFRASTRUCTURE']);
   });
 
   it('exposes a labelled navigation landmark', () => {
@@ -97,7 +97,7 @@ describe('Accordion (RG-NAV-021)', () => {
 
   it('persists the expanded modules without storing sensitive data', () => {
     renderSidebar('/dashboard');
-    fireEvent.click(group('Runtime'));
+    fireEvent.click(group('Pack Runtime'));
     expect(JSON.parse(localStorage.getItem('techzone.nav.expanded'))).toMatchObject({ runtime: true });
     expect(JSON.stringify(localStorage.getItem('techzone.nav.expanded'))).not.toMatch(/tenant|token|user|secret/i);
   });
@@ -114,7 +114,7 @@ describe('Active state and deep links (RG-NAV-019, RG-NAV-020)', () => {
 
 it.each([
     ['/erp/clients', 'ERP / Dolibarr', 'Ressources'],
-    ['/runtime/cache', 'Runtime', 'Cache'],
+    ['/runtime/cache', 'Pack Runtime', 'Cache'],
     ['/business-manager/applications/app-1/versions/v1', 'Business Manager', 'Applications'],
     ['/data-runtime', 'Données', 'Vue d’ensemble'],
     ['/automation/workflows', 'Automatisation', 'Workflows'],
@@ -153,7 +153,7 @@ describe('Collapsed mode and tooltips (RG-NAV-023)', () => {
   it('keeps every module reachable by its accessible name while collapsed', () => {
     collapsed = true;
     renderSidebar('/dashboard');
-    ['Tableau de bord', 'Business Manager', 'UI Builder', 'Automatisation', 'Pack Manager', 'Runtime', 'Données', 'ERP / Dolibarr', 'API & Intégrations', 'Registry'].forEach(name => {
+    ['Tableau de bord', 'Business Manager', 'UI Builder', 'Automatisation', 'Pack Manager', 'Pack Runtime', 'Données', 'ERP / Dolibarr', 'API & Intégrations', 'Registry'].forEach(name => {
       expect(group(name)).toBeInTheDocument();
     });
   });
@@ -212,7 +212,7 @@ describe('IAM filtering of the sidebar', () => {
   it('keeps the safe fallback when the tenant context fails', () => {
     tenant = { activeTenant: null, loading: false, error: new Error('down') };
     renderSidebar('/dashboard');
-    expect(screen.queryByRole('button', { name: 'Runtime' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pack Runtime' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Tableau de bord' })).toBeInTheDocument();
   });
 
@@ -265,6 +265,6 @@ describe('Mobile drawer and accessibility (RG-NAV-022, RG-NAV-021)', () => {
     const nav = document.querySelector('#main-sidebar nav');
     expect(nav).toBeTruthy();
     expect(nav.className).toMatch(/overflow-y-auto/);
-    expect(screen.getAllByRole('button', { name: /^(Business Manager|UI Builder|Automatisation|Pack Manager|Runtime|Données|ERP \/ Dolibarr|API & Intégrations)$/ }).length).toBe(8);
+    expect(screen.getAllByRole('button', { name: /^(Business Manager|UI Builder|Automatisation|Pack Manager|Pack Runtime|Données|ERP \/ Dolibarr|API & Intégrations)$/ }).length).toBe(8);
   });
 });

@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Logger, Req } from '@nestjs/common';
+import { RuntimeExecutionService } from '../modules/pack-runtime/runtime-execution.service';
+import { Controller, Get, Post, Body, Param, Logger, Req, ConflictException, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { QueryEngine } from './query-engine/query-engine';
@@ -15,6 +16,7 @@ import {
 import { CurrentUser } from '../iam/decorators/current-user.decorator';
 import type { IamAuthContext } from '../iam/decorators/current-user.decorator';
 import { Permissions } from '../iam/iam-permissions.guard';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   DATA_RUNTIME_EXECUTE,
   DATA_RUNTIME_QUERY,
@@ -34,6 +36,8 @@ export class DataRuntimeController {
     private readonly bindingService: DataBindingService,
     private readonly historyService: HistoryService,
     private readonly validationService: ValidationService,
+    private readonly prisma: PrismaService = null as any,
+    private readonly runtimeExecution: RuntimeExecutionService = new RuntimeExecutionService(prisma),
   ) {}
 
   // === CONTRACT ===
@@ -66,6 +70,7 @@ export class DataRuntimeController {
     @Body() query: QueryContractDto,
   ) {
     this.logger.log(`POST /data-runtime/query resource=${query.resource}`);
+    await this.assertPublishedRuntimeGuard(req, principal, query as Record<string, any>);
     const context = this.buildContext(query.resource, principal, req);
     return this.queryEngine.execute(query, context);
   }
@@ -78,6 +83,7 @@ export class DataRuntimeController {
     @Param('resource') resource: string,
     @Param('id') id: string,
   ) {
+    await this.assertPublishedRuntimeGuard(req, principal, { resource, id, applicationId: (req as any)?.body?.applicationId });
     const ctx = this.buildContext(resource, principal, req);
     return this.dataAccess.get(resource, id, ctx);
   }
@@ -90,6 +96,7 @@ export class DataRuntimeController {
     @CurrentUser() principal: IamAuthContext,
     @Param('resource') resource: string,
   ) {
+    await this.assertPublishedRuntimeGuard(req, principal, { resource, applicationId: (req as any)?.body?.applicationId });
     const ctx = this.buildContext(resource, principal, req);
     return this.dataAccess.list(resource, ctx);
   }
@@ -103,6 +110,7 @@ export class DataRuntimeController {
   @ApiResponse({ status: 201, description: 'Resultat de laction' })
   async executeOperation(@Req() req: Request, @CurrentUser() principal: IamAuthContext, @Body() request: ExecutionRequestDto) {
     this.logger.log(`POST /data-runtime/execute ${request.operation} ${request.resource}`);
+    await this.assertPublishedRuntimeGuard(req, principal, request as Record<string, any>);
     const ctx = this.buildContext(request.resource, principal, req);
     return this.executionEngine.execute(request, ctx);
   }
@@ -145,8 +153,11 @@ export class DataRuntimeController {
   @Get('metrics')
   @Permissions(DATA_RUNTIME_READ)
   @ApiOperation({ summary: 'Metriques du Data Runtime' })
-  async getMetrics() {
-    return this.historyService.getMetrics();
+  async getMetrics(@CurrentUser() principal: IamAuthContext) {
+    if (!principal?.tenantId) {
+      throw new ForbiddenException('TENANT_REQUIRED');
+    }
+    return this.historyService.getMetrics(principal.tenantId);
   }
 
   // === BINDING ===
@@ -159,6 +170,7 @@ export class DataRuntimeController {
     @CurrentUser() principal: IamAuthContext,
     @Param('bindingId') bindingId: string,
   ) {
+    await this.assertPublishedRuntimeGuard(req, principal, { bindingId, applicationId: (req as any)?.body?.applicationId });
     const context = this.buildContext('default', principal, req);
     return this.bindingService.resolve(bindingId, context);
   }
@@ -170,6 +182,35 @@ export class DataRuntimeController {
     return { state: this.bindingService.getBindingState(bindingId) };
   }
 
+  private async assertPublishedRuntimeGuard(req: Request | undefined, principal: IamAuthContext, payload: Record<string, any> = {}) {
+    if (!principal?.tenantId) {
+      throw new ForbiddenException('TENANT_REQUIRED');
+    }
+    const resolutionId = payload.resolutionId || (req as any)?.body?.resolutionId || (req as any)?.query?.resolutionId || (req as any)?.headers?.['x-runtime-resolution-id'];
+    const resource = String(payload.resource || '');
+    const bm = /^bm:([0-9a-f-]{36}):/i.exec(resource);
+    let version: { id: string; applicationId: string; status: string } | null = null;
+    if (bm) {
+      version = await this.prisma.applicationVersion.findFirst({ where: { id: bm[1], tenantId: principal.tenantId }, select: { id: true, applicationId: true, status: true } });
+      if (!version) throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
+    }
+    const published = version?.status === 'PUBLISHED' || req?.headers?.['x-runtime-origin'] === 'published' || Boolean(version && await this.prisma.packVersion.count({ where: { tenantId: principal.tenantId, applicationVersionId: version.id, status: 'PUBLISHED' } }));
+    if (!resolutionId && !published) return;
+    if (!resolutionId) throw new BadRequestException('RUNTIME_RESOLUTION_ID_REQUIRED');
+    const item = await this.runtimeExecution.assertExecutable({
+      resolutionId: String(resolutionId), tenantId: principal.tenantId,
+      applicationId: version?.applicationId || payload.applicationId,
+      applicationVersionId: version?.id || payload.applicationVersionId,
+      environmentId: payload.environmentId,
+    });
+    if (bm) {
+      const content = item.effectiveManifest!.content as Record<string, any>;
+      if (!content.ui?.definition?.businessContext?.entities?.some((e: any) => e.code === resource.split(':')[2])) throw new ForbiddenException('RUNTIME_DATA_BINDING_UNAVAILABLE');
+    }
+    if (req) (req as any).runtimeResolution = item;
+    return item;
+  }
+
   private buildContext(resource: string, principal: IamAuthContext, req?: Request): RuntimeContextDto {
     if (!principal.tenantId) {
       throw new Error('TENANT_REQUIRED: tenantId manquant dans le principal IAM');
@@ -178,8 +219,8 @@ export class DataRuntimeController {
     return {
       tenantId: principal.tenantId,
       userId: principal.userId,
-      applicationId: 'data-runtime',
-      environmentId: process.env.NODE_ENV || 'development',
+      applicationId: (req as any)?.runtimeResolution?.applicationId ?? 'data-runtime',
+      environmentId: (req as any)?.runtimeResolution?.environment ?? process.env.NODE_ENV ?? 'development',
       requestId: `req-${Date.now()}`,
       traceId,
       // The IAM guard derives ADMIN from the persisted user, never request JSON.

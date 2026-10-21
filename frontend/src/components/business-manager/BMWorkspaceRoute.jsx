@@ -1,13 +1,13 @@
 import BMContractsPanel from './BMContractsPanel.jsx';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Database, Boxes, Compass, Settings2, ShieldCheck, ChevronDown, ChevronRight,
   ArrowRight, Pencil, Archive, Trash2, MoreVertical, Plus, Layers, CircleDot,
   AlertTriangle, XCircle, CheckCircle2, Clock, Rocket,
 } from 'lucide-react';
 import { api } from '../../services/apiClient.js';
-import { useTenant } from '../../contexts/TenantProvider.jsx';
+import { useBmContext } from './useBmContext.js';
 import { PageHeader } from '../ui/PageHeader.jsx';
 import {
   BmPage, BmBreadcrumb, BmContextBar, BmCard, BmTabs, BmTable, BmBadge, BmStatusBadge,
@@ -25,7 +25,7 @@ const SECTIONS = [
   ['features', 'Fonctionnalités'],
   ['navigation', 'Navigation'],
   ['configuration', 'Configuration'],
-  ['validation', 'Validation & publication'],
+  ['validation', 'Validation'],
 ];
 
 const fieldTypes = 'TEXT LONG_TEXT INTEGER BIG_INTEGER DECIMAL CURRENCY PERCENTAGE BOOLEAN DATE DATETIME TIME EMAIL PHONE URL ENUM MULTI_ENUM UUID SEQUENCE FILE IMAGE JSON RELATION FORMULA'.split(' ');
@@ -46,52 +46,16 @@ const configurationTypes = ['STRING', 'NUMBER', 'BOOLEAN', 'ENUM', 'JSON', 'URL'
 const COMMON_FIELDS = [{ key: 'code', label: 'Code technique', required: true }, { key: 'name', label: 'Nom', required: true }, { key: 'description', label: 'Description' }];
 
 export default function BMWorkspaceRoute() {
-  const { activeTenant } = useTenant();
-  return <Workspace key={activeTenant?.id || 'none'} tenant={activeTenant} />;
+  return <Workspace />;
 }
 
-function Workspace({ tenant }) {
-  const params = useParams();
+function Workspace() {
   const location = useLocation();
   const navigate = useNavigate();
-  const storageKey = `bm-context:${tenant?.id}`;
-  const [saved, setSaved] = useState(() => { try { return JSON.parse(sessionStorage.getItem(storageKey) || '{}'); } catch { return {}; } });
-
-  const applicationId = params.applicationId || saved.applicationId || '';
-  const versionId = params.versionId || (applicationId === saved.applicationId ? saved.versionId : '') || '';
+  const { tenant, applications, versions, application, version, applicationId, versionId, loading, error, retry, selectApplication, selectVersion } = useBmContext();
+  const indexSections = { models: 'data-model', features: 'features', navigation: 'navigation', configuration: 'configuration', validation: 'validation' };
   const suffix = location.pathname.split('/').pop();
-  const section = SECTIONS.some(([id]) => id === suffix) ? suffix : 'data-model';
-
-  const [applications, setApplications] = useState([]);
-  const [versions, setVersions] = useState([]);
-  const [environments, setEnvironments] = useState([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    let live = true;
-    setLoading(true); setError(''); setApplications([]); setVersions([]); setEnvironments([]);
-    if (!tenant) { setLoading(false); return undefined; }
-    (async () => {
-      const [apps, envs] = await Promise.all([get('/applications'), get('/environments')]);
-      const vers = applicationId && apps.some((a) => a.id === applicationId) ? await get(`/applications/${applicationId}/versions`) : [];
-      if (live) { setApplications(apps); setVersions(vers); setEnvironments(envs); }
-    })().catch(() => { if (live) setError(bmSafeError); }).finally(() => { if (live) setLoading(false); });
-    return () => { live = false; };
-  }, [tenant?.id, applicationId, revision]);
-
-  const application = applications.find((a) => a.id === applicationId);
-  const version = versions.find((v) => v.id === versionId);
-
-  useEffect(() => {
-    if (application && version) {
-      sessionStorage.setItem(storageKey, JSON.stringify({ applicationId, versionId }));
-      setSaved((previous) => (previous.applicationId === applicationId && previous.versionId === versionId ? previous : { applicationId, versionId }));
-    }
-  }, [application, version, storageKey, applicationId, versionId]);
-
-  const path = (appId, verId, targetSection = section) => `${root}/applications/${appId}/versions${verId ? `/${verId}/${targetSection}` : ''}`;
+  const section = Object.keys(SECTION_ICONS).find((id) => location.pathname.endsWith(`/${id}`)) || indexSections[suffix] || 'data-model';
 
   const versionOptions = [{ value: '', label: 'Sélectionner une version' }, ...versions.map((v) => ({ value: v.id, label: `${v.version} — ${v.status}` }))];
   const applicationOptions = [{ value: '', label: 'Sélectionner une application' }, ...applications.map((a) => ({ value: a.id, label: a.name }))];
@@ -114,53 +78,19 @@ function Workspace({ tenant }) {
 
       <BmContextBar
         items={[
-          { label: 'Application', value: application?.name },
-          { label: 'Version', value: version?.version },
+          { label: 'Tenant', value: tenant?.name || tenant?.code },
+          { label: 'Application', value: application?.name, control: <select aria-label="Application" className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" value={application?.id || ''} onChange={(event) => selectApplication(event.target.value)}>{applicationOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> },
+          { label: 'Version', value: version?.version, control: <select aria-label="Version" className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none disabled:text-slate-400" value={version?.id || ''} disabled={!applicationId} onChange={(event) => selectVersion(event.target.value)}>{versionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> },
           { label: 'Statut', value: version?.status },
-          { label: 'Environnement', value: version?.environment?.name },
-          { label: 'Tenant', value: tenant?.name },
         ]}
       />
 
       {/* Sélecteurs Application / Version (besoin réel du CDC : le contexte pilote tout l'écran) */}
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-        <label className="text-xs font-semibold text-slate-600">
-          Application
-          <select aria-label="Application" className={`${inputClass} mt-1 w-64`} value={application?.id || ''} onChange={(event) => navigate(path(event.target.value, ''))}>
-            {applicationOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="text-xs font-semibold text-slate-600">
-          Version
-          <select aria-label="Version" className={`${inputClass} mt-1 w-56`} value={version?.id || ''} disabled={!applicationId} onChange={(event) => navigate(path(applicationId, event.target.value))}>
-            {versionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-      </div>
-
       {/* Navigation secondaire entre sections */}
-      <nav aria-label="Sections de la version" className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-2 shadow-2xs">
-        {SECTIONS.map(([id, label]) => {
-          const Icon = SECTION_ICONS[id];
-          const isActive = id === section;
-          return (
-            <Link
-              key={id}
-              to={path(applicationId, versionId, id)}
-              aria-current={isActive ? 'page' : undefined}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-150 bm-focus ${isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
       {loading ? (
         <BmLoading label="Chargement du contexte…" />
       ) : error ? (
-        <BmErrorState message={error} onRetry={() => setRevision((r) => r + 1)} />
+        <BmErrorState message={error} onRetry={retry} />
       ) : !version ? (
         <div className="rounded-xl border border-slate-200 bg-white shadow-2xs">
           <BmEmptyState
@@ -170,7 +100,7 @@ function Workspace({ tenant }) {
           />
         </div>
       ) : (
-        <Domain key={`${versionId}:${section}`} versionId={versionId} section={section} navigate={navigate} applicationId={applicationId} />
+        <Domain key={`${versionId}:${section}`} versionId={versionId} section={section} navigate={navigate} applicationId={applicationId} readOnly={version.status === 'PUBLISHED'} />
       )}
     </BmPage>
   );
@@ -182,21 +112,21 @@ function Workspace({ tenant }) {
 
 const TABS = {
   'data-model': ['overview', 'entities', 'fields', 'relations', 'constraints'],
-  features: ['features', 'capabilities', 'dependencies'],
+  features: ['features', 'capabilities', 'business-events'],
   navigation: ['menus', 'items'],
-  configuration: ['configuration'],
+  configuration: ['settings', 'metadata', 'permissions', 'contracts'],
   validation: ['workflow', 'reports'],
 };
 
 const TAB_LABELS = {
   overview: 'Vue d’ensemble', entities: 'Entités', fields: 'Champs', relations: 'Relations', constraints: 'Contraintes',
-  features: 'Features', capabilities: 'Capacités', dependencies: 'Dépendances',
+  features: 'Features', capabilities: 'Capacités', 'business-events': 'Business Events',
   menus: 'Menus', items: 'Éléments',
-  configuration: 'Paramètres de la version',
+  settings: 'Paramètres métier', metadata: 'Métadonnées', permissions: 'Permissions référencées', contracts: 'Contrats',
   workflow: 'Workflow de publication', reports: 'Historique des validations',
 };
 
-function Domain({ versionId, section, navigate, applicationId }) {
+function Domain({ versionId, section, navigate, applicationId, readOnly = false }) {
   const tabs = TABS[section];
   const [tab, setTab] = useState(tabs[0]);
   const [rows, setRows] = useState([]);
@@ -335,7 +265,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
         { key: 'status', label: 'Statut', render: (row) => <BmStatusBadge value={row.status} /> },
       ];
       createLabel = 'Créer une capacité';
-    } else if (tab === 'dependencies') {
+    } else if (tab === 'business-events') {
       // Endpoint réel : GET /features/:versionId/dependencies
       data = (dependencies || []).flatMap((feature) => feature.capabilities.flatMap((capability) => capability.dependencies.map((dependency) => ({
         id: `${capability.code}:${dependency.targetCapabilityCode}:${dependency.dependencyType}`,
@@ -390,7 +320,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
       ];
       createLabel = 'Créer un menu';
     }
-  } else if (section === 'configuration') {
+  } else if (section === 'configuration' && tab === 'settings') {
     // Configuration portée par la version : scope APPLICATION_VERSION + scopeId.
     data = rows;
     createPath = '/configurations';
@@ -425,7 +355,7 @@ function Domain({ versionId, section, navigate, applicationId }) {
   function createButton() {
     if (!createPath) return null;
     return (
-      <BmButton size="sm" icon={<Plus className="h-4 w-4" />} disabled={busy || (needsParent && !selected)} onClick={() => setEditor({})}>
+      <BmButton size="sm" icon={<Plus className="h-4 w-4" />} disabled={busy || readOnly || (needsParent && !selected)} onClick={() => setEditor({})}>
         {createLabel}
       </BmButton>
     );
@@ -449,8 +379,8 @@ const configurationLifecycleColumn = section === 'configuration' ? {
     className: 'text-right',
     render: (row) => (
       <div className="flex items-center justify-end gap-1">
-        <BmIconButton label="Valider" disabled={busy || ['READY', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'].includes(row.status)} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/validate`))}><ShieldCheck className="h-4 w-4" /></BmIconButton>
-        <BmIconButton label="Activer" disabled={busy || row.status !== 'READY'} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/activate`))}><Rocket className="h-4 w-4" /></BmIconButton>
+        <BmIconButton label="Valider" disabled={busy || readOnly || ['READY', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'].includes(row.status)} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/validate`))}><ShieldCheck className="h-4 w-4" /></BmIconButton>
+        <BmIconButton label="Activer" disabled={busy || readOnly || row.status !== 'READY'} onClick={() => mutate(() => api.post(`${root}/configurations/${row.id}/activate`))}><Rocket className="h-4 w-4" /></BmIconButton>
       </div>
     ),
   } : null;
@@ -462,8 +392,8 @@ const configurationLifecycleColumn = section === 'configuration' ? {
     render: (row) => (
       <div className="flex items-center justify-end gap-1">
         {onView && <BmIconButton label="Voir" onClick={() => onView(row)}><MoreVertical className="h-4 w-4" /></BmIconButton>}
-        {updatePath && <BmIconButton label="Modifier" disabled={row.status === 'ARCHIVED' || busy} onClick={() => setEditor(row)}><Pencil className="h-4 w-4" /></BmIconButton>}
-        {removePath && <BmIconButton label={removeLabel} variant="danger" disabled={row.status === 'ARCHIVED' || busy} onClick={() => { if (window.confirm(`${removeLabel} « ${row.name || row.label || row.code} » ?`)) mutate(() => api[removeMethod](root + removePath(row))); }}><Archive className="h-4 w-4" /></BmIconButton>}
+        {updatePath && <BmIconButton label="Modifier" disabled={readOnly || row.status === 'ARCHIVED' || busy} onClick={() => setEditor(row)}><Pencil className="h-4 w-4" /></BmIconButton>}
+        {removePath && <BmIconButton label={removeLabel} variant="danger" disabled={readOnly || row.status === 'ARCHIVED' || busy} onClick={() => { if (window.confirm(`${removeLabel} « ${row.name || row.label || row.code} » ?`)) mutate(() => api[removeMethod](root + removePath(row))); }}><Archive className="h-4 w-4" /></BmIconButton>}
       </div>
     ),
   });
@@ -490,7 +420,7 @@ const configurationLifecycleColumn = section === 'configuration' ? {
         <>
           {/* ---- Validation & publication : workflow réel ---- */}
           {section === 'validation' && tab === 'workflow' && (
-            <><BMContractsPanel versionId={versionId} applicationId={applicationId}/><ValidationWorkflow versionId={versionId} applicationId={applicationId} navigate={navigate} onError={setError} /></>
+            <><BMContractsPanel versionId={versionId} applicationId={applicationId} readOnly={readOnly}/><ValidationWorkflow versionId={versionId} applicationId={applicationId} navigate={navigate} onError={setError} readOnly={readOnly} /></>
           )}
 
           {section === 'validation' && tab === 'reports' && (
@@ -517,6 +447,19 @@ const configurationLifecycleColumn = section === 'configuration' ? {
           )}
 
           {section !== 'validation' && (
+            section === 'features' && tab === 'business-events' ? (
+              <BmPlannedState
+                title="Business Events indisponibles"
+                description="Aucun contrat Business Events n’est exposé par le backend Business Manager. Aucun événement n’est affiché ou créé sans source réelle."
+              />
+            ) : section === 'configuration' && tab === 'contracts' ? (
+              <BMContractsPanel versionId={versionId} applicationId={applicationId} readOnly={readOnly} />
+            ) : section === 'configuration' && ['metadata', 'permissions'].includes(tab) ? (
+              <BmPlannedState
+                title={tab === 'metadata' ? 'Métadonnées indisponibles' : 'Permissions référencées indisponibles'}
+                description="Cette information n’est pas encore fournie par un contrat Business Manager dédié. Les données ne sont pas reconstituées côté interface."
+              />
+            ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <input
@@ -565,7 +508,22 @@ const configurationLifecycleColumn = section === 'configuration' ? {
                 emptyState={emptyState}
                 footer={<> {filtered.length} élément(s) sur {rows.length}</>}
               />
+              {section === 'features' && tab === 'capabilities' && Array.isArray(dependencies) && (
+                <BmCard title="Dépendances existantes" subtitle="Données de dépendances rattachées aux capacités réelles.">
+                  <BmTable
+                    columns={[
+                      { key: 'featureName', label: 'Feature' },
+                      { key: 'capabilityCode', label: 'Capacité' },
+                      { key: 'targetCapabilityCode', label: 'Cible' },
+                      { key: 'dependencyType', label: 'Type', render: (row) => <BmBadge tone={row.dependencyType === 'REQUIRED' ? 'red' : 'blue'}>{row.dependencyType}</BmBadge> },
+                    ]}
+                    rows={dependencies.flatMap((feature) => feature.capabilities.flatMap((capability) => capability.dependencies.map((dependency) => ({ id: `${capability.code}:${dependency.targetCapabilityCode}:${dependency.dependencyType}`, featureName: feature.name, capabilityCode: capability.code, ...dependency }))))}
+                    emptyState={<BmEmptyState title="Aucune dépendance" />}
+                  />
+                </BmCard>
+              )}
             </>
+            )
           )}
         </>
       )}
@@ -606,7 +564,7 @@ const WORKFLOW_STEPS = [
   { id: 'publication', label: 'Publication', detail: (checks) => checks && `Statut : ${checks.version?.status}` },
 ];
 
-function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
+function ValidationWorkflow({ versionId, applicationId, navigate, onError, readOnly = false }) {
   const [state, setState] = useState({ loading: true, error: '', data: null });
   const [busy, setBusy] = useState(false);
   const [environmentId, setEnvironmentId] = useState('');
@@ -722,10 +680,10 @@ function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
         {/* Actions de publication */}
         <BmCard title="Actions de publication">
           <div className="space-y-3">
-            <BmButton className="w-full" icon={<ShieldCheck className="h-4 w-4" />} disabled={busy} onClick={runValidation}>
+            <BmButton className="w-full" icon={<ShieldCheck className="h-4 w-4" />} disabled={busy || readOnly} onClick={runValidation}>
               Lancer la validation
             </BmButton>
-            <BmButton className="w-full" variant="secondary" icon={<Rocket className="h-4 w-4" />} disabled={busy || !canPromote} onClick={promote} title={canPromote ? 'Faire avancer le statut de la version' : 'Version déjà publiée ou archivée'}>
+            <BmButton className="w-full" variant="secondary" icon={<Rocket className="h-4 w-4" />} disabled={busy || readOnly || !canPromote} onClick={promote} title={canPromote && !readOnly ? 'Faire avancer le statut de la version' : 'Version publiée ou non éligible à une transition'}>
               Faire avancer le statut{version ? ` (${version.status})` : ''}
             </BmButton>
             <label className="block text-xs font-semibold text-slate-600">
@@ -735,6 +693,7 @@ function ValidationWorkflow({ versionId, applicationId, navigate, onError }) {
                 {(environments || []).map((environment) => <option key={environment.id} value={environment.id}>{environment.name} ({environment.type})</option>)}
               </select>
             </label>
+            {readOnly && <p className="rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-600">Cette version publiée est en lecture seule.</p>}
             <p className="rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
               La publication complète (gate qualité + readiness runtime + snapshot) n’est pas encore orchestrée par la plateforme. Seule la transition de statut de la version est réelle.
             </p>

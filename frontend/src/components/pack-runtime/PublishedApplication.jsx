@@ -2,25 +2,46 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../../services/apiClient.js';
 import { UiRenderer } from '../../features/ui-builder/renderer/Renderer.jsx';
 
-/** Loads only the immutable published manifest. No working-UI endpoint. */
-export default function PublishedApplication({ packCode, packVersion, tenantId }) {
-  const identity = `${tenantId}:${packCode}:${packVersion}`;
-  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} />;
+function validPublishedUi(ui) {
+  return ui?.schemaVersion === '1.1'
+    && Array.isArray(ui.pages)
+    && Array.isArray(ui.navigation?.items)
+    && Boolean(ui.businessContext)
+    && ui.applicationVersionId === ui.businessContext.applicationVersionId;
 }
-function PublishedWorkspace({ packCode, packVersion }) {
+
+/** Execution uses a fresh server gate and the effective UI, never the raw publication. */
+export default function PublishedApplication({ packCode, packVersion, tenantId, resolutionId, effectiveManifest }) {
+  const manifestContent = effectiveManifest?.content ?? effectiveManifest;
+  const source = manifestContent?.source;
+  const isExecutable = Boolean(resolutionId) && manifestContent?.status === 'EXECUTABLE' && manifestContent?.executable === true;
+  if (
+    !isExecutable ||
+    manifestContent?.scope?.tenantId !== tenantId ||
+    source?.packCode !== packCode ||
+    source?.packVersion !== packVersion ||
+    !source?.manifestHash
+  ) {
+    return <p role="alert">Interface bloquée : une résolution Runtime exécutable est requise.</p>;
+  }
+  const identity = `${tenantId}:${packCode}:${packVersion}:${resolutionId}`;
+  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} expectedHash={source.manifestHash} resolutionId={resolutionId} tenantId={tenantId} />;
+}
+
+function PublishedWorkspace({ packCode, packVersion, expectedHash, resolutionId, tenantId }) {
   const [definition, setDefinition] = useState(null), [error, setError] = useState('');
   const [selection, setSelection] = useState({ key: null, recordId: null });
   useEffect(() => {
     let active = true;
-    api.get(`/runtime/manifests/${encodeURIComponent(packCode)}/${encodeURIComponent(packVersion)}`)
+    api.get(`/runtime/resolutions/${encodeURIComponent(resolutionId)}/execution-manifest`)
       .then(response => {
-        const manifest = response.data;
-        const ui = manifest.definition?.ui?.definition;
-        if (!ui?.pages || !ui.businessContext || ui.applicationVersionId !== ui.businessContext.applicationVersionId) throw new Error('Published UI metadata missing');
-        if (active) setDefinition(ui);
-      }).catch(() => active && setError('Interface publiée indisponible pour ce tenant.'));
+        const { effectiveManifest: effective, runtimeContext } = response.data;
+        const ui = effective?.ui?.definition;
+        if (effective?.status !== 'EXECUTABLE' || effective?.executable !== true || effective.scope?.tenantId !== tenantId || effective.source?.packCode !== packCode || effective.source?.packVersion !== packVersion || effective.source?.manifestHash !== expectedHash || runtimeContext?.resolutionId !== resolutionId || runtimeContext?.status !== 'ACTIVE' || runtimeContext?.readiness !== 'READY' || !validPublishedUi(ui) || ui.applicationVersionId !== effective.scope?.businessVersionId) throw new Error('RUNTIME_CONTEXT_NOT_ACTIVE');
+        if (active) { setError(''); setDefinition({ ...ui, businessContext: { ...ui.businessContext, runtimeProof: { resolutionId } } }); }
+      }).catch(() => active && setError('Interface publiée indisponible : contexte Runtime inactif, expiré ou incompatible.'));
     return () => { active = false; };
-  }, [packCode, packVersion]);
+  }, [resolutionId, tenantId, expectedHash, packCode, packVersion]);
   if (error) return <p role="alert">{error}</p>;
   if (!definition) return <p role="status">Chargement de l’application publiée…</p>;
   const page = definition.pages.find(p => p.key === selection.key) || definition.pages[0];

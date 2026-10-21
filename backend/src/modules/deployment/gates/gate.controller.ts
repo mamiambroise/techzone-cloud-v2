@@ -8,6 +8,10 @@ import {
 import { RequirePermission } from '../../../iam/permission.decorator';
 import { PERMISSIONS } from '../../../iam/iam.constants';
 import { TenantResource } from '../../../iam/tenant-resource.decorator';
+import {
+  CurrentUser,
+  type IamAuthContext,
+} from '../../../iam/decorators/current-user.decorator';
 import { GateService } from './gate.service';
 import { EvaluateGateDto } from './dto/evaluate-gate.dto';
 import { ApproveGateDto } from './dto/approve-gate.dto';
@@ -20,17 +24,21 @@ export class GateController {
 
   @Get()
   @RequirePermission(PERMISSIONS.DEPLOYMENT_READ)
-  findByDeployment(@Param('id') deploymentId: string) {
-    return this.gateService.findByDeployment(deploymentId);
+  findByDeployment(
+    @Param('id') deploymentId: string,
+    @CurrentUser() principal: IamAuthContext,
+  ) {
+    return this.gateService.findByDeployment(deploymentId, principal);
   }
 
   @Post('evaluate')
   @RequirePermission(PERMISSIONS.DEPLOYMENT_EXECUTE)
   evaluate(
     @Param('id') deploymentId: string,
-    @Body() dto: EvaluateGateDto,
+    @Body() _dto: EvaluateGateDto,
+    @CurrentUser() principal: IamAuthContext,
   ) {
-    return this.gateService.evaluate(deploymentId, dto);
+    return this.gateService.evaluate(deploymentId, principal);
   }
 
   @Post(':gateId/approve')
@@ -39,8 +47,9 @@ export class GateController {
     @Param('id') deploymentId: string,
     @Param('gateId') gateId: string,
     @Body() dto: ApproveGateDto,
+    @CurrentUser() principal: IamAuthContext,
   ) {
-    return this.gateService.approve(deploymentId, gateId, dto);
+    return this.gateService.approve(deploymentId, gateId, dto, principal);
   }
 
   @Post(':gateId/bypass')
@@ -49,7 +58,8 @@ export class GateController {
     @Param('id') deploymentId: string,
     @Param('gateId') gateId: string,
     @Body() dto: BypassGateDto,
+    @CurrentUser() principal: IamAuthContext,
   ) {
-    return this.gateService.bypass(deploymentId, gateId, dto);
+    return this.gateService.bypass(deploymentId, gateId, dto, principal);
   }
 }

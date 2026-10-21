@@ -78,6 +78,30 @@ npx prisma generate
 npx prisma db seed
 ```
 
+Pour préparer un environnement de recette complet et réutilisable, utilisez le
+seed démo sur la copie disposable `techzonecloud_phase7_recipe` uniquement :
+
+```bash
+npm run seed:demo:cloud -- techzonecloud_phase7_recipe
+```
+
+Prérequis : la base dédiée doit exister et avoir toutes les migrations courantes
+appliquées sans erreur. Le PostgreSQL doit être local (`localhost` ou
+`127.0.0.1`, port `5432` ou `55432`) et configuré dans `backend/.env`.
+Définissez `SEED_AUTH_PASSWORD` dans `backend/.env.local`.
+Le script vérifie le nom de base, l’historique des migrations et les contraintes
+tenant avant toute écriture ; il refuse les autres bases, dont
+`techzonecloud_dev`. Il est relançable et ne supprime aucune donnée.
+
+Il compose le seed plateforme/IAM existant et les fixtures Phase 7 pour deux
+applications, données métier, UI et packs publiés. Il ajoute le catalogue
+Billing et un registre ERP inactif pointant vers un domaine `.invalid` sans
+identifiants réels. Le seed ne crée pas de paiements/factures de test ; le
+modèle Billing tenant-scopé doit d’abord être aligné avec les migrations. Le
+module Automation utilise actuellement un mock mémoire, sans tables Prisma à
+peupler. Le backend compilé (`dist/`) doit déjà contenir les services utilisés
+par les scripts Phase 7 ; le seed ne déclenche pas de build implicite.
+
 ### Lancer le serveur de développement
 ```bash
 npm run start:dev

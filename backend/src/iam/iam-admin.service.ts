@@ -120,25 +120,54 @@ export class IamAdminService {
     if (!allowed[dto.status]) {
       throw new IamError('Statut invalide', 422, 'INVALID_STATUS');
     }
-    const user = await this.prisma.iamUser.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new IamError('Utilisateur introuvable', 404, 'USER_NOT_FOUND');
-    }
-    if (user.id === actorId && dto.status !== 'ACTIVE') {
-      throw new IamError("Impossible de modifier son propre statut", 422, 'SELF_STATUS_CHANGE');
-    }
+    const now = new Date();
+    const user = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.iamUser.findUnique({ where: { id: userId } });
+      if (!existing) {
+        throw new IamError('Utilisateur introuvable', 404, 'USER_NOT_FOUND');
+      }
+      if (existing.id === actorId && dto.status !== 'ACTIVE') {
+        throw new IamError("Impossible de modifier son propre statut", 422, 'SELF_STATUS_CHANGE');
+      }
 
-    return this.sanitizeUser(
-      await this.prisma.iamUser.update({
+      const updated = await tx.iamUser.update({
         where: { id: userId },
         data: {
           status: dto.status as any,
-          statusChangedAt: new Date(),
+          statusChangedAt: now,
           statusChangedBy: actorId,
           statusChangedReason: dto.reason ?? `Changement de statut via console (${dto.status})`,
         },
-      }),
-    );
+      });
+
+      if (dto.status !== 'ACTIVE') {
+        // The status change and invalidation of every live credential commit
+        // together. A failed revocation therefore cannot leave a suspended or
+        // disabled account with a usable session/refresh token.
+        const revokeReason = `USER_${dto.status}`;
+        await tx.iamRefreshToken.updateMany({
+          where: {
+            status: 'ACTIVE',
+            session: { is: { userId } },
+          },
+          data: { status: 'REVOKED', revokedAt: now, revokeReason },
+        });
+        await tx.iamSession.updateMany({
+          where: { userId, status: 'ACTIVE' },
+          data: {
+            status: 'REVOKED',
+            revokedAt: now,
+            revokedBy: actorId,
+            revokeReason,
+            statusChangedAt: now,
+          },
+        });
+      }
+
+      return updated;
+    });
+
+    return this.sanitizeUser(user);
   }
 
   async deleteUser(userId: string, actorId: string) {

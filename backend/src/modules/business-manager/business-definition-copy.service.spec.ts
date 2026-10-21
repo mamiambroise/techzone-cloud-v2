@@ -291,6 +291,7 @@ describe('BusinessDefinitionCopyService (COLONNES PRISES EN CHARGE)', () => {
       })
       .mockResolvedValueOnce({
         id: TARGET_VERSION_ID,
+        applicationId: APPLICATION_ID,
         status: 'ACTIVE',
         version: '1.0.1',
       });

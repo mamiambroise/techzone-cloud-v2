@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -31,8 +31,12 @@
     "setup:test-db": "node ./test/setup-test-database.mjs",
     "prisma:test:validate": "node ./test/with-test-database.mjs validate",
     "prisma:test:generate": "node ./test/with-test-database.mjs generate",
+    "prisma:test:status": "node ./test/with-test-database.mjs migrate status",
     "prisma:test:migrate": "node ./test/with-test-database.mjs migrate deploy",
-    "seed:bm": "tsx src/prisma/seed-bm.ts"
+    "seed:bm": "tsx src/prisma/seed-bm.ts",
+    "test:security:ui": "npm test -- --runInBand ui-builder ui-snapshot.integration pack-runtime.service.spec data-runtime.controller.spec validation.service.spec iam-permission.guard.spec",
+    "seed:auth": "tsx src/prisma/seed-auth.ts",
+    "seed:demo:cloud": "node scripts/seed-demo.cjs"
   },
   "prisma": {
     "seed": "tsx src/prisma/seed.ts"

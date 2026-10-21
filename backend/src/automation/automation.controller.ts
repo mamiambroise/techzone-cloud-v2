@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Patch, Body, Param, Logger, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { RulesEngine } from './rules/rules.engine';
 import { WorkflowEngine } from './workflow/workflow.engine';
@@ -19,7 +19,7 @@ import {
 import { CurrentUser } from '../iam/decorators/current-user.decorator';
 import type { IamAuthContext } from '../iam/decorators/current-user.decorator';
 import { Permissions } from '../iam/iam-permissions.guard';
-import { AUTOMATION_EXECUTE, AUTOMATION_READ } from '../iam/iam.constants';
+import { AUTOMATION_EXECUTE, AUTOMATION_READ, AUTOMATION_SIMULATE } from '../iam/iam.constants';
 import { IamError } from '../iam/iam-error';
 
 @ApiTags('automation')
@@ -126,10 +126,16 @@ export class AutomationController {
   }
 
   @Post('rules/simulate')
+  @Permissions(AUTOMATION_SIMULATE)
   @ApiOperation({ summary: 'Simuler une regle sans effet metier' })
   @ApiBody({ type: SimulateRuleDto })
-  async simulateRule(@Body() dto: SimulateRuleDto) {
-    return this.rulesEngine.simulateRule(dto.ruleCode, dto.context || {});
+  async simulateRule(
+    @Req() req: Request,
+    @CurrentUser() principal: IamAuthContext,
+    @Body() dto: SimulateRuleDto,
+  ) {
+    const ctx = this.buildContext('rule-simulate', dto.context, principal, this.getTraceId(req));
+    return this.rulesEngine.simulateRule(dto.ruleCode, { ...dto.context, ...ctx });
   }
 
   // === WORKFLOW (WF-CDC-03) ===

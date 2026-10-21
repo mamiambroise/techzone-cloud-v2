@@ -57,12 +57,12 @@ export function BmPageHeader({ title, subtitle, actions, children }) {
 
 export function BmContextBar({ items }) {
   return (
-    <section aria-label="Contexte de travail" className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
-      <dl className="flex flex-wrap items-center gap-x-8 gap-y-4">
+    <section aria-label="Contexte de travail" className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-2xs">
+      <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => (
-          <div key={item.label} className="min-w-0">
+          <div key={item.label} className="min-w-0 rounded-lg bg-slate-50/80 px-3 py-2">
             <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{item.label}</dt>
-            <dd className="mt-0.5 truncate text-sm font-semibold text-slate-800">{item.value || 'Non sélectionné'}</dd>
+            <dd className="mt-0.5 min-w-0 text-sm font-semibold text-slate-800">{item.control || <span className="block truncate">{item.value || 'Non sélectionné'}</span>}</dd>
           </div>
         ))}
       </dl>
@@ -133,7 +133,7 @@ export function BmSearchInput({ value, onChange, placeholder = 'Rechercher…', 
     <input
       type="search"
       aria-label={label}
-      value={value}
+      value={value ?? ''}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       className="w-full min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 bm-focus focus:border-blue-400 sm:max-w-xs"
@@ -145,7 +145,7 @@ export function BmSelect({ label, value, onChange, options, className = '' }) {
   return (
     <select
       aria-label={label}
-      value={value}
+      value={value ?? ''}
       onChange={(event) => onChange(event.target.value)}
       className={`rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 bm-focus ${className}`}
     >

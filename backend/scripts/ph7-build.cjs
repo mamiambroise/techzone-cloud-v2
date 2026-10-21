@@ -6,7 +6,8 @@ const { apps } = require('./ph7-spec.cjs');
 const target = process.argv[2];
 require('./ph7-live-gate.cjs').gate(target);
 const url = new URL(require('dotenv').parse(fs.readFileSync('.env')).DATABASE_URL);
-assert(url.hostname === '127.0.0.1' && url.port === '55432');
+assert(url.hostname === '127.0.0.1' && url.port === '55432' ||
+  target === 'techzonecloud_phase7_recipe' && ['127.0.0.1', 'localhost'].includes(url.hostname) && ['5432', '55432'].includes(url.port));
 url.pathname = '/' + target; process.env.DATABASE_URL = url.toString();
 const { PrismaService } = require('../dist/prisma/prisma.service');
 const { DataModelService } = require('../dist/modules/business-manager/data-model/data-model.service');

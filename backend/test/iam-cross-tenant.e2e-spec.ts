@@ -64,6 +64,32 @@ describe('IAM cross-tenant PostgreSQL E2E', () => {
     if (app) await app.close();
   });
 
+  it('SEC-UI-001/010: authenticated tenant A cannot read UI Definition B', async () => {
+    const agent = await login(E2E_USERS.a, E2E_IDS.tenantA);
+    await agent.get(`/api/ui-builder/uidefinition/${E2E_IDS.versionB}`).expect(404);
+  });
+
+  it('SEC-UI-021/080: direct theme write remains forbidden without permission', async () => {
+    const agent = await login(E2E_USERS.limited, E2E_IDS.tenantA);
+    await agent.put('/api/ui-builder/theme').send({ applicationVersionId: E2E_IDS.versionA, tokens: { colors: { primary: '#2563eb' } } }).expect(403);
+  });
+
+  it('SEC-UI-060/061: rejects an action carrying an external target and credentials before storage', async () => {
+    const agent = await login(E2E_USERS.a, E2E_IDS.tenantA);
+    const before = await prisma.uiPage.findUniqueOrThrow({ where: { id: E2E_IDS.pageA } });
+    await agent.patch(page(E2E_IDS.pageA)).send({ components: { root: 'root', nodes: { root: {
+      id: 'root', type: 'Button', props: {}, children: [],
+      actions: [{ type: 'CALL_API', config: { url: 'https://external.invalid', headers: { Authorization: 'synthetic-test-value' } } }],
+    } } } }).expect(400);
+    const after = await prisma.uiPage.findUniqueOrThrow({ where: { id: E2E_IDS.pageA } });
+    expect(after.components).toEqual(before.components);
+  });
+
+  it('SEC-UI-140: rejects privileged page status instead of promoting the page', async () => {
+    const agent = await login(E2E_USERS.a, E2E_IDS.tenantA);
+    await agent.patch(page(E2E_IDS.pageA)).send({ status: 'PUBLISHED', snapshotHash: 'forged' }).expect(400);
+  });
+
   it('A → A GET : PASS', async () => {
     const agentA = await login(E2E_USERS.a, E2E_IDS.tenantA);
     const response = await agentA.get(pages(E2E_IDS.versionA)).expect(200);

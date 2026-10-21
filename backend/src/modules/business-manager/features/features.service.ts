@@ -40,7 +40,11 @@ export class FeatureCapabilityService {
   // =====================================================================
 
   async createFeature(applicationVersionId: string, dto: CreateFeatureDto, tenantId: string | null) {
-    const appVersion = await assertVersionWritable(this.prisma, applicationVersionId, tenantId);
+    const appVersion = await assertVersionWritable(
+      this.prisma,
+      applicationVersionId,
+      tenantId,
+    );
 
     const code = dto.code.trim().toLowerCase();
 
@@ -62,7 +66,7 @@ export class FeatureCapabilityService {
 
     return this.prisma.bmFeature.create({
       data: {
-        applicationId: appVersion?.applicationId ?? '',
+        applicationId: appVersion.applicationId,
         applicationVersionId,
         code,
         name: dto.name,

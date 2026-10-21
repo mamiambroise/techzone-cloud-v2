@@ -5,9 +5,9 @@ import { ROUTES } from './routes.js';
 const labelsOf = id => groupEntries(id).map(e => e.label);
 
 describe('Global architecture (CDC §50)', () => {
-  it('exposes exactly the five target sections in the target order', () => {
+  it('exposes the V3 workspace sections in their target order', () => {
     expect(navigationSections.map(s => s.id)).toEqual([
-      'accueil', 'construction', 'execution', 'integrations', 'platform',
+      'accueil', 'creation', 'publication', 'integrations', 'supervision', 'commercial', 'administration',
     ]);
   });
 
@@ -18,45 +18,46 @@ describe('Global architecture (CDC §50)', () => {
     }));
     expect(rendered).toEqual([
       { section: 'accueil', modules: ['dashboard'] },
-      { section: 'construction', modules: ['bm', 'ui', 'automation', 'packs'] },
-      { section: 'execution', modules: ['runtime'] },
+      { section: 'creation', modules: ['bm', 'ui', 'automation'] },
+      { section: 'publication', modules: ['packs', 'runtime', 'environments'] },
       { section: 'integrations', modules: ['data', 'erp', 'api'] },
-      { section: 'platform', modules: ['registry', 'environments', 'deployments', 'iam', 'observability', 'billing', 'admin'] },
+      { section: 'supervision', modules: ['observability'] },
+      { section: 'commercial', modules: ['billing'] },
+      { section: 'administration', modules: ['registry', 'iam', 'admin'] },
     ]);
   });
 
   it('maps each module to its target section', () => {
     const expected = {
       dashboard: 'accueil',
-      bm: 'construction', ui: 'construction', automation: 'construction', packs: 'construction',
-      runtime: 'execution',
+      bm: 'creation', ui: 'creation', automation: 'creation',
+      packs: 'publication', runtime: 'publication', environments: 'publication',
       data: 'integrations', erp: 'integrations', api: 'integrations',
-      registry: 'platform', environments: 'platform', deployments: 'platform',
-      iam: 'platform', observability: 'platform', billing: 'platform', admin: 'platform',
+      observability: 'supervision', billing: 'commercial',
+      registry: 'administration', iam: 'administration', admin: 'administration',
     };
     Object.entries(expected).forEach(([id, section]) => {
       expect(navigationGroups.find(g => g.id === id)?.section).toBe(section);
     });
   });
 
-  it('keeps Registry as the first module of the platform section', () => {
-    const platform = navigationGroups.filter(g => g.section === 'platform').map(g => g.id);
-    expect(platform[0]).toBe('registry');
+  it('keeps Registry as the first confirmed module of administration', () => {
+    const administration = navigationGroups.filter(g => g.section === 'administration').map(g => g.id);
+    expect(administration[0]).toBe('registry');
   });
 });
 
 describe('Stable ordering per module (RG-NAV-025)', () => {
   it.each([
-    ['bm', ['Vue d’ensemble', 'Applications', 'Modèles de données', 'Fonctionnalités', 'Navigation', 'Configuration', 'Validation']],
-    ['ui', ['Vue d’ensemble', 'Pages', 'Éditeur visuel', 'Composants', 'Formulaires', 'Navigation', 'Thème', 'Aperçu & Test']],
+    ['bm', ['Applications', 'Modèles de données', 'Fonctionnalités', 'Navigation', 'Configuration', 'Validation']],
+    ['ui', ['Pages', 'Éditeur visuel']],
     ['automation', ['Vue d’ensemble', 'Workflows', 'Déclencheurs', 'Actions', 'Planifications', 'Exécutions', 'Modèles', 'Diagnostics', 'Règles', 'Formules']],
     ['packs', ['Vue d’ensemble', 'Packs', 'Versions', 'Modules', 'Fonctionnalités', 'Capacités', 'Dépendances', 'Règles', 'Validation & Manifest', 'Publication']],
-    ['runtime', ['Vue d’ensemble', 'Contextes', 'Manifest', 'Résolution', 'Configuration effective', 'Cache', 'Diagnostics']],
+    ['runtime', ['Vue d’ensemble', 'Applications', 'Résolutions', 'Activations', 'Cache', 'Diagnostics', 'Historique']],
     ['data', ['Vue d’ensemble', 'Sources', 'Modèles & Contrats', 'Requêtes', 'Politiques', 'Diagnostics', 'Historique']],
     ['erp', ['Vue d’ensemble', 'Ressources', 'Mappings', 'Synchronisations', 'Paramètres & diagnostics']],
     ['api', ['Vue d’ensemble', 'Connecteurs', 'Webhooks', 'Diagnostics']],
-    ['deployments', ['Vue d’ensemble', 'Historique']],
-    ['billing', ['Vue d’ensemble', 'Plans', 'Abonnements', 'Entitlements', 'Quotas', 'Facturation']],
+    ['billing', ['Mon abonnement', 'Utilisation', 'Factures & paiements', 'Paramètres', 'Offres & tarifs', 'Abonnements clients', 'Opérations financières', 'Diagnostics & audit']],
     ['admin', ['Vue d’ensemble', 'Paramètres généraux', 'Profil']],
   ])('orders %s children as specified by the CDC', (group, expected) => {
     expect(labelsOf(group)).toEqual(expected);
@@ -120,9 +121,9 @@ describe('Active route and parent route (RG-NAV-019, RG-NAV-020)', () => {
     ['/packs/packs?pack=pack-1', 'pmpacks'],
     ['/packs/validation?pack=pack-1&version=v1', 'pmvalidation'],
     ['/packs/publication', 'pmpublication'],
-    ['/runtime/cache', 'runtimecache'],
+    ['/runtime/cache', 'runtimeCache'],
     ['/runtime', 'runtime'],
-    ['/business-manager', 'bm'],
+    ['/business-manager', 'bmApplications'],
     ['/business-manager/applications/app-1', 'bmApplications'],
     ['/business-manager/applications/app-1/versions', 'bmApplications'],
     ['/business-manager/applications/app-1/versions/v1', 'bmApplications'],
@@ -222,7 +223,7 @@ describe('Module availability (RG-NAV-017, RG-NAV-018)', () => {
       ['erp', '/erp'],
       ['automation', '/automation'],
       ['data', '/data-runtime'],
-      ['ui', '/ui'],
+      ['ui', '/ui/pages'],
       ['billing', '/billing/overview'],
     ].forEach(([id, route]) => {
       expect(groupDestination(id)).toBe(route);
@@ -258,17 +259,11 @@ describe('Destinations réelles de la sidebar (UI Builder)', () => {
   // Une entrée de menu est une destination cliquable : elle ne doit jamais être
   // un motif de route containing un paramètre non résolu (« /ui/builder/:pageId »),
   // qui produirait une URL littérale non partageable dans la barre d'adresse.
-  it('expose les 8 destinations UI Builder sans paramètre de route', () => {
+  it('expose les 2 destinations UI Builder sans paramètre de route', () => {
     const destinations = groupEntries('ui').map((entry) => entry.route);
     expect(destinations).toEqual([
-      '/ui',
       '/ui/pages',
       '/ui/builder/editor',
-      '/ui/components',
-      '/ui/forms',
-      '/ui/navigation',
-      '/ui/themes',
-      '/ui/preview',
     ]);
     destinations.forEach((route) => expect(route).not.toMatch(/:\w/));
   });

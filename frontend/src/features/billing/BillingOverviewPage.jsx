@@ -29,14 +29,17 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
   const entitlements = context.data?.entitlements ?? null;
   const providers = context.data?.providers ?? null;
 
+  const lifecycleNotice = subscription?.status === 'SUSPENDED'
+    ? { tone: 'rose', title: 'Abonnement suspendu', text: 'Les données sont conservées, mais les capacités commerciales peuvent être limitées. Une réactivation dépend d’un paiement vérifié ou d’une action autorisée.' }
+    : subscription?.status === 'GRACE_PERIOD'
+      ? { tone: 'amber', title: 'Période de grâce en cours', text: `La fin de grâce est ${dateTime(subscription.graceEndsAt)}. Les conséquences applicables sont déterminées par la politique serveur.` }
+      : subscription?.status === 'PAST_DUE'
+        ? { tone: 'amber', title: 'Paiement en retard', text: 'Un paiement ou une facture reste en attente. Le cycle de grâce et de suspension est calculé côté serveur.' }
+        : null;
+
   const openInvoices = (invoices.data ?? []).filter((invoice) =>
     ['OPEN', 'PARTIALLY_PAID', 'OVERDUE'].includes(invoice.status),
   );
-  const dueTotal = openInvoices.reduce(
-    (total, invoice) => total + Number(String(invoice.amountDue ?? 0)),
-    0,
-  );
-  const currency = subscription?.price?.currency ?? openInvoices[0]?.currency ?? '';
 
   return (
     <div className="space-y-5">
@@ -48,6 +51,12 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
       </header>
 
       <BillingError error={context.error} title="Contexte Billing indisponible" />
+      {lifecycleNotice ? (
+        <div role="alert" className={`rounded-xl border p-4 text-sm ${lifecycleNotice.tone === 'rose' ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+          <p className="font-semibold">{lifecycleNotice.title}</p>
+          <p className="mt-1">{lifecycleNotice.text}</p>
+        </div>
+      ) : null}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <BillingPanel
@@ -135,8 +144,8 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
           {(invoices.data ?? []).length > 0 ? (
             <>
               <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                Reste à payer : <strong>{amount(dueTotal, currency)}</strong> sur {openInvoices.length} facture(s)
-                ouverte(s).
+                {openInvoices.length} facture(s) ouverte(s). Les montants restent affichés par facture :
+                aucune addition monétaire n’est calculée dans le navigateur.
               </div>
               <ul className="mt-3 divide-y divide-slate-100">
                 {(invoices.data ?? []).map((invoice) => (

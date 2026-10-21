@@ -2,6 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GateService } from './gate.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { DeploymentException } from '../../../common/errors/deployment.exception';
+import type { IamAuthContext } from '../../../iam/decorators/current-user.decorator';
+
+const principalFor = (tenantId: string): IamAuthContext => ({
+  userId: 'gate-test-user',
+  sessionId: 'gate-test-session',
+  tenantId,
+  organizationId: null,
+  siteId: null,
+  authenticationLevel: 'PASSWORD',
+  roles: [],
+  permissions: [],
+  isSuperAdmin: false,
+});
 
 describe('GateService (DEP-CDC-05)', () => {
   let service: GateService;
@@ -16,6 +29,10 @@ describe('GateService (DEP-CDC-05)', () => {
     prisma = module.get<PrismaService>(PrismaService);
   });
 
+  afterEach(async () => {
+    await prisma.$disconnect();
+  });
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
@@ -26,8 +43,11 @@ describe('GateService (DEP-CDC-05)', () => {
     });
     const depWithGates = deployments.find((d: any) => d.gates && d.gates.length > 0);
 
-    if (depWithGates) {
-      const gates = await service.findByDeployment(depWithGates.id);
+    if (depWithGates?.tenantId) {
+      const gates = await service.findByDeployment(
+        depWithGates.id,
+        principalFor(depWithGates.tenantId),
+      );
       expect(gates.length).toBeGreaterThan(0);
       expect(gates[0]).toHaveProperty('type');
       expect(gates[0]).toHaveProperty('result');
@@ -40,14 +60,19 @@ describe('GateService (DEP-CDC-05)', () => {
     });
     const depWithGates = deployments.find((d: any) => d.gates && d.gates.length > 0);
 
-    if (depWithGates) {
+    if (depWithGates?.tenantId) {
       const gate = depWithGates.gates[0];
-      const approved = await service.approve(depWithGates.id, gate.id, {
-        approvedBy: 'qa-engineer@techzone.io',
-        comment: 'Manual compliance sign-off',
-      });
-      expect(approved.result).toBe('PASSED');
-      expect(approved.executedBy).toBe('qa-engineer@techzone.io');
+      await expect(
+        service.approve(
+          depWithGates.id,
+          gate.id,
+          {
+            approvedBy: 'forged-qa-engineer@techzone.io',
+            comment: 'Manual compliance sign-off',
+          },
+          principalFor(depWithGates.tenantId),
+        ),
+      ).rejects.toThrow(DeploymentException);
     }
   });
 
@@ -57,23 +82,34 @@ describe('GateService (DEP-CDC-05)', () => {
     });
     const depWithGates = deployments.find((d: any) => d.gates && d.gates.length > 0);
 
-    if (depWithGates) {
+    if (depWithGates?.tenantId) {
       const gate = depWithGates.gates[0];
 
       // Rejects empty justification
       await expect(
-        service.bypass(depWithGates.id, gate.id, {
-          bypassedBy: 'emergency-responder',
-          justification: '   ',
-        }),
+        service.bypass(
+          depWithGates.id,
+          gate.id,
+          {
+            bypassedBy: 'emergency-responder',
+            justification: '   ',
+          },
+          principalFor(depWithGates.tenantId),
+        ),
       ).rejects.toThrow(DeploymentException);
 
-      // Accepts valid justification
-      const bypassed = await service.bypass(depWithGates.id, gate.id, {
-        bypassedBy: 'emergency-responder',
-        justification: 'Hotfix release approved by VP of Engineering during outage',
-      });
-      expect(bypassed.result).toBe('SKIPPED');
+      // Required gates remain non-bypassable even with a forged body actor.
+      await expect(
+        service.bypass(
+          depWithGates.id,
+          gate.id,
+          {
+            bypassedBy: 'emergency-responder',
+            justification: 'Hotfix release approved by VP of Engineering during outage',
+          },
+          principalFor(depWithGates.tenantId),
+        ),
+      ).rejects.toThrow(DeploymentException);
     }
   });
 });

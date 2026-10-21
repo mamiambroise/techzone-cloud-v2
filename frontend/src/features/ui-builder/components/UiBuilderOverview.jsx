@@ -107,7 +107,7 @@ function OverviewBody() {
         editable={applicationVersion.editable}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <BmKpiCard label="Pages" value={counts.pages} hint={`${counts.navigationItems} visible(s) dans la navigation`} icon={<LayoutTemplate className="h-6 w-6" />} tone="blue" />
         <BmKpiCard label="Composants" value={counts.components} hint={`${counts.bindings} binding(s) Data Runtime`} icon={<Boxes className="h-6 w-6" />} tone="violet" />
         <BmKpiCard label="Formulaires" value={counts.forms} hint={`${themeConfigured ? 'thème configuré' : 'thème par défaut'}`} icon={<FileText className="h-6 w-6" />} tone="green" />
@@ -125,6 +125,7 @@ function OverviewBody() {
           icon={<TriangleAlert className="h-6 w-6" />}
           tone={(validation?.counts?.warnings ?? 0) > 0 ? 'amber' : 'blue'}
         />
+        <BmKpiCard label="Complétion" value={Array.isArray(progression) && progression.length ? `${Math.round(progression.filter((step) => step.status === 'READY').length / progression.length * 100)}%` : '—'} hint="Étapes de conception prêtes" icon={<CheckCircle2 className="h-6 w-6" />} tone="violet" />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -280,7 +281,7 @@ function ValidationPanel({ validation }) {
             </div>
           </div>
           {issue.pageId && (
-            <Link to={editorRoute(issue.pageId)} className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700">
+            <Link to={`${editorRoute(issue.pageId)}${issue.componentId ? `?component=${encodeURIComponent(issue.componentId)}` : ''}`} className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700">
               Ouvrir →
             </Link>
           )}

@@ -58,10 +58,19 @@ const baseCredential = () => ({
     return {
       ...merged,
       organization: merged.organizationId
-        ? (overrides.organization ?? { id: merged.organizationId, status: 'ACTIVE' })
+        ? (overrides.organization ?? {
+            id: merged.organizationId,
+            tenantId,
+            status: 'ACTIVE',
+          })
         : null,
       site: merged.siteId
-        ? (overrides.site ?? { id: merged.siteId, status: 'ACTIVE' })
+        ? (overrides.site ?? {
+            id: merged.siteId,
+            organizationId: merged.organizationId ?? `org-${tenantId}`,
+            status: 'ACTIVE',
+            organization: { tenantId, status: 'ACTIVE' },
+          })
         : null,
     };
   };
@@ -83,7 +92,7 @@ const buildPrisma = (opts: {
   const prisma: any = {
     iamUser: {
       findFirst: jest.fn(async () => baseUser),
-      findUnique: jest.fn(async () => ({ defaultTenantId: null })),
+      findUnique: jest.fn(async () => ({ ...baseUser, defaultTenantId: null })),
       update: jest.fn(async () => baseUser),
     },
     iamCredential: {
@@ -147,9 +156,23 @@ const buildPrisma = (opts: {
           ...m,
           tenant: { id: m.tenantId, status: tStatus },
           organization: m.organizationId
-            ? { id: m.organizationId, status: m.orgStatus ?? 'ACTIVE' }
+            ? {
+                id: m.organizationId,
+                tenantId: m.tenantId,
+                status: m.orgStatus ?? 'ACTIVE',
+              }
             : null,
-          site: m.siteId ? { id: m.siteId, status: m.siteStatus ?? 'ACTIVE' } : null,
+          site: m.siteId
+            ? {
+                id: m.siteId,
+                organizationId: m.organizationId ?? `org-${m.tenantId}`,
+                status: m.siteStatus ?? 'ACTIVE',
+                organization: {
+                  tenantId: m.tenantId,
+                  status: m.orgStatus ?? 'ACTIVE',
+                },
+              }
+            : null,
         };
       };
       return floating();
@@ -288,7 +311,7 @@ describe('LOT 2 — membership tenant / forged tenant', () => {
     });
     prisma.iamCredential.findFirst.mockResolvedValue({ ...baseCredential(), secretHash: passwordHash });
     // iamUser.findUnique (defaultTenantId) → null puis membership par défaut.
-    prisma.iamUser.findUnique.mockResolvedValue({ defaultTenantId: null });
+    prisma.iamUser.findUnique.mockResolvedValue({ ...baseUser, defaultTenantId: null });
     prisma.iamSession.create.mockImplementation(async ({ data }: any) => ({
       id: 'session-1',
       ...data,

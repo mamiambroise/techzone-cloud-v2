@@ -4,14 +4,29 @@ import { CreateRollbackDto, RollbackTypeDto } from './dto/create-rollback.dto';
 import { EnvironmentRollbackDto } from './dto/environment-rollback.dto';
 import { DeploymentErrorCode } from '../../../common/errors/deployment-error-code.enum';
 import { DeploymentException } from '../../../common/errors/deployment.exception';
+import { type IamAuthContext } from '../../../iam/decorators/current-user.decorator';
 import { randomUUID } from 'crypto';
 
 @Injectable()
 export class RollbackService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
+  private requireTenant(principal: IamAuthContext): string {
+    const tenantId = principal?.tenantId;
+    if (!tenantId || tenantId === 'legacy') {
+      throw new DeploymentException(
+        DeploymentErrorCode.DEP_PERMISSION_DENIED,
+        'An active tenant context is required for rollback operations',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    return tenantId;
+  }
+
+  async findAll(principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
     return this.prisma.rollback.findMany({
+      where: { deployment: { is: { tenantId } } },
       include: {
         deployment: {
           include: {
@@ -31,9 +46,10 @@ export class RollbackService {
     });
   }
 
-  async findOne(id: string) {
-    const rollback = await this.prisma.rollback.findUnique({
-      where: { id },
+  async findOne(id: string, principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    const rollback = await this.prisma.rollback.findFirst({
+      where: { id, deployment: { is: { tenantId } } },
       include: {
         deployment: {
           include: {
@@ -57,9 +73,15 @@ export class RollbackService {
     return rollback;
   }
 
-  async rollbackDeployment(deploymentId: string, dto: CreateRollbackDto) {
-    const deployment = await this.prisma.deployment.findUnique({
-      where: { id: deploymentId },
+  async rollbackDeployment(
+    deploymentId: string,
+    dto: CreateRollbackDto,
+    principal: IamAuthContext,
+  ) {
+    const tenantId = this.requireTenant(principal);
+    const actor = principal.userId;
+    const deployment = await this.prisma.deployment.findFirst({
+      where: { id: deploymentId, tenantId },
       include: {
         release: true,
         environment: true,
@@ -78,6 +100,7 @@ export class RollbackService {
       where: {
         environmentId: deployment.environmentId,
         applicationId: deployment.release.applicationId,
+        tenantId,
       },
     });
 
@@ -89,6 +112,7 @@ export class RollbackService {
       const priorReleases = await this.prisma.release.findMany({
         where: {
           applicationId: deployment.release.applicationId,
+          tenantId,
           status: { in: ['APPROVED', 'RELEASED'] },
           id: { not: deployment.releaseId },
         },
@@ -108,8 +132,12 @@ export class RollbackService {
       targetReleaseId = priorReleases[0].id;
     }
 
-    const targetRelease = await this.prisma.release.findUnique({
-      where: { id: targetReleaseId },
+    const targetRelease = await this.prisma.release.findFirst({
+      where: {
+        id: targetReleaseId,
+        applicationId: deployment.release.applicationId,
+        tenantId,
+      },
     });
 
     if (!targetRelease) {
@@ -127,6 +155,7 @@ export class RollbackService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId,
+        tenantId,
         releaseId: deployment.releaseId,
         deploymentId: deployment.id,
         applicationId: deployment.release.applicationId,
@@ -134,7 +163,7 @@ export class RollbackService {
         action: 'ROLLBACK_STARTED',
         status: 'RUNNING',
         startedAt,
-        actor: dto.startedBy,
+        actor,
         metadata: {
           fromReleaseId: deployment.releaseId,
           toReleaseId: targetRelease.id,
@@ -153,7 +182,7 @@ export class RollbackService {
         type: dto.type ?? RollbackTypeDto.MANUAL_ROLLBACK,
         reason: dto.reason,
         status: 'SUCCEEDED',
-        startedBy: dto.startedBy,
+        startedBy: actor,
         startedAt,
         finishedAt: new Date(),
         traceId,
@@ -181,6 +210,7 @@ export class RollbackService {
     await this.prisma.deploymentHistory.create({
       data: {
         traceId,
+        tenantId,
         releaseId: targetRelease.id,
         deploymentId: deployment.id,
         applicationId: deployment.release.applicationId,
@@ -190,7 +220,7 @@ export class RollbackService {
         startedAt,
         finishedAt,
         duration,
-        actor: dto.startedBy,
+        actor,
         metadata: {
           rollbackId: rollback.id,
           restoredReleaseVersion: targetRelease.version,
@@ -201,11 +231,17 @@ export class RollbackService {
     return rollback;
   }
 
-  async rollbackEnvironment(environmentId: string, dto: EnvironmentRollbackDto) {
+  async rollbackEnvironment(
+    environmentId: string,
+    dto: EnvironmentRollbackDto,
+    principal: IamAuthContext,
+  ) {
+    const tenantId = this.requireTenant(principal);
     const envDeployment = await this.prisma.environmentDeployment.findFirst({
       where: {
         environmentId,
         applicationId: dto.applicationId,
+        tenantId,
       },
       include: {
         deployment: true,
@@ -232,7 +268,7 @@ export class RollbackService {
       type: RollbackTypeDto.MANUAL_ROLLBACK,
       reason: dto.reason,
       toReleaseId: dto.toReleaseId,
-      startedBy: dto.startedBy,
-    });
+      startedBy: principal.userId,
+    }, principal);
   }
 }

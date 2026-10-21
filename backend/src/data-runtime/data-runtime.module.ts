@@ -1,3 +1,4 @@
+import { RuntimeExecutionModule } from '../modules/pack-runtime/runtime-execution.module';
 import { Module } from '@nestjs/common';
 import { DataRuntimeController } from './data-runtime.controller';
 import { DataAccessManager } from './data-access/data-access-manager';
@@ -13,7 +14,7 @@ import { ErpRegistryModule } from '../erp-registry/erp-registry.module';
 import { ResourceDescriptor } from './interfaces';
 
 @Module({
-  imports: [ErpAdapterModule, ErpRegistryModule],
+  imports: [ErpAdapterModule, ErpRegistryModule, RuntimeExecutionModule],
   controllers: [DataRuntimeController],
   providers: [
     DataAccessManager,
