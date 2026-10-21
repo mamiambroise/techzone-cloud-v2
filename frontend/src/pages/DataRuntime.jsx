@@ -16,6 +16,11 @@ function DataRuntime() {
   const [metrics, setMetrics] = useState(null);
   const [selected, setSelected] = useState('Product');
   const [rows, setRows] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(null);
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState('ASC');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [queryOutput, setQueryOutput] = useState(null);
@@ -53,18 +58,37 @@ function DataRuntime() {
     }
   }, []);
 
-  const listRows = useCallback(async (resource) => {
+  const listRows = useCallback(async (resource, requestedPage = page, requestedPageSize = pageSize) => {
     try {
-      const res = await dataRuntimeService.listResource(resource);
+      const body = { resource, page: requestedPage, pageSize: requestedPageSize };
+      if (sortField) body.sort = [{ field: sortField, direction: sortDirection }];
+      const res = await dataRuntimeService.query(body);
       setRows(res.data.items || []);
+      setTotal(typeof res.data.total === 'number' ? res.data.total : null);
     } catch (err) {
       setError(`Impossible de lister ${resource}`);
       console.error(err);
     }
-  }, []);
+  }, [page, pageSize, sortDirection, sortField]);
 
   useEffect(() => { fetchResources(); }, [fetchResources]);
-  useEffect(() => { if (selected) listRows(selected); }, [selected, listRows]);
+  useEffect(() => { if (selected) listRows(selected, page, pageSize); }, [selected, page, pageSize, listRows]);
+
+  const changeResource = (resource) => {
+    setSelected(resource);
+    setPage(1);
+    setTotal(null);
+  };
+
+  const changeSort = (field) => {
+    setPage(1);
+    if (sortField === field) {
+      setSortDirection((direction) => (direction === 'ASC' ? 'DESC' : 'ASC'));
+    } else {
+      setSortField(field);
+      setSortDirection('ASC');
+    }
+  };
 
   const runQuery = async (e) => {
     e.preventDefault();
@@ -187,7 +211,7 @@ function DataRuntime() {
               {resources.map((r) => (
                 <li key={r.resourceCode}>
                   <button
-                    onClick={() => setSelected(r.resourceCode)}
+                    onClick={() => changeResource(r.resourceCode)}
                     className={`w-full text-left px-6 py-3 hover:bg-slate-50/50 transition-colors ${
                       selected === r.resourceCode ? 'bg-blue-50/60 border-l-4 border-blue-500' : 'border-l-4 border-transparent'
                     }`}
@@ -214,19 +238,39 @@ function DataRuntime() {
                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">Données — {selected}</h3>
               </div>
               <button
-                onClick={() => listRows(selected)}
+                onClick={() => listRows(selected, page, pageSize)}
                 className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
               >
                 <ArrowPathIcon className="w-4 h-4" />
                 Rafraîchir
               </button>
             </div>
+            <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-6 py-3 text-sm dark:border-slate-700/60">
+              <label className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                Lignes
+                <select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="rounded-lg border border-slate-200 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-700">
+                  {[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+                </select>
+              </label>
+              <span className="text-slate-500 dark:text-slate-400" aria-live="polite">
+                {total == null ? `${rows.length} résultat(s)` : `${total} résultat(s)`}
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <button type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-lg border border-slate-200 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600">Précédent</button>
+                <span className="min-w-16 text-center text-slate-600 dark:text-slate-300">Page {page}</span>
+                <button type="button" disabled={total != null ? page * pageSize >= total : rows.length < pageSize} onClick={() => setPage((current) => current + 1)} className="rounded-lg border border-slate-200 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600">Suivant</button>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
                   <tr>
                     {columns.map((c) => (
-                      <th key={c} className="px-4 py-2 text-left font-semibold">{c}</th>
+                      <th key={c} className="px-4 py-2 text-left font-semibold">
+                        <button type="button" onClick={() => changeSort(c)} className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white" aria-label={`Trier par ${c}`}>
+                          {c}{sortField === c && <span aria-hidden="true">{sortDirection === 'ASC' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
                     ))}
                   </tr>
                 </thead>
