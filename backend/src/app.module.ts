@@ -19,6 +19,7 @@ import { ErpRegistryModule } from './erp-registry/erp-registry.module';
 import { UiBuilderModule } from './modules/ui-builder/ui-builder.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { ConfigController } from './config/config.controller';
+import { RegistryModule } from './registry/registry.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ConfigController } from './config/config.controller';
     IntegrationModule,
     DeploymentModule,
     ErpRegistryModule,
+    RegistryModule,
     ErpAdapterModule,
     DataRuntimeModule,
     AutomationModule,

@@ -133,11 +133,16 @@ const menu = [
 
   group("registry", "Registry", "administration", "Box", "text-slate-200", [
     item("registry", "Vue d’ensemble", "Home", ["packRegistry"]),
+    item("registrySources", "Sources", "Network"),
     item("registryEntries", "Entrées", "Package"),
+    item("registryVersions", "Versions", "Tag"),
     item("registryCapabilities", "Capacités", "Server"),
     item("registryProviders", "Providers", "Plug"),
+    item("registrySchemas", "Schémas", "FileText"),
     item("registryCompatibility", "Compatibilité", "CheckCircle2"),
+    item("registryAvailability", "Disponibilité", "Activity"),
     item("registryDiagnostics", "Diagnostics", "BarChart3"),
+    item("registryAudit", "Audit", "FileSearch"),
   ]),
 
   group("environments", "Environnements & Déploiements", "publication", "Server", "text-sky-400", [

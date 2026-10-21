@@ -36,13 +36,6 @@ export const plannedPages = [
   planned("erpSynchronizations", "erp", "Synchronisations", "Le suivi des synchronisations ERP sera intégré avec l’Integration Hub."),
   planned("erpDiagnostics", "erp", "Diagnostics", "Les diagnostics de la connexion ERP seront fournis par l’Integration Hub."),
 
-  planned("registry", "registry", "Vue d’ensemble", "Le Registry plateforme est en préparation ; il centralisera composants, capacités, providers et compatibilité."),
-  planned("registryEntries", "registry", "Entrées", "Le catalogue des entrées du Registry n’est pas encore disponible."),
-  planned("registryCapabilities", "registry", "Capacités", "Les capacités enregistrées seront consultables avec le Registry plateforme."),
-  planned("registryProviders", "registry", "Providers", "Les providers enregistrés seront consultables avec le Registry plateforme."),
-  planned("registryCompatibility", "registry", "Compatibilité", "La matrice de compatibilité Pack / Runtime sera disponible avec le Registry plateforme."),
-  planned("registryDiagnostics", "registry", "Diagnostics", "Les diagnostics du Registry ne sont pas encore disponibles."),
-
   planned("deploymentActivations", "deployments", "Activations", "L’activation des versions de packs par environnement n’est pas encore intégrée."),
 
   planned("observability-traces", "observability", "Traces", "Les traces distribuées ne sont pas encore collectées par la plateforme."),
