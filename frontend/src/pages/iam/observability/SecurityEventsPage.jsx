@@ -10,7 +10,6 @@ import {
   SortDesc,
 } from 'lucide-react';
 import { iamObservabilityService } from '../../../services/apiClient.js';
-import { obsSecurityEvents, obsSecurityEventTypes, obsSecuritySeverities, obsSecurityStatuses } from './mockData.js';
 import { ModernSpinner } from '../../../components/Loaders.jsx';
 import ConfirmModal from '../../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../../hooks/useToast.js';
@@ -63,9 +62,9 @@ function SecurityEventsPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  const eventTypeOptions = ['ALL', ...obsSecurityEventTypes];
-  const severityOptions = ['ALL', ...obsSecuritySeverities];
-  const statusOptions = ['ALL', ...obsSecurityStatuses];
+  const eventTypeOptions = ['ALL'];
+  const severityOptions = ['ALL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  const statusOptions = ['ALL'];
   const tenantIdOptions = ['ALL', ...Array.from(new Set(events.map((e) => e.tenantId).filter(Boolean))).sort((a, b) => a - b)];
 
   const loadEvents = useCallback(async () => {
@@ -73,7 +72,7 @@ function SecurityEventsPage() {
     try {
       const response = await iamObservabilityService.securityEvents();
       const data = response.data;
-      setEvents(Array.isArray(data) ? data : (data?.events ?? data?.data ?? []));
+      setEvents(Array.isArray(data) ? data : (data?.items ?? []));
     } catch {
       {
         toast.error('Erreur lors du chargement des événements de sécurité.');

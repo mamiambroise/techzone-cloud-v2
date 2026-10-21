@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../auth/AuthProvider.jsx';
 import { billingAdminService, billingService } from '../../services/apiClient.js';
 import {
   ActionButton,
@@ -24,7 +23,6 @@ import {
  * l'affiche au lieu de masquer la restriction.
  */
 export default function BillingAdminPage({ title = 'Billing Admin' }) {
-  const { user } = useAuth();
   const { pathname } = useLocation();
   const tabForPath = {
     '/billing/admin/catalog': 'catalog',
@@ -88,21 +86,6 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
     }
   };
 
-  const tabs = [
-    { id: 'catalog', label: 'Offres & tarifs' },
-    { id: 'subscriptions', label: 'Abonnements' },
-    { id: 'operations', label: 'Opérations financières' },
-    { id: 'diagnostics', label: 'Diagnostics' },
-  ];
-  const permissionByTab = {
-    catalog: ['billing:plan:read'],
-    subscriptions: ['billing:subscription:read'],
-    operations: ['billing:invoice:read', 'billing:payment:read'],
-    diagnostics: ['billing:diagnostic:read', 'billing:read'],
-  };
-  const permissions = user?.permissions ?? [];
-  const allowedTabs = tabs.filter((entry) => user?.isSuperAdmin || permissions.includes('*') || permissionByTab[entry.id].every((permission) => permissions.includes(permission)));
-
   const currentResource = {
     catalog: products,
     subscriptions,
@@ -118,23 +101,6 @@ export default function BillingAdminPage({ title = 'Billing Admin' }) {
           Vue plateforme transverse : tous les tenants. Réservée aux permissions Billing globales.
         </p>
       </header>
-
-      <div className="flex flex-wrap gap-2 border-b border-slate-200">
-        {allowedTabs.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            onClick={() => { setTab(entry.id); setSweepReport(null); }}
-            className={`-mb-px border-b-2 px-3 py-2 text-xs font-medium ${
-              tab === entry.id
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {entry.label}
-          </button>
-        ))}
-      </div>
 
       <BillingError error={actionError} title="Opération plateforme refusée" />
       <BillingError error={currentResource.error} title="Endpoint plateforme indisponible" />

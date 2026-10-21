@@ -42,7 +42,7 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <header>
         <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
         <p className="mt-1 text-sm text-slate-600">
@@ -58,7 +58,7 @@ export default function BillingOverviewPage({ title = 'Billing' }) {
         </div>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <BillingPanel
           title="Abonnement"
           description="Contrat commercial en cours pour ce tenant."

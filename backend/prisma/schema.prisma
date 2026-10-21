@@ -4335,6 +4335,208 @@ enum UiThemeStatus {
   READY
 }
 
+// Observability V3: PostgreSQL is the durable, bounded default provider when
+// no specialised telemetry backend is configured. Provider selection remains
+// an adapter concern so high-volume deployments can replace it.
+model ObservabilityLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  timestamp     DateTime @default(now())
+  tenantId      String?  @db.Uuid
+  traceId       String   @db.VarChar(128)
+  requestId     String?  @db.VarChar(128)
+  correlationId String?  @db.VarChar(128)
+  module        String   @db.VarChar(100)
+  service       String   @db.VarChar(100)
+  operation     String?  @db.VarChar(255)
+  severity      String   @db.VarChar(20)
+  status        String?  @db.VarChar(32)
+  durationMs    Int?
+  category      String   @db.VarChar(32)
+  event         String   @db.VarChar(160)
+  message       String
+  attributes    Json?
+
+  @@index([tenantId, timestamp])
+  @@index([tenantId, traceId, timestamp])
+  @@index([traceId, timestamp])
+  @@index([severity, timestamp])
+  @@map("observability_log")
+}
+
+model ObservabilityMetric {
+  id        String   @id @default(uuid()) @db.Uuid
+  timestamp DateTime @default(now())
+  tenantId  String?  @db.Uuid
+  name      String   @db.VarChar(160)
+  type      String   @db.VarChar(20)
+  value     Float
+  labels    Json
+
+  @@index([tenantId, name, timestamp])
+  @@index([name, timestamp])
+  @@map("observability_metric")
+}
+
+model ObservabilityAlertRule {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  code        String   @db.VarChar(120)
+  name        String   @db.VarChar(255)
+  enabled     Boolean  @default(true)
+  severity    String   @db.VarChar(20)
+  condition   Json
+  scope       Json?
+  cooldownSec Int      @default(300)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  alerts      ObservabilityAlert[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, enabled])
+  @@map("observability_alert_rule")
+}
+
+model ObservabilityAlert {
+  id             String   @id @default(uuid()) @db.Uuid
+  ruleId         String?  @db.Uuid
+  tenantId       String?  @db.Uuid
+  scopeKey       String   @default("PLATFORM") @db.VarChar(100)
+  fingerprint    String   @db.VarChar(255)
+  severity       String   @db.VarChar(20)
+  status         String   @default("OPEN") @db.VarChar(20)
+  summary        String   @db.VarChar(500)
+  description    String?
+  resource       String?  @db.VarChar(255)
+  traceId        String?  @db.VarChar(128)
+  openedAt       DateTime @default(now())
+  lastOccurredAt DateTime @default(now())
+  occurrences    Int      @default(1)
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+  assigneeId     String?
+  resolutionNote String?
+  metadata       Json?
+  rule           ObservabilityAlertRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  incidents      ObservabilityIncidentAlert[]
+  notificationAttempts ObservabilityNotificationAttempt[]
+
+  @@unique([ruleId, scopeKey, fingerprint])
+  @@index([tenantId, status, lastOccurredAt])
+  @@index([traceId])
+  @@map("observability_alert")
+}
+
+model ObservabilityIncident {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  title       String   @db.VarChar(255)
+  description String?
+  severity    String   @db.VarChar(20)
+  status      String   @default("OPEN") @db.VarChar(20)
+  ownerId     String?
+  openedAt    DateTime @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  alerts      ObservabilityIncidentAlert[]
+  timeline    ObservabilityIncidentTimeline[]
+
+  @@index([tenantId, status, updatedAt])
+  @@map("observability_incident")
+}
+
+model ObservabilityIncidentAlert {
+  incidentId String @db.Uuid
+  alertId    String @db.Uuid
+  createdAt  DateTime @default(now())
+  incident   ObservabilityIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  alert      ObservabilityAlert @relation(fields: [alertId], references: [id], onDelete: Restrict)
+
+  @@id([incidentId, alertId])
+  @@index([alertId])
+  @@map("observability_incident_alert")
+}
+
+model ObservabilityIncidentTimeline {
+  id         String   @id @default(uuid()) @db.Uuid
+  incidentId String   @db.Uuid
+  type       String   @db.VarChar(50)
+  message    String
+  actorId    String?
+  traceId    String?  @db.VarChar(128)
+  createdAt  DateTime @default(now())
+  incident   ObservabilityIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, createdAt])
+  @@map("observability_incident_timeline")
+}
+
+model ObservabilityNotificationRoute {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  name        String   @db.VarChar(255)
+  severity    String?  @db.VarChar(20)
+  channel     String   @db.VarChar(20)
+  recipients  Json
+  enabled     Boolean  @default(true)
+  cooldownSec Int      @default(300)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  attempts    ObservabilityNotificationAttempt[]
+
+  @@index([tenantId, enabled, severity])
+  @@map("observability_notification_route")
+}
+
+model ObservabilityNotificationAttempt {
+  id          String   @id @default(uuid()) @db.Uuid
+  alertId     String   @db.Uuid
+  routeId     String   @db.Uuid
+  channel     String   @db.VarChar(20)
+  recipient   String   @db.VarChar(255)
+  status      String   @db.VarChar(20)
+  attempt     Int      @default(1)
+  errorCode   String?  @db.VarChar(100)
+  attemptedAt DateTime @default(now())
+  sentAt      DateTime?
+  alert       ObservabilityAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  route       ObservabilityNotificationRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@index([alertId, routeId, attemptedAt])
+  @@map("observability_notification_attempt")
+}
+
+model ObservabilityRetentionPolicy {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  signalType  String   @db.VarChar(50)
+  retentionDays Int
+  enabled     Boolean  @default(true)
+  archive     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  runs        ObservabilityRetentionRun[]
+
+  @@unique([tenantId, signalType])
+  @@index([enabled])
+  @@map("observability_retention_policy")
+}
+
+model ObservabilityRetentionRun {
+  id          String   @id @default(uuid()) @db.Uuid
+  policyId    String   @db.Uuid
+  dryRun      Boolean  @default(true)
+  status      String   @db.VarChar(20)
+  affected    Int      @default(0)
+  details     Json?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  policy      ObservabilityRetentionPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([policyId, startedAt])
+  @@map("observability_retention_run")
+}
+
 /// Page d'interface construite par le UI Builder.
 /// Hybrid representation : colonnes requêtes (route/key/type/ordre) + JSON
 /// déclaratif pour l'arbre de composants (UI Definition), même pattern

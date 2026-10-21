@@ -257,6 +257,7 @@ describe('seedIamRbac', () => {
     expect(summary.permissions).toBeGreaterThan(0);
     expect(fake.permissions.has(PERMISSIONS.BM_WRITE)).toBe(true);
     expect(fake.permissions.has(PERMISSIONS.IAM_ADMIN)).toBe(true);
+    expect(fake.permissions.has(PERMISSIONS.OBSERVABILITY_EXPORT)).toBe(true);
     expect(fake.permissions.get(PERMISSIONS.IAM_ADMIN)?.critical).toBe(true);
   });
 

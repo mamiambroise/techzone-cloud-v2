@@ -404,18 +404,34 @@ export const iamAdminService = {
 };
 
 export const iamObservabilityService = {
-  securityEvents: (params) => authApi.get('/security/events', { params }),
-  updateSecurityEvent: (id, body) => authApi.patch(`/security/events/${id}`, body),
-  monitoring: () => authApi.get('/observability/dashboard'),
-  logs: (params) => authApi.get('/logs/search', { params }),
-  auditLogs: (params) => authApi.get('/audit/search', { params }),
-  alertRules: (params) => authApi.get('/alerts/rules', { params }),
-  alertInstances: (params) => authApi.get('/alerts', { params }),
-  toggleAlertRule: (id, body) => authApi.patch(`/alerts/rules/${id}`, body),
+  overview: () => api.get('/observability/overview'),
+  health: () => api.get('/observability/health'),
+  metrics: (params) => api.get('/observability/metrics', { params }),
+  diagnostics: () => api.get('/observability/diagnostics'),
+  incidents: (params) => api.get('/observability/incidents', { params }),
+  createIncident: (body) => api.post('/observability/incidents', body),
+  updateIncident: (id, body) => api.patch(`/observability/incidents/${id}`, body),
+  securityEvents: (params) => api.get('/observability/security-events', { params }),
+  monitoring: () => api.get('/observability/overview'),
+  logs: (params) => api.get('/observability/logs', { params }),
+  traces: (params) => api.get('/observability/traces', { params }),
+  auditLogs: (params) => api.get('/observability/audit', { params }),
+  exportData: (source, body = {}) => api.post(`/observability/exports/${source}`, body),
+  alertRules: (params) => api.get('/observability/alert-rules', { params }),
+  alertInstances: (params) => api.get('/observability/alerts', { params }),
+  createAlertRule: (body) => api.post('/observability/alert-rules', body),
+  toggleAlertRule: (id, body) => api.patch(`/observability/alert-rules/${id}`, body),
+  notificationRoutes: () => api.get('/observability/notification-routes'),
+  createNotificationRoute: (body) => api.post('/observability/notification-routes', body),
+  retentionPolicies: () => api.get('/observability/retention-policies'),
+  upsertRetentionPolicy: (body) => api.post('/observability/retention-policies', body),
+  evaluateAlerts: () => api.post('/observability/admin/evaluate'),
+  dispatchAlertNotification: (id) => api.post(`/observability/admin/alerts/${id}/notify`),
+  runRetention: (id, body = { dryRun: true }) => api.post(`/observability/admin/retention/${id}/run`, body),
   updateAlertInstance: (id, body) => {
     const action = { ACKNOWLEDGED: 'acknowledge', RESOLVED: 'resolve' }[body.status];
     if (!action) return Promise.reject(new Error('Action non disponible dans le contrat Alert Manager.'));
-    return authApi.post(`/alerts/${id}/${action}`, body);
+    return api.post(`/observability/alerts/${id}/${action === 'acknowledge' ? 'ack' : action}`, body);
   },
 };
 

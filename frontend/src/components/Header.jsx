@@ -19,7 +19,7 @@ import { useTenant } from "../contexts/TenantProvider.jsx";
 import { useDashboard, alertKeys } from "./dashboard/DashboardContext.jsx";
 import GlobalSearch from "./GlobalSearch.jsx";
 const iconButton =
-  "rounded-[var(--radius-lg)] p-2 text-slate-300 transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
+  "rounded-[var(--radius-lg)] p-2 text-slate-500 transition-colors duration-200 hover:bg-blue-50 hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] motion-reduce:transition-none";
 export default function Header({ mobileOpen, onToggleMobileSidebar }) {
   const { user, logout } = useAuth(),
     { activeTenant, tenants, switchTenant, hasMultipleTenants, loading } =
@@ -69,7 +69,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
   return (
     <header
       ref={root}
-      className="sticky top-0 z-30 border-b border-white/10 bg-[var(--color-header)] text-[var(--color-header-text)] shadow-[0_1px_0_rgb(15_23_42_/_0.02)] backdrop-blur-sm"
+      className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-header)] text-[var(--color-header-text)] shadow-[0_1px_0_rgb(15_23_42_/_0.02)] backdrop-blur-sm"
     >
       <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
@@ -94,7 +94,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
                   ? "/dashboard"
                   : groupDestination(group?.id) || "/dashboard"
               }
-              className="hidden shrink-0 text-slate-300 hover:text-white sm:inline"
+              className="hidden shrink-0 text-slate-500 hover:text-[var(--color-primary)] sm:inline"
             >
               {entry?.group === "dashboard"
                 ? "Accueil"
@@ -106,7 +106,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             />
             <span
               aria-current="page"
-              className="truncate font-medium text-white"
+              className="truncate font-medium text-[var(--color-text-primary)]"
             >
               {entry?.label || "Page introuvable"}
             </span>
@@ -144,7 +144,7 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
             ) : (
               <span
                 aria-label="Tenant actif"
-                className="hidden max-w-40 truncate rounded-[var(--radius-lg)] border border-white/15 bg-white/10 px-3 py-2 text-xs font-medium text-white sm:block"
+                className="hidden max-w-40 truncate rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-xs font-medium text-[var(--color-text-primary)] sm:block"
                 title={activeTenant.name || activeTenant.code}
               >
                 {activeTenant.name || activeTenant.code}
@@ -231,10 +231,10 @@ export default function Header({ mobileOpen, onToggleMobileSidebar }) {
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-xs font-semibold text-white">
                 {name.slice(0, 1).toUpperCase()}
               </span>
-            <span className="hidden max-w-28 truncate text-xs font-medium text-white xl:block">
+            <span className="hidden max-w-28 truncate text-xs font-medium text-[var(--color-text-primary)] xl:block">
                 {name}
               </span>
-              <ChevronDown size={12} className="text-slate-300" />
+              <ChevronDown size={12} className="text-slate-400" />
             </button>
             {panel === "user" && (
               <div className="absolute right-0 top-full mt-3 w-56 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-[var(--color-text)] shadow-[var(--shadow-card-hover)]">

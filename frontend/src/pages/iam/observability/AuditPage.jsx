@@ -11,9 +11,9 @@ import {
   ChevronRight,
   SortAsc,
   SortDesc,
+  Download,
 } from 'lucide-react';
 import { iamObservabilityService } from '../../../services/apiClient.js';
-import { obsAuditLogs, obsAuditFilters } from './mockData.js';
 import { ModernSpinner } from '../../../components/Loaders.jsx';
 import { useToast } from '../../../hooks/useToast.js';
 
@@ -61,20 +61,20 @@ function AuditPage() {
   const [page, setPage] = useState(1);
   const [detailLog, setDetailLog] = useState(null);
 
-  const actorTypeOptions = ['ALL', ...obsAuditFilters.actorTypes];
-  const actionOptions = ['ALL', ...obsAuditFilters.actions];
-  const resourceTypeOptions = ['ALL', ...obsAuditFilters.resourceTypes];
-  const resultOptions = ['ALL', ...obsAuditFilters.results];
+  const actorTypeOptions = ['ALL'];
+  const actionOptions = ['ALL'];
+  const resourceTypeOptions = ['ALL'];
+  const resultOptions = ['ALL', 'SUCCESS', 'FAILURE'];
 
-  const tenantIdOptions = ['ALL', ...Array.from(new Set(logs.map((l) => l.tenantId).filter(Boolean))).sort((a, b) => a - b)];
-  const traceIdOptions = ['ALL', ...Array.from(new Set(logs.map((l) => l.traceId))).sort()];
+  const tenantIdOptions = ['ALL', ...Array.from(new Set(auditLogs.map((l) => l.tenantId).filter(Boolean))).sort((a, b) => a - b)];
+  const traceIdOptions = ['ALL', ...Array.from(new Set(auditLogs.map((l) => l.traceId))).sort()];
 
   const loadAuditLogs = useCallback(async () => {
     setLoading(true);
     try {
       const response = await iamObservabilityService.auditLogs();
       const data = response.data;
-      setAuditLogs(Array.isArray(data) ? data : (data?.auditLogs ?? data?.data ?? []));
+      setAuditLogs(Array.isArray(data) ? data : (data?.items ?? []));
     } catch {
       {
         toast.error('Erreur lors du chargement des audits.');
@@ -156,6 +156,20 @@ function AuditPage() {
     toast.success('Filtres réinitialisés.');
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await iamObservabilityService.exportData('AUDIT');
+      const payload = response.data;
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+      link.download = `observability-audit-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click(); URL.revokeObjectURL(link.href);
+      toast.success(`${payload.count} audit(s) exporté(s).`);
+    } catch {
+      toast.error('Export refusé ou indisponible.');
+    }
+  };
+
   const copyTraceId = (traceId) => {
     if (navigator.clipboard) navigator.clipboard.writeText(traceId);
     toast.info(`Trace ID copié : ${traceId}`);
@@ -195,6 +209,7 @@ function AuditPage() {
         <button onClick={handleRefresh} disabled={loading} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">
           <RefreshCw className="w-4 h-4 inline mr-1" />Actualiser
         </button>
+        <button onClick={handleExport} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg"><Download className="w-4 h-4 inline mr-1" />Exporter</button>
         <button onClick={handleResetFilters} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">Réinitialiser les filtres</button>
       </div>
 

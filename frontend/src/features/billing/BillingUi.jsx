@@ -126,12 +126,12 @@ export function BillingError({ error, title = 'Action impossible' }) {
 }
 
 export function BillingLoading({ label = 'Chargement…' }) {
-  return <p className="py-6 text-center text-sm text-slate-500">{label}</p>;
+  return <p className="py-4 text-center text-sm text-slate-500">{label}</p>;
 }
 
 export function BillingEmpty({ label = 'Aucune donnée.', hint = null }) {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
+    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/50 px-4 py-4 text-center">
       <p className="text-sm text-slate-600">{label}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </div>
@@ -140,8 +140,8 @@ export function BillingEmpty({ label = 'Aucune donnée.', hint = null }) {
 
 export function BillingPanel({ title, description, actions, children }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-start justify-between gap-4">
+    <section className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
           {description ? <p className="mt-0.5 text-xs text-slate-500">{description}</p> : null}
@@ -165,7 +165,7 @@ export function DataRow({ label, children }) {
 export function ActionButton({ children, onClick, disabled, tone = 'slate', type = 'button', title }) {
   const tones = {
     slate: 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-    primary: 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800',
+    primary: 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]',
     danger: 'border-rose-300 bg-white text-rose-700 hover:bg-rose-50',
   };
   return (

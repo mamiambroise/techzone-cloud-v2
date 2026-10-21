@@ -45,6 +45,8 @@ const Adapters = lazy(() => import('./pages/Adapters.jsx'));
 const Mapping = lazy(() => import('./pages/Mapping.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const DemoPage = lazy(() => import('./pages/DemoPage.jsx'));
+const AdminOverviewPage = lazy(() => import('./pages/AdminOverviewPage.jsx'));
+const UiGallery = lazy(() => import('./pages/UiGallery.jsx'));
 
 const ERPList = lazy(() => import('./pages/ERPList.jsx'));
 const ERPCreate = lazy(() => import('./pages/ERPCreate.jsx'));
@@ -67,6 +69,8 @@ const AuditPage = lazy(() => import('./pages/iam/observability/AuditPage.jsx'));
 const SecurityEventsPage = lazy(() => import('./pages/iam/observability/SecurityEventsPage.jsx'));
 const MonitoringPage = lazy(() => import('./pages/iam/observability/MonitoringPage.jsx'));
 const AlertManagerPage = lazy(() => import('./pages/iam/observability/AlertManagerPage.jsx'));
+const ObservabilityDataPage = lazy(() => import('./pages/iam/observability/ObservabilityDataPage.jsx'));
+const ObservabilitySettingsPage = lazy(() => import('./pages/iam/observability/ObservabilitySettingsPage.jsx'));
 
 const DataRuntime = lazy(() => import('./pages/DataRuntime.jsx'));
 const DataRuntimeHistory = lazy(() => import('./pages/DataRuntimeHistory.jsx'));
@@ -158,7 +162,7 @@ const UiComponentsCatalog = lazy(() => import('./features/ui-builder/components/
 const UiThemeBuilder = lazy(() => import('./features/ui-builder/components/UiThemeBuilder.jsx'));
 const UiNavigationPresentation = lazy(() => import('./features/ui-builder/components/UiNavigationPresentation.jsx'));
 const UiPreviewValidation = lazy(() => import('./features/ui-builder/components/UiPreviewValidation.jsx'));
-const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, RegistryPage, BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, ErpResourcesNav, ErpSynchronizations, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon, BillingOverviewPage, BillingPlansPage, BillingSubscriptionsPage, BillingEntitlementsPage, BillingUsagePage, BillingInvoicesPage, BillingPaymentsPage, BillingAdminPage, BillingWebhooksPage };
+const routeComponents = { BMRuntimeRedirect, PackManagerPage, RuntimePage, BMWorkspaceRoute, UiBuilderOverview, UiPagesManager, UiVisualEditor, UiFormsBuilder, UiComponentsCatalog, UiThemeBuilder, UiNavigationPresentation, UiPreviewValidation, NewApplicationRoute, ApplicationDetailRoute, CockpitRoute, OverviewRoute, ApplicationsRoute, WorkspaceConfigView, VersionsDetailView, ValidationRoute, PublicationView, HistoryRollbackView, SpecificationsView, EnvironmentsView, ContractsView, ConfigurationView, SnapshotsRoute, PlatformContractView, IntegrationsView, DeploymentPublicationView, IamUsersPage, SessionsPage, IdentitiesPage, RolesPage, PoliciesPage, TenantsPage, ObservabilityOverview, LogsPage, AuditPage, SecurityEventsPage, MonitoringPage, AlertManagerPage, ObservabilityDataPage, ObservabilitySettingsPage, ERPDashboard, ErpModule, ERPList, ERPCreate, ERPEdit, ErpResourcesNav, ErpSynchronizations, DataRuntime, DataRuntimeHistory, AutomationCockpit, AutomationConditions, AutomationHistory, AutomationRules, AutomationTriggers, AutomationWorkflows, Adapters, Mapping, Settings, DemoPage, AdminOverviewPage, BMOverview, BMApplicationsRoute, BMApplicationNewRoute, BMApplicationDetailRoute, BMVersionsRoute, BMVersionDetailRoute, ComingSoon, BillingOverviewPage, BillingPlansPage, BillingSubscriptionsPage, BillingEntitlementsPage, BillingInvoicesPage, BillingPaymentsPage, BillingAdminPage, BillingWebhooksPage, BillingSettingsPage };
 
 function App() {
   return (
@@ -182,6 +186,7 @@ function App() {
                   return <Route key={route} path={route} element={<RequireNavigationAccess>{implemented ? <TenantBoundary>{content}</TenantBoundary> : content}</RequireNavigationAccess>} />;
                 })}
                 {redirects.map(({ from, to }) => <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
+                <Route path="/demo/ui-gallery" element={<UiGallery />} />
 
                 <Route path="*" element={<NotFound />} />
               </Route>

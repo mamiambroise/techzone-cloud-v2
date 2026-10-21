@@ -216,12 +216,7 @@ export default function PoliciesPage() {
       setFormPolicy(null);
       loadPolicies();
     } catch {
-      {
-        toast.error('Erreur lors de l\'opération sur la politique.');
-      }
-      toast.success(formPolicy ? 'Politique mise à jour.' : 'Politique créée avec succès.');
-      setFormOpen(false);
-      setFormPolicy(null);
+      toast.error('Erreur lors de l\'opération sur la politique.');
     }
   };
 
