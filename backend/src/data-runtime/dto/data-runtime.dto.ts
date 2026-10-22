@@ -44,6 +44,11 @@ export class QueryContractDto implements QueryContract {
   @IsNotEmpty()
   resource: string;
 
+  @ApiPropertyOptional({ description: 'Identifiant de résolution Pack Runtime exécutable' })
+  @IsOptional()
+  @IsString()
+  resolutionId?: string;
+
   @ApiPropertyOptional({ description: 'Champs a selectionner', type: [String] })
   @IsOptional()
   @IsArray()
@@ -82,6 +87,11 @@ export class ExecutionRequestDto implements ExecutionRequest {
   @IsString()
   @IsNotEmpty()
   resource: string;
+
+  @ApiPropertyOptional({ description: 'Identifiant de résolution Pack Runtime exécutable' })
+  @IsOptional()
+  @IsString()
+  resolutionId?: string;
 
   @ApiProperty({ description: 'Operation', enum: ['CREATE','UPDATE','DELETE','EXECUTE','BATCH'] })
   @IsIn(['CREATE','UPDATE','DELETE','EXECUTE','BATCH'])

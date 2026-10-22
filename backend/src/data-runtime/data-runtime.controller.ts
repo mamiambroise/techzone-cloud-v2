@@ -74,6 +74,21 @@ export class DataRuntimeController {
     const context = this.buildContext(query.resource, principal, req);
     return this.queryEngine.execute(query, context);
   }
+
+  @Post('runtime/query')
+  @Permissions(DATA_RUNTIME_QUERY)
+  @ApiOperation({ summary: 'Exécuter une requête depuis une application publiée' })
+  @ApiBody({ type: QueryContractDto })
+  async executePublishedQuery(
+    @Req() req: Request,
+    @CurrentUser() principal: IamAuthContext,
+    @Body() query: QueryContractDto,
+  ) {
+    await this.assertPublishedRuntimeGuard(req, principal, query as Record<string, any>, true);
+    const context = this.buildContext(query.resource, principal, req);
+    return this.queryEngine.execute(query, context);
+  }
+
   @Get('resources/:resource/:id')
   @Permissions(DATA_RUNTIME_READ)
   @ApiOperation({ summary: 'Obtenir un element canonique' })
@@ -84,6 +99,20 @@ export class DataRuntimeController {
     @Param('id') id: string,
   ) {
     await this.assertPublishedRuntimeGuard(req, principal, { resource, id, applicationId: (req as any)?.body?.applicationId });
+    const ctx = this.buildContext(resource, principal, req);
+    return this.dataAccess.get(resource, id, ctx);
+  }
+
+  @Get('runtime/resources/:resource/:id')
+  @Permissions(DATA_RUNTIME_READ)
+  @ApiOperation({ summary: 'Obtenir un enregistrement depuis une application publiée' })
+  async getPublishedResource(
+    @Req() req: Request,
+    @CurrentUser() principal: IamAuthContext,
+    @Param('resource') resource: string,
+    @Param('id') id: string,
+  ) {
+    await this.assertPublishedRuntimeGuard(req, principal, { resource }, true);
     const ctx = this.buildContext(resource, principal, req);
     return this.dataAccess.get(resource, id, ctx);
   }
@@ -111,6 +140,20 @@ export class DataRuntimeController {
   async executeOperation(@Req() req: Request, @CurrentUser() principal: IamAuthContext, @Body() request: ExecutionRequestDto) {
     this.logger.log(`POST /data-runtime/execute ${request.operation} ${request.resource}`);
     await this.assertPublishedRuntimeGuard(req, principal, request as Record<string, any>);
+    const ctx = this.buildContext(request.resource, principal, req);
+    return this.executionEngine.execute(request, ctx);
+  }
+
+  @Post('runtime/execute')
+  @Permissions(DATA_RUNTIME_EXECUTE)
+  @ApiOperation({ summary: 'Exécuter une mutation depuis une application publiée' })
+  @ApiBody({ type: ExecutionRequestDto })
+  async executePublishedOperation(
+    @Req() req: Request,
+    @CurrentUser() principal: IamAuthContext,
+    @Body() request: ExecutionRequestDto,
+  ) {
+    await this.assertPublishedRuntimeGuard(req, principal, request as Record<string, any>, true);
     const ctx = this.buildContext(request.resource, principal, req);
     return this.executionEngine.execute(request, ctx);
   }
@@ -182,11 +225,21 @@ export class DataRuntimeController {
     return { state: this.bindingService.getBindingState(bindingId) };
   }
 
-  private async assertPublishedRuntimeGuard(req: Request | undefined, principal: IamAuthContext, payload: Record<string, any> = {}) {
+  private async assertPublishedRuntimeGuard(
+    req: Request | undefined,
+    principal: IamAuthContext,
+    payload: Record<string, any> = {},
+    requireResolution = false,
+  ) {
     if (!principal?.tenantId) {
       throw new ForbiddenException('TENANT_REQUIRED');
     }
-    const resolutionId = payload.resolutionId || (req as any)?.body?.resolutionId || (req as any)?.query?.resolutionId || (req as any)?.headers?.['x-runtime-resolution-id'];
+    const bodyResolutionId = payload.resolutionId || (req as any)?.body?.resolutionId;
+    const headerResolutionId = (req as any)?.headers?.['x-runtime-resolution-id'];
+    if (bodyResolutionId && headerResolutionId && String(bodyResolutionId) !== String(headerResolutionId)) {
+      throw new BadRequestException('RUNTIME_RESOLUTION_ID_MISMATCH');
+    }
+    const resolutionId = bodyResolutionId || (req as any)?.query?.resolutionId || headerResolutionId;
     const resource = String(payload.resource || '');
     const bm = /^bm:([0-9a-f-]{36}):/i.exec(resource);
     let version: { id: string; applicationId: string; status: string } | null = null;
@@ -195,20 +248,37 @@ export class DataRuntimeController {
       if (!version) throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
     }
     const published = version?.status === 'PUBLISHED' || req?.headers?.['x-runtime-origin'] === 'published' || Boolean(version && await this.prisma.packVersion.count({ where: { tenantId: principal.tenantId, applicationVersionId: version.id, status: 'PUBLISHED' } }));
-    if (!resolutionId && !published) return;
+    if (!resolutionId && !requireResolution && !published) return;
     if (!resolutionId) throw new BadRequestException('RUNTIME_RESOLUTION_ID_REQUIRED');
     const item = await this.runtimeExecution.assertExecutable({
       resolutionId: String(resolutionId), tenantId: principal.tenantId,
-      applicationId: version?.applicationId || payload.applicationId,
-      applicationVersionId: version?.id || payload.applicationVersionId,
-      environmentId: payload.environmentId,
+      ...(version ? { applicationId: version.applicationId, applicationVersionId: version.id } : {}),
     });
-    if (bm) {
+    if (requireResolution) {
+      this.assertEffectiveDataBinding(item, resource);
+    } else if (bm) {
       const content = item.effectiveManifest!.content as Record<string, any>;
       if (!content.ui?.definition?.businessContext?.entities?.some((e: any) => e.code === resource.split(':')[2])) throw new ForbiddenException('RUNTIME_DATA_BINDING_UNAVAILABLE');
     }
     if (req) (req as any).runtimeResolution = item;
     return item;
+  }
+
+  private assertEffectiveDataBinding(item: any, resource: string): void {
+    const match = /^bm:([0-9a-f-]{36}):([A-Za-z][A-Za-z0-9_-]*)$/i.exec(resource);
+    const content = item.effectiveManifest?.content as Record<string, any> | undefined;
+    const versionId = content?.scope?.businessVersionId;
+    const businessContext = content?.ui?.definition?.businessContext;
+    const entities = businessContext?.entities;
+    if (
+      !match ||
+      match[1] !== versionId ||
+      businessContext?.applicationVersionId !== versionId ||
+      !Array.isArray(entities) ||
+      !entities.some((entity: any) => entity.code === match[2])
+    ) {
+      throw new ForbiddenException('RUNTIME_DATA_BINDING_UNAVAILABLE');
+    }
   }
 
   private buildContext(resource: string, principal: IamAuthContext, req?: Request): RuntimeContextDto {
@@ -232,6 +302,5 @@ export class DataRuntimeController {
     };
   }
 }
-
 
 

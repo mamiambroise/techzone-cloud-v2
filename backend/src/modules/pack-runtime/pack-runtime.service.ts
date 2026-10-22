@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { IamPrincipal } from '../../iam/principal.decorator';
@@ -8,6 +8,8 @@ import { contractHash, dependencyIssues, matches, publicJson, RecordValue } from
 import { RuntimeBridgeService } from '../business-manager/runtime/runtime-bridge.service';
 import { RuntimeCacheService } from './runtime-cache.service';
 import { RegistryService } from '../../registry/registry.service';
+import { RuntimeExecutionService } from './runtime-execution.service';
+import type { RuntimeProof } from './runtime-execution.service';
 
 @Injectable()
 export class PackRuntimeService {
@@ -16,6 +18,7 @@ export class PackRuntimeService {
     private readonly packs: PackManagerService,
     private readonly bridge: RuntimeBridgeService,
     private readonly cache: RuntimeCacheService,
+    private readonly execution?: RuntimeExecutionService,
     private readonly registry?: RegistryService,
   ) {}
   private tenant(actor: IamPrincipal) { if (!actor.tenantId || actor.tenantId === 'legacy') throw new BadRequestException('TENANT_CONTEXT_REQUIRED'); return actor.tenantId; }
@@ -25,7 +28,12 @@ export class PackRuntimeService {
 
   assertExecutableResolution(proof: RuntimeProof, actor?: IamPrincipal) {
     if (actor && actor.tenantId !== proof.tenantId) throw new BadRequestException('TENANT_CONTEXT_MISMATCH');
-    return this.execution.assertExecutable(proof);
+    return this.runtimeExecution().assertExecutable(proof);
+  }
+
+  private runtimeExecution(): RuntimeExecutionService {
+    if (!this.execution) throw new InternalServerErrorException('RUNTIME_EXECUTION_UNAVAILABLE');
+    return this.execution;
   }
 
   async resolve(input: RecordValue, actor: IamPrincipal) {
@@ -41,6 +49,7 @@ export class PackRuntimeService {
       this.bridge.applicationContext(applicationId,businessVersionId,environment,tenantId),
       this.packs.publishedVersions(actor),
     ]);
+    publicJson(business);
     const context = { tenant: { id: tenantId }, application: business.application, environment: business.environment, permissions: [...actor.permissions].sort(), capabilities: business.features.flatMap(f => f.capabilities).sort() };
     const identity = { tenantId, actorId: actor.userId, permissions: context.permissions, businessRevision: business.revision, readiness: business.readiness, sourceHash: source.hash, publications, applicationId, businessVersionId, environment, packCode, packVersion };
     const key = this.cache.key(tenantId,'resolution',identity);
@@ -195,7 +204,7 @@ export class PackRuntimeService {
     const result = await this.db.$transaction(async tx => {
       const scope = `${tenantId}:${item.applicationId}:${item.environment}`;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${scope}, 0))`;
-      const resolution = await this.execution.assertExecutable({ resolutionId: id, tenantId }, false, tx as PrismaService);
+      const resolution = await this.runtimeExecution().assertExecutable({ resolutionId: id, tenantId }, false, tx as PrismaService);
       const state = resolution.result as RecordValue;
       if (state.runtimeContext?.status === 'ACTIVE') return state.runtimeContext;
       const previous = await tx.runtimeResolution.findMany({ where: { tenantId, applicationId: item.applicationId, environment: item.environment, result: { path: ['runtimeContext','status'], equals: 'ACTIVE' } } });
@@ -236,7 +245,7 @@ export class PackRuntimeService {
     return (await this.resolutions(actor)).filter(r => (r.result as RecordValue | null)?.runtimeContext).map(r => { const state = r.result as RecordValue; const expired = Date.parse(state.expiresAt) <= Date.now(); return { ...state.runtimeContext, ...(expired ? { status: 'EXPIRED', readiness: 'NOT_READY' } : {}), expiresAt: state.expiresAt }; });
   }
   async executionManifest(id: string, actor: IamPrincipal) {
-    const item = await this.execution.assertExecutable({ resolutionId: id, tenantId: this.tenant(actor) });
+    const item = await this.runtimeExecution().assertExecutable({ resolutionId: id, tenantId: this.tenant(actor) });
     const context = (item.result as RecordValue).runtimeContext;
     return { resolutionId: id, runtimeContext: context, effectiveManifest: item.effectiveManifest!.content };
   }

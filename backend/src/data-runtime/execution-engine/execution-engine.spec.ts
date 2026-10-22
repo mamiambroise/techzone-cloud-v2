@@ -91,6 +91,41 @@ describe('ExecutionEngine', () => {
       expect(second.success).toBe(true);
       expect(second.data).toBe(first.data);
     });
+
+    it('rejects reusing an idempotency key for a different mutation', async () => {
+      const create = jest.spyOn(dataAccess.getProvider('MOCK'), 'create');
+      const first = await engine.execute({
+        resource: 'Product', operation: 'CREATE', input: { name: 'Original' }, idempotencyKey: 'stable-key',
+      }, ctx);
+      await expect(engine.execute({
+        resource: 'Product', operation: 'CREATE', input: { name: 'Different' }, idempotencyKey: 'stable-key',
+      }, ctx)).rejects.toThrow('IDEMPOTENCY_KEY_REUSED');
+      expect(first.success).toBe(true);
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+
+    it('serializes concurrent retries with the same idempotency key', async () => {
+      const create = jest.spyOn(dataAccess.getProvider('MOCK'), 'create');
+      let releaseCreate!: () => void;
+      let markStarted!: () => void;
+      const createGate = new Promise<void>(resolve => { releaseCreate = resolve; });
+      const createStarted = new Promise<void>(resolve => { markStarted = resolve; });
+      create.mockImplementation(async () => {
+        markStarted();
+        await createGate;
+        return { id: 'single-create' };
+      });
+      const request = {
+        resource: 'Product', operation: 'CREATE' as const, input: { name: 'Same' }, idempotencyKey: 'concurrent-key',
+      };
+      const first = engine.execute(request, ctx);
+      const second = engine.execute(request, ctx);
+      await createStarted;
+      releaseCreate();
+      const [firstResult, secondResult] = await Promise.all([first, second]);
+      expect(firstResult).toEqual(secondResult);
+      expect(create).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('executeBatch', () => {

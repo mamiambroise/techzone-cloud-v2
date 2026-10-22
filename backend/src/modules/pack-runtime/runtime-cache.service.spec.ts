@@ -2,11 +2,24 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { RuntimeCacheService } from './runtime-cache.service';
 
 describe('RuntimeCacheService', () => {
-  it('namespaces every key by tenant', () => {
+  it('SEC-PR-140 namespaces every key by tenant', () => {
     const cache = new RuntimeCacheService();
     expect(cache.key('tenant-a', 'resolution', { id: 1 })).not.toBe(
       cache.key('tenant-b', 'resolution', { id: 1 }),
     );
+  });
+
+  it('SEC-PR-141 gives changed publication and configuration revisions distinct keys', () => {
+    const cache = new RuntimeCacheService();
+    const base = { businessRevision: 'revision-a', sourceHash: 'manifest-a', applicationId: 'app-a', environment: 'dev' };
+    const original = cache.key('tenant-a', 'resolution', base);
+    cache.set(original, { status: 'old' }, { tenantId: 'tenant-a' }, base.sourceHash);
+    const changedConfiguration = cache.key('tenant-a', 'resolution', { ...base, businessRevision: 'revision-b' });
+    const changedPublication = cache.key('tenant-a', 'resolution', { ...base, sourceHash: 'manifest-b' });
+    expect(changedConfiguration).not.toBe(original);
+    expect(changedPublication).not.toBe(original);
+    expect(cache.get(changedConfiguration)).toBeUndefined();
+    expect(cache.get(changedPublication)).toBeUndefined();
   });
 
   it('expires entries after the configured TTL', () => {

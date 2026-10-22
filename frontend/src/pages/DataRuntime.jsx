@@ -8,7 +8,17 @@ import {
   CubeTransparentIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
+  ServerStackIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
+
+function apiMessage(error) {
+  return error?.response?.data?.message || error?.response?.data?.error || error?.message || 'La requête a échoué.';
+}
+
+function isErpUnavailable(error) {
+  return String(apiMessage(error)).includes('ERP_INSTANCE_NOT_CONFIGURED');
+}
 
 function DataRuntime() {
   const [resources, setResources] = useState([]);
@@ -23,6 +33,7 @@ function DataRuntime() {
   const [sortDirection, setSortDirection] = useState('ASC');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [erpUnavailable, setErpUnavailable] = useState(false);
   const [queryOutput, setQueryOutput] = useState(null);
   const [mutationForm, setMutationForm] = useState({ operation: 'CREATE', targetId: '', json: '{\n  "ref": "PRD-X",\n  "label": "Produit test"\n}' });
   const [mutationOutput, setMutationOutput] = useState(null);
@@ -60,13 +71,22 @@ function DataRuntime() {
 
   const listRows = useCallback(async (resource, requestedPage = page, requestedPageSize = pageSize) => {
     try {
+      setError(null);
+      setErpUnavailable(false);
       const body = { resource, page: requestedPage, pageSize: requestedPageSize };
       if (sortField) body.sort = [{ field: sortField, direction: sortDirection }];
       const res = await dataRuntimeService.query(body);
       setRows(res.data.items || []);
       setTotal(typeof res.data.total === 'number' ? res.data.total : null);
     } catch (err) {
-      setError(`Impossible de lister ${resource}`);
+      setRows([]);
+      setTotal(0);
+      if (isErpUnavailable(err)) {
+        setErpUnavailable(true);
+        setError('La source ERP de ce tenant doit être configurée avant de charger les enregistrements.');
+      } else {
+        setError(apiMessage(err));
+      }
       console.error(err);
     }
   }, [page, pageSize, sortDirection, sortField]);
@@ -169,11 +189,17 @@ function DataRuntime() {
   const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
 
   return (
-    <div className="tz-page space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Data Runtime</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Exploration et validation des ressources de données</p>
-      </div>
+    <main className="tz-page space-y-6">
+      <header className="overflow-hidden rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg sm:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-3 flex items-center gap-2 text-sm text-cyan-300"><CubeTransparentIcon className="h-5 w-5" /> Espace données métier</div>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Explorez vos enregistrements avec contrôle.</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Consultez les modèles publiés par Business Manager, vérifiez les relations et exécutez les opérations autorisées par votre tenant.</p>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Tenant courant <span className="font-mono text-xs text-slate-400">00000000…0000</span></div>
+        </div>
+      </header>
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Vue d’ensemble Data Runtime">
         {[
@@ -191,28 +217,29 @@ function DataRuntime() {
       </section>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-          <ExclamationTriangleIcon className="w-5 h-5 text-red-500 shrink-0" />
-          <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
+        <div className={`rounded-xl border p-4 ${erpUnavailable ? 'border-amber-200 bg-amber-50' : 'border-red-200 bg-red-50'}`} role="alert">
+          {erpUnavailable ? <ServerStackIcon className="mr-3 inline h-5 w-5 text-amber-600" /> : <ExclamationTriangleIcon className="mr-3 inline h-5 w-5 text-red-500" />}
+          <span className={`font-medium ${erpUnavailable ? 'text-amber-900' : 'text-red-700'}`}>{error}</span>
+          {erpUnavailable && <a href="/erp" className="ml-4 inline-flex items-center gap-1 text-sm font-semibold text-amber-800 underline underline-offset-2">Configurer une source <ArrowTopRightOnSquareIcon className="h-4 w-4" /></a>}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Ressources */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+          <div className="tz-surface overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500 shadow-md">
                 <FolderOpenIcon className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-semibold text-slate-800 dark:text-slate-100">Ressources canoniques</h3>
             </div>
-            <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
+            <ul className="divide-y divide-slate-100">
               {resources.map((r) => (
                 <li key={r.resourceCode}>
                   <button
                     onClick={() => changeResource(r.resourceCode)}
-                    className={`w-full text-left px-6 py-3 hover:bg-slate-50/50 transition-colors ${
+                    className={`w-full text-left px-6 py-3 transition-colors hover:bg-cyan-50/50 ${
                       selected === r.resourceCode ? 'bg-blue-50/60 border-l-4 border-blue-500' : 'border-l-4 border-transparent'
                     }`}
                   >
@@ -228,8 +255,8 @@ function DataRuntime() {
         </div>
 
         {/* Données */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="space-y-6 lg:col-span-3">
+          <div className="tz-surface overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
@@ -417,7 +444,7 @@ function DataRuntime() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

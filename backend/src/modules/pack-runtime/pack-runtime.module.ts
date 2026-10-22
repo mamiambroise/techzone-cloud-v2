@@ -8,7 +8,7 @@ import { RuntimeCacheService } from './runtime-cache.service';
 import { RegistryModule } from '../../registry/registry.module';
 
 @Module({
-  imports: [RuntimeBridgeModule, PackManagerModule, RegistryModule],
+  imports: [RuntimeBridgeModule, PackManagerModule, RegistryModule, RuntimeExecutionModule],
   controllers: [PackRuntimeController],
   providers: [PackRuntimeService, RuntimeCacheService],
   exports: [RuntimeCacheService],

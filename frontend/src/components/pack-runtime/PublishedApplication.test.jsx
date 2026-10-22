@@ -69,7 +69,7 @@ describe('SEC-UI-121 Runtime gate', () => {
     ['resolution-a', { content: { ...gate().content, executable: false } }],
     ['resolution-a', { content: { ...gate().content, status: 'BLOCKED' } }],
     ['resolution-a', gate('tenant-b')],
-  ])('does not load or render a blocked or foreign runtime', (resolutionId, effectiveManifest) => {
+  ])('SEC-PR-010 does not load or render a blocked or foreign runtime', (resolutionId, effectiveManifest) => {
     api.get.mockClear();
     render(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-a" resolutionId={resolutionId} effectiveManifest={effectiveManifest} />);
     expect(screen.getByRole('alert')).toHaveTextContent('Interface bloquée');
