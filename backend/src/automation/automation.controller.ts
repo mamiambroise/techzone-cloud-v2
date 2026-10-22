@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Body, Param, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Logger, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { RulesEngine } from './rules/rules.engine';
@@ -21,6 +21,8 @@ import type { IamAuthContext } from '../iam/decorators/current-user.decorator';
 import { Permissions } from '../iam/iam-permissions.guard';
 import { AUTOMATION_EXECUTE, AUTOMATION_READ, AUTOMATION_SIMULATE } from '../iam/iam.constants';
 import { IamError } from '../iam/iam-error';
+import { AutomationPersistenceService } from './automation-persistence.service';
+import { CreateAutomationScheduleDto, UpdateAutomationScheduleDto } from './dto/automation.dto';
 
 @ApiTags('automation')
 @Controller('api/automation')
@@ -34,6 +36,7 @@ export class AutomationController {
     private readonly historyService: AutomationHistoryService,
     private readonly conditionsEngine: ConditionsEngine,
     private readonly actionEngine: ActionEngine,
+    private readonly persistence: AutomationPersistenceService,
   ) {}
 
   // === CONTRACT / COCKPIT (WF-CDC-00 / WF-CDC-01) ===
@@ -41,11 +44,12 @@ export class AutomationController {
   @Get('cockpit')
   @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Automation Cockpit - Etat global' })
-  async getCockpit() {
+  async getCockpit(@CurrentUser() principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
     const rules = this.rulesEngine.getRules();
-    const workflows = this.workflowEngine.getWorkflows();
+    const workflows = await this.persistence.listWorkflows(tenantId);
     const triggers = this.triggerEngine.getTriggers();
-    const metrics = this.historyService.getMetrics();
+    const metrics = this.historyService.getMetrics(tenantId);
 
     return {
       engine: { status: 'UP' },
@@ -73,16 +77,24 @@ export class AutomationController {
   @Get('contract')
   @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Automation Contract v1' })
-  async getContract() {
+  async getContract(@CurrentUser() principal: IamAuthContext) {
     return {
       contract: 'techzone.automation',
       contractVersion: '1.0',
       provider: 'automation',
       instance: 'main',
       rules: this.rulesEngine.getRules(),
-      workflows: this.workflowEngine.getWorkflows(),
+      workflows: await this.persistence.listWorkflows(this.requireTenant(principal)),
       triggers: this.triggerEngine.getTriggers(),
-      actions: this.actionEngine.getActions().map(({ handler: _handler, ...action }) => action),
+      actions: this.actionEngine.getActions().map((action) => ({
+        code: action.code,
+        category: action.category,
+        retryable: action.retryable,
+        timeout: action.timeout,
+        idempotent: action.idempotent,
+        version: action.version,
+        executable: typeof action.handler === 'function',
+      })),
       health: { status: 'UP' },
     };
   }
@@ -91,7 +103,15 @@ export class AutomationController {
   @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Lister les actions disponibles' })
   async getActions() {
-    return this.actionEngine.getActions().map(({ handler: _handler, ...action }) => action);
+    return this.actionEngine.getActions().map((action) => ({
+      code: action.code,
+      category: action.category,
+      retryable: action.retryable,
+      timeout: action.timeout,
+      idempotent: action.idempotent,
+      version: action.version,
+      executable: typeof action.handler === 'function',
+    }));
   }
 
   // === RULES (WF-CDC-02) ===
@@ -143,15 +163,15 @@ export class AutomationController {
   @Get('workflows')
   @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Lister les workflows' })
-  async getWorkflows() {
-    return this.workflowEngine.getWorkflows();
+  async getWorkflows(@CurrentUser() principal: IamAuthContext) {
+    return this.persistence.listWorkflows(this.requireTenant(principal));
   }
 
   @Post('workflows')
   @Permissions(AUTOMATION_EXECUTE)
   @ApiOperation({ summary: 'Creer un workflow en brouillon' })
-  async createWorkflow(@Body() dto: WorkflowDefinitionDto) {
-    return this.workflowEngine.createWorkflow({
+  async createWorkflow(@Body() dto: WorkflowDefinitionDto, @CurrentUser() principal: IamAuthContext) {
+    return this.persistence.createWorkflow(this.requireTenant(principal), principal.userId, {
       ...dto,
       lifecycle: 'DRAFT',
       version: dto.version || '1.0',
@@ -161,8 +181,8 @@ export class AutomationController {
   @Put('workflows/:code')
   @Permissions(AUTOMATION_EXECUTE)
   @ApiOperation({ summary: 'Modifier un workflow' })
-  async updateWorkflow(@Param('code') code: string, @Body() dto: WorkflowDefinitionDto) {
-    return this.workflowEngine.updateWorkflow(code, {
+  async updateWorkflow(@Param('code') code: string, @Body() dto: WorkflowDefinitionDto, @CurrentUser() principal: IamAuthContext) {
+    return this.persistence.updateWorkflow(this.requireTenant(principal), principal.userId, code, {
       ...dto,
       lifecycle: 'DRAFT',
       version: dto.version || '1.0',
@@ -172,17 +192,19 @@ export class AutomationController {
   @Post('workflows/:code/validate')
   @Permissions(AUTOMATION_EXECUTE)
   @ApiOperation({ summary: 'Valider la definition d un workflow' })
-  async validateWorkflow(@Param('code') code: string) {
-    const workflow = this.workflowEngine.getWorkflow(code);
-    return this.workflowEngine.validateWorkflow(workflow);
+  async validateWorkflow(@Param('code') code: string, @CurrentUser() principal: IamAuthContext) {
+    return this.persistence.validateWorkflow(this.requireTenant(principal), code);
   }
 
   @Patch('workflows/:code/lifecycle')
   @Permissions(AUTOMATION_EXECUTE)
   @ApiOperation({ summary: 'Modifier le cycle de vie d un workflow' })
-  async setWorkflowLifecycle(@Param('code') code: string, @Body() dto: WorkflowLifecycleDto) {
-    this.workflowEngine.setLifecycle(code, dto.lifecycle);
-    return this.workflowEngine.getWorkflow(code);
+  async setWorkflowLifecycle(
+    @Param('code') code: string,
+    @Body() dto: WorkflowLifecycleDto,
+    @CurrentUser() principal: IamAuthContext,
+  ) {
+    return this.persistence.setWorkflowLifecycle(this.requireTenant(principal), code, dto.lifecycle, principal.userId);
   }
 
   @Post('workflows/start')
@@ -191,7 +213,7 @@ export class AutomationController {
   @ApiBody({ type: StartWorkflowDto })
   async startWorkflow(@Req() req: Request, @CurrentUser() principal: IamAuthContext, @Body() dto: StartWorkflowDto) {
     const ctx = this.buildContext('workflow-start', dto.variables, principal, this.getTraceId(req));
-    const rec = await this.workflowEngine.startWorkflow(dto.workflowCode, ctx);
+    const rec = await this.persistence.startWorkflow(ctx.tenantId, dto.workflowCode, ctx);
     this.historyService.recordExecution({
       executionId: rec.executionId,
       traceId: ctx.traceId,
@@ -210,8 +232,52 @@ export class AutomationController {
   @Get('workflows/executions')
   @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Executions de workflows' })
-  async getExecutions() {
-    return this.workflowEngine.getExecutions();
+  async getExecutions(@CurrentUser() principal: IamAuthContext) {
+    const tenantId = this.requireTenant(principal);
+    return this.workflowEngine.getExecutions().filter((execution) => execution.context.tenantId === tenantId);
+  }
+
+  @Get('schedules')
+  @Permissions(AUTOMATION_READ)
+  @ApiOperation({ summary: 'Lister les planifications du tenant' })
+  async getSchedules(@CurrentUser() principal: IamAuthContext) {
+    return this.persistence.listSchedules(this.requireTenant(principal));
+  }
+
+  @Get('schedules/status')
+  @Permissions(AUTOMATION_READ)
+  @ApiOperation({ summary: 'État réel du scheduler serveur' })
+  getScheduleStatus() {
+    return this.persistence.getSchedulerStatus();
+  }
+
+  @Post('schedules')
+  @Permissions(AUTOMATION_EXECUTE)
+  @ApiOperation({ summary: 'Créer une planification récurrente' })
+  async createSchedule(
+    @Body() dto: CreateAutomationScheduleDto,
+    @CurrentUser() principal: IamAuthContext,
+  ) {
+    return this.persistence.createSchedule(this.requireTenant(principal), principal.userId, dto);
+  }
+
+  @Patch('schedules/:id')
+  @Permissions(AUTOMATION_EXECUTE)
+  @ApiOperation({ summary: 'Modifier ou suspendre une planification' })
+  async updateSchedule(
+    @Param('id') id: string,
+    @Body() dto: UpdateAutomationScheduleDto,
+    @CurrentUser() principal: IamAuthContext,
+  ) {
+    return this.persistence.updateSchedule(this.requireTenant(principal), id, dto);
+  }
+
+  @Delete('schedules/:id')
+  @Permissions(AUTOMATION_EXECUTE)
+  @ApiOperation({ summary: 'Supprimer une planification' })
+  async deleteSchedule(@Param('id') id: string, @CurrentUser() principal: IamAuthContext) {
+    await this.persistence.deleteSchedule(this.requireTenant(principal), id);
+    return { deleted: true };
   }
 
   // === TRIGGER (WF-CDC-04) ===
@@ -263,15 +329,15 @@ export class AutomationController {
   @Get('history')
   @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Historique des executions' })
-  async getHistory() {
-    return this.historyService.search();
+  async getHistory(@CurrentUser() principal: IamAuthContext) {
+    return this.historyService.search({ tenantId: this.requireTenant(principal) });
   }
 
   @Get('history/metrics')
   @Permissions(AUTOMATION_READ)
   @ApiOperation({ summary: 'Metriques du moteur' })
-  async getMetrics() {
-    return this.historyService.getMetrics();
+  async getMetrics(@CurrentUser() principal: IamAuthContext) {
+    return this.historyService.getMetrics(this.requireTenant(principal));
   }
 
   private buildContext(
@@ -319,6 +385,11 @@ export class AutomationController {
   private getTraceId(req: Request): string {
     return (req as any).traceId || `tr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 10)}`;
   }
+
+  private requireTenant(principal: IamAuthContext): string {
+    if (!principal?.tenantId) {
+      throw new IamError('tenantId requis dans le contexte IAM', 403, 'TENANT_REQUIRED');
+    }
+    return principal.tenantId;
+  }
 }
-
-

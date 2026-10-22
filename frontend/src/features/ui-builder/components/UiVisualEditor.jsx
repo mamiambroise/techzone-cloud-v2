@@ -177,7 +177,7 @@ function EditorBody() {
                 onClick={() => dispatch(setDevice(kind))}
                 aria-pressed={device === kind}
                 title={kind}
-                className={`rounded-md p-1.5 transition-colors duration-150 ${device === kind ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`rounded-md p-1.5 transition-colors duration-150 ${device === kind ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 <Icon className="h-4 w-4" />
               </button>
@@ -229,7 +229,7 @@ function EditorBody() {
                 role="tab"
                 aria-selected={leftTab === tab.id}
                 onClick={() => setLeftTab(tab.id)}
-                className={`flex-1 rounded-md px-2 py-2 text-[10px] font-bold transition-colors ${leftTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+                className={`flex-1 rounded-md px-2 py-2 text-[10px] font-bold transition-colors ${leftTab === tab.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
               >
                 {tab.label}
               </button>
@@ -334,10 +334,10 @@ function EditorBody() {
         }}
         onDragOver={(event) => event.preventDefault()}
         onDrop={handleCanvasDrop({ nodeId, parentId, index })}
-        className={`relative rounded-lg transition-[box-shadow,outline] duration-150 ${isSelected ? 'outline outline-2 outline-blue-500 outline-offset-2' : 'outline outline-1 outline-dashed outline-transparent hover:outline-slate-300'} ${isHidden ? 'opacity-40' : ''}`}
+        className={`relative rounded-lg transition-[box-shadow,outline] duration-150 ${isSelected ? 'outline outline-2 outline-indigo-500 outline-offset-2' : 'outline outline-1 outline-dashed outline-transparent hover:outline-slate-300'} ${isHidden ? 'opacity-40' : ''}`}
       >
         {isSelected && (
-          <span className="absolute -top-2 left-2 z-10 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
+          <span className="absolute -top-2 left-2 z-10 rounded bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
             {node.type}{isHidden ? ' · Masqué' : ''}
           </span>
         )}
@@ -509,7 +509,7 @@ function LayerTreeNode({ node, tree, selectedComponentId, onSelect, depth }) {
       <button
         type="button"
         onClick={() => onSelect(node.id)}
-        className={`w-full truncate rounded-md py-1.5 pr-2 text-left text-xs transition-colors ${selectedComponentId === node.id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+        className={`w-full truncate rounded-md py-1.5 pr-2 text-left text-xs transition-colors ${selectedComponentId === node.id ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
         {definition?.label || node.type}
@@ -565,7 +565,7 @@ function Inspector({ node, tab, onTab }) {
             role="tab"
             aria-selected={tab === tabId}
             onClick={() => onTab(tabId)}
-            className={`rounded-t-lg px-2.5 py-2 text-[10px] font-bold transition-colors duration-150 ${tab === tabId ? 'border-b-2 border-blue-600 text-blue-700' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`rounded-t-lg px-2.5 py-2 text-[10px] font-bold transition-colors duration-150 ${tab === tabId ? 'border-b-2 border-indigo-600 text-indigo-700' : 'text-slate-400 hover:text-slate-600'}`}
           >
             {({ CONTENT: 'Propriétés', DATA: 'Données', ACTIONS: 'Actions', VISIBILITY: 'Visibilité', RESPONSIVE: 'Responsive', ADVANCED: 'Avancé' })[tabId]}
           </button>

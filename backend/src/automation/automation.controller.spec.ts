@@ -17,6 +17,7 @@ import { ConditionsEngine } from './conditions/conditions.engine';
 import { AutomationHistoryService } from './history/automation-history.service';
 import { ActionEngine } from './action/action.engine';
 import { ErpError } from '../erp-adapter/erp-error';
+import { AutomationPersistenceService } from './automation-persistence.service';
 
 type Mocked<T> = { [K in keyof T]: jest.Mock };
 
@@ -44,6 +45,7 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
   let triggerEngine: Mocked<TriggerEngine>;
   let historyService: Mocked<AutomationHistoryService>;
   let conditionsEngine: Mocked<ConditionsEngine>;
+  let persistence: { listWorkflows: jest.Mock; startWorkflow: jest.Mock };
 
   const buildCtx = (
     principal: IamAuthContext,
@@ -114,6 +116,10 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
       evaluateWithTracePublic: jest.fn(),
     } as any;
 
+    persistence = {
+      listWorkflows: jest.fn().mockResolvedValue([]),
+      startWorkflow: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AutomationController],
       providers: [
@@ -123,6 +129,22 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
         { provide: AutomationHistoryService, useValue: historyService },
         { provide: ConditionsEngine, useValue: conditionsEngine },
         { provide: ActionEngine, useValue: { getActions: jest.fn().mockReturnValue([]) } },
+        {
+          provide: AutomationPersistenceService,
+          useValue: {
+            ...persistence,
+            createWorkflow: jest.fn(),
+            updateWorkflow: jest.fn(),
+            validateWorkflow: jest.fn(),
+            setWorkflowLifecycle: jest.fn(),
+            startWorkflow: persistence.startWorkflow,
+            listSchedules: jest.fn().mockResolvedValue([]),
+            getSchedulerStatus: jest.fn().mockReturnValue({ enabled: false }),
+            createSchedule: jest.fn(),
+            updateSchedule: jest.fn(),
+            deleteSchedule: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -321,7 +343,7 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
     it('should propagate traceId through startWorkflow', async () => {
       const principal = makePrincipal();
       const req = mockReq('trace-wf-start');
-      (workflowEngine.startWorkflow as jest.Mock).mockResolvedValue({
+      persistence.startWorkflow.mockResolvedValue({
         executionId: 'exec-1',
         version: '1.0',
         startedAt: '2024-01-01T00:00:00Z',
@@ -331,7 +353,7 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
 
       await controller.startWorkflow(req as any, principal, { workflowCode: 'test-wf' });
 
-      const ctx = (workflowEngine.startWorkflow as jest.Mock).mock.calls[0][1];
+      const ctx = persistence.startWorkflow.mock.calls[0][2];
       expect(ctx.traceId).toBe('trace-wf-start');
     });
 
@@ -363,17 +385,17 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
 
   // === E2-10: ERP failure remains propagated → PASS ===
   describe('E2-10: ERP failure remains propagated', () => {
-    it('should propagate ErpError from workflowEngine.startWorkflow', async () => {
+    it('should propagate ErpError from persisted workflow execution', async () => {
       const principal = makePrincipal();
       const req = mockReq('trace-erp-10');
       const erpError = ErpError.unavailable('ERP unavailable', { tenantId: 'tenant-A' }, 'trace-erp-10');
-      (workflowEngine.startWorkflow as jest.Mock).mockRejectedValue(erpError);
+      persistence.startWorkflow.mockRejectedValue(erpError);
 
       await expect(
         controller.startWorkflow(req as any, principal, { workflowCode: 'test-wf' }),
       ).rejects.toThrow(ErpError);
 
-      const ctx = (workflowEngine.startWorkflow as jest.Mock).mock.calls[0][1];
+      const ctx = persistence.startWorkflow.mock.calls[0][2];
       expect(ctx.traceId).toBe('trace-erp-10');
     });
 
@@ -413,14 +435,11 @@ describe('AutomationController — Fail-Closed Context (1B.5-E2)', () => {
     });
   });
 
-  // === Regression: READ endpoints remain accessible with AUTH ===
-  describe('Regression: read endpoints do not require tenant/user context', () => {
-    it('getCockpit should not call buildContext', () => {
-      controller.getCockpit();
-      const ctx = (rulesEngine.getActiveRules as jest.Mock).mock.calls;
-      // getCockpit should not throw even without principal
-      expect(ctx).toBeDefined();
+  // === Regression: tenant-scoped read endpoints ===
+  describe('Regression: cockpit is tenant-scoped', () => {
+    it('loads persisted workflows for the authenticated tenant', async () => {
+      await controller.getCockpit(makePrincipal());
+      expect(persistence.listWorkflows).toHaveBeenCalledWith('tenant-A');
     });
   });
 });
-

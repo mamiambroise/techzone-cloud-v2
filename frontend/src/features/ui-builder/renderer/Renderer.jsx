@@ -67,11 +67,15 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
     let active = true;
     setRecord(null); setMessage(null);
     if (operation === 'CREATE') return undefined;
+    if (ctx.mode === 'preview') {
+      setMessage({ error: 'Aperçu protégé : la lecture des enregistrements est désactivée.' });
+      return undefined;
+    }
     if (!ctx.recordId) { setMessage({ error: 'Sélectionnez un enregistrement depuis la liste.' }); return undefined; }
-    getRuntimeRecord(resource, ctx.recordId).then(value => { if (active) setRecord(value); })
+    getRuntimeRecord(resource, ctx.recordId, ctx.resolutionId).then(value => { if (active) setRecord(value); })
       .catch(() => active && setMessage({ error: 'Enregistrement inaccessible.' }));
     return () => { active = false; };
-  }, [resource, ctx.recordId, operation]);
+  }, [resource, ctx.recordId, ctx.mode, ctx.resolutionId, operation]);
   const submit = async (event) => {
     event.preventDefault();
     if (!resource) return setMessage({ error: 'Aucun binding ENTITY_FIELD ne définit la ressource.' });
@@ -83,7 +87,7 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
     const input = serializeFields(fields, event.currentTarget, ctx.businessContext);
     setSubmitting(true);
     try {
-    const result = await executeRuntime({ resource, operation, ...(operation === 'UPDATE' ? { targetId: ctx.recordId } : {}), input, idempotencyKey: `ui-${node.id}-${Date.now()}` });
+    const result = await executeRuntime({ resource, operation, ...(operation === 'UPDATE' ? { targetId: ctx.recordId } : {}), input, idempotencyKey: `ui-${node.id}-${Date.now()}` }, ctx.resolutionId);
     setMessage(result.success ? { success: operation === 'CREATE' ? 'Enregistrement créé.' : 'Enregistrement modifié.' } : { error: result.errorMessage || 'Écriture refusée.' });
     if (result.success) ctx.refreshData();
     } catch { setMessage({ error: 'Création impossible. Réessayez après vérification de la connexion.' }); }
@@ -337,7 +341,7 @@ function getViewportDevice() {
   return 'DESKTOP';
 }
 
-export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', recordId, onNavigate, device, decorateNode }) {
+export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', resolutionId, recordId, onNavigate, device, decorateNode }) {
   const [dataRevision, setDataRevision] = useState(0);
   const [viewportDevice, setViewportDevice] = useState(getViewportDevice);
 
@@ -354,6 +358,7 @@ export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'prev
     decorateNode,
     businessContext,
     recordId,
+    resolutionId,
     onNavigate,
     mode,
     device: activeDevice,
@@ -361,7 +366,7 @@ export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'prev
     fieldSchemas: new Map(),
     dataRevision,
     refreshData: () => setDataRevision((value) => value + 1),
-  }), [tree, resolveBinding, businessContext, mode, dataRevision, recordId, onNavigate, activeDevice, decorateNode]);
+  }), [tree, resolveBinding, businessContext, mode, dataRevision, resolutionId, recordId, onNavigate, activeDevice, decorateNode]);
 
   const treeError = tree ? rendererTreeError(tree) : null;
   if (treeError) return <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{treeError}</p>;

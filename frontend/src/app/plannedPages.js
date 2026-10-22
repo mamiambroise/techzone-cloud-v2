@@ -18,7 +18,6 @@ export const plannedPages = [
   planned("uiNavigation", "ui", "Navigation", "L’ordre visuel, les icônes et la visibilité des pages seront gérés ici ; la structure de navigation reste au Business Manager."),
   planned("uiEditor", "ui", "Éditeur visuel", "L’éditeur visuel s’ouvre depuis une page de l’application ; il sera disponible avec le futur Page Builder."),
 
-  planned("automationSchedules", "automation", "Planifications", "La planification des workflows (récurrence, fuseaux horaires) n’est pas encore disponible."),
   planned("automationTemplates", "automation", "Modèles", "Les modèles de workflows réutilisables ne sont pas encore disponibles."),
   planned("automationDiagnostics", "automation", "Diagnostics", "Le diagnostic des automatisations (erreurs, exécutions bloquées) sera intégré avec le moteur d’automatisation."),
 

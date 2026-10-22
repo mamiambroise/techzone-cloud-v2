@@ -1,5 +1,5 @@
 import {
-  IsString, IsNotEmpty, IsOptional, IsBoolean, IsNumber, IsArray, IsIn, ValidateNested, IsObject,
+  IsString, IsNotEmpty, IsOptional, IsBoolean, IsNumber, IsArray, IsIn, ValidateNested, IsObject, IsInt, Min, Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -176,4 +176,41 @@ export class WorkflowLifecycleDto {
   @ApiProperty({ enum: ['DRAFT', 'READY', 'ACTIVE', 'PAUSED', 'DEPRECATED', 'ARCHIVED'] })
   @IsIn(['DRAFT', 'READY', 'ACTIVE', 'PAUSED', 'DEPRECATED', 'ARCHIVED'])
   lifecycle: 'DRAFT' | 'READY' | 'ACTIVE' | 'PAUSED' | 'DEPRECATED' | 'ARCHIVED';
+}
+
+export class CreateAutomationScheduleDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  workflowCode: string;
+
+  @ApiProperty({ minimum: 1, maximum: 10080, example: 60 })
+  @IsInt()
+  @Min(1)
+  @Max(10080)
+  frequencyMinutes: number;
+
+  @ApiPropertyOptional({ example: 'Europe/Paris', default: 'UTC' })
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+}
+
+export class UpdateAutomationScheduleDto {
+  @ApiPropertyOptional({ minimum: 1, maximum: 10080 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10080)
+  frequencyMinutes?: number;
+
+  @ApiPropertyOptional({ example: 'Europe/Paris' })
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
 }

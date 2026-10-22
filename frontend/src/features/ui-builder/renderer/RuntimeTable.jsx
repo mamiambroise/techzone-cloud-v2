@@ -13,15 +13,19 @@ export default function RuntimeTable({ node, props, ctx }) {
     let active = true;
     setState({ rows: [], total: 0, loading: true, error: null });
     if (!resource) { setState({ rows: [], total: 0, loading: false, error: 'Ressource non définie.' }); return undefined; }
-    queryRuntime(resource, { page, pageSize, ...(sort ? { sort: [sort] } : {}), ...(filter && field ? { filter: { logic: 'AND', conditions: [{ field, operator: 'CONTAINS', value: filter }] } } : {}) })
+    if (ctx.mode === 'preview') {
+      setState({ rows: [], total: 0, loading: false, error: 'Aperçu protégé : les données métier ne sont pas chargées.' });
+      return undefined;
+    }
+    queryRuntime(resource, { page, pageSize, ...(sort ? { sort: [sort] } : {}), ...(filter && field ? { filter: { logic: 'AND', conditions: [{ field, operator: 'CONTAINS', value: filter }] } } : {}) }, ctx.resolutionId)
       .then(result => active && setState({ rows: recordRows(result), total: result.total, loading: false, error: null }))
       .catch(() => active && setState({ rows: [], total: 0, loading: false, error: 'Lecture Data Runtime impossible.' }));
     return () => { active = false; };
-  }, [resource, page, pageSize, filter, field, sort, ctx.dataRevision]);
+  }, [resource, page, pageSize, filter, field, sort, ctx.dataRevision, ctx.mode, ctx.resolutionId]);
   async function archive(id) {
     if (ctx.mode === 'preview' || !window.confirm('Archiver cet enregistrement ?')) return;
     try {
-      const result = await executeRuntime({ resource, operation: 'DELETE', targetId: id });
+      const result = await executeRuntime({ resource, operation: 'DELETE', targetId: id }, ctx.resolutionId);
       if (!result.success) throw new Error();
       ctx.refreshData();
     } catch { setState(current => ({ ...current, error: 'Archivage refusé.' })); }

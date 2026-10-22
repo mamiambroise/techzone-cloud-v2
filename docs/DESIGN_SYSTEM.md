@@ -68,6 +68,7 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 
 ## UI Builder — contexte et inspection
 
+- Le UI Builder conserve la palette primaire Techzone Cloud pour les actions globales ; son accent de module indigo est réservé à sa navigation, sa sélection de canvas et ses états d’édition.
 - Barre de contexte commune : tenant, application, version, page, device et statut ; position sticky sur tablette/desktop, flux normal sur mobile pour préserver la place du canvas.
 - État de sauvegarde annoncé avec `role="status"` dans le contexte commun.
 - Inspecteur : Propriétés, Données, Actions, Visibilité, Responsive, Avancé ; définition avancée en lecture seule, sans saisie de code arbitraire.

@@ -1823,6 +1823,8 @@ model Tenant {
   billingCredits      Credit[]
   billingAdjustments  Adjustment[]
   roleAssignments     RoleAssignment[]
+  automationWorkflows AutomationWorkflow[]
+  automationSchedules AutomationSchedule[]
 
   @@index([status])
   @@map("tenant")
@@ -4306,6 +4308,53 @@ model RuntimeDiagnostic {
   @@index([tenantId, resolutionId, createdAt])
   @@index([tenantId, severity, category])
   @@map("pr_runtime_diagnostics")
+}
+
+model AutomationWorkflow {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Text
+  code      String   @db.VarChar(100)
+  name      String   @db.VarChar(255)
+  version   String   @default("1.0") @db.VarChar(50)
+  lifecycle String   @default("DRAFT") @db.VarChar(20)
+  steps     Json
+  maxSteps  Int      @default(20)
+  createdBy String   @db.Text
+  updatedBy String   @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  schedules AutomationSchedule[]
+
+  @@unique([tenantId, code])
+  @@unique([id, tenantId])
+  @@index([tenantId, lifecycle, updatedAt])
+  @@map("automation_workflows")
+}
+
+model AutomationSchedule {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @db.Text
+  workflowId       String    @db.Uuid
+  frequencyMinutes Int
+  timezone         String    @default("UTC") @db.VarChar(100)
+  enabled          Boolean   @default(true)
+  nextRunAt        DateTime  @db.Timestamptz(6)
+  lastRunAt        DateTime? @db.Timestamptz(6)
+  lastRunStatus    String?   @db.VarChar(20)
+  lastRunError     String?
+  lastExecutionId  String?   @db.VarChar(100)
+  createdBy        String    @db.Text
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflow AutomationWorkflow @relation(fields: [workflowId, tenantId], references: [id, tenantId], onDelete: Cascade)
+
+  @@index([tenantId, enabled, nextRunAt])
+  @@index([workflowId, tenantId])
+  @@map("automation_schedules")
 }
 
 // UI Builder: preserved from the merged branch.

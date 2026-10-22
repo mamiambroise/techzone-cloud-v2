@@ -64,8 +64,11 @@ export class AutomationHistoryService {
       .flatMap((r) => [{ timestamp: r.startedAt, event: 'EXECUTION_START', status: 'RUNNING' }]);
   }
 
-  getMetrics(): AutomationMetrics {
-    const total = this.records.length;
+  getMetrics(tenantId?: string): AutomationMetrics {
+    const records = tenantId
+      ? this.records.filter((record) => record.tenantId === tenantId)
+      : this.records;
+    const total = records.length;
     if (total === 0) {
       return {
         executionsCount: 0,
@@ -80,12 +83,12 @@ export class AutomationHistoryService {
       };
     }
 
-    const succeeded = this.records.filter((r) => r.status === 'SUCCEEDED').length;
-    const failed = this.records.filter((r) => r.status === 'FAILED').length;
-    const running = this.records.filter((r) => r.status === 'RUNNING').length;
-    const timeouts = this.records.filter((r) => r.status === 'TIMEOUT').length;
-    const retries = this.records.reduce((sum, r) => sum + r.retryCount, 0);
-    const durations = this.records.filter((r) => r.duration != null).map((r) => r.duration!);
+    const succeeded = records.filter((r) => r.status === 'SUCCEEDED').length;
+    const failed = records.filter((r) => r.status === 'FAILED').length;
+    const running = records.filter((r) => r.status === 'RUNNING').length;
+    const timeouts = records.filter((r) => r.status === 'TIMEOUT').length;
+    const retries = records.reduce((sum, r) => sum + r.retryCount, 0);
+    const durations = records.filter((r) => r.duration != null).map((r) => r.duration!);
     const avg = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
 
     return {

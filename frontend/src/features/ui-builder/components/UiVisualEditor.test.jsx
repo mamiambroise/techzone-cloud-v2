@@ -74,4 +74,14 @@ describe('UI Builder visual editor', () => {
     await screen.findByLabelText('Canvas');
     expect(screen.getByDisplayValue('Clients — /clients')).toBeInTheDocument();
   });
+
+   it('uses the UI Builder indigo accent for navigation and canvas selection', async () => {
+     renderEditor('/ui/builder/page-a');
+     await screen.findByLabelText('Canvas');
+
+     expect(screen.getByRole('link', { name: 'Éditeur visuel' })).toHaveClass('border-indigo-600', 'text-indigo-700');
+     expect(screen.getByRole('button', { name: 'Composant Container' })).toHaveClass('outline-indigo-500');
+     expect(screen.getByRole('region', { name: 'Contexte UI Builder' })).toHaveClass('relative', 'sm:sticky');
+     expect(screen.getByRole('region', { name: 'Contexte UI Builder' })).toHaveTextContent('Aucune modification');
+   });
  });

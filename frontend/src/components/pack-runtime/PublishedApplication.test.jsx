@@ -22,7 +22,26 @@ const gate = (tenantId = 'tenant-a') => ({
   },
 });
 const renderPublished = () => render(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-a" resolutionId="resolution-a" effectiveManifest={gate()} />);
-beforeEach(() => api.get.mockResolvedValue({ data: manifest() }));
+const businessContext = {
+  applicationVersionId: 'version-a',
+  entities: [{ code: 'Customer', fields: [{ code: 'name', type: 'TEXT' }] }],
+};
+const dataTableTree = () => ({
+  root: 'table',
+  nodes: {
+    table: {
+      id: 'table',
+      type: 'DataTable',
+      props: { title: 'Customers' },
+      bindings: { rows: { kind: 'ENTITY_LIST', entity: 'Customer' } },
+      children: [],
+    },
+  },
+});
+beforeEach(() => {
+  api.get.mockResolvedValue({ data: manifest() });
+  api.post.mockResolvedValue({ data: { items: [], total: 0 } });
+});
 
 describe('Published application — shared renderer and version isolation', () => {
   it('renders the same definition as preview and navigates published pages', async () => {
@@ -88,5 +107,31 @@ describe('SEC-UI-121 Runtime gate', () => {
     api.get.mockResolvedValue({ data: { ...manifest(), hash: 'other-hash' } });
     renderPublished();
     expect(await screen.findByRole('alert')).toHaveTextContent('Interface publiée indisponible');
+  });
+
+  it('forwards the server-validated resolution proof to published Data Runtime reads', async () => {
+    const ui = {
+      ...definition(),
+      businessContext,
+      pages: [{ key: 'home', components: dataTableTree() }],
+    };
+    const effectiveManifest = {
+      content: { ...gate().content, ui: { definition: ui } },
+    };
+    render(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-a" resolutionId="resolution-a" effectiveManifest={effectiveManifest} />);
+
+    await screen.findByRole('navigation', { name: 'Pages de l’application' });
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith(
+      '/data-runtime/query',
+      expect.objectContaining({ resource: 'bm:version-a:Customer' }),
+      expect.objectContaining({ headers: { 'X-Runtime-Resolution-Id': 'resolution-a' } }),
+    ));
+  });
+
+  it('never reads live Data Runtime records in editor preview', async () => {
+    render(<UiRenderer tree={dataTableTree()} businessContext={businessContext} mode="preview" />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Aperçu protégé');
+    expect(api.post).not.toHaveBeenCalled();
   });
 });

@@ -25,10 +25,10 @@ export default function PublishedApplication({ packCode, packVersion, tenantId, 
     return <p role="alert">Interface bloquée : une résolution Runtime exécutable est requise.</p>;
   }
   const identity = `${tenantId}:${packCode}:${packVersion}:${resolutionId}`;
-  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} expectedHash={source.manifestHash} effectiveManifest={manifestContent} />;
+  return <PublishedWorkspace key={identity} packCode={packCode} packVersion={packVersion} resolutionId={resolutionId} expectedHash={source.manifestHash} effectiveManifest={manifestContent} />;
 }
 
-function PublishedWorkspace({ packCode, packVersion, expectedHash, effectiveManifest }) {
+function PublishedWorkspace({ packCode, packVersion, resolutionId, expectedHash, effectiveManifest }) {
   const [definition, setDefinition] = useState(null), [error, setError] = useState('');
   const [selection, setSelection] = useState({ key: null, recordId: null });
   useEffect(() => {
@@ -59,6 +59,6 @@ function PublishedWorkspace({ packCode, packVersion, expectedHash, effectiveMani
   const navigate = (key, recordId = null) => setSelection({ key, recordId });
   return <section className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-4" aria-label="Application publiée">
     <nav aria-label="Pages de l’application" className="mb-4 flex flex-wrap gap-2">{definition.navigation.items.map(item => <button key={item.id} onClick={() => navigate(item.pageKey)} aria-current={page?.key === item.pageKey ? 'page' : undefined} className="rounded border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-500">{item.label}</button>)}</nav>
-    {page ? <UiRenderer key={page.key} tree={page.components} businessContext={definition.businessContext} mode="runtime" recordId={selection.recordId} onNavigate={navigate} /> : <p>Aucune page publiée.</p>}
+    {page ? <UiRenderer key={page.key} tree={page.components} businessContext={definition.businessContext} mode="runtime" resolutionId={resolutionId} recordId={selection.recordId} onNavigate={navigate} /> : <p>Aucune page publiée.</p>}
   </section>;
 }
