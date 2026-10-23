@@ -69,6 +69,8 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 ## UI Builder — contexte et inspection
 
 - Le UI Builder conserve la palette primaire Techzone Cloud pour les actions globales ; son accent de module indigo est réservé à sa navigation, sa sélection de canvas et ses états d’édition.
+- Le thème du module est défini dans `frontend/src/index.css` sous `.uib-workspace` (`--uib-accent`, `--uib-accent-soft`, `--uib-canvas`, etc.) afin de ne pas modifier les couleurs des autres modules.
+- Les vues utilisent `.uib-content` pour les surfaces et contrôles harmonisés ; l’éditeur utilise `.uib-editor-toolbar`, `.uib-editor-panel`, `.uib-canvas` et `.uib-canvas-frame` pour sa disposition à trois colonnes et son adaptation mobile.
 - Barre de contexte commune : tenant, application, version, page, device et statut ; position sticky sur tablette/desktop, flux normal sur mobile pour préserver la place du canvas.
 - État de sauvegarde annoncé avec `role="status"` dans le contexte commun.
 - Inspecteur : Propriétés, Données, Actions, Visibilité, Responsive, Avancé ; définition avancée en lecture seule, sans saisie de code arbitraire.

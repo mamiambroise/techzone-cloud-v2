@@ -27,7 +27,7 @@ function CatalogBody() {
   }, [query]);
 
   return (
-    <div className="space-y-5">
+    <div className="uib-content space-y-5">
       <div className="relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
         <input

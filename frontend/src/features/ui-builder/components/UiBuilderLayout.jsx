@@ -131,7 +131,7 @@ export default function UiBuilderLayout({ subTab, children }) {
         <p role="status" className="mt-2 text-xs text-slate-600">{({ CLEAN: 'Aucune modification', DIRTY: 'Modifications en attente', SAVING: 'Enregistrement…', SAVED: 'Enregistré', ERROR: 'Échec de l’enregistrement', CONFLICT: 'Conflit de sauvegarde' })[uiBuilder.saveState] || 'Aucune modification'}</p>
       </section>
 
-      <nav aria-label="Sections UI Builder" className="flex gap-1 overflow-x-auto border-b border-slate-200 pb-px [scrollbar-width:thin]">
+      <nav aria-label="Sections UI Builder" className="uib-navigation flex gap-1 overflow-x-auto border-b border-slate-200 pb-px [scrollbar-width:thin]">
         {UIB_SUB_TABS.map((tab) => {
           const isActive = tab.id === subTab;
           return (

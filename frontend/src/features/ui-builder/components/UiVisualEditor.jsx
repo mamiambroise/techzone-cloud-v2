@@ -144,9 +144,9 @@ function EditorBody() {
   };
 
   return (
-    <div className="flex flex-col gap-3" data-testid="ui-visual-editor">
+    <div className="uib-editor flex flex-col gap-3" data-testid="ui-visual-editor">
       {/* ------- Toolbar ------- */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-2xs">
+      <div className="uib-editor-toolbar flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-2xs">
         <select
           aria-label="Page en cours d'édition"
           value={selectedPageId || ''}
@@ -215,9 +215,9 @@ function EditorBody() {
         <BmButton variant="secondary" disabled={!state.saveConflict.serverPage} onClick={() => { if (window.confirm('Remplacer les modifications locales par la version serveur ?')) dispatch(reloadConflictingPage()); }}>Recharger la version serveur</BmButton>
       </section>}
       {/* ------- 3 panneaux ------- */}
-      <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="uib-editor-grid grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
         {/* LEFT : Component Library */}
-        <aside className={`rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'library' ? '' : 'hidden lg:block'}`} aria-label="Bibliothèque de composants">
+        <aside className={`uib-editor-panel rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'library' ? '' : 'hidden lg:block'}`} aria-label="Bibliothèque de composants">
           <nav role="tablist" aria-label="Navigation du panneau éditeur" className="flex border-b border-slate-100 p-1">
             {[
               { id: 'PAGES', label: 'Pages' },
@@ -265,13 +265,13 @@ function EditorBody() {
         </aside>
 
         {/* CENTER : Canvas */}
-        <section className="min-w-0 rounded-xl border border-slate-200 bg-[#f1f5f9] shadow-2xs" aria-label="Canvas" style={{ padding: '1.25rem' }}>
+        <section className="uib-canvas min-w-0 rounded-xl border border-slate-200 shadow-2xs" aria-label="Canvas" style={{ padding: '1.25rem' }}>
           <div className="mx-auto transition-[width] duration-200" style={{ width: DEVICE_WIDTHS[device], maxWidth: '100%', transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
             <div className="mb-2 flex items-center justify-between px-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{page.route} · {device}</span>
               <span className="text-[10px] text-slate-400">{page.layout}</span>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="uib-canvas-frame rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <UiRenderer tree={tree} resolveBinding={resolveBinding} businessContext={businessContext} mode="preview" device={device} decorateNode={(node, content) => {
                 const parentId = Object.keys(tree.nodes).find((id) => tree.nodes[id].children?.includes(node.id)) || null;
                 const index = parentId ? tree.nodes[parentId].children.indexOf(node.id) : null;
@@ -282,7 +282,7 @@ function EditorBody() {
         </section>
 
         {/* RIGHT : Inspector */}
-        <aside className={`rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'inspector' ? '' : 'hidden lg:block'}`} aria-label="Inspecteur du composant sélectionné">
+        <aside className={`uib-editor-panel rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'inspector' ? '' : 'hidden lg:block'}`} aria-label="Inspecteur du composant sélectionné">
           {tree.nodes[state.selectedComponentId]
             ? <Inspector node={tree.nodes[state.selectedComponentId]} tab={inspectorTab} onTab={setInspectorTab} />
             : <EmptyInspector />}

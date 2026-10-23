@@ -98,7 +98,7 @@ function OverviewBody() {
   const isEmptyProject = counts.pages === 0;
 
   return (
-    <div className="space-y-5">
+    <div className="uib-content space-y-5">
       <ContextHeader
         application={application}
         applicationVersion={applicationVersion}

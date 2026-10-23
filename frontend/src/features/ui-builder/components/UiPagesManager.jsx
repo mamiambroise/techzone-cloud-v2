@@ -137,7 +137,7 @@ function PagesBody() {
   if (pagesStatus === 'ERROR') return <BmErrorState message={lastActionError || undefined} onRetry={() => applicationVersionId && dispatch(fetchPages(applicationVersionId))} />;
 
   return (
-    <div className="space-y-5">
+    <div className="uib-content space-y-5">
       <BmCard title="Nouvelle page" subtitle="Route, type, layout et visibilité — validés côté backend">
         <form onSubmit={handleCreate} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

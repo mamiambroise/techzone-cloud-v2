@@ -85,7 +85,7 @@ function ThemeBody() {
   const invalidColor = Object.values(tokens.colors || {}).filter((value) => typeof value === 'string' && value !== '' && !HEX_RE.test(value));
 
   return (
-    <div className="space-y-5" style={cssVars}>
+    <div className="uib-content space-y-5" style={cssVars}>
       <div className="grid gap-5 lg:grid-cols-2">
         <BmCard
           title="Design tokens"
