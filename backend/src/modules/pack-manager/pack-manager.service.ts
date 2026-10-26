@@ -998,6 +998,7 @@ export class PackManagerService {
     return {
       id: item.id,
       packVersionId: item.packVersionId,
+      applicationVersionId: item.packVersion.applicationVersionId,
       hash: item.manifestHash,
       definition: content.definition,
       registryReferences: Array.isArray(content.registryReferences)

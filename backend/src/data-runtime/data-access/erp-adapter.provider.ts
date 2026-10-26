@@ -1,12 +1,18 @@
 // Provider Data Runtime → ERP Adapter
 // Pont entre le Data Runtime et l'ERP Adapter existant
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DataProvider, ListOptions } from './data-access-manager';
 import { RuntimeContext, ResourceDescriptor } from '../interfaces';
 import { ErpAdapterService } from '../../erp-adapter/erp-adapter.service';
 import { IErpAdapter } from '../../erp-adapter/interfaces/erp-adapter.interface';
 import { ErpError } from '../../erp-adapter/erp-error';
+import { MAX_PAGE_SIZE } from '../interfaces/query.contract';
+import type { FilterCondition, FilterGroup } from '../interfaces/query.contract';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
 
 @Injectable()
 export class ERPAdapterDataProvider implements DataProvider {
@@ -47,7 +53,7 @@ export class ERPAdapterDataProvider implements DataProvider {
 
   async list(resource: string, ctx: RuntimeContext, options?: ListOptions): Promise<any> {
     const adapter = await this.resolveAdapter(ctx);
-    let items: any[];
+    let items: unknown[] | { items?: unknown[]; total?: number };
     switch (resource) {
       case 'Product':
         items = await adapter.getProducts();
@@ -62,17 +68,52 @@ export class ERPAdapterDataProvider implements DataProvider {
         throw new NotFoundException(`RESOURCE_NOT_SUPPORTED: "${resource}"`);
     }
 
-    const page = options?.page || 1;
-    const pageSize = options?.pageSize || 20;
-    const itemsArray = Array.isArray(items) ? items : [items];
-    const realTotal =
-      items && typeof items === 'object' && (items as any).total !== undefined
-        ? (items as any).total
-        : null;
-    const total = realTotal !== null ? realTotal : null;
-    const totalPages = total !== null && pageSize > 0 ? Math.ceil(total / pageSize) : null;
+    const page = options?.page ?? 1;
+    const pageSize = options?.pageSize ?? 20;
+    if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
+      throw new BadRequestException('INVALID_PAGINATION');
+    }
+    const descriptor = await this.metadata(resource, ctx);
+    const allowedFields = new Set(descriptor.fields.map(field => field.code));
+    const rawItems: unknown = items;
+    const listedItems = Array.isArray(rawItems)
+      ? rawItems
+      : isRecord(rawItems) && Array.isArray(rawItems.items) ? rawItems.items : [];
+    const sourceItems = listedItems.filter(isRecord);
+    let filteredItems: Record<string, unknown>[] = sourceItems;
+    if (options?.filter) {
+      this.validateFilter(options.filter, allowedFields);
+      filteredItems = filteredItems.filter(item => this.matchesFilter(item, options.filter!));
+    }
+    for (const field of options?.select ?? []) {
+      this.assertAllowedField(field, allowedFields);
+    }
+    if ((options?.sort?.length ?? 0) > 5) throw new BadRequestException('INVALID_SORT');
+    const sorts = options?.sort ?? [];
+    for (const sort of sorts) {
+      this.assertAllowedField(sort.field, allowedFields);
+      if (!['ASC', 'DESC'].includes(sort.direction)) throw new BadRequestException('INVALID_SORT');
+    }
+    if (sorts.length) {
+      filteredItems = [...filteredItems].sort((left, right) => {
+        for (const sort of sorts) {
+          const a = left?.[sort.field], b = right?.[sort.field];
+          if (a === b) continue;
+          if (a == null) return 1;
+          if (b == null) return -1;
+          const comparison = a < b ? -1 : a > b ? 1 : 0;
+          if (comparison) return sort.direction === 'ASC' ? comparison : -comparison;
+        }
+        return 0;
+      });
+    }
+    const total = filteredItems.length;
+    const totalPages = Math.ceil(total / pageSize);
     const start = (page - 1) * pageSize;
-    const pagedItems = itemsArray.slice(start, start + pageSize);
+    let pagedItems = filteredItems.slice(start, start + pageSize);
+    if (options?.select?.length) {
+      pagedItems = pagedItems.map(item => Object.fromEntries(options.select!.map(field => [field, item?.[field]])));
+    }
 
     return {
       items: pagedItems,
@@ -81,6 +122,70 @@ export class ERPAdapterDataProvider implements DataProvider {
       total,
       totalPages,
     };
+  }
+
+  private assertAllowedField(field: string, allowedFields: Set<string>): void {
+    if (!allowedFields.has(field)) throw new BadRequestException('FIELD_NOT_ALLOWED');
+  }
+
+  private validateFilter(filter: unknown, allowedFields: Set<string>, depth = 0): asserts filter is FilterGroup {
+    if (!filter || typeof filter !== 'object' || Array.isArray(filter) || depth > 3) {
+      throw new BadRequestException('INVALID_FILTER');
+    }
+    const candidate = filter as Partial<FilterGroup>;
+    if (!['AND', 'OR'].includes(candidate.logic ?? '') ||
+      !Array.isArray(candidate.conditions) || candidate.conditions.length === 0 || candidate.conditions.length > 100) {
+      throw new BadRequestException('INVALID_FILTER');
+    }
+    for (const condition of candidate.conditions) {
+      if ('logic' in condition) {
+        this.validateFilter(condition, allowedFields, depth + 1);
+        continue;
+      }
+      if (typeof condition.field !== 'string') throw new BadRequestException('INVALID_FILTER');
+      this.assertAllowedField(condition.field, allowedFields);
+      if (!['EQ', 'NE', 'GT', 'GTE', 'LT', 'LTE', 'IN', 'NOT_IN', 'CONTAINS', 'STARTS_WITH', 'ENDS_WITH', 'IS_NULL'].includes(condition.operator)) {
+        throw new BadRequestException('INVALID_FILTER');
+      }
+      if (['IN', 'NOT_IN'].includes(condition.operator) && (!Array.isArray(condition.value) || condition.value.length > 100)) {
+        throw new BadRequestException('INVALID_FILTER');
+      }
+      if (condition.operator !== 'IS_NULL' && condition.value === undefined) throw new BadRequestException('INVALID_FILTER');
+      if (['CONTAINS', 'STARTS_WITH', 'ENDS_WITH'].includes(condition.operator) && typeof condition.value !== 'string') {
+        throw new BadRequestException('INVALID_FILTER');
+      }
+    }
+  }
+
+  private matchesFilter(item: Record<string, unknown>, filter: FilterGroup): boolean {
+    const results = filter.conditions.map((condition) =>
+      'logic' in condition
+        ? this.matchesFilter(item, condition)
+        : this.matchesCondition(item?.[condition.field], condition),
+    );
+    return filter.logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
+  }
+
+  private matchesCondition(actual: unknown, condition: FilterCondition): boolean {
+    const expected = condition.value;
+    const comparable = (['string', 'number'].includes(typeof actual) && typeof actual === typeof expected)
+      ? actual as string | number
+      : undefined;
+    switch (condition.operator) {
+      case 'EQ': return actual === expected;
+      case 'NE': return actual !== expected;
+      case 'GT': return comparable !== undefined && comparable > expected;
+      case 'GTE': return comparable !== undefined && comparable >= expected;
+      case 'LT': return comparable !== undefined && comparable < expected;
+      case 'LTE': return comparable !== undefined && comparable <= expected;
+      case 'IN': return condition.value.includes(actual);
+      case 'NOT_IN': return !condition.value.includes(actual);
+      case 'CONTAINS': return typeof actual === 'string' && actual.includes(expected);
+      case 'STARTS_WITH': return typeof actual === 'string' && actual.startsWith(expected);
+      case 'ENDS_WITH': return typeof actual === 'string' && actual.endsWith(expected);
+      case 'IS_NULL': return actual == null;
+      default: return false;
+    }
   }
 
   async count(resource: string, ctx: RuntimeContext, filter?: any): Promise<number> {

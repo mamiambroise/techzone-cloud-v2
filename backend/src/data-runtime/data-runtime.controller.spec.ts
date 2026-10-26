@@ -1,6 +1,8 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { DataRuntimeController } from './data-runtime.controller';
 import { ROLES } from '../iam/iam.constants';
+import { Reflector } from '@nestjs/core';
+import { IamPermissionsGuard } from '../iam/iam-permissions.guard';
 
 const principal = { tenantId: 'tenant-a', userId: 'reader', roles: [ROLES.USER], permissions: ['data-runtime:query'] } as any;
 
