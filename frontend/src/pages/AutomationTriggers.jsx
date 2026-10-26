@@ -10,6 +10,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { automationService } from '../services/apiClient.js';
 import { ModernSpinner } from '../components/Loaders.jsx';
+import { mapErrorToAction, mapErrorToMessage } from '../lib/automation/errors.js';
+import { maskSecrets } from '../lib/automation/masking.js';
 
 function AutomationTriggers() {
   const [triggers, setTriggers] = useState([]);
@@ -24,11 +26,12 @@ function AutomationTriggers() {
   const fetchTriggers = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await automationService.triggers();
+      if (!Array.isArray(res.data)) throw new Error('Réponse de déclencheurs Automation invalide.');
       setTriggers(res.data);
     } catch (err) {
-      setError('Impossible de charger les triggers');
-      console.error(err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -40,12 +43,12 @@ function AutomationTriggers() {
     e.preventDefault();
     setFireResult(null);
     let vars = {};
-    try { vars = JSON.parse(fireVars); } catch { alert('JSON de variables invalide'); return; }
+    try { vars = JSON.parse(fireVars); } catch { setFireResult({ error: 'JSON de variables invalide.' }); return; }
     try {
       const res = await automationService.fireTrigger(fireCode, vars);
       setFireResult(res.data);
     } catch (err) {
-      setFireResult({ error: err.response?.data?.message || err.message });
+      setFireResult({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
     }
   };
 
@@ -53,12 +56,12 @@ function AutomationTriggers() {
     e.preventDefault();
     setEventResult(null);
     let payload = {};
-    try { payload = JSON.parse(eventPayload); } catch { alert('JSON invalide'); return; }
+    try { payload = JSON.parse(eventPayload); } catch { setEventResult({ error: 'JSON invalide.' }); return; }
     try {
       const res = await automationService.processEvent(payload);
       setEventResult(res.data);
     } catch (err) {
-      setEventResult({ error: err.response?.data?.message || err.message });
+      setEventResult({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
     }
   };
 
@@ -104,9 +107,9 @@ function AutomationTriggers() {
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+        <div role="alert" className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
           <XCircleIcon className="w-5 h-5 text-red-500 shrink-0" />
-          <p className="text-red-600 dark:text-red-400 font-medium text-sm">{error}</p>
+          <div><p className="text-red-600 dark:text-red-400 font-medium text-sm">{mapErrorToMessage(error)}</p><p className="mt-1 text-xs text-red-700">{mapErrorToAction(error)}</p></div>
         </div>
       )}
 
@@ -162,7 +165,7 @@ function AutomationTriggers() {
                   {t.filters && (
                     <span className="flex items-center gap-1">
                       <SignalIcon className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                      <span>Filtres: <span className="font-mono text-slate-700 dark:text-slate-200">{JSON.stringify(t.filters)}</span></span>
+                      <span>Filtres: <span className="font-mono text-slate-700 dark:text-slate-200">{JSON.stringify(maskSecrets(t.filters))}</span></span>
                     </span>
                   )}
                 </div>
@@ -192,7 +195,7 @@ function AutomationTriggers() {
               </form>
               {fireResult && (
                 <pre className={`mt-4 rounded-xl p-4 text-xs overflow-x-auto max-h-64 ${fireResult.error ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200' : 'bg-slate-900 text-emerald-400'}`}>
-                  {JSON.stringify(fireResult, null, 2)}
+                  {JSON.stringify(maskSecrets(fireResult), null, 2)}
                 </pre>
               )}
             </div>
@@ -214,7 +217,7 @@ function AutomationTriggers() {
               </form>
               {eventResult && (
                 <pre className={`mt-4 rounded-xl p-4 text-xs overflow-x-auto max-h-64 ${eventResult.error ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200' : 'bg-slate-900 text-emerald-400'}`}>
-                  {JSON.stringify(eventResult, null, 2)}
+                  {JSON.stringify(maskSecrets(eventResult), null, 2)}
                 </pre>
               )}
             </div>

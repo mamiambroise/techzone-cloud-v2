@@ -36,6 +36,7 @@ export const ROUTES = {
   "automationTemplates": "/automation/templates",
   "automationDiagnostics": "/automation/diagnostics",
   "automationExecutions": "/automation/executions",
+  "automationHistory": "/automation/history",
   "packs": "/packs",
   "packManager": "/packs/packs",
   "packRegistry": "/packs/registry",

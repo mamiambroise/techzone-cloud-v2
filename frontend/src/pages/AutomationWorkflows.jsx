@@ -24,6 +24,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { automationService } from '../services/apiClient.js';
+import { maskSecrets } from '../lib/automation/masking.js';
 
 const createWorkflow = () => ({
   code: 'workflow.nouveau',
@@ -447,7 +448,7 @@ function WorkflowEditor({ initialWorkflow, actions, onCancel, onSaved }) {
             </button>
             {runResult && (
               <pre className={`mt-3 max-h-64 overflow-auto rounded-lg p-3 text-[11px] ${runResult.error ? 'bg-rose-50 text-rose-700' : 'bg-slate-900 text-emerald-300'}`}>
-                {JSON.stringify(runResult, null, 2)}
+                {JSON.stringify(maskSecrets(runResult), null, 2)}
               </pre>
             )}
           </div>
@@ -633,7 +634,7 @@ function AutomationWorkflows() {
                     <span>{execution.startedAt ? new Date(execution.startedAt).toLocaleString() : '—'}</span>
                   </div>
                   {selectedExecution === execution.executionId && (
-                    <pre className="mt-3 max-h-52 overflow-auto rounded-lg bg-slate-900 p-3 text-[10px] leading-relaxed text-emerald-300">{JSON.stringify(execution.timeline || execution, null, 2)}</pre>
+                    <pre className="mt-3 max-h-52 overflow-auto rounded-lg bg-slate-900 p-3 text-[10px] leading-relaxed text-emerald-300">{JSON.stringify(maskSecrets(execution.timeline || execution), null, 2)}</pre>
                   )}
                 </button>
               ))}

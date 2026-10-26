@@ -76,6 +76,7 @@ const DataRuntime = lazy(() => import('./pages/DataRuntime.jsx'));
 const DataRuntimeHistory = lazy(() => import('./pages/DataRuntimeHistory.jsx'));
 const DataRuntimeGovernance = lazy(() => import('./pages/DataRuntimeGovernance.jsx'));
 const AutomationCockpit = lazy(() => import('./pages/AutomationCockpit.jsx'));
+const AutomationDiagnostics = lazy(() => import('./pages/AutomationDiagnostics.jsx'));
 const AutomationConditions = lazy(() => import('./pages/AutomationConditions.jsx'));
 const AutomationHistory = lazy(() => import('./pages/AutomationHistory.jsx'));
 const AutomationRules = lazy(() => import('./pages/AutomationRules.jsx'));
@@ -184,7 +185,8 @@ function App() {
                   const homeIsReal = Boolean(home) && resolveRoute(home)?.implemented === true;
                   const backTo = homeIsReal ? home : ROUTES.dashboard;
                   const backLabel = homeIsReal ? (module ?? 'Accueil') : 'Accueil';
-                  const content = <Component pageId={pageId} moduleKeyOverride={moduleKeyOverride} title={label} module={module} backTo={backTo} backLabel={backLabel} plannedPhase={phase} description={description || `L’espace « ${label} » du module ${module} n’est pas encore disponible. Ses outils seront intégrés lors d’une prochaine phase.`} />;
+                  const page = <Component pageId={pageId} moduleKeyOverride={moduleKeyOverride} title={label} module={module} backTo={backTo} backLabel={backLabel} plannedPhase={phase} description={description || `L’espace « ${label} » du module ${module} n’est pas encore disponible. Ses outils seront intégrés lors d’une prochaine phase.`} />;
+                  const content = group === 'automation' ? <AutomationLayout>{page}</AutomationLayout> : page;
                   return <Route key={route} path={route} element={<RequireNavigationAccess>{implemented ? <TenantBoundary>{content}</TenantBoundary> : content}</RequireNavigationAccess>} />;
                 })}
                 {redirects.map(({ from, to }) => <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}

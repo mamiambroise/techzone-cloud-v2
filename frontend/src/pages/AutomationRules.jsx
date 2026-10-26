@@ -9,6 +9,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { automationService } from '../services/apiClient.js';
 import { ModernSpinner } from '../components/Loaders.jsx';
+import { mapErrorToAction, mapErrorToMessage } from '../lib/automation/errors.js';
+import { maskSecrets } from '../lib/automation/masking.js';
 
 function AutomationRules() {
   const [rules, setRules] = useState([]);
@@ -22,11 +24,12 @@ function AutomationRules() {
   const fetchRules = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await automationService.rules();
+      if (!Array.isArray(res.data)) throw new Error('Réponse de règles Automation invalide.');
       setRules(res.data);
     } catch (err) {
-      setError('Impossible de charger les règles');
-      console.error(err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -36,25 +39,26 @@ function AutomationRules() {
 
   const runSimulate = async (ruleCode) => {
     let context = {};
-    try { context = JSON.parse(evalContext); } catch { alert('JSON de contexte invalide'); return; }
+    try { context = JSON.parse(evalContext); } catch { setSimResult({ error: 'JSON de contexte invalide.' }); return; }
     try {
       const res = await automationService.simulateRule(ruleCode, context);
       setSelectedRule(ruleCode);
       setSimResult(res.data);
     } catch (err) {
-      alert(err.response?.data?.message || 'Erreur');
+      setSelectedRule(ruleCode);
+      setSimResult({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
     }
   };
 
   const runEvaluate = async (e) => {
     e.preventDefault();
     let context = {};
-    try { context = JSON.parse(evalContext); } catch { alert('JSON de contexte invalide'); return; }
+    try { context = JSON.parse(evalContext); } catch { setEvalOutput({ error: 'JSON de contexte invalide.' }); return; }
     try {
       const res = await automationService.evaluateRules(context);
       setEvalOutput(res.data);
     } catch (err) {
-      setEvalOutput({ error: err.response?.data?.message || err.message });
+      setEvalOutput({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
     }
   };
 
@@ -93,9 +97,9 @@ function AutomationRules() {
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+        <div role="alert" className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
           <XCircleIcon className="w-5 h-5 text-red-500 shrink-0" />
-          <p className="text-red-600 dark:text-red-400 font-medium text-sm">{error}</p>
+          <div><p className="text-red-600 dark:text-red-400 font-medium text-sm">{mapErrorToMessage(error)}</p><p className="mt-1 text-xs text-red-700">{mapErrorToAction(error)}</p></div>
         </div>
       )}
 
@@ -134,7 +138,7 @@ function AutomationRules() {
                   </div>
                 </div>
                 <pre className="mt-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl p-3 text-xs text-slate-600 dark:text-slate-300 overflow-x-auto border border-slate-100 dark:border-slate-700/60">
-                  {JSON.stringify(r.conditions, null, 1)}
+                  {JSON.stringify(maskSecrets(r.conditions), null, 1)}
                 </pre>
                 {(r.effects || []).length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -171,7 +175,7 @@ function AutomationRules() {
               </button>
               {evalOutput && (
                 <pre className="mt-4 bg-slate-900 text-emerald-400 rounded-xl p-4 text-xs overflow-x-auto max-h-72">
-                  {JSON.stringify(evalOutput, null, 2)}
+                  {JSON.stringify(maskSecrets(evalOutput), null, 2)}
                 </pre>
               )}
             </div>
@@ -193,7 +197,7 @@ function AutomationRules() {
               </div>
               <div className="p-6">
                 <pre className="bg-slate-900 text-emerald-400 rounded-xl p-4 text-xs overflow-x-auto max-h-72">
-                  {JSON.stringify(simResult, null, 2)}
+                  {JSON.stringify(maskSecrets(simResult), null, 2)}
                 </pre>
               </div>
             </div>
