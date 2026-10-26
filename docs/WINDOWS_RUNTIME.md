@@ -3,18 +3,16 @@
 Depuis la racine, avec les dépendances frontend/backend installées et Node 22 :
 
 ```powershell
-npm --prefix backend run build
-npm run test-user:provision
-npm run windows:start
-npm run windows:status
+npm run dev
+npm run status
 npm run windows:test
-npm run windows:restart
-npm run windows:stop
+npm run restart
+npm run stop
 ```
 
-Ne pas reconstruire `backend/dist` pendant un démarrage/redémarrage. Arrêter le runtime avant une reconstruction. Le démarrage signale un build absent ; il ne lance aucune migration.
+`npm run dev` est le point d'entrée Windows unique : il lance uniquement le backend NestJS (`:3003`) et le frontend Vite (`:3000`). Le lancement ne lance aucune migration. Après un changement backend, exécuter `npx prisma generate` puis `npx nest build` depuis `backend/`, puis relancer `npm run dev`.
 
-`Lancer-Techzone.cmd` et `scripts/start-windows.ps1` délèguent au même runtime. `Arreter-Techzone.cmd` arrête les services et `Redemarrer-Techzone.cmd` redémarre le profil Windows. Les commandes `dev` et `windows:start` conservent leurs modes de démarrage respectifs. `npm run stop` et `windows:stop` partagent le même arrêt : lanceurs, descendants et services du projet, avec vérification des ports 3000, 3003 et 8080. `npm run restart` relance le mode dev ; `windows:restart` relance le profil Windows sélectionné. Ne pas démarrer les deux modes simultanément.
+`Lancer-Techzone.cmd`, `scripts/start-windows.ps1`, `npm run dev` et `npm run windows:start` délèguent au même runtime. `Arreter-Techzone.cmd` arrête les services et `Redemarrer-Techzone.cmd` redémarre le profil Windows. `npm run stop` et `windows:stop` partagent le même arrêt : lanceurs, descendants et services du projet, avec vérification des ports 3000, 3003 et 8080. Si 3000 ou 3003 sont occupés, le runtime arrête seulement les processus Techzone dont il peut vérifier l'identité ; un processus étranger n'est jamais tué et le lancement échoue explicitement.
 
 Le runtime conserve les identités de ses processus dans `.runtime/*.pid` (PID, date de création, exécutable, commande). Il refuse d'arrêter un PID réutilisé ou de remplacer un processus inconnu. Il laisse PostgreSQL en service et ne démarre ni PHP/Dolibarr ni un IAM séparé. Les sorties privées et les captures de recette sont dans `.runtime/`, ignoré par Git.
 

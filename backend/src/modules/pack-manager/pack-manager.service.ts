@@ -10,6 +10,7 @@ import { Prisma, PackVersion } from '../../generated/prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UiBuilderService } from '../ui-builder/ui-builder.service';
+import { RegistryService } from '../../registry/registry.service';
 
 import type { IamPrincipal as Actor } from '../../iam/principal.decorator';
 type Input = Record<string, unknown>;
@@ -31,7 +32,11 @@ function invalidRuleField(expression: unknown): boolean {
 
 @Injectable()
 export class PackManagerService {
-  constructor(private readonly db: PrismaService, private readonly uiBuilder?: UiBuilderService) {}
+  constructor(
+    private readonly db: PrismaService,
+    private readonly uiBuilder?: UiBuilderService,
+    private readonly registry?: RegistryService,
+  ) {}
 
   private inTransaction = false;
   private transaction<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>, _options?: unknown): Promise<T> {
@@ -51,7 +56,11 @@ export class PackManagerService {
     }
     try {
       return await this.db.$transaction(async tx => {
-        const service = new PackManagerService(tx as unknown as PrismaService, this.uiBuilder);
+        const service = new PackManagerService(
+          tx as unknown as PrismaService,
+          this.uiBuilder,
+          this.registry,
+        );
         service.inTransaction = true;
         const result = await (service as any)[method](...args);
         await service.audit(tx,actor,'PACK_MANAGER',result?.id ?? String(args[0]),'pack.'+method);
@@ -821,6 +830,10 @@ export class PackManagerService {
     hash(version.snapshot.content) !== version.snapshotHash
     ) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
     publicJson(version.snapshot.content);
+    const registryReferences = await this.lockRegistryDependencies(
+      version.snapshot.content,
+      actor,
+    );
     const content = {
       contract: 'techzone.pack-manifest',
       contractVersion: '1.0.0',
@@ -828,6 +841,7 @@ export class PackManagerService {
       snapshotHash: version.snapshot.snapshotHash,
       generatedAt: version.validatedAt!.toISOString(),
       definition: version.snapshot.content,
+      registryReferences,
     };
     const manifestHash = hash(content);
     const manifest = await this.db.packManifest.upsert({
@@ -871,6 +885,12 @@ export class PackManagerService {
         )
           throw new ConflictException('PACK_VERSION_PUBLICATION_BLOCKED');
         this.assertPublicationIntegrity(version, actor);
+        const manifestContent = version.manifest.content as Input;
+        await this.verifyRegistryDependencies(
+          manifestContent.definition,
+          manifestContent.registryReferences,
+          actor,
+        );
         const publicationIssues: Array<{ code: string; path: string; severity: string; message: string }> = [];
         const currentDefinition = await this.definitionWithUi(await this.version(id, actor, true), actor, publicationIssues);
         if (publicationIssues.length) throw new ConflictException('PACK_VALIDATION_OUTDATED');
@@ -962,7 +982,7 @@ export class PackManagerService {
   async publishedManifest(code: string, versionNumber: string, actor: Actor) {
     const item = await this.db.packManifest.findFirst({
       where: { tenantId: this.tenant(actor), status: 'PUBLISHED', packVersion: { versionNumber, status: 'PUBLISHED', pack: { code, archivedAt: null } } },
-      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true, applicationVersionId: true } } },
     });
     if (!item) throw new NotFoundException('PUBLISHED_PACK_MANIFEST_NOT_FOUND');
     const content = item.content as any;
@@ -975,7 +995,120 @@ export class PackManagerService {
       hash(item.packVersion.snapshot.content) !== item.packVersion.snapshotHash
     ) throw new ConflictException('PACK_MANIFEST_HASH_INVALID');
     publicJson(content);
-    return { id: item.id, packVersionId: item.packVersionId, hash: item.manifestHash, definition: content.definition };
+    return {
+      id: item.id,
+      packVersionId: item.packVersionId,
+      hash: item.manifestHash,
+      definition: content.definition,
+      registryReferences: Array.isArray(content.registryReferences)
+        ? content.registryReferences
+        : [],
+    };
+  }
+
+  private registryDependencies(definition: any): Input[] {
+    if (!definition || !Array.isArray(definition.dependencies)) return [];
+    return definition.dependencies.filter(
+      (dependency: any) =>
+        dependency &&
+        typeof dependency === 'object' &&
+        ['REGISTRY', 'REGISTRY_ENTRY', 'REGISTRY_REF'].includes(
+          String(dependency.targetType).toUpperCase(),
+        ) &&
+        dependency.required !== false,
+    );
+  }
+
+  private dependencyKey(dependency: Input): string {
+    return [
+      dependency.sourceId,
+      dependency.targetType,
+      dependency.targetRef,
+      dependency.type,
+    ].join(':');
+  }
+
+  private async lockRegistryDependencies(definition: any, actor: Actor) {
+    const dependencies = this.registryDependencies(definition);
+    if (dependencies.length && !this.registry) {
+      throw new ConflictException('REGISTRY_RESOLVER_UNAVAILABLE');
+    }
+
+    return Promise.all(
+      dependencies.map(async (dependency) => {
+        const key = dependency.targetRef;
+        if (typeof key !== 'string' || !key.trim()) {
+          throw new ConflictException('PACK_REGISTRY_DEPENDENCY_INVALID');
+        }
+        const resolution = await this.registry!.resolve(actor, {
+          key,
+          ...(typeof dependency.targetVersionRange === 'string'
+            ? { versionRange: dependency.targetVersionRange }
+            : {}),
+        });
+        const selected = resolution.selectedCandidate;
+        if (resolution.status !== 'COMPATIBLE' || !selected) {
+          throw new ConflictException('PACK_REGISTRY_DEPENDENCY_BLOCKED');
+        }
+        return {
+          dependencyKey: this.dependencyKey(dependency),
+          entryId: selected.id,
+          key: selected.stableKey,
+          version: selected.version,
+        };
+      }),
+    );
+  }
+
+  private async verifyRegistryDependencies(
+    definition: any,
+    references: unknown,
+    actor: Actor,
+  ) {
+    const dependencies = this.registryDependencies(definition);
+    if (!dependencies.length && (!Array.isArray(references) || references.length === 0)) {
+      return;
+    }
+    if (!Array.isArray(references) || references.length !== dependencies.length) {
+      throw new ConflictException('PACK_REGISTRY_VERSION_LOCK_INVALID');
+    }
+    if (dependencies.length && !this.registry) {
+      throw new ConflictException('REGISTRY_RESOLVER_UNAVAILABLE');
+    }
+
+    for (const dependency of dependencies) {
+      const dependencyKey = this.dependencyKey(dependency);
+      const reference = references.find(
+        (item): item is Input =>
+          !!item &&
+          typeof item === 'object' &&
+          (item as Input).dependencyKey === dependencyKey,
+      );
+      if (
+        !reference ||
+        typeof reference.entryId !== 'string' ||
+        typeof reference.key !== 'string' ||
+        typeof reference.version !== 'string' ||
+        reference.key !== dependency.targetRef
+      ) {
+        throw new ConflictException('PACK_REGISTRY_VERSION_LOCK_INVALID');
+      }
+      const resolution = await this.registry!.resolve(actor, {
+        key: reference.key,
+        entryId: reference.entryId,
+        version: reference.version,
+        published: true,
+        ...(typeof dependency.targetVersionRange === 'string'
+          ? { versionRange: dependency.targetVersionRange }
+          : {}),
+      });
+      if (
+        resolution.status !== 'COMPATIBLE' ||
+        resolution.selectedCandidate?.id !== reference.entryId
+      ) {
+        throw new ConflictException('PACK_REGISTRY_DEPENDENCY_BLOCKED');
+      }
+    }
   }
 
   private assertPublicationIntegrity(
@@ -1075,7 +1208,7 @@ export class PackManagerService {
     await this.version(id, actor);
     const item = await this.db.packManifest.findFirst({
       where: { tenantId: this.tenant(actor), packVersionId: id },
-      include: { packVersion: { select: { snapshotHash: true, snapshot: true } } },
+      include: { packVersion: { select: { snapshotHash: true, snapshot: true, applicationVersionId: true } } },
     });
     if (!item) throw new NotFoundException('PACK_MANIFEST_NOT_FOUND');
     if (

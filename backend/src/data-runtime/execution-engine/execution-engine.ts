@@ -8,15 +8,19 @@ import {
   BatchExecutionRequest,
   BatchExecutionResult,
 } from '../interfaces/execution.contract';
-import { RuntimeContext, OperationType } from '../interfaces';
+import { RuntimeContext } from '../interfaces';
 import { DataAccessManager } from '../data-access/data-access-manager';
+import { HistoryService } from '../history/history.service';
 
 @Injectable()
 export class ExecutionEngine {
   private readonly logger = new Logger(ExecutionEngine.name);
   private readonly idempotencyStore: Map<string, ExecutionResult> = new Map();
 
-  constructor(private readonly dataAccess: DataAccessManager) {}
+  constructor(
+    private readonly dataAccess: DataAccessManager,
+    private readonly historyService?: HistoryService,
+  ) {}
 
   async execute(request: ExecutionRequest, ctx: RuntimeContext): Promise<ExecutionResult> {
     const start = Date.now();
@@ -101,11 +105,13 @@ export class ExecutionEngine {
         this.idempotencyStore.set(idempotencyScope, result);
       }
 
+      this.recordHistory(request, ctx, result);
+
       return result;
     } catch (error) {
       const err = error as Error & { code?: string };
       this.logger.error(`EXECUTE echoue: ${err.message}`);
-      return {
+      const result: ExecutionResult = {
         success: false,
         operation: request.operation,
         resource: request.resource,
@@ -116,7 +122,26 @@ export class ExecutionEngine {
         duration: Date.now() - start,
         timestamp: new Date().toISOString(),
       };
+      this.recordHistory(request, ctx, result);
+      return result;
     }
+  }
+
+  private recordHistory(request: ExecutionRequest, ctx: RuntimeContext, result: ExecutionResult): void {
+    this.historyService?.recordExecution({
+      traceId: result.traceId,
+      requestId: ctx.requestId,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      resource: request.resource,
+      operation: request.operation,
+      provider: request.resource.startsWith('bm:') ? 'BM_RECORDS' : 'ERP_ADAPTER',
+      startTime: new Date(Date.now() - result.duration).toISOString(),
+      duration: result.duration,
+      status: result.success ? 'SUCCESS' : (result.errorCode === 'FORBIDDEN' ? 'DENIED' : 'FAILED'),
+      errorCode: result.errorCode,
+      errorMessage: result.errorMessage,
+    });
   }
 
   async executeBatch(request: BatchExecutionRequest, ctx: RuntimeContext): Promise<BatchExecutionResult> {
@@ -161,7 +186,7 @@ export class ExecutionEngine {
     };
   }
 
-  private async executeAction(request: ExecutionRequest, ctx: RuntimeContext): Promise<any> {
+  private async executeAction(request: ExecutionRequest, _ctx: RuntimeContext): Promise<any> {
     const adapterName = request.metadata?.provider;
     if (!adapterName) {
       throw new BadRequestException('metadata.provider requis pour EXECUTE');

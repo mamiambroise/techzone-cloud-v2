@@ -10,7 +10,6 @@ import {
   SortDesc,
 } from 'lucide-react';
 import { iamObservabilityService } from '../../../services/apiClient.js';
-import { obsAlertSources } from './mockData.js';
 import { ModernSpinner } from '../../../components/Loaders.jsx';
 import ConfirmModal from '../../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../../hooks/useToast.js';
@@ -22,7 +21,7 @@ const RULE_TABS = [
 
 const SEVERITY_OPTIONS = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'WARNING', 'LOW'];
 const STATUS_OPTIONS = ['ALL', 'OPEN', 'ACKNOWLEDGED', 'RESOLVED', 'SUPPRESSED'];
-const SOURCE_OPTIONS = ['ALL', ...obsAlertSources];
+const SOURCE_OPTIONS = ['ALL'];
 const ENABLED_OPTIONS = ['ALL', 'true', 'false'];
 
 const PAGE_SIZE = 8;
@@ -84,7 +83,7 @@ function AlertManagerPage() {
     try {
       const response = await iamObservabilityService.alertRules();
       const data = response.data;
-      setRules(Array.isArray(data) ? data : (data?.rules ?? data?.data ?? []));
+      setRules(Array.isArray(data) ? data : (data?.items ?? []));
     } catch {
       {
         setLoadError("Impossible de charger les règles d'alerte.");
@@ -102,7 +101,7 @@ function AlertManagerPage() {
     try {
       const response = await iamObservabilityService.alertInstances();
       const data = response.data;
-      setInstances(Array.isArray(data) ? data : (data?.instances ?? data?.data ?? []));
+      setInstances(Array.isArray(data) ? data : (data?.items ?? []));
     } catch {
       {
         setLoadError("Impossible de charger les instances d'alerte.");

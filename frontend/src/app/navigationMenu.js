@@ -28,17 +28,18 @@ const group = (id, label, section, icon, accent, items) => ({
 
 export const navigationSections = [
   { id: "accueil", label: "ACCUEIL" },
-  { id: "construction", label: "CONSTRUCTION" },
-  { id: "execution", label: "EXÉCUTION" },
+  { id: "creation", label: "CRÉATION D’APPLICATIONS" },
+  { id: "publication", label: "PUBLICATION & EXÉCUTION" },
   { id: "integrations", label: "DONNÉES & INTÉGRATIONS" },
-  { id: "platform", label: "PLATEFORME" },
+  { id: "supervision", label: "SUPERVISION" },
+  { id: "commercial", label: "COMMERCIAL" },
+  { id: "administration", label: "ADMINISTRATION & INFRASTRUCTURE" },
 ];
 
 const menu = [
   group("dashboard", "Tableau de bord", "accueil", "Home", "", [item("dashboard", "Tableau de bord", "Home")]),
 
-  group("bm", "Business Manager", "construction", "BriefcaseBusiness", "text-pink-500", [
-    item("bm", "Vue d’ensemble", "Home"),
+  group("bm", "Business Manager", "creation", "BriefcaseBusiness", "text-pink-500", [
     item("bmApplications", "Applications", "LayoutGrid", ["applications", "applicationNew", "applicationDetail", "applicationWorkspace", "bmApplicationNew", "bmApplicationDetail", "bmVersions", "bmVersionsIndex", "bmVersionDetail", "bmRuntimeIndex", "bmRuntime"]),
     item("bmModels", "Modèles de données", "Database", ["bmDataModel"]),
     item("bmFeaturesIndex", "Fonctionnalités", "Cog", ["bmFeatures"]),
@@ -47,21 +48,21 @@ const menu = [
     item("bmQuality", "Validation", "CheckCircle2", ["bmValidation"]),
   ]),
 
-  group("ui", "UI Builder", "construction", "PanelsTopLeft", "text-violet-500", [
-    item("ui", "Vue d’ensemble", "Home"),
+  group("ui", "UI Builder", "creation", "PanelsTopLeft", "text-violet-500", [
+    item("ui", "Vue d’ensemble", "LayoutDashboard"),
     item("uiPages", "Pages", "FileText"),
     item("uiEditor", "Éditeur visuel", "ImageIcon", ["uiBuilder", "uiPage"], {
       pageId: "uiBuilder",
       route: "/ui/builder/editor",
     }),
-    item("uiComponents", "Composants", "Box"),
-    item("uiForms", "Formulaires", "ClipboardList"),
-    item("uiNavigation", "Navigation", "Navigation"),
-    item("uiThemes", "Thème", "Palette"),
-    item("uiPreview", "Aperçu & Test", "Eye"),
+    item("uiComponents", "Composants", "Boxes"),
+    item("uiForms", "Formulaires", "FormInput"),
+    item("uiNavigation", "Navigation", "Waypoints"),
+    item("uiThemes", "Thèmes", "Palette"),
+    item("uiPreview", "Aperçu & test", "MonitorPlay"),
   ]),
 
-  group("automation", "Automatisation", "construction", "Cog", "text-amber-400", [
+  group("automation", "Automatisation", "creation", "Cog", "text-amber-400", [
     item("automation", "Vue d’ensemble", "Home"),
     item("automationWorkflows", "Workflows", "Network"),
     item("automationTriggers", "Déclencheurs", "Zap"),
@@ -74,7 +75,7 @@ const menu = [
     item("automationFormulas", "Formules", "SlidersHorizontal"),
   ]),
 
-  group("packs", "Pack Manager", "construction", "Layers", "text-emerald-400", [
+  group("packs", "Pack Manager", "publication", "Layers", "text-emerald-400", [
     item("packs", "Vue d’ensemble", "Home"),
     item("pmpacks", "Packs", "Box", [], { pageId: "pmpacks" }),
     item("packVersions", "Versions", "Tag"),
@@ -91,14 +92,14 @@ const menu = [
     }),
   ]),
 
-  group("runtime", "Runtime", "execution", "Play", "text-sky-400", [
+  group("runtime", "Pack Runtime", "publication", "Play", "text-sky-400", [
     item("runtime", "Vue d’ensemble", "Home", ["packRuntime"]),
-    item("runtimeContext", "Contextes", "Layers"),
-    item("runtimeManifest", "Manifest", "FileText"),
-    item("runtimeResolver", "Résolution", "GitBranch"),
-    item("runtimeEffective", "Configuration effective", "SlidersHorizontal"),
-    item("runtimecache", "Cache", "Database", [], { pageId: "runtimeCache" }),
+    item("runtimeApplications", "Applications", "LayoutGrid"),
+    item("runtimeResolutions", "Résolutions", "GitBranch"),
+    item("runtimeActivations", "Activations", "PlayCircle"),
+    item("runtimeCache", "Cache", "Database"),
     item("runtimeDiagnostics", "Diagnostics", "BarChart3"),
+    item("runtimeHistory", "Historique", "History"),
   ]),
 
   group("data", "Données", "integrations", "Database", "text-cyan-400", [
@@ -121,12 +122,9 @@ const menu = [
       "erp-stocks",
       "erp-:moduleKey",
     ]),
+    item("erpRegistry", "Connexions", "Server"),
     item("erpMapping", "Mappings", "Table2"),
-    item("erpSynchronizations", "Synchronisations", "RefreshCw"),
-    item("erpDiagnostics", "Paramètres & diagnostics", "Settings", [
-      "settingsErp",
-      "adapters",
-    ]),
+    item("settingsErp", "Paramètres & diagnostics", "Settings", ["adapters"]),
   ]),
 
   group("api", "API & Intégrations", "integrations", "Puzzle", "text-teal-300", [
@@ -136,25 +134,27 @@ const menu = [
     item("integrations-diagnostics", "Diagnostics", "BarChart3", ["integrations-apis", "integrations-sync", "integrations-specifications"]),
   ]),
 
-  group("registry", "Registry", "platform", "Box", "text-slate-200", [
+  group("registry", "Registry", "administration", "Box", "text-slate-200", [
     item("registry", "Vue d’ensemble", "Home", ["packRegistry"]),
+    item("registrySources", "Sources", "Network"),
     item("registryEntries", "Entrées", "Package"),
+    item("registryVersions", "Versions", "Tag"),
     item("registryCapabilities", "Capacités", "Server"),
     item("registryProviders", "Providers", "Plug"),
+    item("registrySchemas", "Schémas", "FileText"),
     item("registryCompatibility", "Compatibilité", "CheckCircle2"),
+    item("registryAvailability", "Disponibilité", "Activity"),
     item("registryDiagnostics", "Diagnostics", "BarChart3"),
+    item("registryAudit", "Audit", "FileSearch"),
   ]),
 
-  group("environments", "Environnements", "platform", "Server", "text-sky-400", [
+  group("environments", "Environnements & Déploiements", "publication", "Server", "text-sky-400", [
     item("environments", "Environnements", "Server", ["specifications", "contracts", "snapshots", "platform-contract"]),
+    item("deployment", "Déploiements", "Rocket", ["deployment-cockpit", "deployment-diagnostics", "deployment-specifications"]),
+    item("deploymentReleases", "Historique des déploiements", "History", [], { pageId: "deployment-releases" }),
   ]),
 
-  group("deployments", "Déploiements", "platform", "Rocket", "text-sky-300", [
-    item("deployment", "Vue d’ensemble", "Home", ["deployment-cockpit", "deployment-diagnostics", "deployment-specifications"]),
-    item("history", "Historique", "History"),
-  ]),
-
-  group("iam", "Sécurité & IAM", "platform", "ShieldCheck", "text-slate-200", [
+  group("iam", "Auth / IAM", "administration", "ShieldCheck", "text-slate-200", [
     item("iam-users", "Utilisateurs", "Users"),
     item("iam-identities", "Identités", "Fingerprint"),
     item("iam-roles", "Rôles", "KeyRound"),
@@ -164,7 +164,7 @@ const menu = [
     item("iam-sessions", "Sessions", "Monitor"),
   ]),
 
-  group("observability", "Observabilité", "platform", "Activity", "text-slate-200", [
+  group("observability", "Observabilité", "supervision", "Activity", "text-slate-200", [
     item("observability", "Vue d’ensemble", "Home"),
     item("observability-monitoring", "Monitoring", "Activity"),
     item("observability-logs", "Logs", "ScrollText"),
@@ -175,20 +175,22 @@ const menu = [
     item("observability-security-events", "Événements de sécurité", "Lock"),
   ]),
 
-  group("billing", "Abonnements", "platform", "CreditCard", "text-sky-400", [
-    item("billingOverview", "Vue d’ensemble", "Home"),
-    item("billingPlans", "Plans", "Tag"),
-    item("billingSubscriptions", "Abonnements", "CreditCard"),
-    item("billingEntitlements", "Entitlements", "KeyRound"),
-    item("billingQuotas", "Quotas", "Gauge"),
-    item("billingInvoices", "Facturation", "Receipt"),
+  group("billing", "Abonnements & Facturation", "commercial", "CreditCard", "text-sky-400", [
+    item("billingOverview", "Mon abonnement", "CreditCard"),
+    item("billingQuotas", "Utilisation", "Gauge"),
+    item("billingInvoices", "Factures & paiements", "Receipt"),
+    item("billingSettings", "Paramètres", "Settings"),
+    item("billingAdminCatalog", "Offres & tarifs", "Tags"),
+    item("billingAdminSubscriptions", "Abonnements clients", "Building2"),
+    item("billingAdminOperations", "Opérations financières", "Landmark"),
+    item("billingAdminDiagnostics", "Diagnostics & audit", "Activity"),
   ]),
 
-  group("admin", "Administration", "platform", "Settings", "text-slate-200", [
+  group("admin", "Administration Platform", "administration", "Settings", "text-slate-200", [
     item("adminOverview", "Vue d’ensemble", "Home"),
     item("settingsGeneral", "Paramètres généraux", "Settings"),
     item("settingsProfile", "Profil", "Users"),
-  ]),
+  ].map((entry) => ({ ...entry, permission: "iam:admin" }))),
 ];
 
 export const navigationGroups = menu.map(({ items, ...rest }) => rest);

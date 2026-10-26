@@ -7,37 +7,25 @@ import { PackManagerService } from '../pack-manager/pack-manager.service';
 import { contractHash, dependencyIssues, matches, publicJson, RecordValue } from '../pack-manager/pack-contract';
 import { RuntimeBridgeService } from '../business-manager/runtime/runtime-bridge.service';
 import { RuntimeCacheService } from './runtime-cache.service';
+import { RegistryService } from '../../registry/registry.service';
 
 @Injectable()
 export class PackRuntimeService {
-  constructor(private readonly db: PrismaService, private readonly packs: PackManagerService, private readonly bridge: RuntimeBridgeService, private readonly cache: RuntimeCacheService) {}
+  constructor(
+    private readonly db: PrismaService,
+    private readonly packs: PackManagerService,
+    private readonly bridge: RuntimeBridgeService,
+    private readonly cache: RuntimeCacheService,
+    private readonly registry?: RegistryService,
+  ) {}
   private tenant(actor: IamPrincipal) { if (!actor.tenantId || actor.tenantId === 'legacy') throw new BadRequestException('TENANT_CONTEXT_REQUIRED'); return actor.tenantId; }
   private text(input: RecordValue, key: string) { if (typeof input[key] !== 'string' || !input[key].trim()) throw new BadRequestException(key.toUpperCase() + '_REQUIRED'); return input[key].trim(); }
   publishedManifest(code: string, version: string, actor: IamPrincipal) { return this.packs.publishedManifest(code,version,actor); }
   private audit(actor: IamPrincipal, action: string, id: string, metadata: RecordValue = {}) { return this.db.auditEvent.create({ data: { tenantId: this.tenant(actor), actorId: actor.userId, traceId: randomUUID(), action, targetType: 'RUNTIME', targetId: id, result: 'SUCCESS', metadata } }); }
 
-  async assertExecutableResolution({ resolutionId, tenantId, applicationId, applicationVersionId, packVersionId, environmentId }: { resolutionId: string; tenantId: string; applicationId?: string; applicationVersionId?: string; packVersionId?: string; environmentId?: string }, actor?: IamPrincipal) {
-    if (!resolutionId) throw new BadRequestException('RUNTIME_RESOLUTION_ID_REQUIRED');
-    const targetTenant = tenantId || actor?.tenantId;
-    if (!targetTenant) throw new BadRequestException('TENANT_CONTEXT_REQUIRED');
-    const item = await this.db.runtimeResolution.findFirst({
-      where: { id: resolutionId, tenantId: targetTenant },
-      include: { effectiveManifest: true },
-    });
-    if (!item) throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND');
-    if (applicationId && item.applicationId !== applicationId) throw new BadRequestException('RUNTIME_APPLICATION_MISMATCH');
-    if (environmentId && item.environment !== environmentId) throw new BadRequestException('RUNTIME_ENVIRONMENT_MISMATCH');
-    if (packVersionId && item.packVersionId !== packVersionId) throw new BadRequestException('RUNTIME_PACK_VERSION_MISMATCH');
-    const effectiveContent = (item.effectiveManifest?.content as RecordValue | null) ?? null;
-    if (applicationVersionId) {
-      const observed = effectiveContent?.scope?.businessVersionId ?? effectiveContent?.businessConfiguration?.versionId ?? effectiveContent?.businessConfiguration?.applicationVersionId;
-      if (observed && String(observed) !== String(applicationVersionId)) throw new BadRequestException('RUNTIME_APPLICATION_VERSION_MISMATCH');
-    }
-    const status = item.status === 'RESOLVED' ? 'EXECUTABLE' : item.status;
-    if (status !== 'EXECUTABLE' || effectiveContent?.executable === false) {
-      throw new ConflictException('RUNTIME_RESOLUTION_BLOCKED');
-    }
-    return { ...item, status, effectiveManifest: item.effectiveManifest };
+  assertExecutableResolution(proof: RuntimeProof, actor?: IamPrincipal) {
+    if (actor && actor.tenantId !== proof.tenantId) throw new BadRequestException('TENANT_CONTEXT_MISMATCH');
+    return this.execution.assertExecutable(proof);
   }
 
   async resolve(input: RecordValue, actor: IamPrincipal) {
@@ -57,13 +45,80 @@ export class PackRuntimeService {
     const identity = { tenantId, actorId: actor.userId, permissions: context.permissions, businessRevision: business.revision, readiness: business.readiness, sourceHash: source.hash, publications, applicationId, businessVersionId, environment, packCode, packVersion };
     const key = this.cache.key(tenantId,'resolution',identity);
     const cached = input.forceRevision ? undefined : this.cache.get<RecordValue>(key);
-    if (cached) return { ...cached, cache: 'HIT' };
+    if (cached) {
+      const stored = await this.db.runtimeResolution.findFirst({ where: { id: cached.resolutionId, tenantId } });
+      const expiry = (stored?.result as RecordValue | null)?.expiresAt;
+      if (stored && expiry && Date.parse(expiry) > Date.now()) return { ...cached, cache: 'HIT' };
+    }
     return this.cache.singleFlight(key, async () => {
       const traceId = randomUUID();
       const definition = source.definition as RecordValue;
       publicJson(definition);
       const issues = await this.packs.publicationDependencies(definition,actor);
+      const registryReferences: RecordValue[] = [];
+      const lockedReferences = source.registryReferences ?? [];
+      const registryDependencies = (definition.dependencies ?? []).filter(
+        (dependency: RecordValue) =>
+          dependency &&
+          typeof dependency === 'object' &&
+          ['REGISTRY', 'REGISTRY_ENTRY', 'REGISTRY_REF'].includes(
+            String(dependency.targetType).toUpperCase(),
+          ) &&
+          dependency.required !== false,
+      );
+      if (registryDependencies.length !== lockedReferences.length) {
+        issues.push({
+          code: 'REGISTRY_VERSION_LOCK_INVALID',
+          severity: 'ERROR',
+          message: 'Les dépendances Registry du Pack publié ne sont pas toutes verrouillées.',
+          path: 'registryReferences',
+        });
+      }
+      for (const reference of lockedReferences) {
+        if (
+          typeof reference.entryId !== 'string' ||
+          typeof reference.key !== 'string' ||
+          typeof reference.version !== 'string' ||
+          !this.registry
+        ) {
+          issues.push({
+            code: 'REGISTRY_VERSION_LOCK_INVALID',
+            severity: 'ERROR',
+            message: 'Le verrou Registry du Pack publié est invalide.',
+            path: 'registryReferences',
+          });
+          continue;
+        }
+        const resolution = await this.registry.resolve(actor, {
+          key: reference.key,
+          entryId: reference.entryId,
+          version: reference.version,
+          published: true,
+          allowDeprecated: true,
+          environmentCode: environment,
+        });
+        if (
+          !['COMPATIBLE', 'DEPRECATED'].includes(resolution.status) ||
+          resolution.selectedCandidate?.id !== reference.entryId
+        ) {
+          issues.push({
+            code: 'REGISTRY_REFERENCE_INCOMPATIBLE',
+            severity: 'ERROR',
+            message: `La référence Registry exacte ${reference.key}@${reference.version} n’est pas disponible.`,
+            path: 'registryReferences',
+          });
+          continue;
+        }
+        registryReferences.push({
+          ...reference,
+          status: resolution.status,
+          warnings: resolution.warnings,
+        });
+      }
       const ui = definition.ui as RecordValue | undefined;
+      for (const provider of ['automation', 'integrations']) {
+        if (definition[provider] && Object.keys(definition[provider]).length) issues.push({ code: 'RUNTIME_PROVIDER_UNSUPPORTED', severity: 'ERROR', message: `Le provider ${provider} ne possède pas encore de contrat de readiness Runtime vérifié.`, path: provider });
+      }
       if (!ui?.definition) {
         issues.push({ code: 'UI_DEFINITION_MISSING', severity: 'ERROR', message: 'Le manifest publié ne contient pas de snapshot UI.', path: 'ui' });
       } else if (ui.schemaVersion !== '1.1' || ui.definition.schemaVersion !== '1.1') {
@@ -77,10 +132,11 @@ export class PackRuntimeService {
       if (business.readiness !== 'READY') issues.push({ code: business.reasonCode, severity: 'ERROR', message: 'Valider la version Business Manager avant la résolution.', path: 'businessVersionId' });
       const sourceApplicationVersionId = typeof ui?.applicationVersionId === 'string' ? ui.applicationVersionId : undefined;
       const expectedApplicationVersionId = business.application.versionId || businessVersionId;
+      if (source.applicationVersionId !== expectedApplicationVersionId) issues.push({ code: 'APPLICATION_VERSION_MISMATCH', severity: 'ERROR', message: 'La version du pack doit être liée à la version métier demandée.', path: 'packVersion.applicationVersionId' });
       if (requestedApplicationVersionId && expectedApplicationVersionId && requestedApplicationVersionId !== expectedApplicationVersionId) {
         issues.push({ code: 'APPLICATION_VERSION_MISMATCH', severity: 'ERROR', message: 'Version d’application incohérente avec la résolution demandée.', path: 'applicationVersionId', details: { requested: requestedApplicationVersionId, expected: expectedApplicationVersionId } });
       }
-      if (sourceApplicationVersionId && expectedApplicationVersionId && sourceApplicationVersionId !== expectedApplicationVersionId) {
+      if (!sourceApplicationVersionId || sourceApplicationVersionId !== expectedApplicationVersionId || ui?.definition?.applicationVersionId !== expectedApplicationVersionId || ui?.definition?.businessContext?.applicationVersionId !== expectedApplicationVersionId) {
         issues.push({ code: 'APPLICATION_VERSION_MISMATCH', severity: 'ERROR', message: 'Pack publié associé à une autre version d’application.', path: 'packVersion', details: { packVersion: packVersion, expected: expectedApplicationVersionId, source: sourceApplicationVersionId } });
       }
       const modules = definition.modules.map((m: RecordValue) => ({ ...m, state: m.enabled ? 'ACTIVE' : 'INACTIVE', reasonCode: m.enabled ? 'DECLARED_ENABLED' : 'DECLARED_DISABLED' }));
@@ -110,29 +166,81 @@ export class PackRuntimeService {
       const finalDefinition = { ...definition, modules: modules.map((r: RecordValue) => ({ ...r, enabled: r.state === 'ACTIVE' })), features: features.map((r: RecordValue) => ({ ...r, enabled: r.state === 'ACTIVE' })) };
       issues.push(...dependencyIssues(finalDefinition, publications).filter(i => !issues.some(existing => existing.code === i.code && existing.path === i.path)));
       const executable = issues.length === 0 && !resources.some(r => r.state === 'BLOCKED');
-      const status = executable ? 'EXECUTABLE' : 'BLOCKED';
-      const effective = { contract: 'techzone.effective-runtime-manifest', contractVersion: '1.0.0', source: { packCode, packVersion, manifestHash: source.hash, packManifestId: source.id }, scope: { tenantId, applicationId, businessVersionId, environment }, status, executable, modules, features, capabilities: [...provided].sort(), dependencies: definition.dependencies, ui, ruleDecisions: decisions, businessConfiguration: business, configuration: business.configuration };
+      const status = executable ? 'RESOLVED' : 'BLOCKED';
+      const effective = { contract: 'techzone.effective-runtime-manifest', contractVersion: '1.0.0', source: { packCode, packVersion, manifestHash: source.hash, packManifestId: source.id }, scope: { tenantId, applicationId, businessVersionId, environment }, status, executable, modules, features, capabilities: [...provided].sort(), dependencies: definition.dependencies, registryReferences, ui, ruleDecisions: decisions, businessConfiguration: business, configuration: business.configuration };
       const functionalHash = contractHash(effective);
+      const expiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
       const stages = [ ['manifest.load', { manifestId: source.id }], ['manifest.validate', { hash: source.hash }], ['context.resolve', { revision: business.revision }], ['module_feature.resolve', { modules: modules.length, features: features.length }], ['capability_dependency.resolve', { issues }], ['rules.evaluate', { decisions }], ['effective_manifest.build', { functionalHash, executable }] ] as const;
       const result = await this.db.$transaction(async tx => {
-        const resolution = await tx.runtimeResolution.create({ data: { tenantId, applicationId, environment, packId: definition.pack.id, packVersionId: source.packVersionId, requestHash: contractHash({ identity, nonce: randomUUID() }), status, context: context as Prisma.InputJsonValue, diagnostics: issues as Prisma.InputJsonValue, createdBy: actor.userId, completedAt: new Date() } });
-        await tx.runtimeResolutionStep.createMany({ data: stages.map(([code,details],i) => ({ resolutionId: resolution.id, code, status: 'COMPLETED', displayOrder: i, details: details as Prisma.InputJsonValue, outputHash: contractHash(details), completedAt: new Date() })) });
+        const resolution = await tx.runtimeResolution.create({ data: { tenantId, applicationId, environment, packId: definition.pack.id, packVersionId: source.packVersionId, requestHash: contractHash({ identity, nonce: randomUUID() }), status, result: { expiresAt }, context: context as Prisma.InputJsonValue, diagnostics: issues as Prisma.InputJsonValue, createdBy: actor.userId, completedAt: new Date() } });
+        await tx.runtimeResolutionStep.createMany({ data: stages.map(([code,details],i) => ({ resolutionId: resolution.id, code, status: !executable && i === stages.length - 1 ? 'BLOCKED' : 'COMPLETED', displayOrder: i, details: details as Prisma.InputJsonValue, outputHash: contractHash(details), completedAt: new Date() })) });
         const manifest = await tx.runtimeEffectiveManifest.create({ data: { tenantId, resolutionId: resolution.id, applicationId, environment, manifestHash: functionalHash, functionalHash, status: executable ? 'VALID' : 'BLOCKED', executable, content: effective as Prisma.InputJsonValue } });
         if (issues.length) await tx.runtimeDiagnostic.createMany({ data: issues.map(issue => ({ tenantId, resolutionId: resolution.id, severity: 'ERROR', category: 'RESOLUTION', code: String(issue.code), message: String(issue.message), details: issue as Prisma.InputJsonValue, traceId })) });
         await tx.auditEvent.create({ data: { tenantId, actorId: actor.userId, traceId, action: 'runtime.resolved', targetType: 'RUNTIME_RESOLUTION', targetId: resolution.id, result: status, metadata: { functionalHash } } });
-        return { resolutionId: resolution.id, effectiveManifestId: manifest.id, status, traceId };
+        return { resolutionId: resolution.id, effectiveManifestId: manifest.id, status, traceId, expiresAt };
       });
-      this.cache.set(key,result,{ tenantId, applicationId, packCode, provider: 'PACK_MANIFEST_STORE' },source.hash);
-      return { ...result, status, cache: 'MISS', executable, effectiveManifest: effective };
+      const response = { ...result, executable, effectiveManifest: effective };
+      this.cache.set(key,response,{ tenantId, applicationId, packCode, provider: 'PACK_MANIFEST_STORE' },source.hash);
+      return { ...response, cache: 'MISS' };
     });
   }
   async resolution(id: string, actor: IamPrincipal) { const item = await this.db.runtimeResolution.findFirst({ where: { id, tenantId: this.tenant(actor) }, include: { steps: { orderBy: { displayOrder: 'asc' } }, effectiveManifest: true } }); if (!item) throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND'); return item; }
   async activate(id: string, actor: IamPrincipal) {
     const tenantId = this.tenant(actor);
-    const resolution = await this.resolution(id, actor);
-    await this.assertExecutableResolution({ resolutionId: id, tenantId, applicationId: resolution.applicationId, environmentId: resolution.environment }, actor);
-    return { resolutionId: id, status: 'ACTIVE', tenantId, applicationId: resolution.applicationId, environment: resolution.environment, activatedBy: actor.userId };
+    const item = await this.resolution(id, actor);
+    const contentBefore = item.effectiveManifest?.content as RecordValue | undefined;
+    if (!contentBefore?.scope?.businessVersionId) throw new ConflictException('RUNTIME_APPLICATION_VERSION_MISMATCH');
+    const currentBusiness = await this.bridge.applicationContext(item.applicationId, contentBefore.scope.businessVersionId, item.environment, tenantId);
+    if (currentBusiness.readiness !== 'READY' || currentBusiness.revision !== contentBefore.businessConfiguration?.revision) throw new ConflictException('RUNTIME_READINESS_FAILED');
+    const result = await this.db.$transaction(async tx => {
+      const scope = `${tenantId}:${item.applicationId}:${item.environment}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${scope}, 0))`;
+      const resolution = await this.execution.assertExecutable({ resolutionId: id, tenantId }, false, tx as PrismaService);
+      const state = resolution.result as RecordValue;
+      if (state.runtimeContext?.status === 'ACTIVE') return state.runtimeContext;
+      const previous = await tx.runtimeResolution.findMany({ where: { tenantId, applicationId: item.applicationId, environment: item.environment, result: { path: ['runtimeContext','status'], equals: 'ACTIVE' } } });
+      for (const old of previous) {
+        const before = old.result as RecordValue;
+        await tx.runtimeResolution.update({ where: { id: old.id }, data: { result: { ...before, runtimeContext: { ...before.runtimeContext, status: 'INACTIVE', readiness: 'NOT_READY', deactivatedAt: new Date().toISOString() } } } });
+      }
+      // Readiness validates the persisted UI, publication and DB provider; unsupported
+      // external execution requirements are blocked at resolution, never marked ready.
+      await tx.$queryRaw`SELECT 1`;
+      const content = resolution.effectiveManifest!.content as RecordValue;
+      const runtimeContext = { id: randomUUID(), resolutionId: id, tenantId, applicationId: item.applicationId, applicationVersionId: content.scope.businessVersionId, packVersionId: item.packVersionId, environment: item.environment, status: 'ACTIVE', readiness: 'READY', activatedAt: new Date().toISOString(), activatedBy: actor.userId, configurationHash: contractHash(content.configuration) };
+      await tx.runtimeResolution.update({ where: { id }, data: { result: { ...state, runtimeContext } } });
+      await tx.auditEvent.create({ data: { tenantId, actorId: actor.userId, traceId: randomUUID(), action: 'runtime.activated', targetType: 'RUNTIME_CONTEXT', targetId: runtimeContext.id, result: 'SUCCESS', metadata: { resolutionId: id } } });
+      return runtimeContext;
+    });
+    this.cache.invalidate(tenantId, 'APPLICATION', { applicationId: item.applicationId });
+    return result;
   }
+  async deactivate(id: string, actor: IamPrincipal) {
+    const tenantId = this.tenant(actor);
+    const item = await this.resolution(id, actor);
+    const result = await this.db.$transaction(async tx => {
+      const scope = `${tenantId}:${item.applicationId}:${item.environment}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${scope}, 0))`;
+      const current = await tx.runtimeResolution.findFirstOrThrow({ where: { id, tenantId } });
+      const state = current.result as RecordValue;
+      if (!state?.runtimeContext) throw new NotFoundException('RUNTIME_CONTEXT_NOT_FOUND');
+      const runtimeContext = { ...state.runtimeContext, status: 'INACTIVE', readiness: 'NOT_READY', deactivatedAt: new Date().toISOString() };
+      await tx.runtimeResolution.update({ where: { id }, data: { result: { ...state, runtimeContext } } });
+      await tx.auditEvent.create({ data: { tenantId, actorId: actor.userId, traceId: randomUUID(), action: 'runtime.deactivated', targetType: 'RUNTIME_CONTEXT', targetId: runtimeContext.id, result: 'SUCCESS' } });
+      return runtimeContext;
+    });
+    this.cache.invalidate(tenantId, 'APPLICATION', { applicationId: item.applicationId });
+    return result;
+  }
+  async contexts(actor: IamPrincipal) {
+    return (await this.resolutions(actor)).filter(r => (r.result as RecordValue | null)?.runtimeContext).map(r => { const state = r.result as RecordValue; const expired = Date.parse(state.expiresAt) <= Date.now(); return { ...state.runtimeContext, ...(expired ? { status: 'EXPIRED', readiness: 'NOT_READY' } : {}), expiresAt: state.expiresAt }; });
+  }
+  async executionManifest(id: string, actor: IamPrincipal) {
+    const item = await this.execution.assertExecutable({ resolutionId: id, tenantId: this.tenant(actor) });
+    const context = (item.result as RecordValue).runtimeContext;
+    return { resolutionId: id, runtimeContext: context, effectiveManifest: item.effectiveManifest!.content };
+  }
+
   resolutions(actor: IamPrincipal) { return this.db.runtimeResolution.findMany({ where: { tenantId: this.tenant(actor) }, orderBy: { startedAt: 'desc' }, take: 100, include: { effectiveManifest: true } }); }
   async effective(id: string, actor: IamPrincipal) { const r = await this.resolution(id,actor); if (!r.effectiveManifest) throw new NotFoundException('EFFECTIVE_MANIFEST_NOT_FOUND'); return r.effectiveManifest; }
   async effectiveById(id: string, actor: IamPrincipal) { const item = await this.db.runtimeEffectiveManifest.findFirst({ where: { id, tenantId: this.tenant(actor) } }); if (!item) throw new NotFoundException('EFFECTIVE_MANIFEST_NOT_FOUND'); return item; }
@@ -147,5 +255,5 @@ export class PackRuntimeService {
   async probeProvider(provider: string, actor: IamPrincipal) { const item = (await this.providersHealth(actor)).providers.find(p => p.code === provider); if (!item) throw new NotFoundException('PROVIDER_NOT_FOUND'); return item; }
   resilienceStatus(actor: IamPrincipal) { this.tenant(actor); return { mode: 'LOCAL_PROCESS', singleFlight: true, staleIfError: false, retries: { enabled: false, reason: 'LOCAL_TRANSACTIONAL_PROVIDERS' }, remoteProviders: false }; }
   async reresolve(id: string, actor: IamPrincipal) { const previous = await this.effective(id,actor); const c = previous.content as RecordValue; return this.resolve({ applicationId: c.scope.applicationId, businessVersionId: c.scope.businessVersionId, environment: c.scope.environment, packCode: c.source.packCode, packVersion: c.source.packVersion, forceRevision: true },actor); }
-  async dashboard(actor: IamPrincipal) { const tenantId = this.tenant(actor); const [total,resolved,blocked,recent] = await Promise.all([this.db.runtimeResolution.count({ where: { tenantId } }),this.db.runtimeResolution.count({ where: { tenantId,status: { in: ['EXECUTABLE','RESOLVED'] } } }),this.db.runtimeResolution.count({ where: { tenantId,status: 'BLOCKED' } }),this.resolutions(actor)]); return { counters: { total,resolved,blocked }, recent: recent.slice(0,20) }; }
+  async dashboard(actor: IamPrincipal) { const tenantId = this.tenant(actor); const [total,resolved,blocked,recent] = await Promise.all([this.db.runtimeResolution.count({ where: { tenantId } }),this.db.runtimeResolution.count({ where: { tenantId,status: 'EXECUTABLE' } }),this.db.runtimeResolution.count({ where: { tenantId,status: 'BLOCKED' } }),this.resolutions(actor)]); return { counters: { total,resolved,blocked }, recent: recent.slice(0,20) }; }
 }

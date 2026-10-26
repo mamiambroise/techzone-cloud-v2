@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import { DolibarrError } from '../../erp-adapter/dolibarr/dolibarr.error';
 import { ErpError } from '../../erp-adapter/erp-error';
+import { RedactionService } from '../../observability/redaction.service';
 
 interface StructuredError {
   statusCode?: number;
@@ -14,6 +15,7 @@ interface StructuredError {
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
+  private readonly redaction = new RedactionService();
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -42,11 +44,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = 503;
       code = 'DATABASE_UNAVAILABLE';
       message = 'La base de données est indisponible.';
+    } else if (['P2021', 'P2022', '42P01', '42703'].includes(dbCode)) {
+      status = 503;
+      code = 'DATABASE_SCHEMA_OUTDATED';
+      message = 'Le schéma de la base de données doit être mis à jour avec les migrations du backend.';
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exResponse = exception.getResponse();
       message = typeof exResponse === 'string' ? exResponse : (exResponse as any).message || message;
       code = (exResponse as any)?.code || (exResponse as any)?.error?.code || (status === 403 ? 'FORBIDDEN' : status === 401 ? 'UNAUTHENTICATED' : status === 400 ? 'VALIDATION_ERROR' : code);
+      if (typeof message === 'string' && /^RUNTIME_[A-Z_]+$/.test(message)) code = message;
       details = (exResponse as any)?.details ?? (exResponse as any)?.error?.details;
     } else if (exception && typeof exception === 'object' && 'statusCode' in exception && 'code' in exception) {
       status = err.statusCode!;
@@ -63,16 +70,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.error(`Unhandled ${exception.name} traceId=${traceId}`, exception.stack?.split('\n').slice(1).join('\n'));
     }
 
+    const safeMessage = this.redaction.redact(message);
     const body: Record<string, unknown> = {
       success: status < 400,
       statusCode: status,
-      message,
+      message: safeMessage,
       traceId,
       timestamp: new Date().toISOString(),
       ...(isErp ? { connector: 'dolibarr' } : {}),
     };
     if (code) body.code = code;
-    if (details !== undefined && details !== null) body.details = details;
+    if (details !== undefined && details !== null) body.details = this.redaction.redact(details);
 
     if (isErp) this.logger.warn(`ERP request failed code=${code} status=${status} traceId=${traceId}`);
     response.setHeader('X-Trace-Id', traceId);

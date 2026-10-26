@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -19,6 +19,8 @@
     "test:cov": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node ./test/iam-e2e-runner.mjs",
+    "test:integration:observability": "tsx ./test/observability-persistence.integration.mjs",
+    "test:integration:observability-rbac": "tsx ./test/observability-rbac.integration.ts",
     "seed:e2e:iam": "node ./test/iam-e2e-seed-runner.mjs",
     "seed": "tsx ./test/seed/cli.ts",
     "seed:test": "npm run seed -- --env=test --profile=standard",

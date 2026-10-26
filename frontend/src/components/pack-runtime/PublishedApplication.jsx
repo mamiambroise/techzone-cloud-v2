@@ -10,11 +10,11 @@ function validPublishedUi(ui) {
     && ui.applicationVersionId === ui.businessContext.applicationVersionId;
 }
 
-/** Loads only the immutable published manifest. No working-UI endpoint. */
+/** Execution uses a fresh server gate and the effective UI, never the raw publication. */
 export default function PublishedApplication({ packCode, packVersion, tenantId, resolutionId, effectiveManifest }) {
   const manifestContent = effectiveManifest?.content ?? effectiveManifest;
   const source = manifestContent?.source;
-  const isExecutable = Boolean(resolutionId) && manifestContent?.status === 'EXECUTABLE' && manifestContent?.executable !== false;
+  const isExecutable = Boolean(resolutionId) && manifestContent?.status === 'EXECUTABLE' && manifestContent?.executable === true;
   if (
     !isExecutable ||
     manifestContent?.scope?.tenantId !== tenantId ||
@@ -33,26 +33,15 @@ function PublishedWorkspace({ packCode, packVersion, resolutionId, expectedHash,
   const [selection, setSelection] = useState({ key: null, recordId: null });
   useEffect(() => {
     let active = true;
-    if (effectiveManifest?.ui?.definition) {
-      const ui = effectiveManifest.ui.definition;
-      if (validPublishedUi(ui)) {
-        setError('');
-        setDefinition(ui);
-        return () => { active = false; };
-      }
-      setDefinition(null);
-      setError('Interface publiée indisponible pour ce tenant.');
-      return () => { active = false; };
-    }
-    api.get(`/runtime/manifests/${encodeURIComponent(packCode)}/${encodeURIComponent(packVersion)}`)
+    api.get(`/runtime/resolutions/${encodeURIComponent(resolutionId)}/execution-manifest`)
       .then(response => {
-        const manifest = response.data;
-        const ui = manifest.definition?.ui?.definition;
-        if (manifest.hash !== expectedHash || !validPublishedUi(ui)) throw new Error('Published UI metadata missing');
-        if (active) { setError(''); setDefinition(ui); }
-      }).catch(() => active && setError('Interface publiée indisponible pour ce tenant.'));
+        const { effectiveManifest: effective, runtimeContext } = response.data;
+        const ui = effective?.ui?.definition;
+        if (effective?.status !== 'EXECUTABLE' || effective?.executable !== true || effective.scope?.tenantId !== tenantId || effective.source?.packCode !== packCode || effective.source?.packVersion !== packVersion || effective.source?.manifestHash !== expectedHash || runtimeContext?.resolutionId !== resolutionId || runtimeContext?.status !== 'ACTIVE' || runtimeContext?.readiness !== 'READY' || !validPublishedUi(ui) || ui.applicationVersionId !== effective.scope?.businessVersionId) throw new Error('RUNTIME_CONTEXT_NOT_ACTIVE');
+        if (active) { setError(''); setDefinition({ ...ui, businessContext: { ...ui.businessContext, runtimeProof: { resolutionId } } }); }
+      }).catch(() => active && setError('Interface publiée indisponible : contexte Runtime inactif, expiré ou incompatible.'));
     return () => { active = false; };
-  }, [effectiveManifest, expectedHash, packCode, packVersion]);
+  }, [resolutionId, tenantId, expectedHash, packCode, packVersion]);
   if (error) return <p role="alert">{error}</p>;
   if (!definition) return <p role="status">Chargement de l’application publiée…</p>;
   const page = definition.pages.find(p => p.key === selection.key) || definition.pages[0];

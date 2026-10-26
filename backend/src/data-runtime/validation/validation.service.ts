@@ -21,7 +21,22 @@ export class ValidationService {
   async validate(resource: string, data: Record<string, any>): Promise<ValidationResult> {
     const fields = this.schemas.get(resource);
     if (!fields) {
-      return { valid: true, errors: [] };
+      return {
+        valid: false,
+        errors: [{
+          field: resource,
+          code: 'RESOURCE_NOT_FOUND',
+          message: `Aucun contrat de validation pour la ressource "${resource}"`,
+          value: resource,
+        }],
+      };
+    }
+
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return {
+        valid: false,
+        errors: [{ field: '_root', code: 'INVALID_OBJECT', message: 'Les données doivent être un objet.', value: data }],
+      };
     }
 
     const errors: ValidationError[] = [];

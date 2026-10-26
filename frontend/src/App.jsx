@@ -45,6 +45,8 @@ const Adapters = lazy(() => import('./pages/Adapters.jsx'));
 const Mapping = lazy(() => import('./pages/Mapping.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const DemoPage = lazy(() => import('./pages/DemoPage.jsx'));
+const AdminOverviewPage = lazy(() => import('./pages/AdminOverviewPage.jsx'));
+const UiGallery = lazy(() => import('./pages/UiGallery.jsx'));
 
 const ERPList = lazy(() => import('./pages/ERPList.jsx'));
 const ERPCreate = lazy(() => import('./pages/ERPCreate.jsx'));
@@ -67,9 +69,12 @@ const AuditPage = lazy(() => import('./pages/iam/observability/AuditPage.jsx'));
 const SecurityEventsPage = lazy(() => import('./pages/iam/observability/SecurityEventsPage.jsx'));
 const MonitoringPage = lazy(() => import('./pages/iam/observability/MonitoringPage.jsx'));
 const AlertManagerPage = lazy(() => import('./pages/iam/observability/AlertManagerPage.jsx'));
+const ObservabilityDataPage = lazy(() => import('./pages/iam/observability/ObservabilityDataPage.jsx'));
+const ObservabilitySettingsPage = lazy(() => import('./pages/iam/observability/ObservabilitySettingsPage.jsx'));
 
 const DataRuntime = lazy(() => import('./pages/DataRuntime.jsx'));
 const DataRuntimeHistory = lazy(() => import('./pages/DataRuntimeHistory.jsx'));
+const DataRuntimeGovernance = lazy(() => import('./pages/DataRuntimeGovernance.jsx'));
 const AutomationCockpit = lazy(() => import('./pages/AutomationCockpit.jsx'));
 const AutomationConditions = lazy(() => import('./pages/AutomationConditions.jsx'));
 const AutomationHistory = lazy(() => import('./pages/AutomationHistory.jsx'));
@@ -88,6 +93,7 @@ const BillingInvoicesPage = lazy(() => import('./features/billing/BillingInvoice
 const BillingPaymentsPage = lazy(() => import('./features/billing/BillingPaymentsPage.jsx'));
 const BillingAdminPage = lazy(() => import('./features/billing/BillingAdminPage.jsx'));
 const BillingWebhooksPage = lazy(() => import('./features/billing/BillingWebhooksPage.jsx'));
+const RegistryPage = lazy(() => import('./features/registry/RegistryPage.jsx'));
 
 function CockpitRoute() {
   const { openModal } = useModal();
@@ -182,6 +188,7 @@ function App() {
                   return <Route key={route} path={route} element={<RequireNavigationAccess>{implemented ? <TenantBoundary>{content}</TenantBoundary> : content}</RequireNavigationAccess>} />;
                 })}
                 {redirects.map(({ from, to }) => <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
+                <Route path="/demo/ui-gallery" element={<UiGallery />} />
 
                 <Route path="*" element={<NotFound />} />
               </Route>

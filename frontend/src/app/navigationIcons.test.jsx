@@ -17,17 +17,19 @@ describe('Sidebar icon registry and navigation',()=>{
     expect(activeNavigation('/business-manager/applications/example').id).toBe('bmApplications');
     expect(activeNavigation('/business-manager/applications/example/versions/version').id).toBe('bmApplications');
   });
-  it('renders five sections, the authenticated user and a working menu search',()=>{
+  it('renders the V3 sections, the authenticated user and a working module search',()=>{
     render(<MemoryRouter initialEntries={['/business-manager']}><Sidebar isOpen={false} onClose={()=>{}}/></MemoryRouter>);
-    expect(screen.getAllByRole('heading',{level:2})).toHaveLength(5);
+    expect(screen.getAllByRole('heading',{level:2})).toHaveLength(7);
     expect(screen.getByText('Compte de recette')).toBeInTheDocument();
-    expect(screen.getByRole('link',{name:'Vue d’ensemble'})).toHaveAttribute('aria-current','page');
+    expect(screen.getByRole('link',{name:'Business Manager'})).toHaveAttribute('aria-current','page');
     fireEvent.change(screen.getByLabelText('Rechercher dans le menu'),{target:{value:'Navigation'}});
-    expect(screen.getAllByRole('link',{name:'Navigation',exact:true}).map(link => link.getAttribute('href'))).toEqual(expect.arrayContaining(['/business-manager/navigation', '/ui/navigation']));
+    expect(screen.queryByRole('link',{name:'Business Manager'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('link',{name:'UI Builder'})).not.toBeInTheDocument();
     // Le groupe UI Builder est maintenant implémenté : il reste visible lors de
     // la recherche tant qu'une de ses pages correspond (ici « Navigation »).
-    expect(screen.queryByRole('button',{name:'UI Builder'})).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Rechercher dans le menu'),{target:{value:'UI Builder'}});
+    expect(screen.getByRole('link',{name:'UI Builder'})).toHaveAttribute('href','/ui');
     fireEvent.change(screen.getByLabelText('Rechercher dans le menu'),{target:{value:'zzzz-inexistant'}});
-    expect(screen.queryByRole('button',{name:'UI Builder'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('link',{name:'UI Builder'})).not.toBeInTheDocument();
   });
 });

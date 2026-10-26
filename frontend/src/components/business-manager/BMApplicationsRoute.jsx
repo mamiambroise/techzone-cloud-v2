@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Plus, ArrowRight, Boxes, MoreVertical, Archive, Ban, CirclePlay } from 'lucide-react';
 import { PageHeader } from '../ui/PageHeader.jsx';
 import {
-  BmPage, BmBreadcrumb, BmKpiCard, BmStatusBadge, BmButton, BmSelect, BmIconButton,
+  BmPage, BmBreadcrumb, BmKpiCard, BmStatusBadge, BmButton, BmSelect, BmIconButton, BmTable,
   BmEmptyState, BmErrorState, BmLoading, bmSafeError,
 } from './bm/ui.jsx';
 import { getApplications } from '../../services/api/platformApplicationsService.js';
@@ -121,14 +121,18 @@ export function BMApplicationsRoute() {
           />
         </div>
       ) : (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((app) => (
-              <ApplicationCard key={app.id} app={app} onClick={() => navigate(`/business-manager/applications/${app.id}`)} />
-            ))}
-          </div>
-          <p className="text-xs text-slate-500">{filtered.length} application(s) sur {applications.length}</p>
-        </>
+        <BmTable
+          rows={filtered}
+          columns={[
+            { key: 'name', label: 'Application', render: (app) => <button type="button" className="font-semibold text-slate-900 hover:text-blue-700 bm-focus" onClick={() => navigate(`/business-manager/applications/${app.id}`)}>{app.name || app.code}</button> },
+            { key: 'code', label: 'Clé', render: (app) => <code className="text-xs text-slate-500">{app.code || '—'}</code> },
+            { key: 'category', label: 'Catégorie', render: (app) => app.category || '—' },
+            { key: 'status', label: 'Statut', render: (app) => <BmStatusBadge value={app.status} /> },
+            { key: 'updatedAt', label: 'Dernière modification', render: (app) => app.updatedAt || app.createdAt ? new Date(app.updatedAt || app.createdAt).toLocaleDateString('fr-FR') : '—' },
+            { key: 'actions', label: 'Actions', className: 'text-right', render: (app) => <BmIconButton label="Ouvrir l’application" onClick={() => navigate(`/business-manager/applications/${app.id}`)}><MoreVertical className="h-4 w-4" /></BmIconButton> },
+          ]}
+          footer={`${filtered.length} application(s) sur ${applications.length}`}
+        />
       )}
     </BmPage>
   );

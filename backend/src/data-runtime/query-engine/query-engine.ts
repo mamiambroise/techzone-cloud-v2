@@ -15,6 +15,7 @@ import {
 } from '../interfaces/query.contract';
 import { RuntimeContext } from '../interfaces';
 import { DataAccessManager } from '../data-access/data-access-manager';
+import { HistoryService } from '../history/history.service';
 
 const ALLOWED_FILTER_OPERATORS: FilterOperator[] = [
   'EQ', 'NE', 'GT', 'GTE', 'LT', 'LTE',
@@ -25,31 +26,65 @@ const ALLOWED_FILTER_OPERATORS: FilterOperator[] = [
 export class QueryEngine {
   private readonly logger = new Logger(QueryEngine.name);
 
-  constructor(private readonly dataAccess: DataAccessManager) {}
+  constructor(
+    private readonly dataAccess: DataAccessManager,
+    private readonly historyService?: HistoryService,
+  ) {}
 
   async execute<T = any>(query: QueryContract, ctx: RuntimeContext): Promise<PaginatedResult<T>> {
+    const start = Date.now();
     this.logger.debug(`Query: ${query.resource} [tenant=${ctx.tenantId}]`);
     this.validateQuery(query);
 
     const page = query.page || 1;
     const pageSize = Math.min(query.pageSize || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
 
-    const result = await this.dataAccess.list(query.resource, ctx, {
-      select: query.select,
-      filter: query.filter,
-      sort: query.sort,
-      page,
-      pageSize,
-      relations: query.relations,
-    });
+    try {
+      const result = await this.dataAccess.list(query.resource, ctx, {
+        select: query.select,
+        filter: query.filter,
+        sort: query.sort,
+        page,
+        pageSize,
+        relations: query.relations,
+      });
 
-    return {
-      items: result.items || [],
-      page: result.page || page,
-      pageSize: result.pageSize || pageSize,
-      total: result.total ?? null,
-      totalPages: result.totalPages ?? null,
-    };
+      const response = {
+        items: result.items || [],
+        page: result.page || page,
+        pageSize: result.pageSize || pageSize,
+        total: result.total ?? null,
+        totalPages: result.totalPages ?? null,
+      };
+      this.historyService?.recordExecution({
+        traceId: ctx.traceId,
+        requestId: ctx.requestId,
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
+        resource: query.resource,
+        operation: 'QUERY',
+        provider: query.resource.startsWith('bm:') ? 'BM_RECORDS' : 'ERP_ADAPTER',
+        startTime: new Date(start).toISOString(),
+        duration: Date.now() - start,
+        status: 'SUCCESS',
+      });
+      return response;
+    } catch (error) {
+      this.historyService?.recordExecution({
+        traceId: ctx.traceId,
+        requestId: ctx.requestId,
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
+        resource: query.resource,
+        operation: 'QUERY',
+        provider: query.resource.startsWith('bm:') ? 'BM_RECORDS' : 'ERP_ADAPTER',
+        startTime: new Date(start).toISOString(),
+        duration: Date.now() - start,
+        status: 'FAILED',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }
 
   private validateQuery(query: QueryContract): void {
@@ -148,7 +183,6 @@ export class QueryEngine {
 
     const page = query.page || 1;
     const pageSize = query.pageSize || DEFAULT_PAGE_SIZE;
-    const total = filtered.length;
     const start = (page - 1) * pageSize;
 
     return filtered.slice(start, start + pageSize);

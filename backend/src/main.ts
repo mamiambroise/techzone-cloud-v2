@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import { randomUUID } from 'node:crypto';
 
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -9,19 +8,45 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { integrationRequestContext } from './common/integration-request-context';
 import { iamHttpThrottle } from './iam/iam-http-throttle.middleware';
+import { ObservabilityService } from './observability/observability.service';
+import { safeOptionalId, safeTraceId, traceContext } from './observability/trace-context';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const observability = app.get(ObservabilityService);
 
   app.use((req: any, res: any, next: () => void) => {
-    const traceId = randomUUID();
+    const traceId = safeTraceId(req.headers['x-trace-id']);
+    const requestId = safeTraceId(req.headers['x-request-id']);
+    const correlationId = safeOptionalId(req.headers['x-correlation-id']);
     req.traceId = traceId;
+    req.requestId = requestId;
+    if (correlationId) req.correlationId = correlationId;
     res.setHeader('X-Trace-Id', traceId);
-    res.setHeader('X-Request-Id', traceId);
+    res.setHeader('X-Request-Id', requestId);
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['sec-fetch-site'] === 'cross-site') {
       return res.status(403).json({ message: 'Cross-site request refused', traceId });
     }
-    integrationRequestContext.run({ traceId }, next);
+    const startedAt = process.hrtime.bigint();
+    res.once('finish', () => {
+      try {
+        const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+        const path = String(req.path ?? req.url ?? '').replace(/\/(?:[0-9a-f]{8,}|\d+)(?=\/|$)/gi, '/:id');
+        observability.recordHttpRequest({
+          method: req.method,
+          path,
+          statusCode: res.statusCode,
+          durationMs: Math.round(durationMs),
+          traceId,
+          requestId,
+          correlationId,
+          tenantId: req.iamAuth?.tenantId ?? undefined,
+        });
+      } catch {
+        // Telemetry must never change the outcome of a healthy business request.
+      }
+    });
+    traceContext.run({ traceId, requestId, correlationId }, () => integrationRequestContext.run({ traceId }, next));
   });
 
   app.use(cookieParser());

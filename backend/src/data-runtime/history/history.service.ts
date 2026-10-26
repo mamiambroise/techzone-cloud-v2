@@ -1,6 +1,7 @@
 // DATA-CDC-06 : History, Diagnostics & Observability
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 import {
   HistoryRecord,
   HistoryFilter,
@@ -8,7 +9,6 @@ import {
   DataMetrics,
   TimelineEntry,
 } from '../interfaces/history.contract';
-import { ExecutionStatus } from '../interfaces';
 
 @Injectable()
 export class HistoryService {
@@ -19,6 +19,8 @@ export class HistoryService {
   private readonly maxDiagnostics = 5000;
   private readonly maxRetentionDays = 30;
 
+  constructor(@Optional() private readonly prisma?: PrismaService) {}
+
   recordExecution(record: HistoryRecord): void {
     this.records.push(record);
     if (this.records.length > this.maxRecords) {
@@ -27,6 +29,34 @@ export class HistoryService {
     this.logger.debug(
       `[hist] ${record.operation} ${record.resource} → ${record.status} (${record.duration}ms)`,
     );
+    void this.persistAudit(record);
+  }
+
+  private async persistAudit(record: HistoryRecord): Promise<void> {
+    if (!this.prisma || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(record.tenantId)) return;
+    try {
+      await this.prisma.auditEvent.create({
+        data: {
+          tenantId: record.tenantId,
+          actorId: record.userId || null,
+          traceId: record.traceId,
+          action: `DATA_RUNTIME_${record.operation}`,
+          targetType: 'DATA_RUNTIME_RESOURCE',
+          targetId: record.resource,
+          result: record.status,
+          reason: record.errorCode || null,
+          metadata: {
+            requestId: record.requestId,
+            provider: record.provider,
+            duration: record.duration,
+            errorMessage: record.errorMessage || undefined,
+          },
+          createdAt: new Date(record.startTime),
+        },
+      });
+    } catch (error) {
+      this.logger.warn(`Impossible de persister l'audit Data Runtime: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   addDiagnostic(entry: DiagnosticEntry): void {
@@ -111,8 +141,17 @@ export class HistoryService {
     return results.reverse();
   }
 
-  getMetrics(): DataMetrics {
-    const total = this.records.length;
+  /**
+   * Return metrics for one tenant only. Runtime telemetry is process-local,
+   * therefore the caller must always provide the authenticated tenant when
+   * exposing it through an HTTP endpoint. Omitting the tenant is retained for
+   * internal diagnostics and tests, but must not be used by tenant routes.
+   */
+  getMetrics(tenantId?: string): DataMetrics {
+    const records = tenantId
+      ? this.records.filter((record) => record.tenantId === tenantId)
+      : this.records;
+    const total = records.length;
     if (total === 0) {
       return {
         queryCount: 0,
@@ -128,16 +167,14 @@ export class HistoryService {
       };
     }
 
-    const successCount = this.records.filter((r) => r.status === 'SUCCESS').length;
-    const timeouts = this.records.filter((r) => r.status === 'TIMEOUT').length;
-    const denied = this.records.filter((r) => r.status === 'DENIED').length;
+    const successCount = records.filter((r) => r.status === 'SUCCESS').length;
+    const timeouts = records.filter((r) => r.status === 'TIMEOUT').length;
+    const denied = records.filter((r) => r.status === 'DENIED').length;
 
-    const latencies = this.records.map((r) => r.duration).sort((a, b) => a - b);
+    const latencies = records.map((r) => r.duration).sort((a, b) => a - b);
     const p95 = latencies[Math.floor(latencies.length * 0.95)];
     const p99 = latencies[Math.floor(latencies.length * 0.99)];
     const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-
-    const running = this.records.filter((r) => r.status === 'SUCCESS').length;
 
     return {
       queryCount: total,

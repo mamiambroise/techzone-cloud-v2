@@ -11,9 +11,9 @@ import {
   ChevronRight,
   SortAsc,
   SortDesc,
+  Download,
 } from 'lucide-react';
 import { iamObservabilityService } from '../../../services/apiClient.js';
-import { obsLogs, obsLogFilters } from './mockData.js';
 import { ModernSpinner } from '../../../components/Loaders.jsx';
 import ConfirmModal from '../../../components/ui/ConfirmModal.jsx';
 import { useToast } from '../../../hooks/useToast.js';
@@ -54,10 +54,10 @@ function LogsPage() {
   const [page, setPage] = useState(1);
   const [detailLog, setDetailLog] = useState(null);
 
-  const levelOptions = ['ALL', ...obsLogFilters.levels];
+  const levelOptions = ['ALL', 'DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL'];
   const serviceOptions = ['ALL', ...Array.from(new Set(logs.map((l) => l.service)))];
   const componentOptions = ['ALL', ...Array.from(new Set(logs.map((l) => l.component)))];
-  const environmentOptions = ['ALL', ...obsLogFilters.environments];
+  const environmentOptions = ['ALL'];
   const tenantOptions = ['ALL', ...Array.from(new Set(logs.map((l) => l.tenantId).filter(Boolean))).sort((a, b) => a - b)];
   const errorCodeOptions = ['ALL', ...Array.from(new Set(logs.map((l) => l.errorCode).filter(Boolean))).sort()];
   const traceIdOptions = ['ALL', ...Array.from(new Set(logs.map((l) => l.traceId))).sort()];
@@ -67,7 +67,7 @@ function LogsPage() {
     try {
       const response = await iamObservabilityService.logs();
       const data = response.data;
-      setLogs(Array.isArray(data) ? data : (data?.logs ?? data?.data ?? []));
+      setLogs(Array.isArray(data) ? data : (data?.items ?? []));
     } catch {
       {
         toast.error('Erreur lors du chargement des logs.');
@@ -152,6 +152,20 @@ function LogsPage() {
     toast.success('Filtres réinitialisés.');
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await iamObservabilityService.exportData('LOGS');
+      const payload = response.data;
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+      link.download = `observability-logs-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click(); URL.revokeObjectURL(link.href);
+      toast.success(`${payload.count} journal(aux) exporté(s).`);
+    } catch {
+      toast.error('Export refusé ou indisponible.');
+    }
+  };
+
   const copyTraceId = (traceId) => {
     if (navigator.clipboard) navigator.clipboard.writeText(traceId);
     toast.info(`Trace ID copié : ${traceId}`);
@@ -191,6 +205,7 @@ function LogsPage() {
         <button onClick={handleRefresh} disabled={loading} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">
           <RefreshCw className="w-4 h-4 inline mr-1" />Actualiser
         </button>
+        <button onClick={handleExport} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg"><Download className="w-4 h-4 inline mr-1" />Exporter</button>
         <button onClick={handleResetFilters} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-lg">Réinitialiser les filtres</button>
       </div>
 

@@ -209,12 +209,7 @@ export default function TenantsPage() {
       setFormTenant(null);
       loadTenants();
     } catch {
-      {
-        toast.error('Erreur lors de l\'opération sur le tenant.');
-      }
-      toast.success(formTenant ? 'Tenant mis à jour.' : 'Tenant créé avec succès.');
-      setFormOpen(false);
-      setFormTenant(null);
+      toast.error('Erreur lors de l\'opération sur le tenant.');
     }
   };
 

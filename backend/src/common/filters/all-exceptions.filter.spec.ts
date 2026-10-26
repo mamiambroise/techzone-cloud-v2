@@ -111,3 +111,19 @@ describe('AllExceptionsFilter — contrat ERP structuré (mission 4 × 500)', ()
     expect(body.traceId).toBe('trace-uuid-1');
   });
 });
+
+
+describe('Runtime schema errors', () => {
+  it('reports an outdated schema without exposing SQL or credentials', () => {
+    const error = Object.assign(new Error('private SQL context'), { code: 'P2022' });
+    const { status, body } = hostFor(error);
+    expect(status).toBe(503);
+    expect(body.code).toBe('DATABASE_SCHEMA_OUTDATED');
+    expect(JSON.stringify(body)).not.toContain('private SQL context');
+  });
+  it('preserves a Runtime blocking code in the HTTP contract', () => {
+    const { status, body } = hostFor(new HttpException('RUNTIME_RESOLUTION_EXPIRED', 409));
+    expect(status).toBe(409);
+    expect(body.code).toBe('RUNTIME_RESOLUTION_EXPIRED');
+  });
+});

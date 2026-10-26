@@ -980,6 +980,60 @@ Constats principaux : la base visuelle existante est déjà cohérente et doit �
 - Les données de test utilisent les deux contextes métier existants et aucun tenant fictif n'est introduit dans le code de production.
 - Les tests de store et de contexte conservent la purge tenant-scoped existante ; le changement de tenant reste piloté par `TenantProvider` et les clés de contexte par tenant.
 
+---
+
+## Revalidation de regression - 19 octobre 2026 (execution courante)
+
+### Integrite Git
+
+- Branche : `mami`, commit `ed9336da`; les references locales `origin/mami` et `origin/main` sont identiques (0 avance, 0 retard).
+- `git fetch origin` execute sans merge ni checkout : `origin/mami` et `origin/main` sont confirmes au commit `ed9336da` (0 avance, 0 retard).
+- Les elements non suivis deja presents ont ete preserves; aucun code, migration, seed, reset, merge ou commit n'a ete realise.
+
+### Matrice de preuve executee
+
+| Module | Commande executee | Resultat reel | Statut |
+|---|---|---|---|
+| Environment / Deployment | `frontend: npm run build`; `backend: npm test -- --runInBand deployment` | Build Vite PASS; 11 suites / 64 tests Deployment PASS; chunk initial 586.66 kB (170.99 kB gzip) | PARTIAL |
+| Prisma / Tenant Foundation | `npm run prisma:test:validate`; `npm run prisma:test:status` | Schema valide; 11 migrations, `techzone_test` isolee, schema a jour | PASS pour les controles executes |
+| Auth / IAM / Context | `iam-throttle.security.spec.ts --detectOpenHandles`; `npm run test:e2e` | 11/11 unitaires PASS; 2 suites / 20 tests IAM E2E PASS, y compris refus attendus | PASS pour les controles executes |
+| Business Manager V3 | tests backend BM/PM et frontend BM/PM/contexte | Backend : 13 suites / 103 tests PASS; frontend : 50 PASS, 6 SKIPPED | PARTIAL |
+| UI Builder V3 | gates backend/frontend ciblees | Backend UI/Runtime/Data : 13 suites / 169 tests PASS; frontend securite UI/Runtime : 116 PASS, 2 SKIPPED | PARTIAL |
+| Pack Manager V3 | gate securite backend et suite BM/PM | Snapshot, permissions et contrats couverts par 146/146 puis 103/103 tests PASS | PARTIAL |
+| Pack Runtime V3 | gates backend/frontend ciblees | Backend Runtime/Data/UI : 169/169; frontend : 116 PASS, 2 SKIPPED | PARTIAL |
+
+Commandes additionnelles : `backend npm run test:security:ui` = 10 suites / 146 tests PASS; `frontend npm run test:security:ui` = 13 fichiers PASS, 2 SKIPPED, 116 tests PASS, 2 SKIPPED; `backend npm test -- --runInBand iam` = 17 suites / 145 tests PASS. Le dry-run de seed standard cible explicitement `techzone_test`, selectionne 10 modules et confirme `writes: false`. Les refus IAM/token/session/MFA observes etaient les branches negatives attendues.
+
+### Simulation boutique reelle - 19 octobre 2026
+
+La simulation est executee uniquement sur `techzone_test` (`127.0.0.1:55432`, schema `business_manager`). Le profil local standard pointe vers une autre base; backend et frontend ont donc ete lances avec une surcharge en memoire de `DATABASE_URL` vers `TEST_DATABASE_URL`. Les services ont repondu : backend health/ready 200, frontend 200, endpoint anonyme IAM 401 attendu.
+
+| Scenario | Operations reelles | Preuve | Statut |
+|---|---|---|---|
+| SIM-BOUTIQUE-01 | Creation tenant, administrateur Boutique et membership; connexion et bascule de contexte | Tenant `TENANT_BOUTIQUE_A` id `96ab05db-dfaa-466a-b948-29a5e4576cee`; membership id `042f98e8-900d-4f60-81f3-89166d08ef33`; HTTP 201/200/200/200 et relecture Prisma | PASS |
+| SIM-BOUTIQUE-02 | Creation Application et ApplicationVersion par API BM | `TECHZONE_BOUTIQUE` id `49db887a-7f63-4f00-b259-88ef23af3689`; version `1.0.0` id `c2eb68ca-7535-4d24-8148-0f1dfb1720c9`; HTTP 201/201, persistance confirmee | PASS |
+| SIM-BOUTIQUE-03 | Modele BM : 7 entites, 26 champs, 6 relations | HTTP 201 sur chaque creation; compteurs Prisma 7 / 26 / 6 | PASS |
+| SIM-BOUTIQUE-04 | Diagnostic puis revalidation BM | Rapport initial HTTP 200 : score `52`, gate `BLOCKED`, `NO_FEATURE` ERROR, `NO_MENU` WARNING, `NO_CONFIGURATION` WARNING, `NO_PUBLISHABLE_CONTRACT` BLOCKER. Apres creation API de 6 features/6 capabilities, 1 menu/6 items, config `boutique.sales.currency=MGA` ACTIVE et contrat `boutique_vente_contract` LOCKED : HTTP 201, score `100`, gate `PASS`, aucune issue | PASS |
+| SIM-BOUTIQUE-05 | UI Builder et navigation resolue | 7 pages creees HTTP 201 : `/boutique/dashboard`, produits, categories, clients, ventes, stock, nouvelle vente. Les 6 routes de menu ont ete patchées HTTP 200 vers ces pages; UI validate HTTP 201 `VALID` (0 erreur, 0 warning), definition HTTP 200 (`schemaVersion 1.1`) | PASS |
+| SIM-BOUTIQUE-06 | Correction REG-011 et Pack `PACK_BOUTIQUE_VENTE` version `1.0.0` | Cause confirmee : migration/colonne deja presentes mais client Prisma genere stale. `prisma migrate status` (11 migrations) OK; `prisma generate` 7.10.0, build et restart backend OK. Le script `backend npm run build` execute maintenant `prisma generate && nest build` et a ete execute avec succes. La colonne `pm_packs.applicationId` est presente; le pack `6d54207e-798f-45c7-9a91-e02a2d75501f` reste DRAFT avec 0 PackVersion, donc aucune persistance partielle du HTTP 500. La remediation REG-012 a ete precontrolee puis arretee avant toute ecriture : le catalogue IAM est vide (REG-013), donc `application_manager` est introuvable. | BLOCKED (REG-013; REG-011 artefact corrige, preuve HTTP restante) |
+| SIM-BOUTIQUE-07 a 10 | Pack Runtime, Data Runtime et ventes VENTE-001 a VENTE-006 | Non executes : le rejet IAM empeche la creation reelle de PackVersion. Aucun snapshot/manifest/publish, activation Runtime ou application publiee n'existe. Aucune vente n'est simulee. | BLOCKED (dependance REG-012) |
+
+Le bootstrap IAM a ete necessaire car `techzone_test` etait vide : un administrateur de campagne a ete cree par le vrai service IAM, puis les objets Boutique ont ete crees par les API HTTP protegees. Les secrets ont ete generes seulement en memoire et ne sont pas rapportes. Le diagnostic REG-012 confirme que ce compte, son credential PASSWORD, son membership `TENANT_BOUTIQUE_A` et le tenant sont ACTIFS; seul le mot de passe de test disponible au rejeu ne correspond pas. Il n'a par ailleurs aucune `RoleAssignment` : le fallback IAM `tenant_user` est lecture seule et ne permettrait pas Pack Manager. La remediation autorisee a controle le role avant toute ecriture et a constate que le catalogue RBAC est vide (0 role, 0 permission active) : `application_manager` est introuvable (REG-013). Aucun mot de passe, credential, session, role ou permission n'a donc ete modifie. La creation de membership avec `metadata` objet retourne reellement HTTP 400 (`metadata must be a string`) : la cause est le decorateur `@IsString()` conserve dans le DTO source et compile, malgre le type TypeScript `Record<string, unknown>` (REG-010). Aucun correctif applicatif n'a ete applique.
+
+Preuve PostgreSQL via relecture Prisma sur `techzone_test` : 6 `BmFeature`, 6 `BmFeatureCapability`, 1 `BmMenu`, 6 `BmNavigationItem`, configuration `dbab264a-95d2-4a5e-8611-a57502aec185` ACTIVE, contrat `4654df3c-eab3-42a4-9ca4-f4ff7f48c8ea` LOCKED et 7 `UiPage`. Pour REG-011, `business_manager.pm_packs.applicationId` est bien presente, le client Prisma regenere 7.10.0 expose ce champ, le pack est encore DRAFT/non lie et `pm_pack_versions` retourne 0 ligne pour ce pack. Cela exclut une migration manquante et toute PackVersion partielle.
+
+### Ecarts et limites verifies
+
+- `npx tsc --noEmit -p tsconfig.spec.json --pretty false` : FAIL, **304 diagnostics** (`REG-008` reste ouvert).
+- `REG-005` reste ouvert : build reussi mais avertissement Vite pour le chunk principal superieur a 500 kB.
+- Les 39 fichiers reellement decouverts par Vitest ont ete rejoues par lots : UI/Runtime, BM/Pack/contexte et navigation/composants. L'invocation globale n'a pas restitue son recapitulatif final, aussi aucun total agrege n'est declare. Deux recettes PostgreSQL opt-in (`Phase7.postgres.test.jsx`, `Renderer.postgres.test.jsx`) sont exclues volontairement par la configuration et restent **NOT TESTED** faute des variables et du backend reel requis. Le typecheck frontend reste **NON CERTIFIE** car son recapitulatif final n'a pas ete restitue.
+- La fondation Boutique, le modele BM, la gate BM et les pages UI ont ete executes et persistes. La correction d'artefact REG-011 est appliquee et son test PM cible est vert (14/14), mais le rejeu HTTP est bloque par le compte de campagne (`REG-012`). Les ventes VENTE-001 a VENTE-006, Pack Runtime et Data Runtime restent **NOT TESTED** : aucun parcours publie UI -> Pack -> Runtime -> Data ne peut etre execute honestement.
+- Les CDC existent pour les sept modules, mais SIM-01 a SIM-32 ne sont pas relies dans le depot a des scripts/scenarios executables individuels; ils restent **NOT TESTED**.
+
+### Decision de recette
+
+**GO SOUS RESERVES pour les regressions automatisees executees; NO-GO pour une certification complete ou une recette metier boutique.** La gate BM et les pages UI de la boutique sont maintenant prouvees; REG-011 est corrige au niveau du client Prisma genere, mais la chaine publication/Runtime/vente reste bloquee par l'acces IAM de campagne (`REG-012`). Les ventes reelles ne sont donc pas declarees. Les reserves `REG-005`, `REG-008`, `REG-009` et `REG-010` restent egalement ouvertes.
+
 ## Limites connues
 
 - La recette navigateur automatisée a été réalisée à 1440 px. Les comportements 320/390/768/1024 sont couverts par les breakpoints et tests de composants ; une revue visuelle manuelle complémentaire à ces largeurs reste recommandée avant livraison externe.
