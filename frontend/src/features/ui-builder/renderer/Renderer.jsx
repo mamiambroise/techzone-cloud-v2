@@ -29,13 +29,6 @@ const ICONS = {
   MousePointerClick,
 };
 
-const SPACING = {
-  none: '0',
-  sm: '0.5rem',
-  md: '1rem',
-  lg: '1.5rem',
-};
-
 const TONE_CLASSES = {
   neutral: 'bg-slate-100 text-slate-700 border-slate-200',
   blue: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -44,8 +37,50 @@ const TONE_CLASSES = {
   rose: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
-function pad(value) {
-  return SPACING[value] ?? SPACING.md;
+const THEME_FONTS = ['Inter', 'system-ui', 'Arial', 'Roboto', 'Georgia'];
+const THEME_SHADOWS = {
+  none: 'none',
+  subtle: '0 2px 12px rgba(16,28,72,0.05)',
+  raised: '0 10px 28px rgba(16,28,72,0.12)',
+};
+
+function pad(value, unit = 4) {
+  const multiplier = value === 'none' ? 0 : value === 'sm' ? 2 : value === 'lg' ? 6 : 4;
+  return `${Math.min(Math.max(Number(unit) || 4, 1), 32) * multiplier}px`;
+}
+
+function safeThemeStyle(theme) {
+  const colors = theme?.colors || {};
+  const radius = theme?.radius || {};
+  const typography = theme?.typography || {};
+  const spacing = theme?.spacing || {};
+  const hex = (value, fallback) => typeof value === 'string' && /^#[a-f\d]{3}(?:[a-f\d]{3})?$/i.test(value) ? value : fallback;
+  const number = (value, fallback, min, max) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.min(Math.max(parsed, min), max) : fallback;
+  };
+  const font = THEME_FONTS.includes(typography.fontFamily) ? typography.fontFamily : 'Inter';
+  const shadow = Object.values(THEME_SHADOWS).includes(theme?.shadow?.card) ? theme.shadow.card : THEME_SHADOWS.subtle;
+
+  return {
+    '--ui-primary': hex(colors.primary, '#0866F5'),
+    '--ui-primary-soft': hex(colors.primarySoft, '#EDF4FF'),
+    '--ui-text': hex(colors.text, '#101C48'),
+    '--ui-muted': hex(colors.muted, '#64748B'),
+    '--ui-surface': hex(colors.surface, '#FFFFFF'),
+    '--ui-canvas': hex(colors.canvas, '#EFF6FF'),
+    '--ui-success': hex(colors.success, '#08A66A'),
+    '--ui-warning': hex(colors.warning, '#FF9800'),
+    '--ui-error': hex(colors.error, '#F22640'),
+    '--ui-font-family': font === 'Georgia' ? 'Georgia, serif' : `${font}, system-ui, sans-serif`,
+    '--ui-font-size': `${number(typography.baseSize, 14, 8, 72)}px`,
+    '--ui-space-unit': `${number(spacing.unit, 4, 1, 32)}px`,
+    '--ui-container-width': `${number(spacing.container, 1200, 320, 2400)}px`,
+    '--ui-radius-sm': `${number(radius.sm, 6, 0, 64)}px`,
+    '--ui-radius-md': `${number(radius.md, 10, 0, 64)}px`,
+    '--ui-radius-lg': `${number(radius.lg, 14, 0, 64)}px`,
+    '--ui-shadow-card': shadow,
+  };
 }
 
 function entityFor(node, prop = 'value') {
@@ -93,8 +128,8 @@ function RuntimeForm({ node, props, childNodes, ctx }) {
     } catch { setMessage({ error: 'Création impossible. Réessayez après vérification de la connexion.' }); }
     finally { setSubmitting(false); }
   };
-  return <form aria-busy={submitting} className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad('md') }} onSubmit={submit}>
-    {props.title && <h3 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h3>}<div className="flex flex-col" style={{ gap: pad('md') }}>{(operation === 'CREATE' || record) && childNodes.map((child) => <RendererNode key={`${child.id}:${record?.id || ''}`} node={child} ctx={{ ...ctx, record: record?.data ?? record, readonly: operation === 'READ' }} />)}</div>
+  return <form aria-busy={submitting} className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad('md', ctx.theme?.spacing?.unit) }} onSubmit={submit}>
+    {props.title && <h3 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h3>}<div className="flex flex-col" style={{ gap: pad('md', ctx.theme?.spacing?.unit) }}>{(operation === 'CREATE' || record) && childNodes.map((child) => <RendererNode key={`${child.id}:${record?.id || ''}`} node={child} ctx={{ ...ctx, record: record?.data ?? record, readonly: operation === 'READ' }} />)}</div>
     {operation !== 'READ' && <div className="mt-4 flex items-center gap-2"><button type="submit" disabled={submitting || ctx.mode === 'preview' || (operation === 'UPDATE' && !record)} className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{props.submitLabel || 'Enregistrer'}</button><button type="reset" className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">{props.cancelLabel || 'Annuler'}</button></div>}
     {message && <p role="status" className={`mt-2 text-xs ${message.error ? 'text-rose-600' : 'text-emerald-600'}`}>{message.error || message.success}</p>}
   </form>;
@@ -111,7 +146,7 @@ function renderNode(node, ctx) {
       return (
         <div
           className="flex flex-col"
-          style={{ padding: pad(props.padding), gap: pad(props.gap), alignItems: props.align === 'center' ? 'center' : props.align === 'end' ? 'flex-end' : 'flex-start' }}
+          style={{ padding: pad(props.padding, ctx.theme?.spacing?.unit), gap: pad(props.gap, ctx.theme?.spacing?.unit), alignItems: props.align === 'center' ? 'center' : props.align === 'end' ? 'flex-end' : 'flex-start' }}
         >
           {childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}
         </div>
@@ -119,9 +154,9 @@ function renderNode(node, ctx) {
 
     case 'Section':
       return (
-        <section className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad(props.padding) }}>
+        <section className="rounded-xl border border-slate-200 bg-white" style={{ padding: pad(props.padding, ctx.theme?.spacing?.unit) }}>
           {props.title && <h2 className="mb-3 text-sm font-bold text-slate-900">{props.title}</h2>}
-          <div className="flex flex-col" style={{ gap: pad('md') }}>
+          <div className="flex flex-col" style={{ gap: pad('md', ctx.theme?.spacing?.unit) }}>
             {childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}
           </div>
         </section>
@@ -129,10 +164,10 @@ function renderNode(node, ctx) {
 
     case 'Card':
       return (
-        <section className="rounded-xl border border-slate-200 bg-white shadow-2xs" style={{ padding: pad(props.padding) }}>
+        <section className="rounded-xl border border-slate-200 bg-white shadow-2xs" style={{ padding: pad(props.padding, ctx.theme?.spacing?.unit) }}>
           {props.title && <h3 className="text-sm font-bold text-slate-900">{props.title}</h3>}
           {props.description && <p className="mt-0.5 text-xs text-slate-500">{props.description}</p>}
-          <div className="flex flex-col" style={{ gap: pad('md'), marginTop: props.title ? '0.75rem' : 0 }}>
+          <div className="flex flex-col" style={{ gap: pad('md', ctx.theme?.spacing?.unit), marginTop: props.title ? '0.75rem' : 0 }}>
             {childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}
           </div>
         </section>
@@ -140,14 +175,14 @@ function renderNode(node, ctx) {
 
     case 'Grid':
       return (
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(Number(props.columns) || 2, 6)}, minmax(0, 1fr))`, gap: pad(props.gap) }}>
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(Number(props.columns) || 2, 6)}, minmax(0, 1fr))`, gap: pad(props.gap, ctx.theme?.spacing?.unit) }}>
           {childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}
         </div>
       );
 
     case 'Stack':
       return (
-        <div className="flex flex-row flex-wrap items-start" style={{ gap: pad(props.gap), justifyContent: props.align === 'center' ? 'center' : props.align === 'end' ? 'flex-end' : 'flex-start' }}>
+        <div className="flex flex-row flex-wrap items-start" style={{ gap: pad(props.gap, ctx.theme?.spacing?.unit), justifyContent: props.align === 'center' ? 'center' : props.align === 'end' ? 'flex-end' : 'flex-start' }}>
           {childNodes.map((child) => <RendererNode key={child.id} node={child} ctx={ctx} />)}
         </div>
       );
@@ -334,29 +369,33 @@ function RendererNode({ node, ctx }) {
  * Rendu racine d'une page.
  * resolveBinding(node, prop, fallback) : résolution structurée injectée.
  */
-function getViewportDevice() {
+function getViewportDevice(theme) {
   if (typeof window === 'undefined') return 'DESKTOP';
-  if (window.innerWidth <= 640) return 'MOBILE';
-  if (window.innerWidth <= 1024) return 'TABLET';
+  const mobileBreakpoint = Number(theme?.breakpoints?.mobile) || 640;
+  const tabletBreakpoint = Number(theme?.breakpoints?.tablet) || 1024;
+  if (window.innerWidth <= mobileBreakpoint) return 'MOBILE';
+  if (window.innerWidth <= tabletBreakpoint) return 'TABLET';
   return 'DESKTOP';
 }
 
-export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'preview', resolutionId, recordId, onNavigate, device, decorateNode }) {
+export function UiRenderer({ tree, resolveBinding, businessContext, theme, mode = 'preview', resolutionId, recordId, onNavigate, device, decorateNode }) {
   const [dataRevision, setDataRevision] = useState(0);
-  const [viewportDevice, setViewportDevice] = useState(getViewportDevice);
+  const [viewportDevice, setViewportDevice] = useState(() => getViewportDevice(theme));
 
   useEffect(() => {
     if (device) return undefined;
-    const updateDevice = () => setViewportDevice(getViewportDevice());
+    const updateDevice = () => setViewportDevice(getViewportDevice(theme));
+    updateDevice();
     window.addEventListener('resize', updateDevice);
     return () => window.removeEventListener('resize', updateDevice);
-  }, [device]);
+  }, [device, theme?.breakpoints?.mobile, theme?.breakpoints?.tablet]);
 
   const activeDevice = device || viewportDevice;
   const ctx = useMemo(() => ({
     nodes: tree?.nodes || {},
     decorateNode,
     businessContext,
+    theme,
     recordId,
     resolutionId,
     onNavigate,
@@ -366,7 +405,7 @@ export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'prev
     fieldSchemas: new Map(),
     dataRevision,
     refreshData: () => setDataRevision((value) => value + 1),
-  }), [tree, resolveBinding, businessContext, mode, dataRevision, resolutionId, recordId, onNavigate, activeDevice, decorateNode]);
+  }), [tree, resolveBinding, businessContext, theme, mode, dataRevision, resolutionId, recordId, onNavigate, activeDevice, decorateNode]);
 
   const treeError = tree ? rendererTreeError(tree) : null;
   if (treeError) return <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{treeError}</p>;
@@ -380,7 +419,11 @@ export function UiRenderer({ tree, resolveBinding, businessContext, mode = 'prev
       </div>
     );
   }
-  return <RendererNode key={`${businessContext?.applicationVersionId}:${tree.root}:${recordId || ''}`} node={rootNode} ctx={ctx} />;
+  return (
+    <div className="ui-renderer min-w-0" style={safeThemeStyle(theme)}>
+      <RendererNode key={`${businessContext?.applicationVersionId}:${tree.root}:${recordId || ''}`} node={rootNode} ctx={ctx} />
+    </div>
+  );
 }
 
 export default UiRenderer;

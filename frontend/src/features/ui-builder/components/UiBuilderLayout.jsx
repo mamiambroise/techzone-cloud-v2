@@ -21,7 +21,7 @@ import {
   BmCard, BmErrorState, BmLoading, BmEmptyState, BmForbiddenState,
 } from '../../../components/business-manager/bm/ui.jsx';
 import useUiBuilderContext from '../hooks/useUiBuilderContext.js';
-import { setContext, fetchOverview, fetchPages, fetchBusinessContext } from '../store/uiBuilderSlice.js';
+import { setContext, fetchOverview, fetchPages, fetchBusinessContext, fetchTheme } from '../store/uiBuilderSlice.js';
 import { ROUTES } from '../../../app/routes.js';
 
 export const UIB_SUB_TABS = [
@@ -58,6 +58,7 @@ export default function UiBuilderLayout({ subTab, children }) {
       dispatch(fetchOverview(versionId));
       dispatch(fetchPages(versionId));
       dispatch(fetchBusinessContext(versionId));
+      dispatch(fetchTheme(versionId));
     }
   }, [versionId, activeTenant?.id, dispatch]);
 

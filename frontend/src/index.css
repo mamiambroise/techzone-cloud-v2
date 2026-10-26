@@ -408,6 +408,37 @@ button:not(:disabled),
   border-color: var(--uib-accent-border);
 }
 
+/* Design tokens are scoped to the shared UI renderer, including preview and runtime. */
+.ui-renderer {
+  width: 100%;
+  max-width: var(--ui-container-width, 1200px);
+  margin-inline: auto;
+  color: var(--ui-text, #101c48);
+  font-family: var(--ui-font-family, Inter, system-ui, sans-serif);
+  font-size: var(--ui-font-size, 14px);
+}
+
+.ui-renderer :is([class~="bg-white"]) { background-color: var(--ui-surface, #fff); }
+.ui-renderer :is([class~="bg-slate-50"]) { background-color: var(--ui-canvas, #eff6ff); }
+.ui-renderer :is([class~="bg-blue-50"]) { background-color: var(--ui-primary-soft, #edf4ff); }
+.ui-renderer :is([class~="text-slate-900"], [class~="text-slate-700"]) { color: var(--ui-text, #101c48); }
+.ui-renderer :is([class~="text-slate-600"], [class~="text-slate-500"]) { color: var(--ui-muted, #64748b); }
+.ui-renderer :is([class~="bg-blue-600"]) { background-color: var(--ui-primary, #0866f5); }
+.ui-renderer :is([class~="text-blue-600"], [class~="text-blue-700"]) { color: var(--ui-primary, #0866f5); }
+.ui-renderer :is([class~="text-emerald-600"]) { color: var(--ui-success, #08a66a); }
+.ui-renderer :is([class~="text-amber-600"]) { color: var(--ui-warning, #ff9800); }
+.ui-renderer :is([class~="text-rose-600"]) { color: var(--ui-error, #f22640); }
+.ui-renderer :is([class~="border-slate-200"]) { border-color: color-mix(in srgb, var(--ui-text, #101c48) 12%, var(--ui-surface, #fff)); }
+.ui-renderer :is([class~="text-xs"]) { font-size: calc(var(--ui-font-size, 14px) * 0.85); }
+.ui-renderer :is([class~="text-sm"]) { font-size: var(--ui-font-size, 14px); }
+.ui-renderer :is([class~="text-base"]) { font-size: calc(var(--ui-font-size, 14px) * 1.15); }
+.ui-renderer :is([class~="text-lg"]) { font-size: calc(var(--ui-font-size, 14px) * 1.3); }
+.ui-renderer :is([class~="text-xl"]) { font-size: calc(var(--ui-font-size, 14px) * 1.5); }
+.ui-renderer :is([class~="rounded"], [class~="rounded-md"]) { border-radius: var(--ui-radius-sm, 6px); }
+.ui-renderer :is([class~="rounded-lg"]) { border-radius: var(--ui-radius-md, 10px); }
+.ui-renderer :is([class~="rounded-xl"]) { border-radius: var(--ui-radius-lg, 14px); }
+.ui-renderer :is([class~="shadow-2xs"], [class~="shadow-sm"]) { box-shadow: var(--ui-shadow-card, 0 2px 12px rgb(16 28 72 / 0.05)); }
+
 @media (max-width: 767px) {
   .uib-workspace .uib-context { position: static; }
   .uib-workspace .uib-editor-panel {

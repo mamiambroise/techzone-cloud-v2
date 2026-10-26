@@ -44,6 +44,17 @@ beforeEach(() => {
 });
 
 describe('Published application — shared renderer and version isolation', () => {
+  it('uses the published theme tokens in the runtime renderer', async () => {
+    const ui = { ...definition(), theme: { colors: { primary: '#6258D7' }, spacing: { container: 960 } } };
+    api.get.mockResolvedValueOnce({ data: manifest(ui) });
+    render(<PublishedApplication packCode="test" packVersion="1.0.0" tenantId="tenant-a" resolutionId="resolution-a" effectiveManifest={gate()} />);
+    await screen.findByText('Contenu publié');
+    const renderer = screen.getByLabelText('Application publiée').querySelector('.ui-renderer');
+
+    expect(renderer.style.getPropertyValue('--ui-primary')).toBe('#6258D7');
+    expect(renderer.style.getPropertyValue('--ui-container-width')).toBe('960px');
+  });
+
   it('renders the same definition as preview and navigates published pages', async () => {
     const preview = render(<UiRenderer tree={definition().pages[0].components} mode="preview" />);
     const html = preview.container.innerHTML;

@@ -79,3 +79,5 @@ Appliquer un thème SaaS moderne et cohérent à toutes les pages existantes et 
 - La complétion est le ratio d’étapes READY parmi les étapes serveur ; sans étapes, afficher « — ».
 - Validation immédiate des routes : message textuel et `aria-invalid`, sans remplacer la validation serveur.
 - Conflit de sauvegarde : conserver l’arbre local, annoncer le conflit, afficher les révisions et une comparaison ; rechargement serveur après confirmation explicite. Bloquer autosave et sauvegarde manuelle tant que le conflit n’est pas résolu.
+- Le panneau Thème édite des tokens gouvernés (palette, police, tailles, rayons, ombres, largeur et breakpoints) avec presets et prévisualisation Desktop/Tablette/Mobile ; aucun CSS libre n’est accepté.
+- Le Shared Renderer applique les tokens de thème de la même UI Definition dans l’éditeur, l’aperçu et l’application publiée. Les valeurs du manifeste sont bornées/filtrées avant d’être converties en variables CSS locales au renderer.

@@ -51,7 +51,7 @@ function EditorBody() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const state = useSelector((s) => s.uiBuilder);
-  const { pages, pagesStatus, selectedPageId, tree, saveState, saveError, device, zoom, undoStack, redoStack, validation, businessContext } = state;
+  const { pages, pagesStatus, selectedPageId, tree, saveState, saveError, device, zoom, undoStack, redoStack, validation, businessContext, theme } = state;
   const initializedRouteRef = useRef(null);
 
   const page = pages.find((p) => p.id === selectedPageId);
@@ -272,7 +272,7 @@ function EditorBody() {
               <span className="text-[10px] text-slate-400">{page.layout}</span>
             </div>
             <div className="uib-canvas-frame rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <UiRenderer tree={tree} resolveBinding={resolveBinding} businessContext={businessContext} mode="preview" device={device} decorateNode={(node, content) => {
+              <UiRenderer tree={tree} resolveBinding={resolveBinding} businessContext={businessContext} theme={theme} mode="preview" device={device} decorateNode={(node, content) => {
                 const parentId = Object.keys(tree.nodes).find((id) => tree.nodes[id].children?.includes(node.id)) || null;
                 const index = parentId ? tree.nodes[parentId].children.indexOf(node.id) : null;
                 return <CanvasNode nodeId={node.id} parentId={parentId} index={index} content={content} />;
