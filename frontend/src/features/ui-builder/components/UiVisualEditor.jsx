@@ -51,7 +51,7 @@ function EditorBody() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const state = useSelector((s) => s.uiBuilder);
-  const { pages, pagesStatus, selectedPageId, tree, saveState, saveError, device, zoom, undoStack, redoStack, validation, businessContext } = state;
+  const { pages, pagesStatus, selectedPageId, tree, saveState, saveError, device, zoom, undoStack, redoStack, validation, businessContext, theme } = state;
   const initializedRouteRef = useRef(null);
 
   const page = pages.find((p) => p.id === selectedPageId);
@@ -144,9 +144,9 @@ function EditorBody() {
   };
 
   return (
-    <div className="flex flex-col gap-3" data-testid="ui-visual-editor">
+    <div className="uib-editor flex flex-col gap-3" data-testid="ui-visual-editor">
       {/* ------- Toolbar ------- */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-2xs">
+      <div className="uib-editor-toolbar flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-2xs">
         <select
           aria-label="Page en cours d'édition"
           value={selectedPageId || ''}
@@ -177,7 +177,7 @@ function EditorBody() {
                 onClick={() => dispatch(setDevice(kind))}
                 aria-pressed={device === kind}
                 title={kind}
-                className={`rounded-md p-1.5 transition-colors duration-150 ${device === kind ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`rounded-md p-1.5 transition-colors duration-150 ${device === kind ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 <Icon className="h-4 w-4" />
               </button>
@@ -215,9 +215,9 @@ function EditorBody() {
         <BmButton variant="secondary" disabled={!state.saveConflict.serverPage} onClick={() => { if (window.confirm('Remplacer les modifications locales par la version serveur ?')) dispatch(reloadConflictingPage()); }}>Recharger la version serveur</BmButton>
       </section>}
       {/* ------- 3 panneaux ------- */}
-      <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="uib-editor-grid grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
         {/* LEFT : Component Library */}
-        <aside className={`rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'library' ? '' : 'hidden lg:block'}`} aria-label="Bibliothèque de composants">
+        <aside className={`uib-editor-panel rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'library' ? '' : 'hidden lg:block'}`} aria-label="Bibliothèque de composants">
           <nav role="tablist" aria-label="Navigation du panneau éditeur" className="flex border-b border-slate-100 p-1">
             {[
               { id: 'PAGES', label: 'Pages' },
@@ -229,7 +229,7 @@ function EditorBody() {
                 role="tab"
                 aria-selected={leftTab === tab.id}
                 onClick={() => setLeftTab(tab.id)}
-                className={`flex-1 rounded-md px-2 py-2 text-[10px] font-bold transition-colors ${leftTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+                className={`flex-1 rounded-md px-2 py-2 text-[10px] font-bold transition-colors ${leftTab === tab.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
               >
                 {tab.label}
               </button>
@@ -265,14 +265,14 @@ function EditorBody() {
         </aside>
 
         {/* CENTER : Canvas */}
-        <section className="min-w-0 rounded-xl border border-slate-200 bg-[#f1f5f9] shadow-2xs" aria-label="Canvas" style={{ padding: '1.25rem' }}>
+        <section className="uib-canvas min-w-0 rounded-xl border border-slate-200 shadow-2xs" aria-label="Canvas" style={{ padding: '1.25rem' }}>
           <div className="mx-auto transition-[width] duration-200" style={{ width: DEVICE_WIDTHS[device], maxWidth: '100%', transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
             <div className="mb-2 flex items-center justify-between px-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{page.route} · {device}</span>
               <span className="text-[10px] text-slate-400">{page.layout}</span>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <UiRenderer tree={tree} resolveBinding={resolveBinding} businessContext={businessContext} mode="preview" device={device} decorateNode={(node, content) => {
+            <div className="uib-canvas-frame rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <UiRenderer tree={tree} resolveBinding={resolveBinding} businessContext={businessContext} theme={theme} mode="preview" device={device} decorateNode={(node, content) => {
                 const parentId = Object.keys(tree.nodes).find((id) => tree.nodes[id].children?.includes(node.id)) || null;
                 const index = parentId ? tree.nodes[parentId].children.indexOf(node.id) : null;
                 return <CanvasNode nodeId={node.id} parentId={parentId} index={index} content={content} />;
@@ -282,7 +282,7 @@ function EditorBody() {
         </section>
 
         {/* RIGHT : Inspector */}
-        <aside className={`rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'inspector' ? '' : 'hidden lg:block'}`} aria-label="Inspecteur du composant sélectionné">
+        <aside className={`uib-editor-panel rounded-xl border border-slate-200 bg-white shadow-2xs ${mobilePanel === 'inspector' ? '' : 'hidden lg:block'}`} aria-label="Inspecteur du composant sélectionné">
           {tree.nodes[state.selectedComponentId]
             ? <Inspector node={tree.nodes[state.selectedComponentId]} tab={inspectorTab} onTab={setInspectorTab} />
             : <EmptyInspector />}
@@ -334,10 +334,10 @@ function EditorBody() {
         }}
         onDragOver={(event) => event.preventDefault()}
         onDrop={handleCanvasDrop({ nodeId, parentId, index })}
-        className={`relative rounded-lg transition-[box-shadow,outline] duration-150 ${isSelected ? 'outline outline-2 outline-blue-500 outline-offset-2' : 'outline outline-1 outline-dashed outline-transparent hover:outline-slate-300'} ${isHidden ? 'opacity-40' : ''}`}
+        className={`relative rounded-lg transition-[box-shadow,outline] duration-150 ${isSelected ? 'outline outline-2 outline-indigo-500 outline-offset-2' : 'outline outline-1 outline-dashed outline-transparent hover:outline-slate-300'} ${isHidden ? 'opacity-40' : ''}`}
       >
         {isSelected && (
-          <span className="absolute -top-2 left-2 z-10 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
+          <span className="absolute -top-2 left-2 z-10 rounded bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
             {node.type}{isHidden ? ' · Masqué' : ''}
           </span>
         )}
@@ -509,7 +509,7 @@ function LayerTreeNode({ node, tree, selectedComponentId, onSelect, depth }) {
       <button
         type="button"
         onClick={() => onSelect(node.id)}
-        className={`w-full truncate rounded-md py-1.5 pr-2 text-left text-xs transition-colors ${selectedComponentId === node.id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+        className={`w-full truncate rounded-md py-1.5 pr-2 text-left text-xs transition-colors ${selectedComponentId === node.id ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
         {definition?.label || node.type}
@@ -565,7 +565,7 @@ function Inspector({ node, tab, onTab }) {
             role="tab"
             aria-selected={tab === tabId}
             onClick={() => onTab(tabId)}
-            className={`rounded-t-lg px-2.5 py-2 text-[10px] font-bold transition-colors duration-150 ${tab === tabId ? 'border-b-2 border-blue-600 text-blue-700' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`rounded-t-lg px-2.5 py-2 text-[10px] font-bold transition-colors duration-150 ${tab === tabId ? 'border-b-2 border-indigo-600 text-indigo-700' : 'text-slate-400 hover:text-slate-600'}`}
           >
             {({ CONTENT: 'Propriétés', DATA: 'Données', ACTIONS: 'Actions', VISIBILITY: 'Visibilité', RESPONSIVE: 'Responsive', ADVANCED: 'Avancé' })[tabId]}
           </button>

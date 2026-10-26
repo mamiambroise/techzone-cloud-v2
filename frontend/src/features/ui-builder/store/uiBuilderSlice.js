@@ -20,6 +20,10 @@ export const fetchPages = createAsyncThunk('uiBuilder/fetchPages', async (versio
 export const fetchBusinessContext = createAsyncThunk('uiBuilder/fetchBusinessContext', async (versionId) => uiBuilderApi.getBusinessContext(versionId));
 export const fetchValidation = createAsyncThunk('uiBuilder/fetchValidation', async (versionId) => uiBuilderApi.validateDefinition(versionId));
 export const fetchUiDefinition = createAsyncThunk('uiBuilder/fetchUiDefinition', async (versionId) => uiBuilderApi.getUiDefinition(versionId));
+export const fetchTheme = createAsyncThunk('uiBuilder/fetchTheme', async (versionId) => {
+  const definition = await uiBuilderApi.getUiDefinition(versionId);
+  return definition?.theme ?? null;
+});
 
 export const submitCreatePage = createAsyncThunk('uiBuilder/submitCreatePage', async (body) => uiBuilderApi.createPage(body));
 export const submitDeletePage = createAsyncThunk('uiBuilder/submitDeletePage', async (pageId) => uiBuilderApi.deletePage(pageId));
@@ -103,6 +107,7 @@ const initialState = {
   saveConflict: null,
   validation: null,
   validationStatus: 'IDLE',
+  theme: null,
   themeStatus: 'IDLE',
   undoStack: [],
   redoStack: [],
@@ -405,6 +410,23 @@ const uiBuilderSlice = createSlice({
         if (state.requests.fetchValidation !== action.meta.requestId) return;
         state.validationStatus = 'ERROR'; })
 
+      .addCase(fetchTheme.pending, (state, action) => {
+        state.requests.fetchTheme = action.meta.requestId;
+        state.themeStatus = 'LOADING';
+      })
+      .addCase(fetchTheme.fulfilled, (state, action) => {
+        if (state.requests.fetchTheme !== action.meta.requestId) return;
+        delete state.requests.fetchTheme;
+        state.theme = action.payload;
+        state.themeStatus = 'LOADED';
+      })
+      .addCase(fetchTheme.rejected, (state, action) => {
+        if (state.requests.fetchTheme !== action.meta.requestId) return;
+        delete state.requests.fetchTheme;
+        state.themeStatus = 'LOAD_ERROR';
+        state.lastActionError = action.error?.message || 'Chargement du thème impossible';
+      })
+
       .addCase(submitCreatePage.pending, (state, action) => { state.requests[action.meta.requestId] = true; })
       .addCase(submitCreatePage.fulfilled, (state, action) => {
         if (!state.requests[action.meta.requestId]) return;
@@ -459,11 +481,12 @@ const uiBuilderSlice = createSlice({
       .addCase(submitTheme.fulfilled, (state, action) => {
         if (!state.requests[action.meta.requestId]) return;
         delete state.requests[action.meta.requestId];
+        state.theme = action.payload?.tokens ?? action.meta.arg.tokens;
         state.themeStatus = 'SAVED'; })
       .addCase(submitTheme.rejected, (state, action) => {
         if (!state.requests[action.meta.requestId]) return;
         delete state.requests[action.meta.requestId];
-        state.themeStatus = 'ERROR'; });
+        state.themeStatus = 'SAVE_ERROR'; });
   },
 });
 

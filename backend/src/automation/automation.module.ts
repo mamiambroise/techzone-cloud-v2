@@ -7,6 +7,7 @@ import { ActionEngine } from './action/action.engine';
 import { ConditionsEngine } from './conditions/conditions.engine';
 import { AutomationHistoryService } from './history/automation-history.service';
 import { MockAutomation } from './mock/mock.automation';
+import { AutomationPersistenceService } from './automation-persistence.service';
 
 @Module({
   controllers: [AutomationController],
@@ -18,6 +19,7 @@ import { MockAutomation } from './mock/mock.automation';
     ConditionsEngine,
     AutomationHistoryService,
     MockAutomation,
+    AutomationPersistenceService,
   ],
   exports: [
     RulesEngine,
@@ -26,6 +28,7 @@ import { MockAutomation } from './mock/mock.automation';
     ActionEngine,
     ConditionsEngine,
     AutomationHistoryService,
+    AutomationPersistenceService,
   ],
 })
 export class AutomationModule {}

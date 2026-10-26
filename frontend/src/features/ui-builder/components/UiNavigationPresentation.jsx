@@ -61,7 +61,7 @@ function NavigationBody() {
   if (pagesStatus === 'LOADING') return <BmLoading />;
 
   return (
-    <div className="space-y-5">
+    <div className="uib-content space-y-5">
       <BmCard
         title="Présentation de la navigation applicative"
         subtitle="Ordre visuel, icône et visibilité des pages. La structure fonctionnelle des menus reste gérée par le Business Manager."

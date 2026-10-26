@@ -25,10 +25,10 @@ describe('ActionEngine', () => {
   describe('executeAction', () => {
     const ctx = { tenantId: 't1', userId: 'u1', traceId: 'tr1' };
 
-    it('should SUCCEED a no-op action', async () => {
+    it('should FAIL an action with no server-side handler', async () => {
       engine.registerAction({ code: 'act.noop', category: 'NOTIFICATION', retryable: true, timeout: 1000, idempotent: false, version: '1' });
       const outcome = await engine.executeAction('act.noop', ctx);
-      expect(outcome).toBe('SUCCEEDED');
+      expect(outcome).toBe('FAILED');
     });
 
     it('should SUCCEED a handler that returns success', async () => {

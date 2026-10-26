@@ -168,6 +168,11 @@ export class WorkflowEngine {
    */
   async startWorkflow(code: string, ctx: AutomationContext): Promise<WorkflowExecutionRecord> {
     const wf = this.getWorkflow(code);
+    return this.startWorkflowDefinition(wf, ctx);
+  }
+
+  async startWorkflowDefinition(wf: WorkflowDefinition, ctx: AutomationContext): Promise<WorkflowExecutionRecord> {
+    const code = wf.code;
 
     if (wf.lifecycle !== 'ACTIVE' && wf.lifecycle !== 'READY') {
       throw new BadRequestException(`Workflow "${code}" non exécutable (lifecycle: ${wf.lifecycle})`);

@@ -21,7 +21,7 @@ import {
   BmCard, BmErrorState, BmLoading, BmEmptyState, BmForbiddenState,
 } from '../../../components/business-manager/bm/ui.jsx';
 import useUiBuilderContext from '../hooks/useUiBuilderContext.js';
-import { setContext, fetchOverview, fetchPages, fetchBusinessContext } from '../store/uiBuilderSlice.js';
+import { setContext, fetchOverview, fetchPages, fetchBusinessContext, fetchTheme } from '../store/uiBuilderSlice.js';
 import { ROUTES } from '../../../app/routes.js';
 
 export const UIB_SUB_TABS = [
@@ -76,6 +76,7 @@ export default function UiBuilderLayout({ subTab, children }) {
       dispatch(fetchOverview(versionId));
       dispatch(fetchPages(versionId));
       dispatch(fetchBusinessContext(versionId));
+      dispatch(fetchTheme(versionId));
     }
   }, [versionId, activeTenant?.id, dispatch]);
 
@@ -120,7 +121,7 @@ export default function UiBuilderLayout({ subTab, children }) {
       <header className="space-y-1">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><PanelsTopLeft className="h-5 w-5" /></span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"><PanelsTopLeft className="h-5 w-5" /></span>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">UI Builder</h1>
               <p className="mt-0.5 text-sm text-slate-500">
@@ -134,7 +135,7 @@ export default function UiBuilderLayout({ subTab, children }) {
         </div>
       </header>
 
-      <section aria-label="Contexte UI Builder" className="uib-context sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <section aria-label="Contexte UI Builder" className="uib-context relative z-20 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:sticky sm:top-0">
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {[
             ['Tenant', activeTenant.name || activeTenant.code || activeTenant.id],
@@ -145,8 +146,24 @@ export default function UiBuilderLayout({ subTab, children }) {
             ['Statut', version?.status || '—'],
           ].map(([label, value, control]) => <div key={label} className="min-w-0"><dt className="text-xs font-medium text-slate-500">{label}</dt><dd className="truncate text-sm font-semibold text-slate-900" title={String(value)}>{control || value}</dd></div>)}
         </dl>
-        <p role="status" className="mt-2 text-xs text-slate-600">{({ CLEAN: 'Aucune modification', DIRTY: 'Modifications en attente', SAVING: 'Saving…', SAVED: 'Saved', ERROR: 'Save failed', CONFLICT: 'Conflict' })[uiBuilder.saveState] || 'Aucune modification'}</p>
+        <p role="status" className="mt-2 text-xs text-slate-600">{({ CLEAN: 'Aucune modification', DIRTY: 'Modifications en attente', SAVING: 'Enregistrement…', SAVED: 'Enregistré', ERROR: 'Échec de l’enregistrement', CONFLICT: 'Conflit de sauvegarde' })[uiBuilder.saveState] || 'Aucune modification'}</p>
       </section>
+
+      <nav aria-label="Sections UI Builder" className="uib-navigation flex gap-1 overflow-x-auto border-b border-slate-200 pb-px [scrollbar-width:thin]">
+        {UIB_SUB_TABS.map((tab) => {
+          const isActive = tab.id === subTab;
+          return (
+            <Link
+              key={tab.id}
+              to={tab.route}
+              aria-current={isActive ? 'page' : undefined}
+              className={`shrink-0 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors duration-150 bm-focus ${isActive ? 'border-b-2 border-indigo-600 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </nav>
 
       {!uiBuilder.overview?.applicationVersion?.editable && uiBuilder.overview && (
         <div role="alert" className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">

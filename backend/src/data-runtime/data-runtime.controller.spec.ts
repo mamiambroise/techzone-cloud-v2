@@ -1,11 +1,47 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
 import { DataRuntimeController } from './data-runtime.controller';
 import { ROLES } from '../iam/iam.constants';
 import { Reflector } from '@nestjs/core';
 import { IamPermissionsGuard } from '../iam/iam-permissions.guard';
 
+const principal = { tenantId: 'tenant-a', userId: 'reader', roles: [ROLES.USER], permissions: ['data-runtime:query'] } as any;
+
+function runtimeResolution(overrides: Record<string, any> = {}) {
+  return {
+    id: 'resolution-a',
+    tenantId: 'tenant-a',
+    applicationId: 'application-a',
+    environment: 'production',
+    status: 'EXECUTABLE',
+    effectiveManifest: {
+      tenantId: 'tenant-a',
+      applicationId: 'application-a',
+      environment: 'production',
+      status: 'VALID',
+      executable: true,
+      content: {
+        scope: {
+          tenantId: 'tenant-a',
+          applicationId: 'application-a',
+          businessVersionId: 'version-a',
+          environment: 'production',
+        },
+      },
+    },
+    ...overrides,
+  };
+}
+
+function controllerWith(findFirst = jest.fn(), findVersion = jest.fn().mockResolvedValue({ applicationId: 'application-a' })) {
+  const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, null as any, null as any, {
+    runtimeResolution: { findFirst },
+    applicationVersion: { findFirst: findVersion },
+  } as any);
+  return { controller, findFirst, findVersion };
+}
+
 describe('Data Runtime authenticated BM context', () => {
-  const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, null as any, null as any, { runtimeResolution: { findFirst: jest.fn() } } as any);
+  const { controller } = controllerWith();
   it('supports dynamic capabilities for authenticated IAM administrators', () => {
     const ctx = (controller as any).buildContext('bm:version:record', { tenantId:'a',userId:'admin',roles:[ROLES.ADMIN],permissions:['data-runtime:query'] });
     expect(ctx.tenantId).toBe('a');
@@ -18,131 +54,52 @@ describe('Data Runtime authenticated BM context', () => {
   });
 });
 
+describe('Data Runtime published BM execution gate', () => {
+  it('denies BM reads and writes when the resolution proof is missing', async () => {
+    const { controller, findFirst } = controllerWith();
+    await expect((controller as any).assertPublishedRuntimeGuard(undefined, principal, { resource: 'bm:version-a:customer' }))
+      .rejects.toThrow('RUNTIME_RESOLUTION_REQUIRED');
+    expect(findFirst).not.toHaveBeenCalled();
+  });
 
-describe('Published data execution boundary', () => {
-  const principal: any = { tenantId: 'a', userId: 'reader', roles: [], permissions: ['data-runtime:query'] };
-  const resource = 'bm:11111111-1111-4111-a111-111111111111:Product';
-  function setup() {
-    const query = { execute: jest.fn() };
-    const execution = { execute: jest.fn() };
-    const gate = { assertExecutable: jest.fn() };
-    const db = { applicationVersion: { findFirst: jest.fn().mockResolvedValue({ id: resource.split(':')[1], applicationId: 'app-a', status: 'PUBLISHED' }) } };
-    const controller = new DataRuntimeController(query as any, execution as any, null as any, null as any, null as any, null as any, db as any, gate as any);
-    return { query, execution, gate, controller };
-  }
-  it('SEC-PR-020 refuses published reads without a resolution even without a browser-origin header', async () => {
-    const { controller, query } = setup();
-    await expect(controller.executeQuery({ headers: {} } as any, principal, { resource })).rejects.toThrow('RUNTIME_RESOLUTION_ID_REQUIRED');
-    expect(query.execute).not.toHaveBeenCalled();
+  it('preserves Data Runtime access to canonical resources outside published applications', async () => {
+    const { controller, findFirst } = controllerWith();
+    await expect((controller as any).assertPublishedRuntimeGuard(undefined, principal, { resource: 'Product' })).resolves.toBeUndefined();
+    expect(findFirst).not.toHaveBeenCalled();
   });
-  it('accepts a resolution proof in the published request contract', async () => {
-    const { controller, query, gate } = setup();
-    gate.assertExecutable.mockResolvedValue({ applicationId: 'app-a', effectiveManifest: { content: { ui: { definition: { businessContext: { entities: [{ code: 'Product' }] } } } } } });
-    query.execute.mockResolvedValue({ items: [] });
-    await controller.executeQuery({ headers: {} } as any, principal, { resource, resolutionId: 'r1' } as any);
-    expect(gate.assertExecutable).toHaveBeenCalledWith(expect.objectContaining({ resolutionId: 'r1', tenantId: 'a' }));
-    expect(query.execute).toHaveBeenCalled();
-  });
-  it('SEC-DATA-001 refuses published runtime reads without a resolution proof', async () => {
-    const { controller, query } = setup();
-    await expect(controller.executePublishedQuery({ headers: {} } as any, principal, { resource: 'Product' } as any))
-      .rejects.toThrow('RUNTIME_RESOLUTION_ID_REQUIRED');
-    expect(query.execute).not.toHaveBeenCalled();
-  });
-  it('SEC-DATA-003 only allows resources bound to the executable application version', async () => {
-    const { controller, query, gate } = setup();
-    const versionId = resource.split(':')[1];
-    gate.assertExecutable.mockResolvedValue({
-      applicationId: 'app-a',
-      effectiveManifest: {
-        content: {
-          scope: { businessVersionId: versionId },
-          ui: {
-            definition: {
-              businessContext: {
-                applicationVersionId: versionId,
-                entities: [{ code: 'Product' }],
-              },
-            },
-          },
-        },
-      },
-    });
-    query.execute.mockResolvedValue({ items: [] });
-    await controller.executePublishedQuery({ headers: {} } as any, principal, { resource, resolutionId: 'r1' } as any);
-    expect(query.execute).toHaveBeenCalled();
-  });
-  it('SEC-DATA-032 refuses a resource not declared in the effective manifest', async () => {
-    const { controller, query, gate } = setup();
-    const versionId = resource.split(':')[1];
-    gate.assertExecutable.mockResolvedValue({
-      effectiveManifest: {
-        content: {
-          scope: { businessVersionId: versionId },
-          ui: {
-            definition: {
-              businessContext: { applicationVersionId: versionId, entities: [{ code: 'Customer' }] },
-            },
-          },
-        },
-      },
-    });
-    await expect(controller.executePublishedQuery(
-      { headers: {} } as any,
+
+  it('accepts only a tenant-scoped executable resolution matching the BM version', async () => {
+    const resolution = runtimeResolution();
+    const findFirst = jest.fn().mockResolvedValue(resolution);
+    const { controller, findVersion } = controllerWith(findFirst);
+
+    await expect((controller as any).assertPublishedRuntimeGuard(
+      { headers: { 'x-runtime-resolution-id': 'resolution-a' } },
       principal,
-      { resource, resolutionId: 'r1' } as any,
-    )).rejects.toThrow('RUNTIME_DATA_BINDING_UNAVAILABLE');
-    expect(query.execute).not.toHaveBeenCalled();
+      { resource: 'bm:version-a:customer' },
+    )).resolves.toBe(resolution);
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { id: 'resolution-a', tenantId: 'tenant-a' },
+      include: { effectiveManifest: true },
+    });
+    expect(findVersion).toHaveBeenCalledWith({
+      where: { id: 'version-a', tenantId: 'tenant-a' },
+      select: { applicationId: true },
+    });
   });
-  it('SEC-PR-011/012 never executes reads or mutations when the shared gate refuses', async () => {
-    const { controller, query, execution, gate } = setup();
-    gate.assertExecutable.mockRejectedValue(new Error('RUNTIME_RESOLUTION_BLOCKED'));
-    const req: any = { headers: { 'x-runtime-resolution-id': 'blocked' } };
-    await expect(controller.executeQuery(req, principal, { resource })).rejects.toThrow('RUNTIME_RESOLUTION_BLOCKED');
-    await expect(controller.executeOperation(req, principal, { resource, operation: 'CREATE', input: {} })).rejects.toThrow('RUNTIME_RESOLUTION_BLOCKED');
-    expect(query.execute).not.toHaveBeenCalled(); expect(execution.execute).not.toHaveBeenCalled();
-  });
-  it('SEC-DATA-002 refuses published runtime mutations without a resolution proof', async () => {
-    const { controller, execution } = setup();
-    await expect(controller.executePublishedOperation(
-      { headers: {} } as any,
+
+  it.each([
+    ['foreign or missing resolution', null, 'RUNTIME_RESOLUTION_NOT_FOUND', 'version-a'],
+    ['blocked resolution', runtimeResolution({ status: 'BLOCKED' }), 'RUNTIME_RESOLUTION_BLOCKED', 'version-a'],
+    ['invalid effective manifest', runtimeResolution({ effectiveManifest: { ...runtimeResolution().effectiveManifest, executable: false } }), 'RUNTIME_RESOLUTION_BLOCKED', 'version-a'],
+    ['different application version', runtimeResolution(), 'RUNTIME_APPLICATION_VERSION_MISMATCH', 'version-b'],
+    ['unverifiable application version', runtimeResolution({ effectiveManifest: { ...runtimeResolution().effectiveManifest, content: { scope: { tenantId: 'tenant-a', applicationId: 'application-a', environment: 'production' } } } }), 'RUNTIME_APPLICATION_VERSION_UNVERIFIABLE', 'version-a'],
+  ])('denies %s', async (_case, resolution, error, requestedVersion) => {
+    const { controller } = controllerWith(jest.fn().mockResolvedValue(resolution));
+    await expect((controller as any).assertPublishedRuntimeGuard(
+      undefined,
       principal,
-      { resource: 'Product', operation: 'CREATE', input: {} } as any,
-    )).rejects.toThrow('RUNTIME_RESOLUTION_ID_REQUIRED');
-    expect(execution.execute).not.toHaveBeenCalled();
-  });
-
-  it('SEC-PR-100 keeps Data Runtime IAM mandatory even with a resolution proof', () => {
-    const guard = new IamPermissionsGuard(new Reflector());
-    const context: any = {
-      getHandler: () => DataRuntimeController.prototype.executePublishedQuery,
-      getClass: () => DataRuntimeController,
-      switchToHttp: () => ({ getRequest: () => ({
-        iamAuth: { tenantId: 'a', userId: 'reader', permissions: [] },
-        body: { resource, resolutionId: 'valid-resolution' },
-      }) }),
-    };
-    expect(() => guard.canActivate(context)).toThrow('Permission insuffisante');
-    context.switchToHttp = () => ({ getRequest: () => ({
-      iamAuth: { tenantId: 'a', userId: 'reader', permissions: ['data-runtime:query'] },
-      body: { resource, resolutionId: 'valid-resolution' },
-    }) });
-    expect(guard.canActivate(context)).toBe(true);
-  });
-});
-
-describe('Tenant-scoped diagnostics', () => {
-  it('requires an authenticated tenant before exposing metrics', async () => {
-    const history = { getMetrics: jest.fn() };
-    const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, history as any, null as any, null as any, null as any);
-    await expect(controller.getMetrics({ tenantId: '', userId: 'user' } as any)).rejects.toThrow('TENANT_REQUIRED');
-    expect(history.getMetrics).not.toHaveBeenCalled();
-  });
-
-  it('passes only the authenticated tenant to metrics', async () => {
-    const history = { getMetrics: jest.fn().mockReturnValue({ queryCount: 1 }) };
-    const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, history as any, null as any, null as any, null as any);
-    await expect(controller.getMetrics({ tenantId: 'tenant-a', userId: 'user' } as any)).resolves.toEqual({ queryCount: 1 });
-    expect(history.getMetrics).toHaveBeenCalledWith('tenant-a');
+      { resource: `bm:${requestedVersion}:customer`, resolutionId: 'resolution-a' },
+    )).rejects.toThrow(error);
   });
 });

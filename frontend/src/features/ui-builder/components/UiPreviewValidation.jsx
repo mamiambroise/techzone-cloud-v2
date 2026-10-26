@@ -34,7 +34,7 @@ export default function UiPreviewValidation() {
 
 function PreviewBody() {
   const dispatch = useDispatch();
-  const { pages, pagesStatus, validation, validationStatus, businessContext, device, applicationVersionId } = useSelector((state) => state.uiBuilder);
+  const { pages, pagesStatus, validation, validationStatus, businessContext, device, applicationVersionId, theme } = useSelector((state) => state.uiBuilder);
   const [previewPageId, setPreviewPageId] = useState('');
   const [expanded, setExpanded] = useState(false);
 
@@ -63,7 +63,7 @@ function PreviewBody() {
   if (pagesStatus === 'ERROR') return <BmErrorState message="Aperçu indisponible." onRetry={() => dispatch(fetchPages(applicationVersionId))} />;
 
   return (
-    <div className={expanded ? "fixed inset-0 z-50 overflow-auto bg-white p-4" : "space-y-5"}>
+    <div className={`uib-content ${expanded ? "fixed inset-0 z-50 overflow-auto bg-white p-4" : "space-y-5"}`}>
       <div className="mb-3 flex items-center justify-between"><BmBadge tone="violet">PREVIEW</BmBadge><BmButton variant="secondary" onClick={() => setExpanded(!expanded)}>{expanded ? "Quitter le plein écran" : "Plein écran"}</BmButton></div>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         {/* ---------- Preview ---------- */}
@@ -117,7 +117,7 @@ function PreviewBody() {
               {page && (
                 <div className="mx-auto rounded-xl border border-slate-200 bg-[#f1f5f9] p-4" style={{ maxWidth: DEVICE_WIDTHS[device] }}>
                   <div className="rounded-lg bg-white p-4 shadow-sm">
-                    <UiRenderer tree={page.components} resolveBinding={resolveBinding} businessContext={businessContext} mode="preview" device={device} />
+                    <UiRenderer tree={page.components} resolveBinding={resolveBinding} businessContext={businessContext} theme={theme} mode="preview" device={device} />
                   </div>
                 </div>
               )}

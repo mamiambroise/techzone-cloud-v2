@@ -213,7 +213,7 @@ export class DataRuntimeController {
     @CurrentUser() principal: IamAuthContext,
     @Param('bindingId') bindingId: string,
   ) {
-    await this.assertPublishedRuntimeGuard(req, principal, { bindingId, applicationId: (req as any)?.body?.applicationId });
+    await this.assertPublishedRuntimeGuard(req, principal, { bindingId, applicationId: (req as any)?.body?.applicationId, requireResolution: true });
     const context = this.buildContext('default', principal, req);
     return this.bindingService.resolve(bindingId, context);
   }
@@ -234,18 +234,17 @@ export class DataRuntimeController {
     if (!principal?.tenantId) {
       throw new ForbiddenException('TENANT_REQUIRED');
     }
-    const bodyResolutionId = payload.resolutionId || (req as any)?.body?.resolutionId;
-    const headerResolutionId = (req as any)?.headers?.['x-runtime-resolution-id'];
-    if (bodyResolutionId && headerResolutionId && String(bodyResolutionId) !== String(headerResolutionId)) {
-      throw new BadRequestException('RUNTIME_RESOLUTION_ID_MISMATCH');
+    const resolutionId = payload.resolutionId || (req as any)?.body?.resolutionId || (req as any)?.query?.resolutionId || (req as any)?.headers?.['x-runtime-resolution-id'];
+    const resource = typeof payload.resource === 'string' ? payload.resource : '';
+    const isBusinessManagerResource = resource.toLowerCase().startsWith('bm:');
+    if (!resolutionId) {
+      if (isBusinessManagerResource || payload.requireResolution === true) {
+        throw new ForbiddenException('RUNTIME_RESOLUTION_REQUIRED');
+      }
+      return;
     }
-    const resolutionId = bodyResolutionId || (req as any)?.query?.resolutionId || headerResolutionId;
-    const resource = String(payload.resource || '');
-    const bm = /^bm:([0-9a-f-]{36}):/i.exec(resource);
-    let version: { id: string; applicationId: string; status: string } | null = null;
-    if (bm) {
-      version = await this.prisma.applicationVersion.findFirst({ where: { id: bm[1], tenantId: principal.tenantId }, select: { id: true, applicationId: true, status: true } });
-      if (!version) throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
+    if (!this.prisma?.runtimeResolution) {
+      throw new ForbiddenException('RUNTIME_RESOLUTION_GUARD_UNAVAILABLE');
     }
     const published = version?.status === 'PUBLISHED' || req?.headers?.['x-runtime-origin'] === 'published' || Boolean(version && await this.prisma.packVersion.count({ where: { tenantId: principal.tenantId, applicationVersionId: version.id, status: 'PUBLISHED' } }));
     if (!resolutionId && !requireResolution && !published) return;
@@ -254,11 +253,64 @@ export class DataRuntimeController {
       resolutionId: String(resolutionId), tenantId: principal.tenantId,
       ...(version ? { applicationId: version.applicationId, applicationVersionId: version.id } : {}),
     });
-    if (requireResolution) {
-      this.assertEffectiveDataBinding(item, resource);
-    } else if (bm) {
-      const content = item.effectiveManifest!.content as Record<string, any>;
-      if (!content.ui?.definition?.businessContext?.entities?.some((e: any) => e.code === resource.split(':')[2])) throw new ForbiddenException('RUNTIME_DATA_BINDING_UNAVAILABLE');
+    if (!item) {
+      throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND');
+    }
+    const runtimeStatus = item.status === 'RESOLVED' ? 'EXECUTABLE' : item.status;
+    if (
+      runtimeStatus !== 'EXECUTABLE' ||
+      item.effectiveManifest?.tenantId !== principal.tenantId ||
+      item.effectiveManifest?.applicationId !== item.applicationId ||
+      item.effectiveManifest?.environment !== item.environment ||
+      item.effectiveManifest?.status !== 'VALID' ||
+      item.effectiveManifest?.executable !== true
+    ) {
+      throw new ConflictException('RUNTIME_RESOLUTION_BLOCKED');
+    }
+    const effective = item.effectiveManifest.content as Record<string, any> | null;
+    const scope = effective?.scope;
+    if (
+      scope?.tenantId !== principal.tenantId ||
+      scope?.applicationId !== item.applicationId ||
+      scope?.environment !== item.environment
+    ) {
+      throw new ConflictException('RUNTIME_RESOLUTION_SCOPE_INVALID');
+    }
+    if (payload.applicationId && item.applicationId !== String(payload.applicationId)) {
+      throw new BadRequestException('RUNTIME_APPLICATION_MISMATCH');
+    }
+    if (payload.environmentId && item.environment !== String(payload.environmentId)) {
+      throw new BadRequestException('RUNTIME_ENVIRONMENT_MISMATCH');
+    }
+    if (isBusinessManagerResource) {
+      const applicationVersionId = resource.split(':')[1];
+      const resolvedVersionId = scope?.businessVersionId
+        ?? effective?.businessConfiguration?.versionId
+        ?? effective?.businessConfiguration?.applicationVersionId;
+      if (!applicationVersionId || !resolvedVersionId) {
+        throw new ConflictException('RUNTIME_APPLICATION_VERSION_UNVERIFIABLE');
+      }
+      if (String(resolvedVersionId) !== applicationVersionId) {
+        throw new BadRequestException('RUNTIME_APPLICATION_VERSION_MISMATCH');
+      }
+      if (!this.prisma?.applicationVersion?.findFirst) {
+        throw new ForbiddenException('RUNTIME_RESOLUTION_GUARD_UNAVAILABLE');
+      }
+      const version = await this.prisma.applicationVersion.findFirst({
+        where: { id: applicationVersionId, tenantId: principal.tenantId },
+        select: { applicationId: true },
+      });
+      if (!version) {
+        throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
+      }
+      if (String(version.applicationId) !== item.applicationId) {
+        throw new BadRequestException('RUNTIME_APPLICATION_MISMATCH');
+      }
+    } else if (payload.applicationVersionId) {
+      const observed = scope?.businessVersionId ?? effective?.businessConfiguration?.versionId ?? effective?.businessConfiguration?.applicationVersionId;
+      if (observed && String(observed) !== String(payload.applicationVersionId)) {
+        throw new BadRequestException('RUNTIME_APPLICATION_VERSION_MISMATCH');
+      }
     }
     if (req) (req as any).runtimeResolution = item;
     return item;
@@ -302,5 +354,3 @@ export class DataRuntimeController {
     };
   }
 }
-
-

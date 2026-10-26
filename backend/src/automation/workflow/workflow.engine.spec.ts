@@ -25,7 +25,15 @@ describe('WorkflowEngine', () => {
     const conditionsEngine = new ConditionsEngine();
     const actionEngine = new ActionEngine();
     workflowEngine = new WorkflowEngine(conditionsEngine, actionEngine);
-    actionEngine.registerAction({ code: 'send.notification', category: 'NOTIFICATION', retryable: true, timeout: 5000, idempotent: true, version: '1.0' });
+    actionEngine.registerAction({
+      code: 'send.notification',
+      category: 'NOTIFICATION',
+      retryable: true,
+      timeout: 5000,
+      idempotent: true,
+      version: '1.0',
+      handler: async () => ({ success: true }),
+    });
     workflowEngine.registerWorkflow(workflow);
 
     ctx = {

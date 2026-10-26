@@ -84,10 +84,8 @@ export class ActionEngine {
         return outcome;
       }
 
-      // Action sans handler = mock simple
-      const outcome: ActionOutcome = 'SUCCEEDED';
-      this.logger.log(`Action ${code} executed (no-op handler)`);
-      return outcome;
+      this.logger.warn(`Action ${code} refusee : aucun handler serveur n'est configure.`);
+      return 'FAILED';
     } catch (error) {
       const err = error as Error & { code?: string }
       this.logger.error(`Action ${code} erreur: ${err.message}`);
@@ -95,4 +93,3 @@ export class ActionEngine {
     }
   }
 }
-

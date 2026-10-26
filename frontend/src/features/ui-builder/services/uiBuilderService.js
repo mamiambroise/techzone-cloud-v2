@@ -52,18 +52,21 @@ export function getBusinessContext(applicationVersionId) {
 
 // Data Runtime is the sole gateway for records rendered by a UI definition.
 // Keeping this here makes preview and the eventual runtime use the same API contract.
-const runtimeHeaders = proof => proof?.resolutionId ? { 'X-Runtime-Resolution-Id': proof.resolutionId, 'X-Runtime-Origin': 'published' } : {};
-const dataRuntimeRoot = proof => proof?.resolutionId ? '/data-runtime/runtime' : '/data-runtime';
-const withRuntimeProof = (request, proof) => proof?.resolutionId ? { ...request, resolutionId: proof.resolutionId } : request;
-
-export function queryRuntime(resource, query = {}, proof) {
-  return api.post(`${dataRuntimeRoot(proof)}/query`, withRuntimeProof({ resource, page: 1, pageSize: 20, ...query }, proof), { headers: runtimeHeaders(proof) }).then(unwrap);
+function runtimeConfig(resolutionId, config = {}) {
+  return {
+    ...config,
+    ...(resolutionId ? { headers: { ...config.headers, 'X-Runtime-Resolution-Id': resolutionId } } : {}),
+  };
 }
 
-export function executeRuntime(request, proof) {
-  return api.post(`${dataRuntimeRoot(proof)}/execute`, withRuntimeProof(request, proof), { preserveEnvelope: true, headers: runtimeHeaders(proof) }).then(unwrap);
+export function queryRuntime(resource, query = {}, resolutionId) {
+  return api.post('/data-runtime/query', { resource, page: 1, pageSize: 20, ...query }, runtimeConfig(resolutionId)).then(unwrap);
 }
 
-export function getRuntimeRecord(resource, id, proof) {
-  return api.get(`${dataRuntimeRoot(proof)}/resources/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`, { preserveEnvelope: true, headers: runtimeHeaders(proof) }).then(unwrap);
+export function executeRuntime(request, resolutionId) {
+  return api.post('/data-runtime/execute', request, runtimeConfig(resolutionId, { preserveEnvelope: true })).then(unwrap);
+}
+
+export function getRuntimeRecord(resource, id, resolutionId) {
+  return api.get(`/data-runtime/resources/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`, runtimeConfig(resolutionId, { preserveEnvelope: true })).then(unwrap);
 }

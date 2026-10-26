@@ -56,7 +56,7 @@ function FormsBody() {
   if (pagesStatus === 'ERROR') return <BmErrorState />;
 
   return (
-    <div className="space-y-5">
+    <div className="uib-content space-y-5">
       <BmCard
         title="Composer un formulaire métier"
         subtitle="Les champs proviennent des entités Business Manager de la version"
