@@ -32,6 +32,8 @@ export interface SortOption {
 
 export interface QueryContract {
   resource: string;
+  /** Pack Runtime proof for published applications. */
+  resolutionId?: string;
   select?: string[];
   filter?: FilterGroup;
   sort?: SortOption[];

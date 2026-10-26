@@ -211,6 +211,47 @@ describe('ERPAdapterDataProvider', () => {
       expect(result.items).toHaveLength(1);
     });
 
+    it('applies metadata-whitelisted selection, filters, sorting, and pagination', async () => {
+      const ctx = createContext();
+      mockAdapter.getProducts.mockResolvedValue([
+        { id: 'p1', ref: 'A', label: 'Alpha', price: 10, stock: 2 },
+        { id: 'p2', ref: 'B', label: 'Beta', price: 30, stock: 5 },
+        { id: 'p3', ref: 'C', label: 'Gamma', price: 20, stock: 8 },
+      ]);
+
+      const result = await provider.list('Product', ctx, {
+        filter: { logic: 'AND', conditions: [{ field: 'price', operator: 'GTE', value: 20 }] },
+        sort: [{ field: 'price', direction: 'DESC' }],
+        select: ['ref', 'price'],
+        page: 2,
+        pageSize: 1,
+      });
+
+      expect(result).toEqual({
+        items: [{ ref: 'C', price: 20 }],
+        page: 2,
+        pageSize: 1,
+        total: 2,
+        totalPages: 2,
+      });
+    });
+
+    it('rejects fields and operators outside the ERP metadata contract', async () => {
+      const ctx = createContext();
+      mockAdapter.getProducts.mockResolvedValue([{ id: 'p1', ref: 'A', label: 'Alpha', price: 10, stock: 2 }]);
+      await expect(provider.list('Product', ctx, {
+        sort: [{ field: 'tenantId', direction: 'ASC' }],
+      })).rejects.toThrow('FIELD_NOT_ALLOWED');
+      await expect(provider.list('Product', ctx, {
+        filter: { logic: 'AND', conditions: [{ field: 'ref', operator: 'RAW_SQL', value: 'x' } as any] },
+      })).rejects.toThrow('INVALID_FILTER');
+    });
+
+    it('rejects excessive ERP page sizes', async () => {
+      await expect(provider.list('Product', createContext(), { pageSize: 101 }))
+        .rejects.toThrow('INVALID_PAGINATION');
+    });
+
     it('devrait utiliser l adapter resolu pour create Order', async () => {
       const ctx = createContext();
       mockAdapter.createOrder.mockResolvedValue({ id: 'ord-1', ref: 'CMD-001', clientId: 'c1', lines: [], total: 0, status: 'DRAFT', createdAt: new Date().toISOString() });

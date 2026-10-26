@@ -1,7 +1,7 @@
 // DATA-CDC-03 : Execution Engine
 // Execution controlee des operations create/update/delete/execute
 
-import { Injectable, Logger, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import {
   ExecutionRequest,
   ExecutionResult,
@@ -12,10 +12,26 @@ import { RuntimeContext } from '../interfaces';
 import { DataAccessManager } from '../data-access/data-access-manager';
 import { HistoryService } from '../history/history.service';
 
+type IdempotencyEntry = { fingerprint: string; result: ExecutionResult };
+type InFlightExecution = { fingerprint: string; promise: Promise<ExecutionResult> };
+
+function stableJson(value: unknown): string {
+  if (value === undefined) return 'undefined';
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
 @Injectable()
 export class ExecutionEngine {
   private readonly logger = new Logger(ExecutionEngine.name);
-  private readonly idempotencyStore: Map<string, ExecutionResult> = new Map();
+  private readonly idempotencyStore = new Map<string, IdempotencyEntry>();
+  private readonly inFlightExecutions = new Map<string, InFlightExecution>();
 
   constructor(
     private readonly dataAccess: DataAccessManager,
@@ -23,6 +39,52 @@ export class ExecutionEngine {
   ) {}
 
   async execute(request: ExecutionRequest, ctx: RuntimeContext): Promise<ExecutionResult> {
+    if (!request.idempotencyKey) return this.executeOnce(request, ctx);
+    if (!request.idempotencyKey.trim() || request.idempotencyKey.length > 200) {
+      throw new BadRequestException('IDEMPOTENCY_KEY_INVALID');
+    }
+
+    this.validateRequest(request);
+    this.checkPermission(request, ctx);
+    if (request.resource.startsWith('bm:')) await this.dataAccess.authorize(request.resource, request.operation, ctx);
+
+    const scope = JSON.stringify([ctx.tenantId, ctx.userId, request.idempotencyKey]);
+    const fingerprint = stableJson({
+      resource: request.resource,
+      operation: request.operation,
+      targetId: request.targetId,
+      input: request.input,
+      metadata: request.metadata,
+    });
+    const completed = this.idempotencyStore.get(scope);
+    if (completed) {
+      if (completed.fingerprint !== fingerprint) throw new ConflictException('IDEMPOTENCY_KEY_REUSED');
+      return completed.result;
+    }
+    const pending = this.inFlightExecutions.get(scope);
+    if (pending) {
+      if (pending.fingerprint !== fingerprint) throw new ConflictException('IDEMPOTENCY_KEY_REUSED');
+      return pending.promise;
+    }
+
+    const execution = this.executeOnce(request, ctx)
+      .then(result => {
+        if (result.success) {
+          if (this.idempotencyStore.size >= 1000) {
+            this.idempotencyStore.delete(this.idempotencyStore.keys().next().value!);
+          }
+          this.idempotencyStore.set(scope, { fingerprint, result });
+        }
+        return result;
+      })
+      .finally(() => {
+        if (this.inFlightExecutions.get(scope)?.promise === execution) this.inFlightExecutions.delete(scope);
+      });
+    this.inFlightExecutions.set(scope, { fingerprint, promise: execution });
+    return execution;
+  }
+
+  private async executeOnce(request: ExecutionRequest, ctx: RuntimeContext): Promise<ExecutionResult> {
     const start = Date.now();
     const traceId = ctx.traceId;
 
@@ -46,17 +108,6 @@ export class ExecutionEngine {
       this.validateRequest(request);
       this.checkPermission(request, ctx);
       if (request.resource.startsWith('bm:')) await this.dataAccess.authorize(request.resource, request.operation, ctx);
-      const idempotencyScope = JSON.stringify([ctx.tenantId, ctx.userId, request.resource, request.operation, request.targetId, request.input, request.idempotencyKey]);
-
-      if (request.idempotencyKey) {
-        const existing = this.idempotencyStore.get(
-          idempotencyScope,
-        );
-        if (existing) {
-          this.logger.debug(`Idempotence hit pour ${request.idempotencyKey}`);
-          return existing;
-        }
-      }
 
       this.checkPermission(request, ctx);
 
@@ -99,11 +150,6 @@ export class ExecutionEngine {
         duration: Date.now() - start,
         timestamp: new Date().toISOString(),
       };
-
-      if (request.idempotencyKey) {
-        if (this.idempotencyStore.size >= 1000) this.idempotencyStore.delete(this.idempotencyStore.keys().next().value!);
-        this.idempotencyStore.set(idempotencyScope, result);
-      }
 
       this.recordHistory(request, ctx, result);
 

@@ -27,6 +27,14 @@ describe('Pack Runtime execution boundary', () => {
     await expect(service.assertExecutable({ resolutionId: '22222222-2222-4222-a222-222222222222', tenantId: 'a' })).rejects.toThrow('RUNTIME_RESOLUTION_NOT_FOUND');
     expect(db.runtimeResolution.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: '22222222-2222-4222-a222-222222222222', tenantId: 'a' } }));
   });
+  it('SEC-PR-002 does not load a pack version owned by another tenant', async () => {
+    const { service, db } = fixture();
+    db.packVersion.findFirst.mockResolvedValue(null);
+    await expect(service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a' })).rejects.toThrow('RUNTIME_APPLICATION_VERSION_MISMATCH');
+    expect(db.packVersion.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'p1', tenantId: 'a', status: 'PUBLISHED', pack: { archivedAt: null } },
+    }));
+  });
   it.each(['BLOCKED','RESOLVED','ERROR','EXPIRED'])('SEC-PR-010 rejects status %s without legacy promotion', async status => {
     const { service, item, db } = fixture(); item.status = status;
     await expect(service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a' })).rejects.toThrow('RUNTIME_RESOLUTION_BLOCKED');
@@ -34,6 +42,15 @@ describe('Pack Runtime execution boundary', () => {
   });
   it('SEC-PR-020 rejects a missing resolution ID', async () => {
     await expect(fixture().service.assertExecutable({ resolutionId: '', tenantId: 'a' })).rejects.toThrow('RUNTIME_RESOLUTION_ID_REQUIRED');
+  });
+  it('SEC-PR-030 ignores a client-supplied executable status', async () => {
+    const { service, item } = fixture();
+    item.status = 'BLOCKED';
+    await expect(service.assertExecutable({
+      resolutionId: '11111111-1111-4111-a111-111111111111',
+      tenantId: 'a',
+      status: 'EXECUTABLE',
+    } as any)).rejects.toThrow('RUNTIME_RESOLUTION_BLOCKED');
   });
   it('rejects malformed IDs before accessing PostgreSQL', async () => {
     const { service, db } = fixture();
@@ -56,6 +73,16 @@ describe('Pack Runtime execution boundary', () => {
     const { service, publication } = fixture(); publication.applicationVersionId='v2';
     await expect(service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a' })).rejects.toThrow('RUNTIME_APPLICATION_VERSION_MISMATCH');
   });
+  it('SEC-PR-041 refuses a UI snapshot for another ApplicationVersion', async () => {
+    const { service, item } = fixture();
+    const content = item.effectiveManifest.content;
+    content.ui.applicationVersionId = 'v2';
+    content.ui.definition.applicationVersionId = 'v2';
+    content.ui.definition.businessContext.applicationVersionId = 'v2';
+    item.effectiveManifest.functionalHash = contractHash(content);
+    item.effectiveManifest.manifestHash = contractHash(content);
+    await expect(service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a' })).rejects.toThrow('RUNTIME_APPLICATION_VERSION_MISMATCH');
+  });
   it('SEC-PR-080 refuses a different environment', async () => {
     await expect(fixture().service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a', environmentId: 'production' })).rejects.toThrow('RUNTIME_ENVIRONMENT_MISMATCH');
   });
@@ -63,7 +90,7 @@ describe('Pack Runtime execution boundary', () => {
     const { service, db } = fixture(); db.environment.findFirst.mockResolvedValue(null);
     await expect(service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a' })).rejects.toThrow('RUNTIME_READINESS_FAILED');
   });
-  it.each(['INACTIVE','DEACTIVATING'])('SEC-PR-090 refuses context %s', async status => {
+  it.each(['INACTIVE','DEACTIVATING'])('SEC-PR-090/091 refuses context %s', async status => {
     const { service, item } = fixture(); item.result.runtimeContext.status=status;
     await expect(service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a' })).rejects.toThrow('RUNTIME_CONTEXT_NOT_ACTIVE');
     await expect(service.assertExecutable({ resolutionId: '11111111-1111-4111-a111-111111111111', tenantId: 'a' }, false)).resolves.toBe(item);

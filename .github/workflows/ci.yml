@@ -90,6 +90,10 @@ jobs:
         run: npm run test:security:ui
         working-directory: backend
 
+      - name: Pack Runtime security gate
+        run: npm run test:security:pack-runtime
+        working-directory: backend
+
       - name: IAM E2E (isolated PostgreSQL)
         run: npm run test:e2e -- --runInBand
         working-directory: backend

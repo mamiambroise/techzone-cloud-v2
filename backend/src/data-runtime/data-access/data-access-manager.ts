@@ -129,7 +129,7 @@ export class DataAccessManager {
     for (const resource of this.resources.values()) {
       const provider = this.providers.get(resource.provider);
       if (provider) {
-        const availability: CapabilityAvailability = 'AVAILABLE';
+        const availability: CapabilityAvailability = 'UNKNOWN';
         capabilities.push({
           code: `${resource.resourceCode}.read`,
           provider: resource.provider,
@@ -180,7 +180,7 @@ export class DataAccessManager {
               filtering: false,
               maxPageSize: 1,
               batch: true,
-              transactions: true,
+              transactions: false,
               readOnly: false,
             },
           });
@@ -198,7 +198,7 @@ export class DataAccessManager {
       instance: 'main',
       resources: Array.from(this.resources.values()),
       capabilities: await this.getCapabilities({} as RuntimeContext),
-      health: { status: 'UP' as any },
+      health: { status: 'UNKNOWN' },
     };
   }
 

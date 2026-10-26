@@ -5,6 +5,8 @@ export type ExecutionOperation = 'CREATE' | 'UPDATE' | 'DELETE' | 'EXECUTE' | 'B
 export interface ExecutionRequest {
   resource: string;
   operation: ExecutionOperation;
+  /** Pack Runtime proof for published applications. */
+  resolutionId?: string;
   targetId?: string;
   input?: Record<string, any>;
   idempotencyKey?: string;
