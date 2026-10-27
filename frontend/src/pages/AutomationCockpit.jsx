@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { automationClient } from '../api/automation/client.ts';
 import { mapErrorToAction, mapErrorToMessage } from '../lib/automation/errors.js';
 import { formatDuration } from '../lib/automation/format.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
 
 const STATUSES = [
   { key: 'SUCCEEDED', label: 'Succès', color: '#059669' },
@@ -156,7 +157,7 @@ export default function AutomationCockpit() {
 
   if (error) {
     return (
-      <main className="mx-auto w-full max-w-6xl space-y-5">
+      <div className="mx-auto w-full max-w-6xl space-y-5">
         <PageHeading onRefresh={load} loading={loading} />
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-5">
           <div className="flex items-start gap-3">
@@ -165,14 +166,14 @@ export default function AutomationCockpit() {
           </div>
           <button type="button" onClick={() => void load()} className="mt-4 rounded-lg bg-rose-700 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-800">Réessayer</button>
         </div>
-      </main>
+      </div>
     );
   }
 
   const { cockpit, records, metrics } = data;
   if (hasNoActivity(cockpit, metrics)) {
     return (
-      <main className="mx-auto w-full max-w-6xl space-y-5">
+      <div className="mx-auto w-full max-w-6xl space-y-5">
         <PageHeading onRefresh={load} loading={loading} />
         <section className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
           <CircleCheck className="mx-auto h-9 w-9 text-slate-400" />
@@ -180,7 +181,7 @@ export default function AutomationCockpit() {
           <p className="mx-auto mt-1 max-w-lg text-sm text-slate-500">Le moteur n’a retourné ni règle, workflow, déclencheur ni exécution. Les indicateurs apparaîtront à réception de données réelles.</p>
           <Link to="/automation/workflows" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">Créer un workflow <ArrowUpRight className="h-4 w-4" /></Link>
         </section>
-      </main>
+      </div>
     );
   }
 
@@ -204,7 +205,7 @@ export default function AutomationCockpit() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <PageHeading onRefresh={load} loading={loading} />
       <section aria-label="Indicateurs Automation" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {cards.map((card) => (
@@ -219,17 +220,20 @@ export default function AutomationCockpit() {
         <ActivityChart records={records} />
         <StatusChart records={records} />
       </div>
-    </main>
+    </div>
   );
 }
 
 function PageHeading({ onRefresh, loading }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">Espace Automation</p><h1 className="mt-1 text-2xl font-bold text-slate-900">Vue d’ensemble</h1><p className="mt-1 text-sm text-slate-500">Indicateurs issus du moteur et de son historique disponible.</p></div>
-      <button type="button" onClick={() => void onRefresh()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
-      </button>
-    </header>
+    <PageHeader
+      title="Vue d’ensemble"
+      subtitle="Indicateurs issus du moteur et de son historique disponible."
+      actions={(
+        <button type="button" onClick={() => void onRefresh()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-amber-600">
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
+        </button>
+      )}
+    />
   );
 }

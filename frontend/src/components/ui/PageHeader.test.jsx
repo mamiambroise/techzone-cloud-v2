@@ -15,6 +15,17 @@ describe('PageHeader', () => {
     expect(screen.getByText('Click Me')).toBeInTheDocument();
   });
 
+  it('renders grouped page actions in the standard action slot', () => {
+    render(
+      <PageHeader
+        title="Test"
+        actions={<><button type="button">Actualiser</button><button type="button">Créer</button></>}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Actualiser' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Créer' })).toBeInTheDocument();
+  });
+
   it('renders breadcrumbs when provided', () => {
     render(
       <PageHeader

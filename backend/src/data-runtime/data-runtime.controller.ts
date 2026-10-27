@@ -237,21 +237,35 @@ export class DataRuntimeController {
     const resolutionId = payload.resolutionId || (req as any)?.body?.resolutionId || (req as any)?.query?.resolutionId || (req as any)?.headers?.['x-runtime-resolution-id'];
     const resource = typeof payload.resource === 'string' ? payload.resource : '';
     const isBusinessManagerResource = resource.toLowerCase().startsWith('bm:');
+    const publishedOrigin = req?.headers?.['x-runtime-origin'] === 'published';
+    if (!resolutionId && (isBusinessManagerResource || payload.requireResolution === true || requireResolution)) {
+      throw new ForbiddenException('RUNTIME_RESOLUTION_REQUIRED');
+    }
+    const requestedVersionId = typeof payload.applicationVersionId === 'string'
+      ? payload.applicationVersionId
+      : isBusinessManagerResource ? resource.split(':')[1] : undefined;
+    const version = requestedVersionId
+      ? await this.prisma.applicationVersion.findFirst({
+        where: { id: requestedVersionId, tenantId: principal.tenantId },
+        select: { id: true, applicationId: true },
+      })
+      : null;
+    if (requestedVersionId && !version) {
+      throw new NotFoundException('APPLICATION_VERSION_NOT_FOUND');
+    }
     if (!resolutionId) {
-      if (isBusinessManagerResource || payload.requireResolution === true) {
-        throw new ForbiddenException('RUNTIME_RESOLUTION_REQUIRED');
-      }
+      const published = publishedOrigin || Boolean(version && await this.prisma.packVersion.count({
+        where: { tenantId: principal.tenantId, applicationVersionId: requestedVersionId, status: 'PUBLISHED' },
+      }));
+      if (published) throw new BadRequestException('RUNTIME_RESOLUTION_ID_REQUIRED');
       return;
     }
     if (!this.prisma?.runtimeResolution) {
       throw new ForbiddenException('RUNTIME_RESOLUTION_GUARD_UNAVAILABLE');
     }
-    const published = version?.status === 'PUBLISHED' || req?.headers?.['x-runtime-origin'] === 'published' || Boolean(version && await this.prisma.packVersion.count({ where: { tenantId: principal.tenantId, applicationVersionId: version.id, status: 'PUBLISHED' } }));
-    if (!resolutionId && !requireResolution && !published) return;
-    if (!resolutionId) throw new BadRequestException('RUNTIME_RESOLUTION_ID_REQUIRED');
     const item = await this.runtimeExecution.assertExecutable({
       resolutionId: String(resolutionId), tenantId: principal.tenantId,
-      ...(version ? { applicationId: version.applicationId, applicationVersionId: version.id } : {}),
+      ...(version ? { applicationId: version.applicationId, applicationVersionId: requestedVersionId } : {}),
     });
     if (!item) {
       throw new NotFoundException('RUNTIME_RESOLUTION_NOT_FOUND');

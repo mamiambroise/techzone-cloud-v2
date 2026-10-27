@@ -66,7 +66,7 @@ marine (`#0B1730`), header clair, workspace `#F5F8FC`, action primaire
 - `.tz-surface` : carte blanche, bordure, rayon 16 px et ombre douce.
 - `.tz-surface-interactive` : surface cliquable avec élévation discrète.
 - `.tz-scroll-x` : défilement horizontal compact des outils et tableaux étroits.
-- `Card`, `PageHeader`, `ConfirmModal` et les primitives `Bm*` : composants à privilégier avant de recréer une variante locale.
+- `Card`, `PageHeader`, `ConfirmModal` et les primitives `Bm*` : composants à privilégier avant de recréer une variante locale. `PageHeader` accepte `actions` pour grouper plusieurs contrôles de page, tout en conservant `action` pour l’action simple historique.
 
 ## Interactions, formulaires et tableaux
 
@@ -75,6 +75,13 @@ marine (`#0B1730`), header clair, workspace `#F5F8FC`, action primaire
 - Les actions icon-only ont un `aria-label` explicite.
 - Les tableaux larges sont contenus dans une zone de défilement horizontal et conservent leurs en-têtes et libellés accessibles.
 - Les modales utilisent `role="dialog"`, `aria-modal`, un titre associé, Échap et la restitution du focus.
+
+## Automation V3
+
+- Automation réutilise le layout global et ses onglets existants ; le contexte App/Version et les bannières sont rendus dans le layout du module, sans seconde sidebar ni second header global.
+- Les bannières MOCK, SIMULATION et RUNTIME_BLOCKED ne sont affichées qu’à partir de l’état Redux réel, d’une réponse API ou de l’historique serveur. Une action qui démarre un workflow est libellée comme une exécution réelle, pas comme un test sandbox.
+- Le badge rouge Diagnostics reflète uniquement le nombre d’exécutions BLOCKED reçues du serveur.
+- Les opérations d’écriture et d’exécution sont enveloppées dans `PermissionGate` avec les permissions Automation effectivement déclarées côté backend ; les contrôles backend restent l’autorité.
 
 ## Console Registry
 

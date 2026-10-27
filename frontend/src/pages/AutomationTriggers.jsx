@@ -12,8 +12,12 @@ import { automationService } from '../services/apiClient.js';
 import { ModernSpinner } from '../components/Loaders.jsx';
 import { mapErrorToAction, mapErrorToMessage } from '../lib/automation/errors.js';
 import { maskSecrets } from '../lib/automation/masking.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { useAutomationMode } from '../components/automation/AutomationModeContext.jsx';
+import { PermissionGate } from '../components/automation/AutomationLayout.jsx';
 
 function AutomationTriggers() {
+  const { reportError } = useAutomationMode();
   const [triggers, setTriggers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,6 +53,7 @@ function AutomationTriggers() {
       setFireResult(res.data);
     } catch (err) {
       setFireResult({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
+      reportError(err);
     }
   };
 
@@ -62,6 +67,7 @@ function AutomationTriggers() {
       setEventResult(res.data);
     } catch (err) {
       setEventResult({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
+      reportError(err);
     }
   };
 
@@ -95,16 +101,16 @@ function AutomationTriggers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Triggers</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Déclencheurs d'événements et actions manuelles</p>
-        </div>
-        <button onClick={fetchTriggers} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl hover:bg-blue-100 transition-colors">
-          <ArrowPathRoundedSquareIcon className="w-4 h-4" />
-          Rafraîchir
-        </button>
-      </div>
+      <PageHeader
+        title="Triggers"
+        subtitle="Déclencheurs d'événements et actions manuelles"
+        actions={(
+          <button type="button" onClick={fetchTriggers} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-amber-600">
+            <ArrowPathRoundedSquareIcon className="h-4 w-4" />
+            Rafraîchir
+          </button>
+        )}
+      />
 
       {error && (
         <div role="alert" className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
@@ -183,16 +189,18 @@ function AutomationTriggers() {
               <h3 className="font-semibold text-slate-800 dark:text-slate-100">Déclencher manuellement</h3>
             </div>
             <div className="p-6">
-              <form onSubmit={runFire} className="space-y-4">
-                <select value={fireCode} onChange={(e) => setFireCode(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-200">
-                  <option value="">— Sélectionner (MANUAL) —</option>
-                  {triggers.filter((t) => t.type === 'MANUAL').map((t) => <option key={t.code} value={t.code}>{t.code}</option>)}
-                </select>
-                <textarea rows="3" value={fireVars} onChange={(e) => setFireVars(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-200" />
-                <button type="submit" disabled={!fireCode} className="w-full bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 font-medium disabled:opacity-50 transition-colors text-sm">
-                  Déclencher
-                </button>
-              </form>
+              <PermissionGate permission="automation:execute" fallback={null}>
+                <form onSubmit={runFire} className="space-y-4">
+                  <select value={fireCode} onChange={(e) => setFireCode(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-200">
+                    <option value="">— Sélectionner (MANUAL) —</option>
+                    {triggers.filter((t) => t.type === 'MANUAL').map((t) => <option key={t.code} value={t.code}>{t.code}</option>)}
+                  </select>
+                  <textarea rows="3" value={fireVars} onChange={(e) => setFireVars(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-200" />
+                  <button type="submit" disabled={!fireCode} className="w-full bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 font-medium disabled:opacity-50 transition-colors text-sm">
+                    Déclencher
+                  </button>
+                </form>
+              </PermissionGate>
               {fireResult && (
                 <pre className={`mt-4 rounded-xl p-4 text-xs overflow-x-auto max-h-64 ${fireResult.error ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200' : 'bg-slate-900 text-emerald-400'}`}>
                   {JSON.stringify(maskSecrets(fireResult), null, 2)}
@@ -209,12 +217,14 @@ function AutomationTriggers() {
               <h3 className="font-semibold text-slate-800 dark:text-slate-100">Événement entrant</h3>
             </div>
             <div className="p-6">
-              <form onSubmit={runEvent} className="space-y-4">
-                <textarea rows="5" value={eventPayload} onChange={(e) => setEventPayload(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-200" />
-                <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 font-medium transition-colors text-sm">
-                  Traiter
-                </button>
-              </form>
+              <PermissionGate permission="automation:execute" fallback={null}>
+                <form onSubmit={runEvent} className="space-y-4">
+                  <textarea rows="5" value={eventPayload} onChange={(e) => setEventPayload(e.target.value)} className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-200" />
+                  <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 font-medium transition-colors text-sm">
+                    Traiter
+                  </button>
+                </form>
+              </PermissionGate>
               {eventResult && (
                 <pre className={`mt-4 rounded-xl p-4 text-xs overflow-x-auto max-h-64 ${eventResult.error ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200' : 'bg-slate-900 text-emerald-400'}`}>
                   {JSON.stringify(maskSecrets(eventResult), null, 2)}

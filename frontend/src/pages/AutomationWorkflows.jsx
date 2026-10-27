@@ -25,6 +25,9 @@ import {
 } from 'lucide-react';
 import { automationService } from '../services/apiClient.js';
 import { maskSecrets } from '../lib/automation/masking.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { useAutomationMode } from '../components/automation/AutomationModeContext.jsx';
+import { PermissionGate } from '../components/automation/AutomationLayout.jsx';
 
 const createWorkflow = () => ({
   code: 'workflow.nouveau',
@@ -98,11 +101,12 @@ function MetricCard({ label, value, detail, icon: Icon, tone }) {
 }
 
 function WorkflowEditor({ initialWorkflow, actions, onCancel, onSaved }) {
+  const { reportError } = useAutomationMode();
   const [definition, setDefinition] = useState(() => structuredClone(initialWorkflow || createWorkflow()));
   const [savedDefinition, setSavedDefinition] = useState(() => initialWorkflow ? structuredClone(initialWorkflow) : null);
   const [isNewWorkflow, setIsNewWorkflow] = useState(!initialWorkflow);
   const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [validation, setValidation] = useState(null);
   const [variables, setVariables] = useState('{\n  "approved": true,\n  "invoice": { "total": 120000 }\n}');
@@ -235,18 +239,18 @@ function WorkflowEditor({ initialWorkflow, actions, onCancel, onSaved }) {
     }
   };
 
-  const testWorkflow = async () => {
-    setTesting(true);
+  const startWorkflow = async () => {
+    setStarting(true);
     setRunResult(null);
     setError('');
     if (!savedDefinition || !['ACTIVE', 'READY'].includes(savedDefinition.lifecycle)) {
-      setRunResult({ error: 'Enregistrez et publiez ce workflow avant de le tester.' });
-      setTesting(false);
+      setRunResult({ error: 'Enregistrez et publiez ce workflow avant de le démarrer.' });
+      setStarting(false);
       return;
     }
     if (JSON.stringify(definition) !== JSON.stringify(savedDefinition)) {
-      setRunResult({ error: 'Enregistrez vos modifications et republiez le workflow avant de le tester.' });
-      setTesting(false);
+      setRunResult({ error: 'Enregistrez vos modifications et republiez le workflow avant de le démarrer.' });
+      setStarting(false);
       return;
     }
     let parsedVariables;
@@ -257,7 +261,7 @@ function WorkflowEditor({ initialWorkflow, actions, onCancel, onSaved }) {
       }
     } catch (parseError) {
       setRunResult({ error: parseError.message || 'Variables JSON invalides.' });
-      setTesting(false);
+      setStarting(false);
       return;
     }
     try {
@@ -266,8 +270,9 @@ function WorkflowEditor({ initialWorkflow, actions, onCancel, onSaved }) {
       onSaved(savedDefinition, true);
     } catch (testError) {
       setRunResult({ error: getErrorMessage(testError) });
+      reportError(testError);
     } finally {
-      setTesting(false);
+      setStarting(false);
     }
   };
 
@@ -287,19 +292,23 @@ function WorkflowEditor({ initialWorkflow, actions, onCancel, onSaved }) {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={validate} disabled={saving || publishing} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-            <CheckCircle2 className="h-4 w-4" /> Valider
-          </button>
-          <button type="button" onClick={save} disabled={saving || publishing} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-            {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
-          </button>
-          <button type="button" onClick={publish} disabled={saving || publishing} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
-            {publishing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Publier
-          </button>
+          <PermissionGate permission="automation:execute" fallback={null}>
+            <>
+              <button type="button" onClick={validate} disabled={saving || publishing} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                <CheckCircle2 className="h-4 w-4" /> Valider
+              </button>
+              <button type="button" onClick={save} disabled={saving || publishing} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
+              </button>
+              <button type="button" onClick={publish} disabled={saving || publishing} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                {publishing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Publier
+              </button>
+            </>
+          </PermissionGate>
         </div>
       </div>
 
-      <form onSubmit={save} className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <form onSubmit={(event) => event.preventDefault()} className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-5 border-b border-slate-100 p-5 xl:border-b-0 xl:border-r">
           <div className="grid gap-4 sm:grid-cols-2">
             <label>
@@ -437,15 +446,17 @@ function WorkflowEditor({ initialWorkflow, actions, onCancel, onSaved }) {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Play className="h-4 w-4 text-emerald-600" /> Test manuel</div>
-            <p className="mt-1 text-xs text-slate-500">Lancez un workflow publié et inspectez le résultat de chaque étape.</p>
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Play className="h-4 w-4 text-emerald-600" /> Exécution manuelle</div>
+            <p className="mt-1 text-xs text-slate-500">Démarrez un workflow publié : cette action déclenche une exécution via le moteur Automation.</p>
             <label className="mt-4 block">
               <span className={labelClass}>Variables d’entrée (JSON)</span>
               <textarea rows="6" className={`${fieldClass} font-mono text-xs`} value={variables} onChange={(event) => setVariables(event.target.value)} spellCheck="false" />
             </label>
-            <button type="button" onClick={testWorkflow} disabled={testing || saving} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
-              {testing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Tester le workflow
-            </button>
+            <PermissionGate permission="automation:execute" fallback={null}>
+              <button type="button" onClick={startWorkflow} disabled={starting || saving} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+                {starting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Démarrer le workflow
+              </button>
+            </PermissionGate>
             {runResult && (
               <pre className={`mt-3 max-h-64 overflow-auto rounded-lg p-3 text-[11px] ${runResult.error ? 'bg-rose-50 text-rose-700' : 'bg-slate-900 text-emerald-300'}`}>
                 {JSON.stringify(maskSecrets(runResult), null, 2)}
@@ -530,22 +541,23 @@ function AutomationWorkflows() {
   }
 
   return (
-    <main className="mx-auto max-w-[1500px] space-y-6 p-4 md:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-600"><Workflow className="h-4 w-4" /> Techzone Cloud · Automation</div>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">Workflows</h1>
-          <p className="mt-1 text-sm text-slate-500">Concevez, publiez et suivez vos automatisations sans code.</p>
-        </div>
-        <div className="flex gap-2">
+    <div className="mx-auto max-w-[1500px] space-y-6">
+      <PageHeader
+        title="Workflows"
+        subtitle="Concevez, publiez et suivez vos automatisations sans code."
+        actions={(
+          <>
           <button type="button" onClick={fetchData} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
           </button>
-          <button type="button" onClick={() => setEditor({ ...createWorkflow(), isNew: true })} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
-            <Plus className="h-4 w-4" /> Nouveau workflow
-          </button>
-        </div>
-      </header>
+          <PermissionGate permission="automation:execute" fallback={null}>
+            <button type="button" onClick={() => setEditor({ ...createWorkflow(), isNew: true })} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 focus-visible:outline-2 focus-visible:outline-amber-700">
+              <Plus className="h-4 w-4" /> Nouveau workflow
+            </button>
+          </PermissionGate>
+          </>
+        )}
+      />
 
       {error && <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
 
@@ -587,12 +599,16 @@ function AutomationWorkflows() {
                       <p className="mt-1 font-mono text-xs text-slate-400">{workflow.code} · v{workflow.version}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <button type="button" onClick={() => setEditor(workflow)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white">Modifier</button>
-                      {workflow.lifecycle === 'ACTIVE' ? (
-                        <button type="button" onClick={() => changeLifecycle(workflow, 'PAUSED')} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100">Mettre en pause</button>
-                      ) : (
-                        <button type="button" onClick={() => changeLifecycle(workflow, 'ACTIVE')} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Publier</button>
-                      )}
+                      <PermissionGate permission="automation:execute" fallback={null}>
+                        <>
+                          <button type="button" onClick={() => setEditor(workflow)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white">Modifier</button>
+                          {workflow.lifecycle === 'ACTIVE' ? (
+                            <button type="button" onClick={() => changeLifecycle(workflow, 'PAUSED')} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100">Mettre en pause</button>
+                          ) : (
+                            <button type="button" onClick={() => changeLifecycle(workflow, 'ACTIVE')} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Publier</button>
+                          )}
+                        </>
+                      </PermissionGate>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -653,19 +669,23 @@ function AutomationWorkflows() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setEditor({ ...createWorkflow(), nom: 'Notification de commande', code: 'workflow.notification-commande', isNew: true })} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"><Bell className="h-3.5 w-3.5" /> Notification</button>
-            <button type="button" onClick={() => setEditor({ ...createWorkflow(), nom: 'Validation de commande', code: 'workflow.validation-commande', steps: [
-              { id: 'start', type: 'START', name: 'Commande créée', next: 'condition-1' },
-              { id: 'condition-1', type: 'CONDITION', name: 'Montant supérieur à 50 000', condition: { field: 'invoice.total', operator: 'GT', value: 50000 }, transitions: { YES: 'action-1', NO: 'end' } },
-              { id: 'action-1', type: 'ACTION', name: 'Envoyer une notification', actionRef: actions[0]?.code || 'send.notification', next: 'end' },
-              { id: 'end', type: 'END', name: 'Fin' },
-            ], isNew: true })} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"><GitBranch className="h-3.5 w-3.5" /> Validation par condition</button>
+            <PermissionGate permission="automation:execute" fallback={null}>
+              <>
+                <button type="button" onClick={() => setEditor({ ...createWorkflow(), nom: 'Notification de commande', code: 'workflow.notification-commande', isNew: true })} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"><Bell className="h-3.5 w-3.5" /> Notification</button>
+                <button type="button" onClick={() => setEditor({ ...createWorkflow(), nom: 'Validation de commande', code: 'workflow.validation-commande', steps: [
+                  { id: 'start', type: 'START', name: 'Commande créée', next: 'condition-1' },
+                  { id: 'condition-1', type: 'CONDITION', name: 'Montant supérieur à 50 000', condition: { field: 'invoice.total', operator: 'GT', value: 50000 }, transitions: { YES: 'action-1', NO: 'end' } },
+                  { id: 'action-1', type: 'ACTION', name: 'Envoyer une notification', actionRef: actions[0]?.code || 'send.notification', next: 'end' },
+                  { id: 'end', type: 'END', name: 'Fin' },
+                ], isNew: true })} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"><GitBranch className="h-3.5 w-3.5" /> Validation par condition</button>
+              </>
+            </PermissionGate>
           </div>
         </div>
       </section>
 
       {actions.length === 0 && !loading && <p className="flex items-center gap-2 text-xs text-amber-700"><AlertCircle className="h-4 w-4" /> Aucune action n’est enregistrée côté moteur ; configurez-en une avant d’ajouter des étapes d’action.</p>}
-    </main>
+    </div>
   );
 }
 

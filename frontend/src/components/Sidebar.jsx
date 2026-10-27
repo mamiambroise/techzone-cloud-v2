@@ -14,6 +14,7 @@ function ModuleLink({ group, active, collapsed, onNavigate, onTooltip }) {
   const Icon = resolveNavigationIcon(group.icon);
   const destination = group.entries.find((entry) => entry.implemented) ?? group.entries[0];
   const isActive = active?.group === group.id;
+  const isAutomation = group.id === 'automation';
   const planned = !group.entries.some((entry) => entry.implemented);
 
   return (
@@ -26,9 +27,9 @@ function ModuleLink({ group, active, collapsed, onNavigate, onTooltip }) {
         onMouseEnter={(event) => collapsed && onTooltip({ label: group.label, top: event.currentTarget.getBoundingClientRect().top + 3 })}
         onFocus={(event) => collapsed && onTooltip({ label: group.label, top: event.currentTarget.getBoundingClientRect().top + 3 })}
         onBlur={() => onTooltip(null)}
-        className={`flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] font-medium transition-colors duration-150 motion-reduce:transition-none ${focusClass} ${isActive ? 'bg-[var(--color-sidebar-active)] text-white shadow-sm' : 'text-slate-300 hover:bg-[var(--color-sidebar-hover)] hover:text-white'} ${collapsed ? 'justify-center' : ''}`}
+        className={`flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] font-medium transition-colors duration-150 motion-reduce:transition-none ${isAutomation ? 'border-l-2 focus-visible:outline-amber-400' : ''} ${focusClass} ${isActive && isAutomation ? 'border-amber-400 bg-amber-400/10 text-amber-200 shadow-sm' : isActive ? 'bg-[var(--color-sidebar-active)] text-white shadow-sm' : `${isAutomation ? 'border-transparent' : ''} text-slate-300 hover:bg-[var(--color-sidebar-hover)] hover:text-white`} ${collapsed ? 'justify-center' : ''}`}
       >
-        <Icon size={19} className="shrink-0" aria-hidden="true" />
+        <Icon size={19} className={`shrink-0 ${isActive && isAutomation ? 'text-amber-400' : ''}`} aria-hidden="true" />
         {!collapsed && <><span className="min-w-0 flex-1 truncate">{group.label}</span>{planned && <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] text-slate-300">Bientôt</span>}</>}
       </Link>
     </div>

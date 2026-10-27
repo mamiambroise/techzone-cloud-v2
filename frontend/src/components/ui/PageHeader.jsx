@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 
-export function PageHeader({ title, subtitle, action, breadcrumb }) {
+export function PageHeader({ title, subtitle, action, actions, breadcrumb }) {
   return (
     <div className="pb-1">
       {breadcrumb && (
@@ -22,7 +22,9 @@ export function PageHeader({ title, subtitle, action, breadcrumb }) {
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">{title}</h1>
           {subtitle && <p className="text-sm text-[var(--color-text-muted)] mt-1.5">{subtitle}</p>}
         </div>
-        {action && (
+        {actions ? (
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>
+        ) : action ? (
           <button
             type="button"
             onClick={action.onClick}
@@ -30,7 +32,7 @@ export function PageHeader({ title, subtitle, action, breadcrumb }) {
           >
             {action.label}
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );

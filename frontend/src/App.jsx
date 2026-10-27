@@ -14,6 +14,7 @@ import { useModal } from './app/ModalContext.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import { ModernSpinner } from './components/Loaders.jsx';
+import AutomationLayout from './components/automation/AutomationLayout.jsx';
 
 const PackManagerPage = lazy(() => import('./components/pack-manager/PackManagerPage.jsx'));
 const RuntimePage = lazy(() => import('./components/pack-runtime/RuntimePage.jsx'));

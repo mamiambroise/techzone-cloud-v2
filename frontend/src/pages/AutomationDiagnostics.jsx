@@ -4,9 +4,13 @@ import { automationService } from '../services/apiClient.js';
 import { mapErrorToAction, mapErrorToMessage } from '../lib/automation/errors.js';
 import { maskSecrets } from '../lib/automation/masking.js';
 import { formatDate } from '../lib/automation/format.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { useAutomationMode } from '../components/automation/AutomationModeContext.jsx';
 
 export default function AutomationDiagnostics() {
+  const { setBanner, reportError } = useAutomationMode();
   const [records, setRecords] = useState([]);
+  const [blockedCount, setBlockedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -17,28 +21,47 @@ export default function AutomationDiagnostics() {
       const response = await automationService.history();
       const history = Array.isArray(response.data) ? response.data : response.data?.records;
       if (!Array.isArray(history)) throw new Error('Réponse d’historique Automation invalide.');
-      setRecords(history.filter((record) => ['FAILED', 'TIMEOUT', 'BLOCKED'].includes(record.status)));
+      const incidents = history.filter((record) => ['FAILED', 'TIMEOUT', 'BLOCKED'].includes(record.status));
+      setRecords(incidents);
+      const blocked = incidents.filter((record) => record.status === 'BLOCKED').length;
+      setBlockedCount(blocked);
+      if (blocked > 0) {
+        const blockedLabel = `${blocked} exécution${blocked > 1 ? 's' : ''}`;
+        setBanner({
+          kind: 'RUNTIME_BLOCKED',
+          message: `${blockedLabel} ${blocked > 1 ? 'sont marquées' : 'est marquée'} BLOCKED dans l’historique chargé.`,
+        });
+      }
     } catch (loadError) {
       setError(loadError);
+      reportError(loadError);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [reportError, setBanner]);
 
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Automatisation</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">Diagnostics</h1>
-          <p className="mt-1 text-sm text-slate-500">Incidents issus de l’historique d’exécution disponible côté serveur.</p>
-        </div>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
-        </button>
-      </header>
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      <PageHeader
+        title={(
+          <span className="inline-flex items-center gap-2">
+            Diagnostics
+            {blockedCount > 0 && (
+              <span role="status" aria-label={`${blockedCount} exécution${blockedCount > 1 ? 's' : ''} bloquée${blockedCount > 1 ? 's' : ''}`} className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                {blockedCount}
+              </span>
+            )}
+          </span>
+        )}
+        subtitle="Incidents issus de l’historique d’exécution disponible côté serveur."
+        actions={(
+          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-amber-600">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
+          </button>
+        )}
+      />
 
       {error && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4">
@@ -81,6 +104,6 @@ export default function AutomationDiagnostics() {
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }

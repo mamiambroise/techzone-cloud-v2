@@ -11,8 +11,12 @@ import { automationService } from '../services/apiClient.js';
 import { ModernSpinner } from '../components/Loaders.jsx';
 import { mapErrorToAction, mapErrorToMessage } from '../lib/automation/errors.js';
 import { maskSecrets } from '../lib/automation/masking.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { useAutomationMode } from '../components/automation/AutomationModeContext.jsx';
+import { PermissionGate } from '../components/automation/AutomationLayout.jsx';
 
 function AutomationRules() {
+  const { setBanner, clearBanner, reportError } = useAutomationMode();
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,6 +44,7 @@ function AutomationRules() {
   const runSimulate = async (ruleCode) => {
     let context = {};
     try { context = JSON.parse(evalContext); } catch { setSimResult({ error: 'JSON de contexte invalide.' }); return; }
+    setBanner({ kind: 'SIMULATION', message: 'Aucun effet métier n’est déclenché par le point d’entrée de simulation.' });
     try {
       const res = await automationService.simulateRule(ruleCode, context);
       setSelectedRule(ruleCode);
@@ -47,6 +52,8 @@ function AutomationRules() {
     } catch (err) {
       setSelectedRule(ruleCode);
       setSimResult({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
+      clearBanner('SIMULATION');
+      reportError(err);
     }
   };
 
@@ -59,6 +66,7 @@ function AutomationRules() {
       setEvalOutput(res.data);
     } catch (err) {
       setEvalOutput({ error: mapErrorToMessage(err), action: mapErrorToAction(err) });
+      reportError(err);
     }
   };
 
@@ -85,16 +93,16 @@ function AutomationRules() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Règles métier</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Gérez et évaluez les règles d'automatisation</p>
-        </div>
-        <button onClick={fetchRules} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl hover:bg-blue-100 transition-colors">
-          <ArrowPathRoundedSquareIcon className="w-4 h-4" />
-          Rafraîchir
-        </button>
-      </div>
+      <PageHeader
+        title="Règles métier"
+        subtitle="Gérez et évaluez les règles d'automatisation"
+        actions={(
+          <button type="button" onClick={fetchRules} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-amber-600">
+            <ArrowPathRoundedSquareIcon className="h-4 w-4" />
+            Rafraîchir
+          </button>
+        )}
+      />
 
       {error && (
         <div role="alert" className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
@@ -131,10 +139,12 @@ function AutomationRules() {
                   <div className="flex items-center gap-3">
                     {statusBadge(r.status)}
                     <span className="text-xs text-slate-400 dark:text-slate-500">v{r.version} · prio {r.priority}</span>
-                    <button onClick={() => runSimulate(r.code)} className="inline-flex items-center gap-1.5 text-sm text-violet-600 dark:text-violet-400 hover:text-violet-800 font-medium transition-colors">
-                      <PlayIcon className="w-4 h-4" />
-                      Simuler
-                    </button>
+                    <PermissionGate permission="automation.simulate" fallback={null}>
+                      <button type="button" onClick={() => runSimulate(r.code)} className="inline-flex items-center gap-1.5 text-sm text-violet-600 dark:text-violet-400 hover:text-violet-800 font-medium transition-colors">
+                        <PlayIcon className="w-4 h-4" />
+                        Simuler
+                      </button>
+                    </PermissionGate>
                   </div>
                 </div>
                 <pre className="mt-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl p-3 text-xs text-slate-600 dark:text-slate-300 overflow-x-auto border border-slate-100 dark:border-slate-700/60">
@@ -170,9 +180,11 @@ function AutomationRules() {
                 onChange={(e) => setEvalContext(e.target.value)}
                 className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-200 mb-4"
               />
-              <button onClick={runEvaluate} className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 font-medium transition-colors text-sm">
-                Évaluer
-              </button>
+              <PermissionGate permission="automation:execute" fallback={null}>
+                <button type="button" onClick={runEvaluate} className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 font-medium transition-colors text-sm">
+                  Évaluer
+                </button>
+              </PermissionGate>
               {evalOutput && (
                 <pre className="mt-4 bg-slate-900 text-emerald-400 rounded-xl p-4 text-xs overflow-x-auto max-h-72">
                   {JSON.stringify(maskSecrets(evalOutput), null, 2)}
@@ -193,7 +205,7 @@ function AutomationRules() {
                     <p className="text-xs text-slate-400 dark:text-slate-500">{selectedRule}</p>
                   </div>
                 </div>
-                <button onClick={() => setSimResult(null)} className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors">Fermer</button>
+                <button onClick={() => { setSimResult(null); clearBanner('SIMULATION'); }} className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors">Fermer</button>
               </div>
               <div className="p-6">
                 <pre className="bg-slate-900 text-emerald-400 rounded-xl p-4 text-xs overflow-x-auto max-h-72">

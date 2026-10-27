@@ -28,26 +28,29 @@ export default function SubNavBar() {
   const entries = group.id === 'billing'
     ? directEntries.filter((entry) => billingScope.has(entry.id))
     : directEntries;
+  const isAutomation = group.id === 'automation';
 
   if (entries.length < 2) return null;
 
   return (
-    <section className="tz-module-nav" aria-label={`Navigation ${group.label}`}>
+    <section className={`tz-module-nav ${isAutomation ? 'tz-module-nav--automation' : ''}`} aria-label={`Navigation ${group.label}`}>
       <div className="tz-module-nav__heading">
         <div>
           <p className="tz-module-nav__eyebrow">Espace module</p>
-          <h1>{group.label}</h1>
+          {isAutomation ? <p className="tz-module-nav__title">{group.label}</p> : <h1>{group.label}</h1>}
         </div>
         <p>Navigation et outils disponibles pour votre contexte.</p>
       </div>
       <ModuleTabs
         ariaLabel={`Sections ${group.label}`}
         activeId={active?.id}
+        className={isAutomation ? 'tz-module-tabs--automation' : ''}
         tabs={entries.map((entry) => ({
           id: entry.id,
           label: entry.label,
           route: entry.route,
           icon: entry.icon,
+          accent: isAutomation ? 'var(--color-warning)' : undefined,
         }))}
       />
     </section>

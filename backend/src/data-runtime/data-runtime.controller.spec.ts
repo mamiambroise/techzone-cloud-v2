@@ -5,10 +5,11 @@ import { Reflector } from '@nestjs/core';
 import { IamPermissionsGuard } from '../iam/iam-permissions.guard';
 
 const principal = { tenantId: 'tenant-a', userId: 'reader', roles: [ROLES.USER], permissions: ['data-runtime:query'] } as any;
+const resolutionId = '123e4567-e89b-42d3-a456-426614174000';
 
 function runtimeResolution(overrides: Record<string, any> = {}) {
   return {
-    id: 'resolution-a',
+    id: resolutionId,
     tenantId: 'tenant-a',
     applicationId: 'application-a',
     environment: 'production',
@@ -33,10 +34,14 @@ function runtimeResolution(overrides: Record<string, any> = {}) {
 }
 
 function controllerWith(findFirst = jest.fn(), findVersion = jest.fn().mockResolvedValue({ applicationId: 'application-a' })) {
+  const runtimeExecution = {
+    assertExecutable: ({ resolutionId: id, tenantId }: { resolutionId: string; tenantId: string }) =>
+      findFirst({ where: { id, tenantId }, include: { effectiveManifest: true } }),
+  };
   const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, null as any, null as any, {
     runtimeResolution: { findFirst },
     applicationVersion: { findFirst: findVersion },
-  } as any);
+  } as any, runtimeExecution as any);
   return { controller, findFirst, findVersion };
 }
 
@@ -74,12 +79,12 @@ describe('Data Runtime published BM execution gate', () => {
     const { controller, findVersion } = controllerWith(findFirst);
 
     await expect((controller as any).assertPublishedRuntimeGuard(
-      { headers: { 'x-runtime-resolution-id': 'resolution-a' } },
+      { headers: { 'x-runtime-resolution-id': resolutionId } },
       principal,
       { resource: 'bm:version-a:customer' },
     )).resolves.toBe(resolution);
     expect(findFirst).toHaveBeenCalledWith({
-      where: { id: 'resolution-a', tenantId: 'tenant-a' },
+      where: { id: resolutionId, tenantId: 'tenant-a' },
       include: { effectiveManifest: true },
     });
     expect(findVersion).toHaveBeenCalledWith({
@@ -99,7 +104,7 @@ describe('Data Runtime published BM execution gate', () => {
     await expect((controller as any).assertPublishedRuntimeGuard(
       undefined,
       principal,
-      { resource: `bm:${requestedVersion}:customer`, resolutionId: 'resolution-a' },
+      { resource: `bm:${requestedVersion}:customer`, resolutionId },
     )).rejects.toThrow(error);
   });
 });

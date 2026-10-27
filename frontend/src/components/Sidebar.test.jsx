@@ -34,6 +34,14 @@ describe('Navigation principale à un niveau', () => {
     expect(screen.getByRole('link', { name: 'Pack Manager' })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('keeps Automation on the existing module route and applies its amber active state', () => {
+    renderSidebar('/automation/workflows');
+    const automation = screen.getByRole('link', { name: 'Automatisation' });
+    expect(automation).toHaveAttribute('href', '/automation');
+    expect(automation).toHaveAttribute('aria-current', 'page');
+    expect(automation).toHaveClass('border-amber-400', 'text-amber-200');
+  });
+
   it('never reveals a module outside the user permissions', () => {
     principal = { displayName: 'Opérateur', permissions: ['automation:read'], isAdmin: false };
     renderSidebar('/automation');
@@ -54,26 +62,25 @@ describe('Navigation principale à un niveau', () => {
     collapsed = true;
     renderSidebar('/dashboard');
     expect(screen.queryByRole('searchbox')).toBeNull();
-    fireEvent.click(group('Pack Manager'));
-    expect(screen.getByRole('searchbox')).toBeInTheDocument();
-    expect(group('Pack Manager')).toHaveAttribute('aria-expanded', 'true');
-    expect(within(submenuOf('packs')).getByRole('link', { name: 'Publication' })).toBeInTheDocument();
+    const packManager = screen.getByRole('link', { name: 'Pack Manager' });
+    fireEvent.focus(packManager);
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Pack Manager');
+    expect(packManager).not.toHaveAttribute('aria-expanded');
   });
 });
 
 describe('Module availability badge', () => {
-  it('shows the implemented Registry without a planned badge', () => {
+  it('keeps Automation as one module destination without a planned badge', () => {
     renderSidebar('/dashboard');
-    expect(group('Registry')).toBeInTheDocument();
-    expect(within(group('Registry')).queryByText('Bientôt')).not.toBeInTheDocument();
+    const automation = screen.getByRole('link', { name: 'Automatisation' });
+    expect(automation).toHaveAttribute('href', '/automation');
+    expect(automation).not.toHaveTextContent('Bientôt');
   });
 
-  it('marks only the unavailable child of a partially available module', () => {
+  it('does not render a nested navigation structure for module destinations', () => {
     renderSidebar('/dashboard');
-    fireEvent.click(group('Automatisation'));
-    const items = within(submenuOf('automation')).getAllByRole('link');
-    const flagged = items.filter(link => within(link).queryByText('Bientôt')).map(link => link.textContent.replace('Bientôt', ''));
-    expect(flagged).toEqual(['Actions', 'Planifications', 'Modèles', 'Diagnostics', 'Formules']);
+    expect(document.querySelector('[id^="submenu-"]')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Actions' })).toBeNull();
   });
 });
 
@@ -111,10 +118,10 @@ describe('IAM filtering of the sidebar', () => {
   it('recomputes the navigation when the tenant changes', () => {
     tenant = { activeTenant: { id: 'tenant-b' }, loading: false, error: null };
     const { rerender } = renderSidebar('/dashboard');
-    expect(screen.getByRole('button', { name: 'Pack Manager' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pack Manager' })).toBeInTheDocument();
     tenant = { activeTenant: { id: 'tenant-c' }, loading: false, error: null };
     rerender(<MemoryRouter initialEntries={['/dashboard']}><Sidebar isOpen={false} onClose={() => {}} /></MemoryRouter>);
-    expect(screen.getByRole('button', { name: 'Pack Manager' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pack Manager' })).toBeInTheDocument();
   });
 
   it('uses a dialog and close control on mobile', () => {

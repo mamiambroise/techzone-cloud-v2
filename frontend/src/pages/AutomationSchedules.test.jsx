@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import AutomationSchedules from './AutomationSchedules.jsx';
 import { automationService } from '../services/apiClient.js';
+import { useAuth } from '../auth/AuthProvider.jsx';
+
+vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: vi.fn() }));
 
 vi.mock('../services/apiClient.js', () => ({
   automationService: {
@@ -16,6 +20,7 @@ vi.mock('../services/apiClient.js', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useAuth.mockReturnValue({ user: { permissions: ['automation:execute'] } });
   automationService.schedules.mockResolvedValue({
     data: [{
       id: 'schedule-1',
@@ -43,5 +48,15 @@ describe('AutomationSchedules', () => {
     expect(await screen.findByText('Validation des factures')).toBeInTheDocument();
     expect(screen.getByText(/worker serveur est désactivé/)).toBeInTheDocument();
     expect(automationService.schedules).toHaveBeenCalledOnce();
+  });
+
+  it('hides schedule mutations without automation:execute', async () => {
+    useAuth.mockReturnValue({ user: { permissions: ['automation:read'] } });
+    render(<AutomationSchedules />);
+
+    expect(await screen.findByRole('heading', { name: 'Planifications' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Planifier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Suspendre la planification' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Supprimer la planification' })).not.toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import { Activity, AlertCircle, RefreshCw, Search } from 'lucide-react';
 import { automationService } from '../services/apiClient.js';
 import { mapErrorToAction, mapErrorToMessage } from '../lib/automation/errors.js';
 import { formatDate, formatDuration } from '../lib/automation/format.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
 
 const EXECUTION_STATUSES = [
   'PENDING',
@@ -118,17 +119,16 @@ export default function AutomationHistory() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">Automatisation</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">Exécutions</h1>
-          <p className="mt-1 text-sm text-slate-500">Historique et suivi des exécutions retournés par le moteur.</p>
-        </div>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
-        </button>
-      </header>
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      <PageHeader
+        title="Exécutions"
+        subtitle="Historique et suivi des exécutions retournés par le moteur."
+        actions={(
+          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-amber-600">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
+          </button>
+        )}
+      />
 
       {error && (
         <div role="alert" className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4">
@@ -216,6 +216,6 @@ export default function AutomationHistory() {
           </table>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
