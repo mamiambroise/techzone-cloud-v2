@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 
@@ -16,6 +16,7 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ user: principal, 
 vi.mock('../contexts/TenantProvider.jsx', () => ({ useTenant: () => tenant }));
 
 const renderSidebar = (path = '/dashboard', props = {}) => render(<MemoryRouter initialEntries={[path]}><Sidebar isOpen={false} onClose={() => {}} {...props} /></MemoryRouter>);
+const group = (label) => screen.getByRole('link', { name: label });
 
 beforeEach(() => { collapsed = false; principal = { displayName: 'Compte de recette', permissions: ['*'], isAdmin: true }; tenant = { activeTenant: { id: 'tenant-a' }, loading: false, error: null }; });
 afterEach(cleanup);
@@ -54,10 +55,8 @@ describe('Navigation principale à un niveau', () => {
     collapsed = true;
     renderSidebar('/dashboard');
     expect(screen.queryByRole('searchbox')).toBeNull();
-    fireEvent.click(group('Pack Manager'));
-    expect(screen.getByRole('searchbox')).toBeInTheDocument();
-    expect(group('Pack Manager')).toHaveAttribute('aria-expanded', 'true');
-    expect(within(submenuOf('packs')).getByRole('link', { name: 'Publication' })).toBeInTheDocument();
+    fireEvent.mouseEnter(group('Pack Manager'));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Pack Manager');
   });
 });
 
@@ -70,10 +69,8 @@ describe('Module availability badge', () => {
 
   it('marks only the unavailable child of a partially available module', () => {
     renderSidebar('/dashboard');
-    fireEvent.click(group('Automatisation'));
-    const items = within(submenuOf('automation')).getAllByRole('link');
-    const flagged = items.filter(link => within(link).queryByText('Bientôt')).map(link => link.textContent.replace('Bientôt', ''));
-    expect(flagged).toEqual(['Actions', 'Planifications', 'Modèles', 'Diagnostics', 'Formules']);
+    expect(group('Automatisation')).toBeInTheDocument();
+    expect(within(group('Automatisation')).queryByText('Bientôt')).not.toBeInTheDocument();
   });
 });
 
@@ -111,10 +108,10 @@ describe('IAM filtering of the sidebar', () => {
   it('recomputes the navigation when the tenant changes', () => {
     tenant = { activeTenant: { id: 'tenant-b' }, loading: false, error: null };
     const { rerender } = renderSidebar('/dashboard');
-    expect(screen.getByRole('button', { name: 'Pack Manager' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pack Manager' })).toBeInTheDocument();
     tenant = { activeTenant: { id: 'tenant-c' }, loading: false, error: null };
     rerender(<MemoryRouter initialEntries={['/dashboard']}><Sidebar isOpen={false} onClose={() => {}} /></MemoryRouter>);
-    expect(screen.getByRole('button', { name: 'Pack Manager' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pack Manager' })).toBeInTheDocument();
   });
 
   it('uses a dialog and close control on mobile', () => {

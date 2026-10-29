@@ -17,6 +17,8 @@ import { CurrentUser } from '../iam/decorators/current-user.decorator';
 import type { IamAuthContext } from '../iam/decorators/current-user.decorator';
 import { Permissions } from '../iam/iam-permissions.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { ErpRegistryService } from '../erp-registry/erp-registry.service';
+import { ErpError } from '../erp-adapter/erp-error';
 import {
   DATA_RUNTIME_EXECUTE,
   DATA_RUNTIME_QUERY,
@@ -38,6 +40,7 @@ export class DataRuntimeController {
     private readonly validationService: ValidationService,
     private readonly prisma: PrismaService = null as any,
     private readonly runtimeExecution: RuntimeExecutionService = new RuntimeExecutionService(prisma),
+    private readonly erpRegistry: ErpRegistryService = null as any,
   ) {}
 
   // === CONTRACT ===
@@ -55,6 +58,29 @@ export class DataRuntimeController {
   @ApiOperation({ summary: 'Lister les ressources canoniques' })
   async getResources() {
     return this.dataAccess.getResources();
+  }
+
+  @Get('readiness')
+  @Permissions(DATA_RUNTIME_READ)
+  @ApiOperation({ summary: 'Etat de disponibilite des providers Data Runtime pour le tenant courant' })
+  async getReadiness(@CurrentUser() principal: IamAuthContext) {
+    if (!principal?.tenantId) throw new ForbiddenException('TENANT_REQUIRED');
+    let erp: Record<string, unknown>;
+    try {
+      const active = await this.erpRegistry.getActiveForTenant({ tenantId: principal.tenantId });
+      erp = { provider: 'ERP_ADAPTER', status: 'AVAILABLE', instance: active.code };
+    } catch (error) {
+      const code = error instanceof ErpError ? error.code : 'ERP_INSTANCE_NOT_CONFIGURED';
+      erp = { provider: 'ERP_ADAPTER', status: 'DEGRADED', code, message: 'Aucun ERP actif pour ce tenant' };
+    }
+    return {
+      tenantId: principal.tenantId,
+      providers: [
+        { provider: 'PRISMA', status: 'AVAILABLE', diagnostics: 'API Data Runtime accessible' },
+        erp,
+        { provider: 'INTERNAL_SERVICES', status: 'AVAILABLE', diagnostics: 'API Data Runtime accessible' },
+      ],
+    };
   }
 
   // === QUERY ===

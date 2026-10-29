@@ -9,8 +9,6 @@ import {
   ABSOLUTE_TIMEOUT_MS,
   IDLE_TIMEOUT_MS,
   REFRESH_TTL_MS,
-  ROLE_PERMISSIONS,
-  ROLES,
 } from './iam.constants';
 import {
   hashToken,
@@ -832,17 +830,8 @@ async buildAccessToken(session: {
     }
     this.assertUserIsActive(user);
 
-    // Phase 8 : les claims du JWT restent une photographie informative. Le
-    // guard ne s'y fie jamais — il ré résout depuis la base à chaque requête,
-    // ce qui évite toute fenêtre d'autorisation après une révocation. Les
-    // claims restent néanmoins alignés pour que `/auth/me` et les outils
-    // hors-ligne ne mentent pas.
-    const effective = await this.authorization.resolve(
-      { id: session.userId, isAdmin: user?.isAdmin },
-      session.tenantId,
-    );
-    const fallbackRoles = this.deriveRoles(user);
-
+    // Keep authorization out of the cookie: the guard resolves current
+    // permissions from the persisted session on every request.
     return signAccessToken({
       type: 'access',
       userId: session.userId,
@@ -850,24 +839,7 @@ async buildAccessToken(session: {
       tenantId: session.tenantId,
       organizationId: session.organizationId,
       authenticationLevel: session.authenticationLevel,
-      roles: effective.roles.length > 0 ? effective.roles : fallbackRoles,
-      permissions: effective.permissions,
     });
-  }
-
-  /**
-   * Rôle de repli historique, utilisé uniquement quand le RBAC n'a rien
-   * résolu (aucun tenant actif). Ce n'est pas une source d'autorisation :
-   * `IamAuthorizationService` est l'unique décideur.
-   */
-  private deriveRoles(user: { isAdmin?: boolean } | null): string[] {
-    const roles: string[] = [];
-    if (user?.isAdmin) {
-      roles.push(ROLES.ADMIN);
-    } else {
-      roles.push(ROLES.USER);
-    }
-    return roles;
   }
 
   private async issueTokenPair(sessionId: string) {
@@ -1066,4 +1038,3 @@ async buildAccessToken(session: {
     }
   }
 }
-

@@ -146,3 +146,14 @@ describe('Tenant-scoped diagnostics', () => {
     expect(history.getMetrics).toHaveBeenCalledWith('tenant-a');
   });
 });
+
+describe('Data Runtime provider readiness', () => {
+  it('returns a degraded ERP state instead of throwing when no tenant ERP is active', async () => {
+    const erpRegistry = { getActiveForTenant: jest.fn().mockRejectedValue(new Error('ERP_INSTANCE_NOT_CONFIGURED')) };
+    const controller = new DataRuntimeController(null as any, null as any, null as any, null as any, null as any, null as any, null as any, null as any, erpRegistry as any);
+    await expect(controller.getReadiness({ tenantId: 'tenant-a', userId: 'user' } as any)).resolves.toEqual(expect.objectContaining({
+      tenantId: 'tenant-a',
+      providers: expect.arrayContaining([expect.objectContaining({ provider: 'ERP_ADAPTER', status: 'DEGRADED', code: 'ERP_INSTANCE_NOT_CONFIGURED' })]),
+    }));
+  });
+});

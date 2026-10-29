@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class RetentionService {
@@ -42,6 +43,6 @@ export class RetentionService {
   }
 
   private finish(id: string, status: string, affected: number, details: Record<string, unknown>) {
-    return this.prisma.observabilityRetentionRun.update({ where: { id }, data: { status, affected, details, completedAt: new Date() } });
+    return this.prisma.observabilityRetentionRun.update({ where: { id }, data: { status, affected, details: details as Prisma.InputJsonValue, completedAt: new Date() } });
   }
 }

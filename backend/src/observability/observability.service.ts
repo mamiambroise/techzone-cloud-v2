@@ -5,6 +5,7 @@ import type { IamAuthContext } from '../iam/decorators/current-user.decorator';
 import { MetricRecorderService } from './metric-recorder.service';
 import { RedactionService } from './redaction.service';
 import type { LogEvent, ObservabilityHealth } from './observability.contracts';
+import type { Prisma } from '../generated/prisma/client';
 
 const MAX_PAGE_SIZE = 100;
 const MAX_LOG_RANGE_MS = 31 * 24 * 60 * 60 * 1000;
@@ -40,7 +41,7 @@ export class ObservabilityService {
     const safeEvent = this.redaction.redact(event) as LogEvent;
     this.logs.push(safeEvent);
     if (this.logs.length > 10_000) this.logs.splice(0, this.logs.length - 10_000);
-    void this.prisma.observabilityLog.create({ data: { timestamp: new Date(safeEvent.timestamp), tenantId: safeEvent.tenantId ?? null, traceId: safeEvent.traceId, requestId: safeEvent.requestId ?? null, correlationId: safeEvent.correlationId ?? null, module: safeEvent.module, service: safeEvent.service, operation: safeEvent.operation ?? null, severity: safeEvent.severity, status: safeEvent.status ?? null, durationMs: safeEvent.durationMs ?? null, category: safeEvent.category, event: safeEvent.event, message: safeEvent.message, attributes: safeEvent.attributes ?? undefined } }).catch(() => undefined);
+    void this.prisma.observabilityLog.create({ data: { timestamp: new Date(safeEvent.timestamp), tenantId: safeEvent.tenantId ?? null, traceId: safeEvent.traceId ?? randomUUID(), requestId: safeEvent.requestId ?? null, correlationId: safeEvent.correlationId ?? null, module: safeEvent.module, service: safeEvent.service, operation: safeEvent.operation ?? null, severity: safeEvent.severity, status: safeEvent.status ?? null, durationMs: safeEvent.durationMs ?? null, category: safeEvent.category, event: safeEvent.event, message: safeEvent.message, attributes: safeEvent.attributes ? safeEvent.attributes as Prisma.InputJsonValue : undefined } }).catch(() => undefined);
   }
 
   async overview(principal: IamAuthContext) {
@@ -207,7 +208,7 @@ export class ObservabilityService {
   async createAlertRule(principal: IamAuthContext, input: { code: string; name: string; severity: string; condition: Record<string, unknown>; cooldownSec?: number }) {
     const threshold = Number(input.condition?.threshold);
     if (!input.code || !input.name || !Number.isFinite(threshold)) throw new Error('OBS_ALERT_RULE_INVALID');
-    return this.prisma.observabilityAlertRule.create({ data: { tenantId: principal.isSuperAdmin ? null : principal.tenantId, code: input.code.slice(0, 120), name: input.name.slice(0, 255), severity: input.severity, condition: input.condition, cooldownSec: Math.min(Math.max(input.cooldownSec ?? 300, 1), 86_400) } });
+    return this.prisma.observabilityAlertRule.create({ data: { tenantId: principal.isSuperAdmin ? null : principal.tenantId, code: input.code.slice(0, 120), name: input.name.slice(0, 255), severity: input.severity, condition: input.condition as Prisma.InputJsonValue, cooldownSec: Math.min(Math.max(input.cooldownSec ?? 300, 1), 86_400) } });
   }
 
   async listNotificationRoutes(principal: IamAuthContext) { return this.prisma.observabilityNotificationRoute.findMany({ where: this.scope(principal), orderBy: { createdAt: 'desc' } }); }
@@ -270,6 +271,6 @@ export class ObservabilityService {
   private page(query: { page?: number }) { return Math.max(Number(query.page) || 1, 1); }
   private skip(query: { page?: number; limit?: number }) { return (this.page(query) - 1) * this.take(query); }
   private paginate<T>(items: T[], query: { page?: number; limit?: number }) { return { items: items.slice(this.skip(query), this.skip(query) + this.take(query)), total: items.length, page: this.page(query), limit: this.take(query) }; }
-  private metricPoints(principal: IamAuthContext, name: `techzone_${string}` | undefined, since: Date) { return this.metrics.queryPersisted(name, since, principal.tenantId, principal.isSuperAdmin); }
+  private metricPoints(principal: IamAuthContext, name: string | null | undefined, since: Date) { return this.metrics.queryPersisted(name as `techzone_${string}` | undefined, since, principal.tenantId ?? undefined, principal.isSuperAdmin); }
   private platformStatus(status: string): ObservabilityHealth { return status === 'HEALTHY' ? 'HEALTHY' : status === 'DEGRADED' ? 'DEGRADED' : status === 'MAINTENANCE' ? 'MAINTENANCE' : status === 'UNAVAILABLE' ? 'UNHEALTHY' : 'UNKNOWN'; }
 }

@@ -10,6 +10,8 @@ import {
   ExclamationTriangleIcon,
   ServerStackIcon,
   ArrowTopRightOnSquareIcon,
+  AdjustmentsHorizontalIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 
 function apiMessage(error) {
@@ -24,6 +26,7 @@ function DataRuntime() {
   const [resources, setResources] = useState([]);
   const [contract, setContract] = useState(null);
   const [metrics, setMetrics] = useState(null);
+  const [readiness, setReadiness] = useState(null);
   const [selected, setSelected] = useState('Product');
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(1);
@@ -38,6 +41,9 @@ function DataRuntime() {
   const [mutationForm, setMutationForm] = useState({ operation: 'CREATE', targetId: '', json: '{\n  "ref": "PRD-X",\n  "label": "Produit test"\n}' });
   const [mutationOutput, setMutationOutput] = useState(null);
   const [mutationLoading, setMutationLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [hiddenColumns, setHiddenColumns] = useState([]);
+  const [expandedRow, setExpandedRow] = useState(null);
 
   const [queryForm, setQueryForm] = useState({ fields: '', filterField: '', filterOp: 'EQ', filterValue: '' });
   const [validateForm, setValidateForm] = useState({ json: '{\n  "ref": "PRD-X",\n  "label": "Produit test",\n  "price": 42\n}' });
@@ -46,15 +52,17 @@ function DataRuntime() {
   const fetchResources = useCallback(async () => {
     try {
       setLoading(true);
-      const [resourceResult, contractResult, metricsResult] = await Promise.allSettled([
+      const [resourceResult, contractResult, metricsResult, readinessResult] = await Promise.allSettled([
         dataRuntimeService.resources(),
         dataRuntimeService.contract(),
         dataRuntimeService.metrics(),
+        dataRuntimeService.readiness(),
       ]);
       if (resourceResult.status === 'rejected') throw resourceResult.reason;
       const available = Array.isArray(resourceResult.value.data) ? resourceResult.value.data : [];
       if (contractResult.status === 'fulfilled') setContract(contractResult.value.data);
       if (metricsResult.status === 'fulfilled') setMetrics(metricsResult.value.data);
+      if (readinessResult.status === 'fulfilled') setReadiness(readinessResult.value.data);
       setResources(available);
       setSelected((prev) => (
         available.some((resource) => resource.resourceCode === prev)
@@ -92,7 +100,18 @@ function DataRuntime() {
   }, [page, pageSize, sortDirection, sortField]);
 
   useEffect(() => { fetchResources(); }, [fetchResources]);
-  useEffect(() => { if (selected) listRows(selected, page, pageSize); }, [selected, page, pageSize, listRows]);
+  useEffect(() => {
+    if (!selected || !readiness) return;
+    const erpProvider = readiness.providers?.find((provider) => provider.provider === 'ERP_ADAPTER');
+    if (erpProvider?.status !== 'AVAILABLE') {
+      setRows([]);
+      setTotal(0);
+      setErpUnavailable(true);
+      setError(erpProvider?.message || 'La source ERP de ce tenant doit être configurée avant de charger les enregistrements.');
+      return;
+    }
+    listRows(selected, page, pageSize);
+  }, [selected, page, pageSize, readiness, listRows]);
 
   const changeResource = (resource) => {
     setSelected(resource);
@@ -129,6 +148,15 @@ function DataRuntime() {
       setQueryOutput({ error: err.response?.data?.message || err.message });
     }
   };
+
+  const querySecurity = queryOutput && !queryOutput.error ? {
+    tenant: queryOutput.tenantId || queryOutput.context?.tenantId || 'Tenant courant',
+    permission: queryOutput.permission || 'data-runtime:query',
+    contract: queryOutput.contract || contract?.contract || 'techzone.data-runtime',
+    policies: queryOutput.policies || queryOutput.appliedPolicies || [],
+    resolution: queryOutput.resolutionId || queryOutput.context?.requestId || 'Résolution serveur',
+    repository: queryOutput.repository || queryOutput.provider || 'Résolution serveur',
+  } : null;
 
   const runValidate = async (e) => {
     e.preventDefault();
@@ -187,10 +215,15 @@ function DataRuntime() {
   }
 
   const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const visibleColumns = columns.filter((column) => !hiddenColumns.includes(column));
+  const filteredRows = rows.filter((row) => {
+    if (!searchTerm.trim()) return true;
+    return Object.values(row).some((value) => String(value ?? '').toLowerCase().includes(searchTerm.trim().toLowerCase()));
+  });
 
   return (
     <main className="tz-page space-y-6">
-      <header className="overflow-hidden rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg sm:px-8">
+      <header className="tz-data-hero px-6 py-7 text-white sm:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="mb-3 flex items-center gap-2 text-sm text-cyan-300"><CubeTransparentIcon className="h-5 w-5" /> Espace données métier</div>
@@ -208,7 +241,7 @@ function DataRuntime() {
           ['Opérations', metrics?.executionCount ?? metrics?.queryCount ?? '—', 'Tenant courant'],
           ['Taux de succès', typeof metrics?.successRate === 'number' ? `${metrics.successRate.toFixed(1)}%` : '—', 'Historique autorisé'],
         ].map(([label, value, hint]) => (
-          <article key={label} className="tz-surface p-4">
+          <article key={label} className="tz-surface tz-data-metric p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
             <p className="mt-2 text-xl font-bold text-slate-900">{value}</p>
             <p className="mt-1 text-xs text-slate-500">{hint}</p>
@@ -273,6 +306,16 @@ function DataRuntime() {
               </button>
             </div>
             <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-6 py-3 text-sm dark:border-slate-700/60">
+              <label className="relative min-w-[220px] flex-1">
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Rechercher dans les enregistrements" className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 dark:border-slate-600 dark:bg-slate-900" aria-label="Rechercher dans les enregistrements" />
+              </label>
+              <details className="relative">
+                <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 font-medium text-slate-600 hover:border-cyan-300 dark:border-slate-600 dark:text-slate-300"><AdjustmentsHorizontalIcon className="h-4 w-4" /> Colonnes</summary>
+                <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-800">
+                  {columns.map((column) => <label key={column} className="flex items-center gap-2 py-1.5 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={!hiddenColumns.includes(column)} onChange={() => setHiddenColumns((current) => current.includes(column) ? current.filter((item) => item !== column) : [...current, column])} /> {column}</label>)}
+                </div>
+              </details>
               <label className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                 Lignes
                 <select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="rounded-lg border border-slate-200 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-700">
@@ -280,7 +323,7 @@ function DataRuntime() {
                 </select>
               </label>
               <span className="text-slate-500 dark:text-slate-400" aria-live="polite">
-                {total == null ? `${rows.length} résultat(s)` : `${total} résultat(s)`}
+                {searchTerm ? `${filteredRows.length} résultat(s) visibles` : (total == null ? `${rows.length} résultat(s)` : `${total} résultat(s)`)}
               </span>
               <div className="ml-auto flex items-center gap-2">
                 <button type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-lg border border-slate-200 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600">Précédent</button>
@@ -292,7 +335,8 @@ function DataRuntime() {
               <table className="w-full">
                 <thead className="bg-slate-50 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
                   <tr>
-                    {columns.map((c) => (
+                    <th className="w-10 px-2 py-2" aria-label="Relations" />
+                    {visibleColumns.map((c) => (
                       <th key={c} className="px-4 py-2 text-left font-semibold">
                         <button type="button" onClick={() => changeSort(c)} className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white" aria-label={`Trier par ${c}`}>
                           {c}{sortField === c && <span aria-hidden="true">{sortDirection === 'ASC' ? ' ↑' : ' ↓'}</span>}
@@ -302,14 +346,15 @@ function DataRuntime() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {rows.length === 0 ? (
-                    <tr><td colSpan={columns.length || 1} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">Aucune donnée</td></tr>
-                  ) : rows.map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-50/50">
-                      {columns.map((c) => (
+                  {filteredRows.length === 0 ? (
+                    <tr><td colSpan={visibleColumns.length + 1 || 1} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">{searchTerm ? 'Aucun enregistrement ne correspond à cette recherche.' : 'Aucune donnée'}</td></tr>
+                  ) : filteredRows.map((row, i) => (
+                    <React.Fragment key={i}><tr className="hover:bg-slate-50/50">
+                      <td className="px-2 py-3"><button type="button" onClick={() => setExpandedRow(expandedRow === i ? null : i)} className="rounded-md p-1 text-slate-400 hover:bg-cyan-50 hover:text-cyan-700" aria-label="Afficher les relations et détails"><LinkIcon className="h-4 w-4" /></button></td>
+                      {visibleColumns.map((c) => (
                         <td key={c} className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">{renderValue(row[c])}</td>
                       ))}
-                    </tr>
+                    </tr>{expandedRow === i && <tr><td colSpan={visibleColumns.length + 1} className="bg-cyan-50/40 px-6 py-4"><div className="grid gap-3 md:grid-cols-2"><div><p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Relations et champs imbriqués</p><p className="mt-1 text-xs text-slate-600">Les données sensibles restent masquées par la politique du contrat.</p></div><pre className="tz-data-code max-h-40 overflow-auto p-3">{JSON.stringify(row, null, 2)}</pre></div></td></tr>}</React.Fragment>
                   ))}
                 </tbody>
               </table>
@@ -408,9 +453,23 @@ function DataRuntime() {
                   </button>
                 </form>
                 {queryOutput && (
-                  <pre className="mt-4 bg-slate-900 text-green-400 rounded-lg p-4 text-xs overflow-x-auto max-h-64">
-                    {JSON.stringify(queryOutput, null, 2)}
-                  </pre>
+                  <div className="mt-4 space-y-3">
+                    {queryOutput.error ? (
+                      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+                        <p className="font-semibold">DATA ACCESS BLOCKED</p>
+                        <p className="mt-1">{queryOutput.error}</p>
+                        <p className="mt-2 font-mono text-xs text-red-600">Correlation ID : {queryOutput.correlationId || 'non fourni par le backend'}</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 p-4">
+                        <div className="flex items-center justify-between gap-3"><h4 className="text-sm font-semibold text-slate-900">Résumé de sécurité</h4><span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700">PASS</span></div>
+                        <dl className="mt-3 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                          {Object.entries(querySecurity).map(([label, value]) => <div key={label}><dt className="text-slate-500">{label}</dt><dd className="mt-0.5 font-mono text-slate-800">{Array.isArray(value) ? (value.length ? value.join(', ') : 'Aucune policy exposée') : value}</dd></div>)}
+                        </dl>
+                      </div>
+                    )}
+                    <details><summary className="cursor-pointer text-xs font-semibold text-slate-500">Voir la réponse technique</summary><pre className="tz-data-code mt-2 max-h-64 overflow-x-auto p-4">{JSON.stringify(queryOutput, null, 2)}</pre></details>
+                  </div>
                 )}
               </div>
             </div>

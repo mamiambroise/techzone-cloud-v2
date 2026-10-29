@@ -15,6 +15,12 @@ const planned = (id, group, label, description) => ({
 });
 
 export const plannedPages = [
+  planned("runtimeApplications", "runtime", "Applications", "Applications publiées et résolues par Pack Runtime."),
+  planned("runtimeResolutions", "runtime", "Résolutions", "Résolutions de runtime et dépendances actives."),
+  planned("runtimeActivations", "runtime", "Activations", "Activations de versions par environnement."),
+  planned("runtimeCache", "runtime", "Cache", "État du cache de résolution du runtime."),
+  planned("runtimeDiagnostics", "runtime", "Diagnostics", "Diagnostics du Pack Runtime."),
+  planned("runtimeHistory", "runtime", "Historique", "Historique des résolutions et activations."),
   { ...planned("data", "data", "Vue d’ensemble", "Vue d’ensemble Data Runtime et état des sources du tenant courant."), component: "DataRuntime", implemented: true, status: "PARTIAL" },
   planned("uiNavigation", "ui", "Navigation", "L’ordre visuel, les icônes et la visibilité des pages seront gérés ici ; la structure de navigation reste au Business Manager."),
   planned("uiEditor", "ui", "Éditeur visuel", "L’éditeur visuel s’ouvre depuis une page de l’application ; il sera disponible avec le futur Page Builder."),

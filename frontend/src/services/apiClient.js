@@ -336,6 +336,7 @@ export const erpHealthService = {
 export const dataRuntimeService = {
   contract: () => api.get('/data-runtime/contract'),
   resources: () => api.get('/data-runtime/resources'),
+  readiness: () => api.get('/data-runtime/readiness'),
   listResource: (resource) => api.get(`/data-runtime/resources/${resource}`),
   getResource: (resource, id) => api.get(`/data-runtime/resources/${resource}/${id}`),
   query: (body) => api.post('/data-runtime/query', body),

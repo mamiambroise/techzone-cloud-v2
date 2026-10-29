@@ -56,11 +56,11 @@ function DataRuntimeHistory() {
   ] : [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <main className="tz-page space-y-6">
+      <header className="tz-data-hero flex items-center justify-between px-6 py-6 text-white sm:px-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Historique Data Runtime</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Journal des opérations et métriques de performance</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Historique Data Runtime</h1>
+          <p className="mt-2 text-sm text-slate-300">Journal des opérations et métriques de performance</p>
         </div>
         <button
           onClick={fetchData}
@@ -69,7 +69,7 @@ function DataRuntimeHistory() {
           <ArrowPathIcon className="w-4 h-4" />
           Rafraîchir
         </button>
-      </div>
+      </header>
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-xl p-4 flex items-center gap-3">
@@ -99,7 +99,7 @@ function DataRuntimeHistory() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="tz-surface border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
             <DocumentTextIcon className="w-5 h-5 text-white" />
@@ -107,7 +107,7 @@ function DataRuntimeHistory() {
           <h3 className="font-semibold text-slate-800 dark:text-slate-100">Opérations récentes</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="tz-data-table w-full">
             <thead className="bg-slate-50 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
               <tr>
                 <th className="px-4 py-2 text-left font-semibold">TraceId</th>
@@ -161,7 +161,7 @@ function DataRuntimeHistory() {
       </div>
 
       {traceDetail && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="tz-surface border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md">
@@ -180,7 +180,7 @@ function DataRuntimeHistory() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }
 

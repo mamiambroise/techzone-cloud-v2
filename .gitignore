@@ -45,3 +45,4 @@ Thumbs.db
 
 # Owned Windows runtime state
 .runtime/
+backend/cookies.txt
